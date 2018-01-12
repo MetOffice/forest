@@ -32,7 +32,7 @@ except:
 bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
-fcast_time = '20180101T0000Z'
+fcast_time = '20180110T0000Z'
 
 N1280_GA6_KEY = 'n1280_ga6'
 KM4P4_RA1T_KEY = 'km4p4_ra1t'
@@ -65,7 +65,7 @@ fname_key = 's3_local_path'
 # S3 mount is unavailable, or for performance reasons.
 do_download = True
 if do_download:
-    base_path_local = '/scratch/shaddad/SEA_data/model_data/'
+    base_path_local = os.path.expanduser('~/SEA_data/model_data/')
     if not (os.path.isdir(base_path_local)):
         print('creating directory {0}'.format(base_path_local))
         os.mkdir(base_path_local)
@@ -75,8 +75,8 @@ if do_download:
                                                        datasets[ds_name]['fname'])
            
     
-    #for ds_name in datasets:
-        #lib_sea.download_from_s3(datasets[ds_name]['s3_url'], datasets[ds_name]['local_path'])
+    for ds_name in datasets:
+        lib_sea.download_from_s3(datasets[ds_name]['s3_url'], datasets[ds_name]['local_path'])
         
     fname_key = 'local_path'
     
