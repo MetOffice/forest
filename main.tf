@@ -8,18 +8,18 @@ data "template_file" "bootstrap" {
 
 resource "aws_instance" "bokeh_server" {
   ami                   = "ami-e7d6c983"
-  instance_type         = "t2.xlarge"	
+  instance_type         = "t2.medium"	
   key_name              = "kubernetes.cluster.k8s.informaticslab.co.uk-be:87:08:3a:ea:a2:9e:7e:be:c1:97:2a:42:9b:8a:05"
   user_data             = "${data.template_file.bootstrap.rendered}"
   # iam_instance_profile  = "seasia-bokeh-on-ec2"
   tags {
-    Name = "se_asia_bokeh_demo",
-    EndOfLife = "2018-02-10",
+    Name = "model_evaluation_tool_server",
+    EndOfLife = "2018-03-31",
     OfficeHours = false,
     Project = "SEAsia",
     ServiceCode = "ZZTLAB",
     ServiceOwner = "aws@informaticslab.co.uk",
-    Owner = "theo.mccaie"
+    Owner = "stephen.haddad"
   }
   security_groups        = ["default", "${aws_security_group.server.name}"]
 }
