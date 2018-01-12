@@ -68,7 +68,7 @@ if do_download:
     base_path_local = os.path.expanduser('~/SEA_data/model_data/')
     if not (os.path.isdir(base_path_local)):
         print('creating directory {0}'.format(base_path_local))
-        os.mkdir(base_path_local)
+        os.makedirs(base_path_local)
         
     for ds_name in datasets.keys():
         datasets[ds_name]['local_path'] = os.path.join(base_path_local,
