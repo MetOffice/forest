@@ -417,9 +417,10 @@ class SEA_plot(object):
     
     def create_matplotlib_fig(self):
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
-                                                       figsize=(4.0,4.0))
+                                                       figsize=(4.0,3.0))
         self.current_figure.clf()
         self.current_axes = self.current_figure.add_subplot(111, projection=cartopy.crs.PlateCarree())
+        self.current_axes.set_position([0, 0, 1, 1])
 
         self.plot_funcs[self.current_var]()
         if self.use_mpl_title:
@@ -432,22 +433,27 @@ class SEA_plot(object):
             self.current_figure.colorbar(self.main_plot,
                                          orientation='horizontal')
 
-        self.current_figure.tight_layout()
+        #self.current_figure.tight_layout()
         self.current_figure.canvas.draw()
         
     def create_bokeh_img_plot_from_fig(self):
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
         print('size of image array is {0}'.format(self.current_img_array.shape))
+        
+        cur_region = self.region_dict[self.current_region]
         self.bokeh_figure = bokeh.plotting.figure(plot_width=800, 
-                                    plot_height=800, 
-                                    x_range=(0, 10),
-                                    y_range=(0, 10), 
-                                    toolbar_location=None)
+                                                  plot_height=600, 
+                                                  x_range=(cur_region[2], cur_region[3]),
+                                                  y_range=(cur_region[0], cur_region[1]), 
+                                                  toolbar_location=None,
+                                                  tools = 'pan,wheel_zoom,reset')
+        latitude_range = cur_region[1] - cur_region[0]
+        longitude_range = cur_region[3] - cur_region[2]
         self.bokeh_image = self.bokeh_figure.image_rgba(image=[self.current_img_array], 
-                                                   x=[0], 
-                                                   y=[0], 
-                                                   dw=[10], 
-                                                   dh=[10])
+                                                   x=[cur_region[2]], 
+                                                   y=[cur_region[0]], 
+                                                   dw=[longitude_range], 
+                                                   dh=[latitude_range])
         self.bokeh_figure.title.text = self.current_title
         
         self.bokeh_img_ds = self.bokeh_image.data_source

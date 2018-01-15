@@ -198,7 +198,8 @@ def get_image_array_from_figure(fig):
     width, height = fig.get_size_inches() * fig.get_dpi()
     
     # Get the RGB buffer from the figure
-    w,h = fig.canvas.get_width_height()
+    h, w = fig.canvas.get_width_height()
+    print(' width={0}\nheight={1}'.format(w,h))
     buf = numpy.fromstring ( fig.canvas.tostring_argb(), dtype=numpy.uint8 )
     buf.shape = ( w, h,4 )
 
