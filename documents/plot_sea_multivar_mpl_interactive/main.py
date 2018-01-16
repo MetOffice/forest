@@ -42,9 +42,9 @@ KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
 
 datasets = {N1280_GA6_KEY:{'model_name':'N1280 GA6 LAM Model'},
             KM4P4_RA1T_KEY:{'model_name':'SE Asia 4.4KM RA1-T '},
-            #KM1P5_INDO_RA1T_KEY:{'model_name':'Indonesia 1.5KM RA1-T'},
-             #KM1P5_MAL_RA1T_KEY:{'model_name':'Malaysia 1.5KM RA1-T'},
-             #KM1P5_PHI_RA1T_KEY:{'model_name':'Philipines 1.5KM RA1-T'},
+            KM1P5_INDO_RA1T_KEY:{'model_name':'Indonesia 1.5KM RA1-T'},
+             KM1P5_MAL_RA1T_KEY:{'model_name':'Malaysia 1.5KM RA1-T'},
+             KM1P5_PHI_RA1T_KEY:{'model_name':'Philipines 1.5KM RA1-T'},
            }
 
 s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
@@ -102,18 +102,18 @@ plot_names = ['precipitation',
 
 var_names = ['precipitation',
              'air_temperature',
-             #'wind_speed',
-             #'wind_vectors',
-              #'cloud_fraction',
-              #'mslp',
+             'wind_speed',
+             'wind_vectors',
+             'cloud_fraction',
+             'mslp',
             ]
 
 datasets[N1280_GA6_KEY]['var_lookup'] = {'precipitation':'precipitation_flux',
-                                 #'cloud_fraction': 'cloud_area_fraction_assuming_maximum_random_overlap',
+                                 'cloud_fraction': 'cloud_area_fraction_assuming_maximum_random_overlap',
                                  'air_temperature':'air_temperature',
-                                 #'x_wind':'x_wind',
-                                 #'y_wind':'y_wind',
-                                 #'mslp':'air_pressure_at_sea_level',
+                                 'x_wind':'x_wind',
+                                 'y_wind':'y_wind',
+                                 'mslp':'air_pressure_at_sea_level',
                                 }
 datasets[N1280_GA6_KEY]['units'] = {'precipitation':'kg-m-2-hour^-1',
                                  'cloud_fraction': None,
@@ -123,11 +123,11 @@ datasets[N1280_GA6_KEY]['units'] = {'precipitation':'kg-m-2-hour^-1',
                                  'mslp':'hectopascals',
                                 }
 datasets[KM4P4_RA1T_KEY]['var_lookup'] = {'precipitation':'stratiform_rainfall_rate',
-                                  #'cloud_fraction': 'cloud_area_fraction_assuming_maximum_random_overlap',
+                                  'cloud_fraction': 'cloud_area_fraction_assuming_maximum_random_overlap',
                                   'air_temperature':'air_temperature',
-                                  #'x_wind':'x_wind',
-                                  #'y_wind':'y_wind',
-                                  #'mslp':'air_pressure_at_sea_level',
+                                  'x_wind':'x_wind',
+                                  'y_wind':'y_wind',
+                                  'mslp':'air_pressure_at_sea_level',
                                  }
 datasets[KM4P4_RA1T_KEY]['units'] = {'precipitation':'kg-m-2-hour^-1',
                                  'cloud_fraction': None,
@@ -137,13 +137,13 @@ datasets[KM4P4_RA1T_KEY]['units'] = {'precipitation':'kg-m-2-hour^-1',
                                  'mslp':'hectopascals',
                                 }
 
-#datasets[KM1P5_INDO_RA1T_KEY]['units'] = dict(datasets[KM4P4_RA1T_KEY]['units'])
-#datasets[KM1P5_MAL_RA1T_KEY]['units'] = dict(datasets[KM4P4_RA1T_KEY]['units'])
-#datasets[KM1P5_PHI_RA1T_KEY]['units'] = dict(datasets[KM4P4_RA1T_KEY]['units'])
+datasets[KM1P5_INDO_RA1T_KEY]['units'] = dict(datasets[KM4P4_RA1T_KEY]['units'])
+datasets[KM1P5_MAL_RA1T_KEY]['units'] = dict(datasets[KM4P4_RA1T_KEY]['units'])
+datasets[KM1P5_PHI_RA1T_KEY]['units'] = dict(datasets[KM4P4_RA1T_KEY]['units'])
 
-#datasets[KM1P5_INDO_RA1T_KEY]['var_lookup'] = dict(datasets[KM4P4_RA1T_KEY]['var_lookup'])
-#datasets[KM1P5_MAL_RA1T_KEY]['var_lookup'] = dict(datasets[KM4P4_RA1T_KEY]['var_lookup'])
-#datasets[KM1P5_PHI_RA1T_KEY]['var_lookup'] = dict(datasets[KM4P4_RA1T_KEY]['var_lookup'])
+datasets[KM1P5_INDO_RA1T_KEY]['var_lookup'] = dict(datasets[KM4P4_RA1T_KEY]['var_lookup'])
+datasets[KM1P5_MAL_RA1T_KEY]['var_lookup'] = dict(datasets[KM4P4_RA1T_KEY]['var_lookup'])
+datasets[KM1P5_PHI_RA1T_KEY]['var_lookup'] = dict(datasets[KM4P4_RA1T_KEY]['var_lookup'])
 
 
 
