@@ -44,7 +44,7 @@ datasets = {N1280_GA6_KEY:{'model_name':'N1280 GA6 LAM Model'},
             KM4P4_RA1T_KEY:{'model_name':'SE Asia 4.4KM RA1-T '},
             KM1P5_INDO_RA1T_KEY:{'model_name':'Indonesia 1.5KM RA1-T'},
              KM1P5_MAL_RA1T_KEY:{'model_name':'Malaysia 1.5KM RA1-T'},
-             KM1P5_PHI_RA1T_KEY:{'model_name':'Philipines 1.5KM RA1-T'},
+             KM1P5_PHI_RA1T_KEY:{'model_name':'Philipines 1.5KM RA1-T'},45t4
            }
 
 s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
@@ -159,22 +159,22 @@ for ds_name in datasets:
 
 
 # process wind cubes to calculate wind speed
-#WIND_SPEED_NAME = 'wind_speed'
-#cube_pow = iris.analysis.maths.exponentiate
-#for ds_name in datasets:
-    #print('calculating wind speed for {0}'.format(ds_name))
-    #cube_x_wind = datasets[ds_name]['x_wind']
-    #cube_y_wind = datasets[ds_name]['y_wind']
-    #datasets[ds_name]['wind_speed'] = cube_pow( cube_pow(cube_x_wind, 2.0) +
-                                                  #cube_pow(cube_y_wind, 2.0),
-                                                 #0.5 )
-    #datasets[ds_name]['wind_speed'].rename(WIND_SPEED_NAME)
+WIND_SPEED_NAME = 'wind_speed'
+cube_pow = iris.analysis.maths.exponentiate
+for ds_name in datasets:
+    print('calculating wind speed for {0}'.format(ds_name))
+    cube_x_wind = datasets[ds_name]['x_wind']
+    cube_y_wind = datasets[ds_name]['y_wind']
+    datasets[ds_name]['wind_speed'] = cube_pow( cube_pow(cube_x_wind, 2.0) +
+                                                  cube_pow(cube_y_wind, 2.0),
+                                                 0.5 )
+    datasets[ds_name]['wind_speed'].rename(WIND_SPEED_NAME)
 
 
-#for ds_name in datasets:
-    #datasets[ds_name].update(lib_sea.calc_wind_vectors(datasets[ds_name]['x_wind'], 
-                                               #datasets[ds_name]['y_wind'],
-                                               #10))
+for ds_name in datasets:
+    datasets[ds_name].update(lib_sea.calc_wind_vectors(datasets[ds_name]['x_wind'], 
+                                               datasets[ds_name]['y_wind'],
+                                               10))
 
 # create regions
 region_dict = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
