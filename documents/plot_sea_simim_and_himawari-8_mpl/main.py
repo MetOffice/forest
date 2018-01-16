@@ -14,6 +14,8 @@ import datetime as dt
 import textwrap
 import numpy as np
 import matplotlib as mpl
+mpl.use('agg')
+
 import matplotlib.pyplot as plt
 import cartopy
 import cartopy.crs as ccrs

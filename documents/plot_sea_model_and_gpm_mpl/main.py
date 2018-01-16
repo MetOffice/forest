@@ -14,6 +14,8 @@ import datetime as dt
 import textwrap
 import numpy as np
 import matplotlib as mpl
+mpl.use('agg')
+
 import matplotlib.pyplot as plt
 import cartopy
 import cartopy.crs as ccrs
@@ -64,7 +66,7 @@ datasets = {N1280_GA6_KEY:{'data_type_name':'N1280 GA6 LAM Model'},
 
 # Model data dict population
 
-s3_base_str = '{server}/{bucket}/sea_model_data/'
+s3_base_str = '{server}/{bucket}/model_data/'
 s3_base = s3_base_str.format(server=server_address, bucket=bucket_name)
 s3_local_base = os.path.join(os.sep,'s3',bucket_name, 'model_data')
 
