@@ -114,7 +114,7 @@ fname_key = 's3_local_path'
 # S3 mount is unavailable, or for performance reasons.
 do_download = True
 use_jh_paths = True
-base_dir = os.path.expanduser('~/sea_model_data')
+base_dir = os.path.expanduser('~/SEA_data')
 if do_download:
     for dtype in datasets.keys():
         if 'gpm_imerg' not in dtype:
