@@ -98,7 +98,7 @@ for dtype in datasets.keys():
             base_path_local = '/usr/local/share/notebooks/{data_type}/'.format(data_type=dtype)
         if not (os.path.isdir(base_path_local)):
             print('creating directory {0}'.format(base_path_local))
-            os.mkdir(base_path_local)
+            os.makedirs(base_path_local)
             
         datasets[dtype]['local_paths_list'] = [os.path.join(base_path_local, file_name)
                                                for file_name in datasets[dtype]['fnames_list']]
