@@ -44,7 +44,7 @@ datasets = {N1280_GA6_KEY:{'model_name':'N1280 GA6 LAM Model'},
             KM4P4_RA1T_KEY:{'model_name':'SE Asia 4.4KM RA1-T '},
             KM1P5_INDO_RA1T_KEY:{'model_name':'Indonesia 1.5KM RA1-T'},
              KM1P5_MAL_RA1T_KEY:{'model_name':'Malaysia 1.5KM RA1-T'},
-             KM1P5_PHI_RA1T_KEY:{'model_name':'Philipines 1.5KM RA1-T'},45t4
+             KM1P5_PHI_RA1T_KEY:{'model_name':'Philipines 1.5KM RA1-T'},
            }
 
 s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
