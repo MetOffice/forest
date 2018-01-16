@@ -1,7 +1,5 @@
 import sys
 
-print sys.version[0]
-
 import time
 import os
 

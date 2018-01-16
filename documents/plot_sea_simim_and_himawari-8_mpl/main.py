@@ -89,12 +89,11 @@ fname_key = 's3_local_path'
 #  for performance reasons.
 do_download = True
 use_jh_paths = True
-
+base_dir = os.path.expanduser('~/sea_model_data/')
 for dtype in datasets.keys():
     if do_download:
         if use_jh_paths:
-            base_dir = '/data/local/gander/SE_Asia/'
-            base_path_local = os.path.expanduser(base_dir + dtype)
+            base_path_local = os.path.join(base_dir,dtype)
         else:
             base_path_local = '/usr/local/share/notebooks/{data_type}/'.format(data_type=dtype)
         if not (os.path.isdir(base_path_local)):

@@ -114,12 +114,12 @@ fname_key = 's3_local_path'
 # S3 mount is unavailable, or for performance reasons.
 do_download = True
 use_jh_paths = True
+base_dir = os.path.expanduser('~/sea_model_data')
 if do_download:
     for dtype in datasets.keys():
         if 'gpm_imerg' not in dtype:
             if use_jh_paths:
-                base_dir = '/data/local/gander/SE_Asia/sea_model_data/'
-                base_path_local = os.path.expanduser(base_dir)
+                base_path_local = os.path.join(base_dir,'model_data')
             else:
                 base_path_local = '/usr/local/share/notebooks/sea_model_data/'
             if not (os.path.isdir(base_path_local)):
@@ -127,7 +127,7 @@ if do_download:
                 os.mkdir(base_path_local)
         else:
             if use_jh_paths:
-                base_path_local = os.path.expanduser('/data/local/gander/SE_Asia/gpm_imerg/')
+                base_path_local = os.path.join(base_dir, 'gpm_imerg') + '/'
             else:
                 base_path_local = '/usr/local/share/notebooks/gpm_imerg/'
             if not (os.path.isdir(base_path_local)):
