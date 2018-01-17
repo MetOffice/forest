@@ -1,7 +1,6 @@
 import os
 import time
 import sys
-import urllib.request
 import textwrap
 import numpy
 import iris
