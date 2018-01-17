@@ -392,8 +392,8 @@ class SEA_plot(object):
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
         print('size of image array is {0}'.format(self.current_img_array.shape))
         
-        self.bokeh_figure = bokeh.plotting.figure(plot_width=600, 
-                                                  plot_height=450, 
+        self.bokeh_figure = bokeh.plotting.figure(plot_width=800, 
+                                                  plot_height=600, 
                                                   x_range=(90, 154),
                                                   y_range=(-18, 30), 
                                                   toolbar_location=None,
