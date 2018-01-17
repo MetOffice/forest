@@ -36,20 +36,16 @@ class SEA_plot(object):
         self.dataset = dataset
         self.figure_name = figname
         self.current_var = plot_var
-        self.set_config(conf1)
+        self.current_config = conf1
         self.current_region = reg1
         self.data_bounds = self.region_dict[self.current_region]
+        self.plot_description = self.dataset[self.current_config]['model_name']
         self.show_colorbar = False
         self.show_axis_ticks = False
         self.use_mpl_title = False
         self.setup_plot_funcs()
         self.setup_pressure_labels()
-        self.current_title = ''
     
-    def set_config(self,new_config):
-        self.current_config = new_config   
-        self.plot_description = self.dataset[self.current_config]['model_name']
-
     def setup_pressure_labels(self):
         '''
         Create dict of pressure levels, to be used labelling MSLP contour plots.
@@ -449,7 +445,6 @@ class SEA_plot(object):
                                                   plot_height=600, 
                                                   x_range=(cur_region[2], cur_region[3]),
                                                   y_range=(cur_region[0], cur_region[1]), 
-                                                  toolbar_location=None,
                                                   tools = 'pan,wheel_zoom,reset')
         latitude_range = cur_region[1] - cur_region[0]
         longitude_range = cur_region[3] - cur_region[2]
@@ -465,9 +460,6 @@ class SEA_plot(object):
     def update_bokeh_img_plot_from_fig(self):
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
         self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
-        print('update_bokeh_img_plot_from_fig: setting bokeh title to the following:\n{0}'.format(self.current_title))
-        self.bokeh_figure.title.text = self.current_title
-        
 
     def update_plot(self):
         '''
@@ -515,7 +507,7 @@ class SEA_plot(object):
         Event handler for a change in the selected model configuration output.
         '''
         print('selected new config {0}'.format(new_val))
-        self.set_config(new_val)
+        self.current_config = new_val       
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
 
