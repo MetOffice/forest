@@ -457,6 +457,13 @@ class SEA_plot(object):
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
         
+    def link_axes_to_other_plot(self, other_plot):
+        try:
+            self.bokeh_figure.x_range = other_plot.bokeh_figure.x_range
+            self.bokeh_figure.y_range = other_plot.bokeh_figure.y_range
+        except:
+            print('bokeh plot linking failed.')        
+        
 # Set the initial values to be plotted
 init_time = '201801100300'
 init_var = 'I'
@@ -487,6 +494,8 @@ plot_obj_right = SEA_plot(datasets,
 
 plot_obj_right.current_time = init_time
 bokeh_img_right = plot_obj_right.create_plot()
+
+plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
 plots_row = bokeh.layouts.row(bokeh_img_left,
                               bokeh_img_right)
