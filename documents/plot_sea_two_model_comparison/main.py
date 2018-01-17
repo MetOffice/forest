@@ -226,6 +226,8 @@ bokeh_img_right = plot_obj_right.create_plot()
 plots_row = bokeh.layouts.row(bokeh_img_left,
                               bokeh_img_right)
 
+plot_obj_right.link_axes_to_other_plot(plot_obj_left)
+
 # set up bokeh widgets
 def create_dropdown_opt_list(iterable1):
     return [(k1,k1) for k1 in iterable1]
