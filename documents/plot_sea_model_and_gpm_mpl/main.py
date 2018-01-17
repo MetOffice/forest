@@ -448,7 +448,18 @@ class SEA_plot(object):
         self.current_config = new_val
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
-        
+
+    def on_imerg_change(self, attr1, old_val, new_val):
+        '''
+        Event handler for a change in the selected model configuration output.
+        '''
+        imerg_list = [ds_name for ds_name in datasets.keys() 
+                      if 'imerg' in ds_name]
+        print('selected new config {0}'.format(imerg_list[new_val]))
+        self.current_config = imerg_list[new_val]
+        self.create_matplotlib_fig()
+        self.update_bokeh_img_plot_from_fig()
+               
 # Set the initial values to be plotted
 init_time = 4
 init_var = 'precipitation'
@@ -495,7 +506,8 @@ data_time_slider = bokeh.models.widgets.Slider(start=0,
                                                end=num_times, 
                                                value=init_time, 
                                                step=1, 
-                                               title="Data time")
+                                               title="Data time",
+                                               width = 800)
                                                
 data_time_slider.on_change('value', plot_obj_right.on_data_time_change)
 data_time_slider.on_change('value', plot_obj_left.on_data_time_change)
@@ -505,23 +517,24 @@ model_menu_list = create_dropdown_opt_list([ds_name for ds_name in datasets.keys
 gpm_imerg_menu_list = create_dropdown_opt_list([ds_name for ds_name in datasets.keys() 
                                                 if 'imerg' in ds_name])
 
-left_desc = 'Model display'
-left_dd = bokeh.models.widgets.Dropdown(menu = model_menu_list,
-                                        label = left_desc,
-                                        button_type = 'warning')
-left_dd.on_change('value', plot_obj_left.on_config_change,)
+model_dd_desc = 'Model display'
+model_dd = bokeh.models.widgets.Dropdown(menu = model_menu_list,
+                                         label = model_dd_desc,
+                                         button_type = 'warning',
+                                         width = 800)
+model_dd.on_change('value', plot_obj_left.on_config_change,)
 
-
-right_desc = 'GPM IMERG display'
-right_dd = bokeh.models.widgets.Dropdown(menu = gpm_imerg_menu_list, 
-                                         label = right_desc,
-                                         button_type = 'warning')
-right_dd.on_change('value', plot_obj_right.on_config_change)
+imerg_rbg = bokeh.models.widgets.RadioButtonGroup(labels = [ds_name for ds_name 
+                                                           in datasets.keys() 
+                                                           if 'imerg' in ds_name], 
+                                                 button_type = 'warning',
+                                                 width = 800)
+imerg_rbg.on_change('active', plot_obj_right.on_imerg_change)
                                 
                               
 # Set layout for widgets
 slider_row = bokeh.layouts.row(data_time_slider)
-config_row = bokeh.layouts.row(left_dd, right_dd)
+config_row = bokeh.layouts.row(model_dd, imerg_rbg, width = 1600)
 
 main_layout = bokeh.layouts.column(slider_row,
                                    config_row,
@@ -537,3 +550,5 @@ if bokeh_mode == 'server':
     bokeh.plotting.curdoc().add_root(main_layout)
 elif bokeh_mode == 'cli':
     bokeh.io.show(main_layout)
+    
+bokeh.plotting.curdoc().title = 'Model rainfall vs GPM app'    
