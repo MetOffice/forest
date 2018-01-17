@@ -396,7 +396,6 @@ class SEA_plot(object):
                                                   plot_height=600, 
                                                   x_range=(90, 154),
                                                   y_range=(-18, 30), 
-                                                  toolbar_location=None,
                                                   tools = 'pan,wheel_zoom,reset')
         latitude_range = 48
         longitude_range = 64
