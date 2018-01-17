@@ -75,7 +75,10 @@ if do_download:
            
     
     for ds_name in datasets:
-        lib_sea.download_from_s3(datasets[ds_name]['s3_url'], datasets[ds_name]['local_path'])
+        try:
+            lib_sea.download_from_s3(datasets[ds_name]['s3_url'], datasets[ds_name]['local_path'])
+        except:
+            print("    Warning: file not downloaded successfully:", datasets[ds_name]['s3_url'])
         
     fname_key = 'local_path'
     

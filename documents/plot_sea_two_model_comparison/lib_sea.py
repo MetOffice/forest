@@ -209,5 +209,5 @@ def get_image_array_from_figure(fig):
 
     # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
     buf = numpy.roll ( buf, 3, axis = 2 )
-    buf = numpy.flip(buf,axis=0)
+    buf = buf[::-1, :, :]
     return buf
