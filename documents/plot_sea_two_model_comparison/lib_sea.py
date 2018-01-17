@@ -1,6 +1,10 @@
+import sys
+
 import time
 import os
-import urllib.request
+
+if sys.version[0] == '3':
+    import urllib.request
 
 import matplotlib.colors
 import matplotlib.cm
