@@ -456,6 +456,15 @@ class SEA_plot(object):
         self.current_time = new_val[:-3]
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
+    
+    def on_date_slider_change(self, attr1, old_val, new_val):
+        '''
+        Event handler for a change in the selected forecast data date.
+        '''
+        print('selected new date {0}'.format(new_val))
+        self.current_time = new_val.strftime('%Y%m%d') + self.current_time['-4:']
+        self.create_matplotlib_fig()
+        self.update_bokeh_img_plot_from_fig()
         
     def on_type_change(self, attr1, old_val, new_val):
     
@@ -545,6 +554,9 @@ date_slider = bokeh.models.widgets.sliders.DateSlider(start = start_date,
                                                       end = end_date,
                                                       value = value_date,
                                                       step = 86400000)
+
+date_slider.on_change('value', plot_obj_left.on_date_slider_change)
+date_slider.on_change('value', plot_obj_right.on_date_slider_change)
 
 # Set layout for widgets
 param_row = bokeh.layouts.row(wavelength_dd)
