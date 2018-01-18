@@ -208,7 +208,4 @@ if bokeh_mode == 'server':
 elif bokeh_mode == 'cli':
     bokeh.io.show(main_layout)
     
-# Share axes between plots to enable linked zooming and panning
-#plot_obj_left.share_axes([plot_obj_right.current_axes])
-
-
+bokeh.plotting.curdoc().title = 'Lazy loading two model comparison'    
