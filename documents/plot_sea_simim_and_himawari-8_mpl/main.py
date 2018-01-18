@@ -22,7 +22,6 @@ import cartopy.crs as ccrs
 import iris
 import bokeh.io
 import bokeh.layouts 
-import bokeh.models
 import bokeh.models.widgets
 import bokeh.plotting
 
@@ -228,8 +227,7 @@ class SEA_plot(object):
         self.figure_name = figname
         self.current_type = plot_type
         self.current_time = time
-        self.current_config = conf
-        self.plot_description = self.dataset[self.current_config]['data_type_name']
+        self.set_config(conf)
         self.use_mpl_title = False
         self.show_axis_ticks = False
         self.show_colorbar = False
@@ -252,6 +250,11 @@ class SEA_plot(object):
         self.update_funcs = {'simim': self.update_simim,
                              'himawari-8': self.update_him8,
                             }
+                            
+    def set_config(self, new_config):
+        self.current_config = new_config
+        self.plot_description = self.dataset[self.current_config]['data_type_name']
+    
           
     def update_him8(self):
     
@@ -365,7 +368,8 @@ class SEA_plot(object):
         '''
         
         self.update_funcs[self.current_type]()
-        self.current_axes.set_title(self.current_title)
+        if self.use_mpl_title:
+            self.current_axes.set_title(self.current_title)
         self.current_figure.canvas.draw_idle()
         
         self.update_bokeh_img_plot_from_fig()
@@ -404,18 +408,11 @@ class SEA_plot(object):
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
         print('size of image array is {0}'.format(self.current_img_array.shape))
         
-        # Set figure navigation limits
-        x_limits = bokeh.models.Range1d(90, 154, bounds = (90, 154))
-        y_limits = bokeh.models.Range1d(-18, 30, bounds = (-18, 30))
-        
-        # Initialize figure        
         self.bokeh_figure = bokeh.plotting.figure(plot_width=800, 
                                                   plot_height=600, 
-                                                  x_range = x_limits,
-                                                  y_range = y_limits, 
+                                                  x_range=(90, 154),
+                                                  y_range=(-18, 30), 
                                                   tools = 'pan,wheel_zoom,reset')
-                                                  
-        # Add mpl image
         latitude_range = 48
         longitude_range = 64
         self.bokeh_image = self.bokeh_figure.image_rgba(image=[self.current_img_array], 
@@ -423,7 +420,6 @@ class SEA_plot(object):
                                                         y=[-18], 
                                                         dw=[longitude_range], 
                                                         dh=[latitude_range])
-                                                        
         self.bokeh_figure.title.text = self.current_title
         
         self.bokeh_img_ds = self.bokeh_image.data_source
@@ -433,8 +429,8 @@ class SEA_plot(object):
         '''
         
         '''
-        
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+        self.bokeh_figure.title.text = self.current_title
         self.bokeh_img_ds.data[u'image'] = [self.current_img_array]  
         
     def share_axes(self, axes_list):

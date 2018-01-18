@@ -22,7 +22,6 @@ import cartopy.crs as ccrs
 import iris
 import bokeh.io
 import bokeh.layouts 
-import bokeh.models
 import bokeh.models.widgets
 import bokeh.plotting
 
@@ -285,14 +284,14 @@ class SEA_plot(object):
         self.dataset = dataset
         self.figure_name = figname
         self.current_type = plot_type
-        self.current_config = conf1
+        self.set_config(conf1)
         self.current_region = reg1
         self.data_bounds = region_dict[self.current_region]
-        self.plot_description = self.dataset[self.current_config]['data_type_name']
         self.use_mpl_title = False
         self.show_axis_ticks = False
         self.show_colorbar = False
         self.setup_plot_funcs()
+        self.current_title = ''
 
     def setup_plot_funcs(self):
     
@@ -303,9 +302,12 @@ class SEA_plot(object):
         amount of work to update the plot, and is used for some option changes, mainly a change 
         in the forecast time selected.
         '''
-        
         self.plot_funcs = {'precipitation' : self.plot_precip}
-        
+    
+    def set_config(self, new_config):
+        self.current_config = new_config
+        self.plot_description = self.dataset[self.current_config]['data_type_name']
+    
     def update_coords(self, data_cube):
     
         '''
@@ -391,20 +393,12 @@ class SEA_plot(object):
         '''
         
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
-        print('size of image array is {0}'.format(self.current_img_array.shape))
         
-        # Set figure navigation limits
-        x_limits = bokeh.models.Range1d(90, 154, bounds = (90, 154))
-        y_limits = bokeh.models.Range1d(-18, 30, bounds = (-18, 30))
-                
-        # Initialize figure
         self.bokeh_figure = bokeh.plotting.figure(plot_width=800, 
                                                   plot_height=600, 
-                                                  x_range = x_limits,
-                                                  y_range = y_limits, 
+                                                  x_range=(90, 154),
+                                                  y_range=(-18, 30), 
                                                   tools = 'pan,wheel_zoom,reset')
-                                                  
-        # Add mpl image                                          
         latitude_range = 48
         longitude_range = 64
         self.bokeh_image = self.bokeh_figure.image_rgba(image=[self.current_img_array], 
@@ -412,7 +406,6 @@ class SEA_plot(object):
                                                         y=[-18], 
                                                         dw=[longitude_range], 
                                                         dh=[latitude_range])
-                                                        
         self.bokeh_figure.title.text = self.current_title
         
         self.bokeh_img_ds = self.bokeh_image.data_source
@@ -424,6 +417,7 @@ class SEA_plot(object):
         '''
         
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+        self.bokeh_figure.title.text = self.current_title
         self.bokeh_img_ds.data[u'image'] = [self.current_img_array]  
         
     def on_data_time_change(self, attr1, old_val, new_val):
@@ -453,7 +447,7 @@ class SEA_plot(object):
         Event handler for a change in the selected model configuration output.
         '''
         print('selected new config {0}'.format(new_val))
-        self.current_config = new_val
+        self.set_config(new_val)
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
 
@@ -464,7 +458,7 @@ class SEA_plot(object):
         imerg_list = [ds_name for ds_name in datasets.keys() 
                       if 'imerg' in ds_name]
         print('selected new config {0}'.format(imerg_list[new_val]))
-        self.current_config = imerg_list[new_val]
+        self.set_config(imerg_list[new_val])
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
         
