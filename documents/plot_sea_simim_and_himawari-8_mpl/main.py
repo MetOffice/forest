@@ -538,8 +538,8 @@ data_time_dd.on_change('value', plot_obj_right.on_data_time_change)
 data_time_dd.on_change('value', plot_obj_left.on_data_time_change)
 
 start_date = fcast_time_obj.date()
-end_date = (start_date + dt.timedelta(days = 2)).date()
-value_date = end_time = (start_date + dt.timedelta(days = 1)).date()
+end_date = (start_date + dt.timedelta(days = 2))
+value_date = end_time = (start_date + dt.timedelta(days = 1))
 
 date_slider = bokeh.models.widgets.sliders.DateSlider(start = start_date,
                                                       end = end_date,
