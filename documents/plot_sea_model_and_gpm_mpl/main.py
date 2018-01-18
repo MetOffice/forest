@@ -22,6 +22,7 @@ import cartopy.crs as ccrs
 import iris
 import bokeh.io
 import bokeh.layouts 
+import bokeh.models
 import bokeh.models.widgets
 import bokeh.plotting
 
@@ -392,11 +393,18 @@ class SEA_plot(object):
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
         print('size of image array is {0}'.format(self.current_img_array.shape))
         
+        # Set figure navigation limits
+        x_limits = bokeh.models.Range1d(90, 154, bounds = (90, 154))
+        y_limits = bokeh.models.Range1d(-18, 30, bounds = (-18, 30))
+                
+        # Initialize figure
         self.bokeh_figure = bokeh.plotting.figure(plot_width=800, 
                                                   plot_height=600, 
-                                                  x_range=(90, 154),
-                                                  y_range=(-18, 30), 
+                                                  x_range = x_limits,
+                                                  y_range = y_limits, 
                                                   tools = 'pan,wheel_zoom,reset')
+                                                  
+        # Add mpl image                                          
         latitude_range = 48
         longitude_range = 64
         self.bokeh_image = self.bokeh_figure.image_rgba(image=[self.current_img_array], 
@@ -404,6 +412,7 @@ class SEA_plot(object):
                                                         y=[-18], 
                                                         dw=[longitude_range], 
                                                         dh=[latitude_range])
+                                                        
         self.bokeh_figure.title.text = self.current_title
         
         self.bokeh_img_ds = self.bokeh_image.data_source

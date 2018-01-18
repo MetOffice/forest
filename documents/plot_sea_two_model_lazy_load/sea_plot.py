@@ -446,14 +446,25 @@ class SEA_plot(object):
         self.current_figure.canvas.draw()
         
     def create_bokeh_img_plot_from_fig(self):
+    
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
         
         cur_region = self.region_dict[self.current_region]
-        self.bokeh_figure = bokeh.plotting.figure(plot_width=800, 
-                                                  plot_height=600, 
-                                                  x_range=(cur_region[2], cur_region[3]),
-                                                  y_range=(cur_region[0], cur_region[1]),
+        
+        # Set figure navigation limits
+        x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3], 
+                                        bounds = (cur_region[2], cur_region[3]))
+        y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1], 
+                                        bounds = (cur_region[0], cur_region[1]))
+                                        
+        # Initialize figure
+        self.bokeh_figure = bokeh.plotting.figure(plot_width = 800, 
+                                                  plot_height = 600, 
+                                                  x_range = x_limits,
+                                                  y_range = y_limits, 
                                                   tools = 'pan,wheel_zoom,reset')
+                                                  
+        # Add mpl image                                          
         latitude_range = cur_region[1] - cur_region[0]
         longitude_range = cur_region[3] - cur_region[2]
         self.bokeh_image = self.bokeh_figure.image_rgba(image=[self.current_img_array], 
@@ -461,6 +472,7 @@ class SEA_plot(object):
                                                    y=[cur_region[0]], 
                                                    dw=[longitude_range], 
                                                    dh=[latitude_range])
+                                                   
         self.bokeh_figure.title.text = self.current_title
         
         self.bokeh_img_ds = self.bokeh_image.data_source
