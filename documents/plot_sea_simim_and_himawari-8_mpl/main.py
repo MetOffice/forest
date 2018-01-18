@@ -462,7 +462,7 @@ class SEA_plot(object):
         Event handler for a change in the selected forecast data date.
         '''
         print('selected new date {0}'.format(new_val))
-        self.current_time = new_val.strftime('%Y%m%d') + self.current_time['-4':]
+        self.current_time = new_val.strftime('%Y%m%d') + self.current_time[-4:]
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
         
