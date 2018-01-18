@@ -39,7 +39,6 @@ class SEA_plot(object):
         self.set_config(conf1)
         self.current_region = reg1
         self.data_bounds = self.region_dict[self.current_region]
-        self.plot_description = self.dataset[self.current_config]['model_name']
         self.show_colorbar = False
         self.show_axis_ticks = False
         self.use_mpl_title = False
@@ -478,6 +477,7 @@ class SEA_plot(object):
         
     def update_bokeh_img_plot_from_fig(self):
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+        self.bokeh_figure.title.text = self.current_title
         self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
 
     def update_plot(self):
