@@ -408,11 +408,17 @@ class SEA_plot(object):
         self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
         print('size of image array is {0}'.format(self.current_img_array.shape))
         
+        # Set figure navigation limits
+        x_limits = bokeh.models.Range1d(90, 154, bounds = (90, 154))
+        y_limits = bokeh.models.Range1d(-18, 30, bounds = (-18, 30))
+        
+        # Initialize figure        
         self.bokeh_figure = bokeh.plotting.figure(plot_width=800, 
                                                   plot_height=600, 
-                                                  x_range=(90, 154),
-                                                  y_range=(-18, 30), 
+                                                  x_range = x_limits,
+                                                  y_range = y_limits, 
                                                   tools = 'pan,wheel_zoom,reset')
+                                                  
         latitude_range = 48
         longitude_range = 64
         self.bokeh_image = self.bokeh_figure.image_rgba(image=[self.current_img_array], 
