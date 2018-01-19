@@ -78,7 +78,7 @@ class SEA_dataset(object):
         self.do_download = do_download
         self.local_path = os.path.join(self.base_local_path,
                                        self.file_name)  
-        self.data = dict([(v1,None) for v1 in VAR_NAMES])
+        
 
         # set up data loader functions
         self.loaders = dict([(v1,self.basic_cube_load) for v1 in VAR_NAMES])
@@ -86,7 +86,8 @@ class SEA_dataset(object):
         self.loaders[WIND_VECTOR_NAME] = self.wind_vector_loader
         for wv_var in WIND_VECTOR_VARS:
             self.loaders[wv_var] = self.wind_vector_loader
-            
+        
+        self.data = dict([(v1,None) for v1 in self.loaders.keys()])
         if self.use_s3_local_mount:
             self.path_to_load = self.s3_local_path
         else:
@@ -115,15 +116,14 @@ class SEA_dataset(object):
         # process wind cubes to calculate wind speed
         
         cube_pow = iris.analysis.maths.exponentiate
-        for ds_name in datasets:
-            print('calculating wind speed for {0}'.format(ds_name))
-            cube_x_wind = self.get_data('x_wind')
-            cube_y_wind = self.get_data('y_wind')
-            
-            self.data[WIND_SPEED_NAME] = cube_pow( cube_pow(cube_x_wind, 2.0) +
-                                                        cube_pow(cube_y_wind, 2.0),
-                                                        0.5 )
-            self.data[WIND_SPEED_NAME].rename(WIND_SPEED_NAME)
+        print('calculating wind speed for {0}'.format(self.config_name))
+        cube_x_wind = self.get_data('x_wind')
+        cube_y_wind = self.get_data('y_wind')
+        
+        self.data[WIND_SPEED_NAME] = cube_pow( cube_pow(cube_x_wind, 2.0) +
+                                                    cube_pow(cube_y_wind, 2.0),
+                                                    0.5 )
+        self.data[WIND_SPEED_NAME].rename(WIND_SPEED_NAME)
 
     def wind_vector_loader(self, var_name):
         cube_x_wind = self.get_data('x_wind')

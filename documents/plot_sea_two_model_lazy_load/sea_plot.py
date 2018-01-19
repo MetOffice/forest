@@ -1,5 +1,9 @@
 import textwrap
 
+import threading
+import time
+
+
 import numpy
 
 import matplotlib
@@ -36,7 +40,7 @@ class SEA_plot(object):
         self.dataset = dataset
         self.figure_name = figname
         self.current_var = plot_var
-        self.set_config(conf1)
+        self._set_config_value(conf1)
         self.current_region = reg1
         self.data_bounds = self.region_dict[self.current_region]
         self.show_colorbar = False
@@ -46,9 +50,14 @@ class SEA_plot(object):
         self.setup_pressure_labels()
         self.current_title = ''
         self.bokeh_figure = None
+        self.bokeh_image = None
+        self.bokeh_img_ds = None
+        self.async = False
+
     
-    def set_config(self,new_config):
-        self.current_config = new_config   
+    def _set_config_value(self,new_config):
+        self.current_config = new_config 
+        print(self.dataset.keys())
         self.plot_description = self.dataset[self.current_config]['model_name']
 
     def setup_pressure_labels(self):
@@ -75,6 +84,7 @@ class SEA_plot(object):
                            'mslp' : self.plot_mslp,
                            'air_temperature' : self.plot_air_temp,
                            'cloud_fraction' :self.plot_cloud,
+                           'blank': self.create_blank,
                           }
         self.update_funcs =  {'precipitation' : self.update_precip,
                            'wind_vectors' : self.update_wind_vectors,
@@ -83,7 +93,10 @@ class SEA_plot(object):
                            'mslp' : self.update_mslp,
                            'air_temperature' : self.update_air_temp,
                            'cloud_fraction' :self.update_cloud,
+                           'blank': self.create_blank,
                           }
+                          
+    
         
     def update_coords(self, data_cube):
         '''
@@ -91,6 +104,10 @@ class SEA_plot(object):
         '''
         self.coords_lat = data_cube.coords('latitude')[0].points
         self.coords_long = data_cube.coords('longitude')[0].points
+        
+    def create_blank(self):
+        self.main_plot = None
+        self.current_title = 'Blank plot'
         
     def update_precip(self):
         '''
@@ -419,12 +436,14 @@ class SEA_plot(object):
         Main plotting function. Generic elements of the plot are created here, and then the plotting
         function for the specific variable is called using the self.plot_funcs dictionary.
         '''
+        print('create_plot')
         self.create_matplotlib_fig()
         self.create_bokeh_img_plot_from_fig()
         
         return self.bokeh_figure
     
     def create_matplotlib_fig(self):
+        print('create_matplotlib_fig')
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
                                                        figsize=(4.0,3.0))
         self.current_figure.clf()
@@ -432,24 +451,29 @@ class SEA_plot(object):
         self.current_axes.set_position([0, 0, 1, 1])
 
         self.plot_funcs[self.current_var]()
-        if self.use_mpl_title:
-            self.current_axes.set_title(self.current_title)
-        self.current_axes.set_xlim(self.data_bounds[2], self.data_bounds[3])
-        self.current_axes.set_ylim(self.data_bounds[0], self.data_bounds[1])
-        self.current_axes.xaxis.set_visible(self.show_axis_ticks)
-        self.current_axes.yaxis.set_visible(self.show_axis_ticks)
-        if self.show_colorbar:
-            self.current_figure.colorbar(self.main_plot,
-                                         orientation='horizontal')
+        if self.main_plot:
+            if self.use_mpl_title:
+                self.current_axes.set_title(self.current_title)
+            self.current_axes.set_xlim(self.data_bounds[2], self.data_bounds[3])
+            self.current_axes.set_ylim(self.data_bounds[0], self.data_bounds[1])
+            self.current_axes.xaxis.set_visible(self.show_axis_ticks)
+            self.current_axes.yaxis.set_visible(self.show_axis_ticks)
+            if self.show_colorbar:
+                self.current_figure.colorbar(self.main_plot,
+                                            orientation='horizontal')
 
-        #self.current_figure.tight_layout()
-        self.current_figure.canvas.draw()
+            self.current_figure.canvas.draw()
         
     def create_bokeh_img_plot_from_fig(self):
-    
-        self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
-        
+        print('create_bokeh_img_plot_from_fig 0')
+        try:
+            self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+        except:
+            self.current_img_array = None
+            
+        print('create_bokeh_img_plot_from_fig 1')
         cur_region = self.region_dict[self.current_region]
+        print('create_bokeh_img_plot_from_fig 2')
         
         # Set figure navigation limits
         x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3], 
@@ -457,30 +481,64 @@ class SEA_plot(object):
         y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1], 
                                         bounds = (cur_region[0], cur_region[1]))
                                         
+        print('create_bokeh_img_plot_from_fig 3')
         # Initialize figure
         self.bokeh_figure = bokeh.plotting.figure(plot_width = 800, 
                                                   plot_height = 600, 
                                                   x_range = x_limits,
                                                   y_range = y_limits, 
                                                   tools = 'pan,wheel_zoom,reset')
-                                                  
-        # Add mpl image                                          
+
+        print('create_bokeh_img_plot_from_fig 4 ')
+
+
+        if self.current_img_array is not None:
+            self.create_bokeh_img()
+        else:
+            print('creating blank plot')
+            mid_x = (cur_region[2] + cur_region[3]) * 0.5
+            mid_y = (cur_region[0] + cur_region[1]) * 0.5
+            self.bokeh_figure.text(x=[mid_x], 
+                                   y=[mid_y], 
+                                   text=['Plot loading'], 
+                                   text_color=['#FF0000'], 
+                                   text_font_size="20pt",
+                                   text_baseline="middle", 
+                                   text_align="center",
+                                  )
+                                                    
+                                                    
+        self.bokeh_figure.title.text = self.current_title
+    
+    def create_bokeh_img(self):
+        cur_region = self.region_dict[self.current_region]
+        print('creating bokeh plot from matplotlib plot')
+        # Add mpl image        
         latitude_range = cur_region[1] - cur_region[0]
         longitude_range = cur_region[3] - cur_region[2]
         self.bokeh_image = self.bokeh_figure.image_rgba(image=[self.current_img_array], 
-                                                   x=[cur_region[2]], 
-                                                   y=[cur_region[0]], 
-                                                   dw=[longitude_range], 
-                                                   dh=[latitude_range])
-                                                   
-        self.bokeh_figure.title.text = self.current_title
-        
-        self.bokeh_img_ds = self.bokeh_image.data_source
+                                                x=[cur_region[2]], 
+                                                y=[cur_region[0]], 
+                                                dw=[longitude_range], 
+                                                dh=[latitude_range])
+        self.bokeh_img_ds = self.bokeh_image.data_source        
         
     def update_bokeh_img_plot_from_fig(self):
-        self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
-        self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
-        self.bokeh_figure.title.text = self.current_title
+        
+        print('update_bokeh_img_plot_from_fig')
+        if self.bokeh_img_ds:
+            self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+            self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
+            self.bokeh_figure.title.text = self.current_title
+        else:
+            try:
+                self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+                self.create_bokeh_img()
+                self.bokeh_figure.title.text = self.current_title
+            except:
+                self.current_img_array = None
+            
+            
         
 
     def update_plot(self):
@@ -488,50 +546,58 @@ class SEA_plot(object):
         Main plot update function. Generic elements of the plot are updated here where possible, and then
         the plot update function for the specific variable is called using the self.plot_funcs dictionary.
         '''
-        self.update_funcs[self.current_var]()
-        if self.use_mpl_title:
-            self.current_axes.set_title(self.current_title)
-        self.current_figure.canvas.draw_idle()
+        print('update_plot')
+        try:
+            self.update_funcs[self.current_var]()
+            if self.use_mpl_title:
+                self.current_axes.set_title(self.current_title)
+            self.current_figure.canvas.draw_idle()
+            if not self.async:
+                self.update_bokeh_img_plot_from_fig()
+        except:
+            print('update failed, creating from scratch')
+            self.create_plot()
         
-        self.update_bokeh_img_plot_from_fig()
-        
-        
-    def on_data_time_change(self, attr1, old_val, new_val):
-        '''
-        Event handler for a change in the selected forecast data time.
-        '''
-        print('selected new time {0}'.format(new_val))
-        self.current_time = new_val
+
+    def set_data_time(self,new_time):
+        """
+        """
+        print('selected new time {0}'.format(new_time))
+        self.current_time = new_time
         self.update_plot()
         
-    def on_var_change(self, attr1, old_val, new_val):
-        '''
-        Event handler for a change in the selected plot type.
-        '''
-        print('selected new var {0}'.format(new_val))
-        self.current_var = new_val
-        self.create_matplotlib_fig()
-        self.update_bokeh_img_plot_from_fig()
         
-    def on_region_change(self, attr1, old_val, new_val):
+    def set_var(self, new_var):
+        print('selected new var {0}'.format(new_var))
+        self.current_var = new_var
+        self.create_matplotlib_fig()
+        if not self.async:
+            self.update_bokeh_img_plot_from_fig()
+
+        
+    def set_region(self, new_region):
         '''
         Event handler for a change in the selected plot region.
         '''
-        print('selected new region {0}'.format(new_val))
+        print('selected new region {0}'.format(new_region))
         
-        self.current_region = new_val
+        self.current_region = new_region
         self.data_bounds = self.region_dict[self.current_region]
         self.create_matplotlib_fig()
-        self.update_bokeh_img_plot_from_fig()
+        if not self.async:
+            self.update_bokeh_img_plot_from_fig()
     
-    def on_config_change(self, attr1, old_val, new_val):
+        
+    def set_config(self, new_config):
         '''
-        Event handler for a change in the selected model configuration output.
+        Function to set a new value of config and do an update
         '''
-        print('selected new config {0}'.format(new_val))
-        self.set_config(new_val)
+        print('setting new config {0}'.format(new_config))
+        self._set_config_value(new_config)
         self.create_matplotlib_fig()
-        self.update_bokeh_img_plot_from_fig()
+        if not self.async:
+            self.update_bokeh_img_plot_from_fig()
+
         
     def link_axes_to_other_plot(self, other_plot):
         try:

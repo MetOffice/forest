@@ -3,6 +3,9 @@ import time
 import sys
 import urllib.request
 import textwrap
+import functools
+import threading
+
 import numpy
 import iris
 
@@ -18,6 +21,7 @@ matplotlib.use('agg')
 import lib_sea
 import sea_plot
 import sea_data
+import sea_control
 
 iris.FUTURE.netcdf_promote = True
 
@@ -27,6 +31,19 @@ try:
 except:
     is_notebook = False
 
+def add_main_plot(main_layout, bokeh_doc):
+    print('finished creating, executing document add callback')
+
+    try:
+        bokeh_mode = os.environ['BOKEH_MODE']
+    except:
+        bokeh_mode = 'server'    
+        
+    if bokeh_mode == 'server':
+        bokeh_doc.add_root(main_layout)
+    elif bokeh_mode == 'cli':
+        bokeh.io.show(main_layout)
+
 
 # Extract and Load
 bucket_name = 'stephen-sea-public-london'
@@ -34,6 +51,7 @@ server_address = 'https://s3.eu-west-2.amazonaws.com'
 
 fcast_time = '20180110T0000Z'
 
+# Setup datasets. Data is not loaded until requested for plotting.
 N1280_GA6_KEY = 'n1280_ga6'
 KM4P4_RA1T_KEY = 'km4p4_ra1t'
 KM1P5_INDO_RA1T_KEY = 'indon2km1p5_ra1t'
@@ -81,6 +99,7 @@ plot_names = ['precipitation',
                'wind_streams',
                'mslp',
                'cloud_fraction',
+               #'blank',
                ]
 
 
@@ -100,19 +119,19 @@ plot_opts = lib_sea.create_colour_opts(plot_names)
 
 
 init_time = 4
-init_var = plot_names[0]
+init_var = plot_names[0] #blank
 init_region = 'se_asia'
 init_model_left = N1280_GA6_KEY # KM4P4_RA1T_KEY
 init_model_right = KM4P4_RA1T_KEY # N1280_GA6_KEY
 
-
+#Set up plots
 plot_obj_left = sea_plot.SEA_plot(datasets,
-                         plot_opts,
-                         'plot_sea_left',
-                         init_var,
-                         init_model_left,
-                         init_region,
-                         region_dict,
+                        plot_opts,
+                        'plot_sea_left',
+                        init_var,
+                        init_model_left,
+                        init_region,
+                        region_dict,
                         )
 
 plot_obj_left.current_time = init_time
@@ -132,80 +151,28 @@ plot_obj_right.current_time = init_time
 bokeh_img_right = plot_obj_right.create_plot()
 
 plots_row = bokeh.layouts.row(bokeh_img_left,
-                              bokeh_img_right)
+                            bokeh_img_right)
 
 plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
-# set up bokeh widgets
-def create_dropdown_opt_list(iterable1):
-    return [(k1,k1) for k1 in iterable1]
 
-model_var_list_desc = 'Attribute to visualise'
-
-model_var_dd = \
-    bokeh.models.widgets.Dropdown(label=model_var_list_desc,
-                                  menu=create_dropdown_opt_list(plot_names),
-                                  button_type='warning')
-model_var_dd.on_change('value',plot_obj_left.on_var_change)
-model_var_dd.on_change('value',plot_obj_right.on_var_change)
 
 num_times = datasets[N1280_GA6_KEY]['data'].get_data('precipitation').shape[0]
 for ds_name in datasets:
     num_times = min(num_times, datasets[ds_name]['data'].get_data('precipitation').shape[0])
-    
-    
-data_time_slider = bokeh.models.widgets.Slider(start=0, 
-                                               end=num_times, 
-                                               value=init_time, 
-                                               step=1, 
-                                               title="Data time")
-                                               
-data_time_slider.on_change('value',plot_obj_right.on_data_time_change)
-data_time_slider.on_change('value',plot_obj_left.on_data_time_change)
+bokeh_doc = bokeh.plotting.curdoc()
 
-region_desc = 'Region'
+# Set up GUI controller class
+control1 = sea_control.SEA_controller(init_time,
+                                      num_times,
+                                      datasets,
+                                      plot_names,
+                                      [plot_obj_left, plot_obj_right],
+                                      [bokeh_img_left, bokeh_img_right],
+                                      region_dict,
+                                      bokeh_doc,
+                                      )
 
-region_menu_list = create_dropdown_opt_list(region_dict.keys())
-region_dd = bokeh.models.widgets.Dropdown(menu=region_menu_list, 
-                                          label=region_desc,
-                                          button_type='warning')
-region_dd.on_change('value', plot_obj_right.on_region_change)
-region_dd.on_change('value', plot_obj_left.on_region_change)
+add_main_plot(control1.main_layout, bokeh_doc)
 
-dataset_menu_list = create_dropdown_opt_list(datasets.keys())
-left_model_desc = 'Left display'
-
-left_model_dd = bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                               label=left_model_desc,
-                                               button_type='warning')
-left_model_dd.on_change('value', plot_obj_left.on_config_change,)
-
-
-right_model_desc = 'Right display'
-right_model_dd = bokeh.models.widgets.Dropdown(menu=dataset_menu_list, 
-                                             label=right_model_desc,
-                                             button_type='warning')
-right_model_dd.on_change('value', plot_obj_right.on_config_change)
-
-# layout widgets
-param_row = bokeh.layouts.row(model_var_dd, region_dd)
-slider_row = bokeh.layouts.row(data_time_slider)
-config_row = bokeh.layouts.row(left_model_dd, right_model_dd)
-
-main_layout = bokeh.layouts.column(param_row, 
-                                   slider_row,
-                                   config_row,
-                                   plots_row,
-                                   )
-
-try:
-    bokeh_mode = os.environ['BOKEH_MODE']
-except:
-    bokeh_mode = 'server'    
-    
-if bokeh_mode == 'server':
-    bokeh.plotting.curdoc().add_root(main_layout)
-elif bokeh_mode == 'cli':
-    bokeh.io.show(main_layout)
-    
-bokeh.plotting.curdoc().title = 'Lazy loading two model comparison'    
+bokeh_doc.title = 'Two model comparison - Lazy loading'    
