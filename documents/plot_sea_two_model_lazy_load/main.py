@@ -132,10 +132,12 @@ plot_obj_left = sea_plot.SEA_plot(datasets,
                         init_model_left,
                         init_region,
                         region_dict,
+                        sea_data.UNIT_DICT,
                         )
 
 plot_obj_left.current_time = init_time
 bokeh_img_left = plot_obj_left.create_plot()
+stats_left = plot_obj_left.create_stats_widget()
 
 plot_obj_right = sea_plot.SEA_plot(datasets,
                     plot_opts,
@@ -144,11 +146,13 @@ plot_obj_right = sea_plot.SEA_plot(datasets,
                     init_model_right,
                     init_region,
                     region_dict,
+                    sea_data.UNIT_DICT,
                     )
 
 
 plot_obj_right.current_time = init_time
 bokeh_img_right = plot_obj_right.create_plot()
+stats_right = plot_obj_right.create_stats_widget()
 
 plots_row = bokeh.layouts.row(bokeh_img_left,
                             bokeh_img_right)
@@ -169,6 +173,7 @@ control1 = sea_control.SEA_controller(init_time,
                                       plot_names,
                                       [plot_obj_left, plot_obj_right],
                                       [bokeh_img_left, bokeh_img_right],
+                                      [stats_left, stats_right],
                                       region_dict,
                                       bokeh_doc,
                                       )

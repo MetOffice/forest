@@ -14,7 +14,7 @@ def create_dropdown_opt_list(iterable1):
 class SEA_controller(object):
     """
     """
-    def __init__(self, init_time, num_times, datasets, plot_names, plots, bokeh_imgs, region_dict, bokeh_doc):
+    def __init__(self, init_time, num_times, datasets, plot_names, plots, bokeh_imgs, stats_widgets, region_dict, bokeh_doc):
         """
         """
         self.plots = plots
@@ -24,6 +24,7 @@ class SEA_controller(object):
         self.region_dict = region_dict
         self.plot_names = plot_names
         self.datasets = datasets
+        self.stats_widgets = stats_widgets
         self.create_widgets()
         self.bokeh_doc = bokeh_doc
     
@@ -76,10 +77,12 @@ class SEA_controller(object):
         self.config_row = bokeh.layouts.row(self.left_model_dd, self.right_model_dd)
 
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
+        self.stats_row = bokeh.layouts.row(*self.stats_widgets)
         self.main_layout = bokeh.layouts.column(self.param_row, 
                                         self.slider_row,
                                         self.config_row,
                                         self.plots_row,
+                                        self.stats_row,
                                         ) 
                                         
     def on_data_time_change(self, attr1, old_val, new_val):
