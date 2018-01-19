@@ -433,7 +433,7 @@ class SEA_plot(object):
         '''
         
         print('selected new time {0}'.format(new_val))
-        self.current_time = new_val
+        self.current_time = new_val/3
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
 
@@ -494,7 +494,7 @@ class SEA_plot(object):
             print('bokeh plot linking failed.')        
                
 # Set the initial values to be plotted
-init_time = 4
+init_time = 12
 init_var = 'precipitation'
 init_region = 'se_asia'
 init_model_left = KM4P4_RA1T_KEY
@@ -535,7 +535,7 @@ plots_row = bokeh.layouts.row(bokeh_img_left, bokeh_img_right)
 def create_dropdown_opt_list(iterable1):
     return [(k1,k1) for k1 in iterable1]
 
-num_times = datasets[GPM_IMERG_LATE_KEY]['precipitation'].shape[0]
+num_times = 3*datasets[GPM_IMERG_LATE_KEY]['precipitation'].shape[0]
     
 data_time_slider = bokeh.models.widgets.Slider(start=0, 
                                                end=num_times, 
