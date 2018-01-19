@@ -547,7 +547,7 @@ data_time_slider = bokeh.models.widgets.Slider(start=0,
 data_time_slider.on_change('value', plot_obj_right.on_data_time_change)
 data_time_slider.on_change('value', plot_obj_left.on_data_time_change)
 
-start_date = fcast_time_obj.date()
+'''start_date = fcast_time_obj.date()
 end_date = (start_date + dt.timedelta(days = 3))
 value_date = dt.date.strptime(init_time[:8], '%Y%m%d')
 
@@ -567,7 +567,7 @@ hour_slider = bokeh.models.widgets.sliders.Slider(start = 0,
                                                   title = 'Select hour')
 
 hour_slider.on_change('value', plot_obj_left.on_hour_slider_change)
-hour_slider.on_change('value', plot_obj_right.on_hour_slider_change)
+hour_slider.on_change('value', plot_obj_right.on_hour_slider_change)'''
 
 model_menu_list = create_dropdown_opt_list([ds_name for ds_name in datasets.keys() 
                                             if 'imerg' not in ds_name])
