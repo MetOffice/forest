@@ -465,6 +465,15 @@ class SEA_plot(object):
         self.current_time = new_val.strftime('%Y%m%d') + self.current_time[-4:]
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
+    
+    def on_hour_slider_change(self, attr1, old_val, new_val):
+        '''
+        Event handler for a change in the selected forecast data date.
+        '''
+        print('selected new date {0}'.format(new_val))
+        self.current_time = self.current_time[:-4] + '{%02d}00'.format(new_val)
+        self.create_matplotlib_fig()
+        self.update_bokeh_img_plot_from_fig()
         
     def on_type_change(self, attr1, old_val, new_val):
     
@@ -485,7 +494,7 @@ class SEA_plot(object):
             print('bokeh plot linking failed.')        
         
 # Set the initial values to be plotted
-init_time = '201801100300'
+init_time = '201801091200'
 init_var = 'I'
 
 
@@ -547,7 +556,7 @@ data_time_dd.on_change('value', plot_obj_right.on_data_time_change)
 data_time_dd.on_change('value', plot_obj_left.on_data_time_change)
 
 start_date = fcast_time_obj.date()
-end_date = (start_date + dt.timedelta(days = 2))
+end_date = (start_date + dt.timedelta(days = 1))
 value_date = end_time = (start_date + dt.timedelta(days = 1))
 
 date_slider = bokeh.models.widgets.sliders.DateSlider(start = start_date,
@@ -558,14 +567,21 @@ date_slider = bokeh.models.widgets.sliders.DateSlider(start = start_date,
 date_slider.on_change('value', plot_obj_left.on_date_slider_change)
 date_slider.on_change('value', plot_obj_right.on_date_slider_change)
 
-# Set layout for widgets
-param_row = bokeh.layouts.row(wavelength_dd)
-slider_row = bokeh.layouts.row(data_time_dd, date_slider)
+hour_slider = bokeh.models.widgets.sliders.Slider(start = 0,
+                                                  end = 21,
+                                                  value = 12,
+                                                  step = 3)
 
-main_layout = bokeh.layouts.column(param_row, 
+hour_slider.on_change('value', plot_obj_left.on_hour_slider_change)
+hour_slider.on_change('value', plot_obj_right.on_hour_slider_change)
+
+# Set layout for widgets
+dd_row = bokeh.layouts.row(wavelength_dd, data_time_dd)
+slider_row = bokeh.layouts.row(date_slider, hour_slider)
+
+main_layout = bokeh.layouts.column(dd_row, 
                                    slider_row,
-                                   plots_row,
-                                   )
+                                   plots_row)
 
 try:
     bokeh_mode = os.environ['BOKEH_MODE']
