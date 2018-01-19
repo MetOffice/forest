@@ -535,12 +535,12 @@ plots_row = bokeh.layouts.row(bokeh_img_left, bokeh_img_right)
 def create_dropdown_opt_list(iterable1):
     return [(k1,k1) for k1 in iterable1]
 
-num_times = datasets[N1280_GA6_KEY]['precipitation'].shape[0]
+num_times = datasets[N1280_GA6_KEY]['gpm_imerg'].shape[0]
     
 data_time_slider = bokeh.models.widgets.Slider(start=0, 
                                                end=num_times, 
                                                value=init_time, 
-                                               step=1, 
+                                               step=3, 
                                                title="Data time",
                                                width = 800)
                                                

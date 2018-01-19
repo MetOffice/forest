@@ -221,7 +221,6 @@ class SEA_plot(object):
         Initialisation function for SEA_plot class
         '''
         self.main_plot = None
-        self.current_time = 0
         self.plot_options = po1
         self.dataset = dataset
         self.figure_name = figname
