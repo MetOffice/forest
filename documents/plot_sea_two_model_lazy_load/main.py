@@ -49,7 +49,10 @@ def add_main_plot(main_layout, bokeh_doc):
 bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
-fcast_time = '20180110T0000Z'
+
+fcast_dt_list, fcast_dt_str_list = lib_sea.get_model_run_times(6)
+
+fcast_time = fcast_dt_str_list[-1]
 
 # Setup datasets. Data is not loaded until requested for plotting.
 N1280_GA6_KEY = 'n1280_ga6'
