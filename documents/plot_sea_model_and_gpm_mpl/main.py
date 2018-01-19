@@ -433,7 +433,7 @@ class SEA_plot(object):
         '''
         
         print('selected new time {0}'.format(new_val))
-        self.current_time = new_val/3
+        self.current_time = int(new_val/3)
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
 
