@@ -52,9 +52,8 @@ server_address = 'https://s3.eu-west-2.amazonaws.com'
 
 fcast_dt_list, fcast_dt_str_list = lib_sea.get_model_run_times(7)
 
-fcast_time = '20180110T0000Z'
-
-#fcast_time = fcast_dt_str_list[-2]
+#fcast_time = '20180110T0000Z'
+fcast_time = fcast_dt_str_list[-2]
 
 # Setup datasets. Data is not loaded until requested for plotting.
 N1280_GA6_KEY = 'n1280_ga6'

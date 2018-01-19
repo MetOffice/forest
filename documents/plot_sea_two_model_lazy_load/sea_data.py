@@ -102,7 +102,11 @@ class SEA_dataset(object):
     
     def get_data(self, var_name):
         if self.data[var_name] is None:
-            self.load_data(var_name)
+            # get data from aws s3 storage
+            self.retrieve_data() 
+            
+            # load the data into memory from file (will only load meta data initially)
+            self.load_data(var_name) 
         
         return self.data[var_name]
 
@@ -144,8 +148,7 @@ class SEA_dataset(object):
                 print('creating directory {0}'.format(self.base_local_path))
                 os.makedirs(self.base_local_path)
             
-            for ds_name in datasets:
-                lib_sea.download_from_s3(self.s3_url, self.local_path)
+            lib_sea.download_from_s3(self.s3_url, self.local_path)
                 
             
     
