@@ -436,6 +436,24 @@ class SEA_plot(object):
         self.current_time = new_val
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
+
+    def on_date_slider_change(self, attr1, old_val, new_val):
+        '''
+        Event handler for a change in the selected forecast data date.
+        '''
+        print('selected new date {0}'.format(new_val))
+        self.current_time = new_val.strftime('%Y%m%d') + self.current_time[-4:]
+        self.create_matplotlib_fig()
+        self.update_bokeh_img_plot_from_fig()
+    
+    def on_hour_slider_change(self, attr1, old_val, new_val):
+        '''
+        Event handler for a change in the selected forecast data date.
+        '''
+        print('selected new date {0}'.format(new_val))
+        self.current_time = self.current_time[:-4] + '{:02d}00'.format(new_val)
+        self.create_matplotlib_fig()
+        self.update_bokeh_img_plot_from_fig()
         
     def on_type_change(self, attr1, old_val, new_val):
     
@@ -529,6 +547,28 @@ data_time_slider = bokeh.models.widgets.Slider(start=0,
 data_time_slider.on_change('value', plot_obj_right.on_data_time_change)
 data_time_slider.on_change('value', plot_obj_left.on_data_time_change)
 
+start_date = fcast_time_obj.date()
+end_date = (start_date + dt.timedelta(days = 3))
+value_date = dt.date.strptime(init_time[:8], '%Y%m%d')
+
+date_slider = bokeh.models.widgets.sliders.DateSlider(start = start_date,
+                                                      end = end_date,
+                                                      value = value_date,
+                                                      step = 86400000, 
+                                                      title = 'Select hour')
+
+date_slider.on_change('value', plot_obj_left.on_date_slider_change)
+date_slider.on_change('value', plot_obj_right.on_date_slider_change)
+
+hour_slider = bokeh.models.widgets.sliders.Slider(start = 0,
+                                                  end = 21,
+                                                  value = 12,
+                                                  step = 3,
+                                                  title = 'Select hour')
+
+hour_slider.on_change('value', plot_obj_left.on_hour_slider_change)
+hour_slider.on_change('value', plot_obj_right.on_hour_slider_change)
+
 model_menu_list = create_dropdown_opt_list([ds_name for ds_name in datasets.keys() 
                                             if 'imerg' not in ds_name])
 gpm_imerg_menu_list = create_dropdown_opt_list([ds_name for ds_name in datasets.keys() 
@@ -550,7 +590,7 @@ imerg_rbg.on_change('active', plot_obj_right.on_imerg_change)
                                 
                               
 # Set layout for widgets
-slider_row = bokeh.layouts.row(data_time_slider)
+slider_row = bokeh.layouts.row(data_time_slider, date_slider, hour_slider)
 config_row = bokeh.layouts.row(model_dd, imerg_rbg, width = 1600)
 
 main_layout = bokeh.layouts.column(slider_row,
