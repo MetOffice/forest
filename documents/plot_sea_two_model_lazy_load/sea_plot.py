@@ -29,7 +29,7 @@ class SEA_plot(object):
     '''
     TITLE_TEXT_WIDTH = 40
     PRESSURE_LEVELS_HPA = range(980,1030,2)
-    def __init__(self, dataset, po1,figname, plot_var, conf1, reg1, rd1):
+    def __init__(self, dataset, po1,figname, plot_var, conf1, reg1, rd1, unit_dict):
         '''
         Initialisation function for SEA_plot class
         '''
@@ -49,10 +49,12 @@ class SEA_plot(object):
         self.setup_plot_funcs()
         self.setup_pressure_labels()
         self.current_title = ''
+        self.stats_string = ''
         self.bokeh_figure = None
         self.bokeh_image = None
         self.bokeh_img_ds = None
         self.async = False
+        self.unit_dict = unit_dict
 
     
     def _set_config_value(self,new_config):
@@ -118,6 +120,7 @@ class SEA_plot(object):
         array_for_update = data_cube[self.current_time].data[:-1,:-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(data_cube)
+        self.update_stats(data_cube)
         
     def plot_precip(self):
         '''
@@ -135,6 +138,7 @@ class SEA_plot(object):
                                      norm=self.plot_options[self.current_var]['norm'],
                                      transform=cartopy.crs.PlateCarree())
         self.update_title(data_cube)
+        self.update_stats(data_cube)        
 
     def update_wind_vectors(self):
         '''
@@ -146,7 +150,7 @@ class SEA_plot(object):
         array_for_update = wind_speed_cube[self.current_time].data[:-1,:-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
-       
+        self.update_stats(wind_speed_cube)       
         self.quiver_plot.set_UVC(self.dataset[self.current_config]['data'].get_data('wv_U')[self.current_time],
                                  self.dataset[self.current_config]['data'].get_data('wv_V')[self.current_time],
                                 )
@@ -189,6 +193,7 @@ class SEA_plot(object):
                                              labelpos='E',
                                              coordinates='figure')    
         self.update_title(wind_speed_cube)
+        self.update_stats(wind_speed_cube)       
      
     def update_wind_mslp(self):
         '''
@@ -213,6 +218,7 @@ class SEA_plot(object):
                                  fmt=self.mslp_contour_label_dict)        
         
         self.update_title(wind_speed_cube)
+        self.update_stats(wind_speed_cube)       
 
         
     def plot_wind_mslp(self):
@@ -262,6 +268,7 @@ class SEA_plot(object):
         array_for_update = wind_speed_cube[self.current_time].data[:-1,:-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
+        self.update_stats(wind_speed_cube)       
         
         # remove old plot elements if they are still present
         self.current_axes.collections.remove(self.wind_stream_plot.lines)
@@ -327,6 +334,7 @@ class SEA_plot(object):
         array_for_update = at_cube[self.current_time].data[:-1,:-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(at_cube)
+        self.update_stats(at_cube)       
         
     def plot_air_temp(self):
         '''
@@ -350,6 +358,7 @@ class SEA_plot(object):
                                                             facecolor = 'none')
         self.current_axes.add_feature(coastline_50m)    
         self.update_title(at_cube)
+        self.update_stats(at_cube)       
 
     def update_mslp(self):
         '''
@@ -360,6 +369,7 @@ class SEA_plot(object):
         array_for_update = ap_cube[self.current_time].data[:-1,:-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(ap_cube)
+        self.update_stats(ap_cube)       
     
     def plot_mslp(self):
         '''
@@ -383,6 +393,7 @@ class SEA_plot(object):
                                                             facecolor = 'none')
         self.current_axes.add_feature(coastline_50m)    
         self.update_title(ap_cube)
+        self.update_stats(ap_cube)
         
 
     def update_cloud(self):
@@ -394,6 +405,7 @@ class SEA_plot(object):
         array_for_update = cloud_cube[self.current_time].data[:-1,:-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(cloud_cube)
+        self.update_stats(cloud_cube)
     
     def plot_cloud(self):
         '''
@@ -417,7 +429,27 @@ class SEA_plot(object):
                                                             facecolor = 'none')
         self.current_axes.add_feature(coastline_50m)   
         self.update_title(cloud_cube)
+        self.update_stats(cloud_cube)
+        
  
+    def update_stats(self, current_cube):
+        stats_str_list = [self.current_title]
+        unit_str = self.unit_dict[self.current_var]
+        data_at_time = current_cube[self.current_time].data
+        max_val = numpy.max(data_at_time)
+        min_val = numpy.min(data_at_time)
+        mean_val = numpy.mean(data_at_time)
+        std_val = numpy.std(data_at_time)
+        rms_val = numpy.sqrt(numpy.mean(numpy.power(data_at_time,2.0)))
+        
+        stats_str_list += ['Max = {0:.4f} {1}'.format(max_val, unit_str)]
+        stats_str_list += ['Min = {0:.4f} {1}'.format(min_val, unit_str)]
+        stats_str_list += ['Mean = {0:.4f} {1}'.format(mean_val, unit_str)]
+        stats_str_list += ['STD = {0:.4f} {1}'.format(std_val, unit_str)]
+        stats_str_list += ['RMS = {0:.4f} {1}'.format(rms_val, unit_str)]
+        
+        self.stats_string = '</br>'.join(stats_str_list)
+    
     def update_title(self, current_cube):
         '''
         Update plot title.
@@ -537,6 +569,8 @@ class SEA_plot(object):
                 self.bokeh_figure.title.text = self.current_title
             except:
                 self.current_img_array = None
+                
+           
             
             
         
@@ -547,17 +581,24 @@ class SEA_plot(object):
         the plot update function for the specific variable is called using the self.plot_funcs dictionary.
         '''
         print('update_plot')
-        try:
-            self.update_funcs[self.current_var]()
-            if self.use_mpl_title:
-                self.current_axes.set_title(self.current_title)
-            self.current_figure.canvas.draw_idle()
-            if not self.async:
-                self.update_bokeh_img_plot_from_fig()
-        except:
-            print('update failed, creating from scratch')
-            self.create_plot()
+        self.update_funcs[self.current_var]()
+        if self.use_mpl_title:
+            self.current_axes.set_title(self.current_title)
+        self.current_figure.canvas.draw_idle()
+        if not self.async:
+            self.update_bokeh_img_plot_from_fig()
+        self.update_stats_widget()
+
+            
+    def create_stats_widget(self):
+        self.stats_widget = bokeh.models.widgets.Div(text=self.stats_string,
+                                                           height=400,
+                                                           width=800,
+                                                          )
+        return self.stats_widget
         
+    def update_stats_widget(self):
+        self.stats_widget.text = self.stats_string
 
     def set_data_time(self,new_time):
         """
@@ -573,6 +614,7 @@ class SEA_plot(object):
         self.create_matplotlib_fig()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
+            self.update_stats_widget()
 
         
     def set_region(self, new_region):
@@ -586,6 +628,7 @@ class SEA_plot(object):
         self.create_matplotlib_fig()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
+            self.update_stats_widget()
     
         
     def set_config(self, new_config):
@@ -597,6 +640,7 @@ class SEA_plot(object):
         self.create_matplotlib_fig()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
+            self.update_stats_widget()
 
         
     def link_axes_to_other_plot(self, other_plot):

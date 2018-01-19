@@ -12,6 +12,7 @@ import lib_sea
 
 WIND_SPEED_NAME = 'wind_speed'
 WIND_VECTOR_NAME = 'wind_vectors'
+WIND_STREAM_NAME = 'wind_streams'
 
 VAR_NAMES = ['precipitation',
              'air_temperature',
@@ -38,6 +39,8 @@ UNIT_DICT = {'precipitation':'kg-m-2-hour^-1',
              'y_wind':'miles-hour^-1',
              WIND_SPEED_NAME:'miles-hour^-1',
              'mslp':'hectopascals',
+             WIND_VECTOR_NAME: 'miles-hour^-1',
+             WIND_STREAM_NAME: 'miles-hour^-1',
              }
 
 VAR_LOOKUP_GA6 = {'precipitation':'precipitation_flux',
