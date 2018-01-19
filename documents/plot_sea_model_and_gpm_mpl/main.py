@@ -590,7 +590,7 @@ imerg_rbg.on_change('active', plot_obj_right.on_imerg_change)
                                 
                               
 # Set layout for widgets
-slider_row = bokeh.layouts.row(data_time_slider, date_slider, hour_slider)
+slider_row = bokeh.layouts.row(data_time_slider)
 config_row = bokeh.layouts.row(model_dd, imerg_rbg, width = 1600)
 
 main_layout = bokeh.layouts.column(slider_row,
