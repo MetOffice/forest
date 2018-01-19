@@ -557,12 +557,13 @@ data_time_dd.on_change('value', plot_obj_left.on_data_time_change)
 
 start_date = fcast_time_obj.date()
 end_date = (start_date + dt.timedelta(days = 1))
-value_date = end_time = (start_date + dt.timedelta(days = 1))
+value_date = dt.date.strptime(init_time[:8], '%Y%m%d')
 
 date_slider = bokeh.models.widgets.sliders.DateSlider(start = start_date,
                                                       end = end_date,
                                                       value = value_date,
-                                                      step = 86400000)
+                                                      step = 86400000, 
+                                                      title = 'Select hour')
 
 date_slider.on_change('value', plot_obj_left.on_date_slider_change)
 date_slider.on_change('value', plot_obj_right.on_date_slider_change)
@@ -570,7 +571,8 @@ date_slider.on_change('value', plot_obj_right.on_date_slider_change)
 hour_slider = bokeh.models.widgets.sliders.Slider(start = 0,
                                                   end = 21,
                                                   value = 12,
-                                                  step = 3)
+                                                  step = 3,
+                                                  title = 'Select hour')
 
 hour_slider.on_change('value', plot_obj_left.on_hour_slider_change)
 hour_slider.on_change('value', plot_obj_right.on_hour_slider_change)
