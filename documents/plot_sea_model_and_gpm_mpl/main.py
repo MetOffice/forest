@@ -34,6 +34,8 @@ import lib_sea
 #  loading, or downloaded on demand using the /s3 filemount. This is 
 #  controlled by the do_download flag.
 
+bokeh_id = __name__
+
 bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
@@ -506,7 +508,7 @@ init_model_right = GPM_IMERG_EARLY_KEY
 # Create a plot object for the left model display
 plot_obj_left = SEA_plot(datasets,
                          plot_opts,
-                         'plot_sea_left',
+                         'plot_sea_left' + bokeh_id,
                          init_var,
                          init_model_left,
                          init_region,
@@ -518,7 +520,7 @@ bokeh_img_left = plot_obj_left.create_plot()
 # Create a plot object for the right model display
 plot_obj_right = SEA_plot(datasets,
                          plot_opts,
-                         'plot_sea_right',
+                         'plot_sea_right' + bokeh_id,
                          init_var,
                          init_model_right,
                          init_region,

@@ -34,6 +34,7 @@ import lib_sea
 #  loading, or downloaded on demand using the /s3 filemount. This is 
 #  controlled by the do_download flag.
 
+bokeh_id = __name__
 bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
@@ -492,6 +493,7 @@ class SEA_plot(object):
         except:
             print('bokeh plot linking failed.')        
         
+
 # Set the initial values to be plotted
 init_time = '201801091200'
 init_var = 'I'
@@ -502,7 +504,7 @@ init_var = 'I'
 # Create a plot object for the left model display
 plot_obj_left = SEA_plot(datasets,
                          None,
-                         'plot_sea_left',
+                         'plot_sea_left' + bokeh_id,
                          init_var,
                          init_time,
                          'simim'
@@ -514,7 +516,7 @@ bokeh_img_left = plot_obj_left.create_plot()
 # Create a plot object for the right model display
 plot_obj_right = SEA_plot(datasets,
                           None,
-                          'plot_sea_right',
+                          'plot_sea_right' + bokeh_id,
                           init_var,
                           init_time,
                           'himawari-8'
