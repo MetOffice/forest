@@ -62,14 +62,16 @@ class SEA_controller(object):
         self.left_model_dd = bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
                                                     label=left_model_desc,
                                                     button_type='warning')
-        self.left_model_dd.on_change('value', self.on_config_change,)
+        self.left_model_dd.on_change('value', 
+                                     functools.partial(self.on_config_change, 0))
 
 
         right_model_desc = 'Right display'
         self.right_model_dd = bokeh.models.widgets.Dropdown(menu=dataset_menu_list, 
                                                     label=right_model_desc,
                                                     button_type='warning')
-        self.right_model_dd.on_change('value', self.on_config_change)
+        self.right_model_dd.on_change('value', 
+                                      functools.partial(self.on_config_change, 1))
 
         # layout widgets
         self.param_row = bokeh.layouts.row(self.model_var_dd, self.region_dd)
@@ -135,13 +137,12 @@ class SEA_controller(object):
         print('region_change_async')
         
     
-    def on_config_change(self, attr1, old_val, new_val):
+    def on_config_change(self, plot_index, attr1, old_val, new_val):
         '''
         Event handler for a change in the selected model configuration output.
         '''
         print('config change handler')
-        for p1 in self.plots:
-            p1.set_config(new_val)        
+        self.plots[plot_index].set_config(new_val)        
         self._update_bokeh_plot()       
         
     def config_change_async(self, new_val):
