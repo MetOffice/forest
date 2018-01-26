@@ -77,3 +77,11 @@ resource "aws_security_group_rule" "server_gateway_ssh" {
   cidr_blocks = ["52.208.180.144/32"]
   security_group_id = "${aws_security_group.server.id}"
 }
+
+resource "aws_route53_record" "server_nice_url" {
+  zone_id = "Z3USS9SVLB2LY1"
+  name = "met.informaticslab.co.uk"
+  type = "A"
+  ttl = "60"
+  records = ["${aws_instance.bokeh_server.public_ip}"]
+}
