@@ -519,7 +519,7 @@ class SEA_plot(object):
                                                   plot_height = 600, 
                                                   x_range = x_limits,
                                                   y_range = y_limits, 
-                                                  tools = 'pan,wheel_zoom,reset')
+                                                  tools = 'pan,wheel_zoom,reset,save')
 
         print('create_bokeh_img_plot_from_fig 4 ')
 
