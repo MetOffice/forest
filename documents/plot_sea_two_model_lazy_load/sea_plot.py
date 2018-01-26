@@ -557,6 +557,7 @@ class SEA_plot(object):
         
     def update_bokeh_img_plot_from_fig(self):
         
+        cur_region = self.region_dict[self.current_region]
         print('update_bokeh_img_plot_from_fig')
         if self.bokeh_img_ds:
             self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
