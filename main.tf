@@ -80,7 +80,7 @@ resource "aws_security_group_rule" "server_gateway_ssh" {
 
 resource "aws_route53_record" "server_nice_url" {
   zone_id = "Z3USS9SVLB2LY1"
-  name = "met.informaticslab.co.uk"
+  name = "forest.informaticslab.co.uk"
   type = "A"
   ttl = "60"
   records = ["${aws_instance.bokeh_server.public_ip}"]
