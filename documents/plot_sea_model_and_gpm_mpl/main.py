@@ -226,7 +226,27 @@ import iris.unit
 import math
 
 def conv_func(coord, value):
+
+    ''' A function to create a new time coordinate in an iris cube, with values
+     to the previous hour divisible by three, i.e. 04:30 becomes 03:00.
+     
+    '''
+
     return math.floor(value/3.)*3
+    
+def half_hour_rate_to_accum(data, axis = 0):
+
+    ''' A function to convert half hour rain rates into accumulations
+    
+    '''
+
+    accum_array = np.sum(data, axis = 0)/2
+    
+    return accum_array
+
+ACCUM = iris.analysis.Aggregator('half_hour_rate_to_accum', 
+                                 half_hour_rate_to_accum, 
+                                 units_func=lambda units: 1)
 
 for ds_name in datasets:
     
@@ -240,7 +260,7 @@ for ds_name in datasets:
         iris.coord_categorisation.add_categorised_coord(raw_cube, 'agg_time', 'time', conv_func, 
                                                         units=iris.unit.Unit('hours since 1970-01-01', 
                                                                              calendar='gregorian'))
-        accum_cube = raw_cube.aggregated_by( ['agg_time'], iris.analysis.SUM)
+        accum_cube = raw_cube.aggregated_by(['agg_time'], ACCUM)
         temp_cube_list.append(accum_cube)
 
     datasets[ds_name]['precipitation'] = temp_cube_list.concatenate_cube()
