@@ -558,10 +558,10 @@ class SEA_plot(object):
     def update_bokeh_img_plot_from_fig(self):
         
         cur_region = self.region_dict[self.current_region]
-        self.current_figure.set_figwidth(4)
-        self.current_figure.set_figheight(self.current_figure.get_figwidth() * \
-                                          [cur_region[1] - cur_region[0]] / \
-                                          [cur_region[3] - cur_region[2]])
+        #self.current_figure.set_figwidth(4)
+        #self.current_figure.set_figheight(self.current_figure.get_figwidth() * \
+                                          #(cur_region[1] - cur_region[0]) / \
+                                          #(cur_region[3] - cur_region[2]))
         print('update_bokeh_img_plot_from_fig')
         
         if self.bokeh_img_ds:
