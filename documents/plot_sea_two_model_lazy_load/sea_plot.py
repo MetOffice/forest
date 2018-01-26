@@ -561,13 +561,12 @@ class SEA_plot(object):
         print('update_bokeh_img_plot_from_fig')
         
         if self.bokeh_img_ds:
-            self.bokeh_figure.x_range = bokeh.models.Range1d(cur_region[2], cur_region[3], 
-                                        bounds = (cur_region[2], cur_region[3]))
-            self.bokeh_figure.y_range = bokeh.models.Range1d(cur_region[0], cur_region[1], 
-                                        bounds = (cur_region[0], cur_region[1]))
-            print(self.bokeh_figure.x_range, self.bokeh_figure.y_range)
             self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
             self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
+            self.bokeh_img_ds.data[u'x'] = [cur_region[2]]
+            self.bokeh_img_ds.data[u'y'] = [cur_region[0]]
+            self.bokeh_img_ds.data[u'dw'] = [cur_region[3] - cur_region[2]]
+            self.bokeh_img_ds.data[u'dh'] = [cur_region[1] - cur_region[0]]
             self.bokeh_figure.title.text = self.current_title
 
         else:
