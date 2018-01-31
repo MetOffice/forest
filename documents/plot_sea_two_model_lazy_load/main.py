@@ -118,10 +118,6 @@ def main(bokeh_id):
     #Setup and display plots
     plot_opts = lib_sea.create_colour_opts(plot_names)
 
-
-
-
-
     init_time = 4
     init_var = plot_names[0] #blank
     init_region = 'se_asia'

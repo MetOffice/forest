@@ -149,8 +149,3 @@ class SEA_dataset(object):
                 os.makedirs(self.base_local_path)
             
             lib_sea.download_from_s3(self.s3_url, self.local_path)
-                
-            
-    
-
-
