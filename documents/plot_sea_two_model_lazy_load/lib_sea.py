@@ -39,6 +39,7 @@ def get_radar_colours():
     cmap_radar.set_name = 'radar'
     return {'cmap':cmap_radar,'norm':norm_radar}
 
+
 def get_wind_colours():
     '''
     setup colormap, based on Oranges
@@ -55,6 +56,7 @@ def get_wind_colours():
     cmap_wind_speed.set_name = 'wind_speed'
     return {'cmap':cmap_wind_speed,'norm':norm_wind_speed}
 
+
 def get_cloud_colours():
     cm1 = matplotlib.cm.get_cmap('gray')
     cloud_colours = cm1(numpy.arange(0.0, 1.01, 0.11))
@@ -69,6 +71,7 @@ def get_cloud_colours():
     cmap_cloud_fraction.set_name = 'cloud_fraction'
     return {'cmap':cmap_cloud_fraction,'norm':norm_cloud_fraction}
  
+    
 def get_air_pressure_colours():
     cm1 = matplotlib.cm.get_cmap('BuGn')
     ap_colors = cm1(numpy.array(numpy.arange(0.0,1.01,1.0/12.0)))
@@ -81,6 +84,7 @@ def get_air_pressure_colours():
                                                                 extend='both')
     cmap_ap.set_name = 'air_pressure'
     return {'cmap':cmap_ap,'norm':norm_ap}
+
 
 def get_air_temp_colours():
     cm1 = matplotlib.cm.get_cmap('viridis')
@@ -105,11 +109,13 @@ def get_time_str(time_in_hrs):
                                         datestamp1_raw.tm_min) 
     return datestr1
 
+
 def convert_vector_to_mag_angle(U,V):
     # Convert U, V to magnitude and angle
     mag = numpy.sqrt(U**2 + V**2)
     angle = (numpy.pi/2.) - numpy.arctan2(U/mag, V/mag)
     return mag, angle
+
 
 def calc_wind_vectors(wind_x, wind_y, sf):
     wv_dict = {}
@@ -170,6 +176,7 @@ def create_plot_opts_dict(var_list):
                                    }
     return plot_opts_dict
 
+
 def create_colour_opts(var_list):
     col_opts_dict = dict([(s1,None) for s1 in var_list])
     col_opts_dict['precipitation'] = get_radar_colours()
@@ -180,6 +187,8 @@ def create_colour_opts(var_list):
     col_opts_dict['mslp'] = get_air_pressure_colours()
     col_opts_dict['cloud_fraction'] = get_cloud_colours()
     return col_opts_dict
+
+
 def extract_region(selected_region, ds1):
     '''
     Function to extract a regional subset of an iris cube based on latitude and longitude constraints.
@@ -195,19 +204,25 @@ def extract_region(selected_region, ds1):
                           )
     return ds1.extract(con1)  
   
-def get_image_array_from_figure(fig):
-    width, height = fig.get_size_inches() * fig.get_dpi()
     
+def get_image_array_from_figure(fig):
+        
     # Get the RGB buffer from the figure
     h, w = fig.canvas.get_width_height()
-    print(' width={0}\nheight={1}'.format(w,h))
-    buf = numpy.fromstring ( fig.canvas.tostring_argb(), dtype=numpy.uint8 )
-    buf.shape = ( w, h,4 )
+    print(' width={0}\n height={1}'.format(w, h))
+    
+    fig.canvas.draw()
+
+    buf = numpy.fromstring(fig.canvas.tostring_argb(), dtype=numpy.uint8)
+    print('buf shape', buf.shape)
+    buf.shape = (w, h, 4)
 
     # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
-    buf = numpy.roll ( buf, 3, axis = 2 )
-    buf = numpy.flip(buf,axis=0)
+    buf = numpy.roll(buf, 3, axis = 2)
+    buf = numpy.flip(buf, axis = 0)
     return buf
+    
+    
     
 def get_model_run_times(num_days):
     lastweek = datetime.datetime.now() + datetime.timedelta(days=-num_days)
@@ -217,4 +232,3 @@ def get_model_run_times(num_days):
     forecast_datetimes  = [lw_midnight + datetime.timedelta(hours=step1) for step1 in range(0,144,12)]
     forecast_dt_str_list = [fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
     return forecast_datetimes, forecast_dt_str_list
-    

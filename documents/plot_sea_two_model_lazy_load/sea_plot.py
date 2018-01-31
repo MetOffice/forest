@@ -498,10 +498,10 @@ class SEA_plot(object):
         
     def create_bokeh_img_plot_from_fig(self):
         print('create_bokeh_img_plot_from_fig 0')
-        try:
-            self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
-        except:
-            self.current_img_array = None
+        #try:
+        self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+        #except:
+        #    self.current_img_array = None
             
         print('create_bokeh_img_plot_from_fig 1')
         cur_region = self.region_dict[self.current_region]
@@ -539,7 +539,6 @@ class SEA_plot(object):
                                    text_align="center",
                                   )
                                                     
-                                                    
         self.bokeh_figure.title.text = self.current_title
     
     def create_bokeh_img(self):
@@ -558,10 +557,13 @@ class SEA_plot(object):
     def update_bokeh_img_plot_from_fig(self):
         
         cur_region = self.region_dict[self.current_region]
-        #self.current_figure.set_figwidth(4)
-        #self.current_figure.set_figheight(self.current_figure.get_figwidth() * \
-                                          #(cur_region[1] - cur_region[0]) / \
-                                          #(cur_region[3] - cur_region[2]))
+        self.current_figure.set_figwidth(4)
+        self.current_figure.set_figheight(round(self.current_figure.get_figwidth() * \
+                                                (cur_region[1] - cur_region[0]) / \
+                                                (cur_region[3] - cur_region[2]), 2))
+
+        print('Current figure:', self.current_figure.get_figwidth())
+        print('Current figure:', self.current_figure.get_figheight())
         print('update_bokeh_img_plot_from_fig')
         
         if self.bokeh_img_ds:
@@ -580,11 +582,7 @@ class SEA_plot(object):
                 self.bokeh_figure.title.text = self.current_title
             except:
                 self.current_img_array = None
-                
-           
-            
-            
-        
+
 
     def update_plot(self):
         '''
