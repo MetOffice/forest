@@ -8,7 +8,7 @@ import numpy
 
 import iris
 
-import util
+import forest.util
 
 WIND_SPEED_NAME = 'wind_speed'
 WIND_VECTOR_NAME = 'wind_vectors'
@@ -136,7 +136,7 @@ class ForestDataset(object):
         cube_x_wind = self.get_data('x_wind')
         cube_y_wind = self.get_data('y_wind')
 
-        self.data.update(util.calc_wind_vectors(cube_x_wind,
+        self.data.update(forest.util.calc_wind_vectors(cube_x_wind,
                                                    cube_y_wind,
                                                    10))
 
@@ -148,4 +148,4 @@ class ForestDataset(object):
                 print('creating directory {0}'.format(self.base_local_path))
                 os.makedirs(self.base_local_path)
             
-            util.download_from_s3(self.s3_url, self.local_path)
+            forest.util.download_from_s3(self.s3_url, self.local_path)

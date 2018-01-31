@@ -18,10 +18,10 @@ import bokeh.plotting
 import matplotlib
 matplotlib.use('agg')
 
-import lib_sea
-import sea_plot
-import sea_data
-import sea_control
+import forest.util
+import forest.plot
+import forest.control
+import forest.data
 
 iris.FUTURE.netcdf_promote = True
 
@@ -50,7 +50,7 @@ bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
 def main(bokeh_id):
-    fcast_dt_list, fcast_dt_str_list = lib_sea.get_model_run_times(7)
+    fcast_dt_list, fcast_dt_str_list = forest.util.get_model_run_times(7)
 
     #fcast_time = '20180110T0000Z'
     fcast_time = fcast_dt_str_list[-2]
@@ -69,9 +69,9 @@ def main(bokeh_id):
                 KM1P5_PHI_RA1T_KEY:{'model_name':'Philipines 1.5KM RA1-T'},
             }
     for ds_name in datasets.keys():
-        datasets[ds_name]['var_lookup'] = sea_data.VAR_LOOKUP_RA1T
+        datasets[ds_name]['var_lookup'] = forest.data.VAR_LOOKUP_RA1T
 
-    datasets[N1280_GA6_KEY]['var_lookup'] = sea_data.VAR_LOOKUP_GA6    
+    datasets[N1280_GA6_KEY]['var_lookup'] = forest.data.VAR_LOOKUP_GA6    
 
     s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
                                                     bucket=bucket_name)
@@ -83,7 +83,7 @@ def main(bokeh_id):
 
     for ds_name in datasets.keys():
         fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fcast_time)
-        datasets[ds_name]['data'] = sea_data.SEA_dataset(ds_name, 
+        datasets[ds_name]['data'] = forest.data.ForestDataset(ds_name, 
                                                         fname1,
                                                         s3_base,
                                                         s3_local_base,
@@ -116,7 +116,7 @@ def main(bokeh_id):
                 }
 
     #Setup and display plots
-    plot_opts = lib_sea.create_colour_opts(plot_names)
+    plot_opts = forest.util.create_colour_opts(plot_names)
 
     init_time = 4
     init_var = plot_names[0] #blank
@@ -125,28 +125,28 @@ def main(bokeh_id):
     init_model_right = KM4P4_RA1T_KEY # N1280_GA6_KEY
 
     #Set up plots
-    plot_obj_left = sea_plot.SEA_plot(datasets,
+    plot_obj_left = forest.plot.ForestPlot(datasets,
                             plot_opts,
-                            'plot_sea_left' + bokeh_id,
+                            'plot_left' + bokeh_id,
                             init_var,
                             init_model_left,
                             init_region,
                             region_dict,
-                            sea_data.UNIT_DICT,
+                            forest.data.UNIT_DICT,
                             )
 
     plot_obj_left.current_time = init_time
     bokeh_img_left = plot_obj_left.create_plot()
     stats_left = plot_obj_left.create_stats_widget()
 
-    plot_obj_right = sea_plot.SEA_plot(datasets,
+    plot_obj_right = forest.plot.ForestPlot(datasets,
                         plot_opts,
-                        'plot_sea_right' + bokeh_id,
+                        'plot_right' + bokeh_id,
                         init_var,
                         init_model_right,
                         init_region,
                         region_dict,
-                        sea_data.UNIT_DICT,
+                        forest.data.UNIT_DICT,
                         )
 
 
@@ -167,7 +167,7 @@ def main(bokeh_id):
     bokeh_doc = bokeh.plotting.curdoc()
 
     # Set up GUI controller class
-    control1 = sea_control.SEA_controller(init_time,
+    control1 = forest.control.ForestController(init_time,
                                         num_times,
                                         datasets,
                                         plot_names,
@@ -180,6 +180,6 @@ def main(bokeh_id):
 
     add_main_plot(control1.main_layout, bokeh_doc)
 
-    bokeh_doc.title = 'Two model comparison - Lazy loading'    
+    bokeh_doc.title = 'Two model comparison'    
 
 main(__name__)

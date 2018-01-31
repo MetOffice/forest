@@ -15,15 +15,14 @@ import cartopy
 import cartopy.crs
 import cartopy.io.img_tiles
 
-import lib_sea
-
+import forest.util
 
 import bokeh.io
 import bokeh.layouts 
 import bokeh.models.widgets
 import bokeh.plotting
 
-class SEA_plot(object):
+class ForestPlot(object):
     '''
     Main plot class. The plotting function is create_plot().
     '''
@@ -31,7 +30,7 @@ class SEA_plot(object):
     PRESSURE_LEVELS_HPA = range(980,1030,2)
     def __init__(self, dataset, po1,figname, plot_var, conf1, reg1, rd1, unit_dict):
         '''
-        Initialisation function for SEA_plot class
+        Initialisation function for ForestPlot class
         '''
         self.region_dict = rd1
         self.main_plot = None
@@ -67,7 +66,7 @@ class SEA_plot(object):
         Create dict of pressure levels, to be used labelling MSLP contour plots.
         '''
         self.mslp_contour_label_dict = {}
-        for pressure1 in SEA_plot.PRESSURE_LEVELS_HPA:
+        for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
             self.mslp_contour_label_dict[pressure1] = '{0:d}hPa'.format(int(pressure1))    
 
     
@@ -211,7 +210,7 @@ class SEA_plot(object):
         self.mslp_contour = self.current_axes.contour(self.long_grid_mslp,
                                                       self.lat_grid_mslp,
                                                       ap_cube[self.current_time].data,
-                                                      levels=SEA_plot.PRESSURE_LEVELS_HPA,
+                                                      levels=ForestPlot.PRESSURE_LEVELS_HPA,
                                                       colors='k')
         self.current_axes.clabel(self.mslp_contour, 
                                  inline=False, 
@@ -242,7 +241,7 @@ class SEA_plot(object):
         self.mslp_contour = self.current_axes.contour(self.long_grid_mslp,
                                                       self.lat_grid_mslp,
                                                       ap_cube[self.current_time].data,
-                                                      levels=SEA_plot.PRESSURE_LEVELS_HPA,
+                                                      levels=ForestPlot.PRESSURE_LEVELS_HPA,
                                                       colors='k')
         self.current_axes.clabel(self.mslp_contour, 
                                  inline=False, 
@@ -454,14 +453,14 @@ class SEA_plot(object):
         '''
         Update plot title.
         '''
-        datestr1 = lib_sea.get_time_str(current_cube.dim_coords[0].points[self.current_time])
+        datestr1 = forest.util.get_time_str(current_cube.dim_coords[0].points[self.current_time])
         
         str1 = '{plot_desc} {var_name} at {fcst_time}'.format(var_name=self.current_var,
                                                               fcst_time=datestr1,
                                                               plot_desc=self.plot_description,
                                                              )
         self.current_title = '\n'.join(textwrap.wrap(str1, 
-                                                     SEA_plot.TITLE_TEXT_WIDTH)) 
+                                                     ForestPlot.TITLE_TEXT_WIDTH)) 
         
     def create_plot(self):
         '''
@@ -499,7 +498,7 @@ class SEA_plot(object):
     def create_bokeh_img_plot_from_fig(self):
         print('create_bokeh_img_plot_from_fig 0')
         #try:
-        self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+        self.current_img_array = forest.util.get_image_array_from_figure(self.current_figure)
         #except:
         #    self.current_img_array = None
             
@@ -567,7 +566,7 @@ class SEA_plot(object):
         print('update_bokeh_img_plot_from_fig')
         
         if self.bokeh_img_ds:
-            self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+            self.current_img_array = forest.get_image_array_from_figure(self.current_figure)
             self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
             self.bokeh_img_ds.data[u'x'] = [cur_region[2]]
             self.bokeh_img_ds.data[u'y'] = [cur_region[0]]
@@ -577,7 +576,7 @@ class SEA_plot(object):
 
         else:
             try:
-                self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+                self.current_img_array = forest.util.get_image_array_from_figure(self.current_figure)
                 self.create_bokeh_img()
                 self.bokeh_figure.title.text = self.current_title
             except:
