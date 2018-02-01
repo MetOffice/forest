@@ -1,4 +1,6 @@
 import os
+import forest.util
+
 class ForestDataset(object):
     def __init__(self,
                  config,
@@ -59,4 +61,4 @@ class ForestDataset(object):
                 print('creating directory {0}'.format(self.base_local_path))
                 os.makedirs(self.base_local_path)
 
-            lib_sea.download_from_s3(self.s3_url, self.local_path)
+            forest.util.download_from_s3(self.s3_url, self.local_path)

@@ -8,7 +8,7 @@ import bokeh
 import bokeh.models
 import bokeh.plotting
 
-import lib_sea
+import forest.util
 
 class SEA_plot(object):
     '''
@@ -91,7 +91,7 @@ class SEA_plot(object):
         '''
         Update plot title.
         '''
-        datestr1 = lib_sea.get_time_str(current_cube.dim_coords[0].points[self.current_time])
+        datestr1 = forest.util.get_time_str(current_cube.dim_coords[0].points[self.current_time])
 
         str1 = '{plot_desc} {var_name} at {fcst_time}'.format(var_name=self.current_type,
                                                               fcst_time=datestr1,
@@ -143,7 +143,7 @@ class SEA_plot(object):
          image.
         '''
 
-        self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+        self.current_img_array = forest.util.get_image_array_from_figure(self.current_figure)
 
         # Set figure navigation limits
         x_limits = bokeh.models.Range1d(90, 154, bounds=(90, 154))
@@ -173,7 +173,7 @@ class SEA_plot(object):
 
         '''
 
-        self.current_img_array = lib_sea.get_image_array_from_figure(self.current_figure)
+        self.current_img_array = forest.util.get_image_array_from_figure(self.current_figure)
         self.bokeh_figure.title.text = self.current_title
         self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
 

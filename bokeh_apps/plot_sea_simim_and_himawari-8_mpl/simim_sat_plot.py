@@ -7,7 +7,7 @@ import cartopy.crs
 import bokeh.models
 import bokeh.plotting
 
-import simim_sat_util
+import forest.util
 
 class SimimSatPlot(object):
     '''
@@ -202,7 +202,7 @@ class SimimSatPlot(object):
          image.
         '''
 
-        self.current_img_array = simim_sat_util.get_image_array_from_figure(self.current_figure)
+        self.current_img_array = forest.util.get_image_array_from_figure(self.current_figure)
         print('size of image array is {0}'.format(self.current_img_array.shape))
 
         # Set figure navigation limits
@@ -232,7 +232,7 @@ class SimimSatPlot(object):
         '''
 
         '''
-        self.current_img_array = simim_sat_util.get_image_array_from_figure(self.current_figure)
+        self.current_img_array = forest.util.get_image_array_from_figure(self.current_figure)
         self.bokeh_figure.title.text = self.current_title
         self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
 

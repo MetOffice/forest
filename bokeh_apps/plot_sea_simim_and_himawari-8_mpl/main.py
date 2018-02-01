@@ -24,7 +24,7 @@ iris.FUTURE.netcdf_promote = True
 
 import simim_sat_control
 import simim_sat_plot
-import simim_sat_util
+import forest.util
 
 ## Extract
 # Extract data from S3. The data can either be downloaded in full before 
@@ -106,7 +106,7 @@ for dtype in datasets.keys():
         for s3_url, local_path in zip(datasets[dtype]['s3_url_list'], 
                                       datasets[dtype]['local_paths_list']):
             try:
-                simim_sat_util.download_from_s3(s3_url, local_path)
+                forest.util.download_from_s3(s3_url, local_path)
             except:
                 print("    Warning: file not downloaded successfully:", s3_url)
 

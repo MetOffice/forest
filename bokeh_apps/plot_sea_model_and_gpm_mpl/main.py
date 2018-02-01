@@ -24,7 +24,7 @@ import bokeh.plotting
 import sea_plot
 import sea_control
 
-import lib_sea
+import forest.util
 
 ## Extract
 # Extract data from S3. The data can either be downloaded in full before 
@@ -140,7 +140,7 @@ if do_download:
 
         for s3_url, local_path in zip(datasets[dtype]['s3_url_list'], datasets[dtype]['local_paths_list']):
             try:
-                lib_sea.download_from_s3(s3_url, local_path)
+                forest.util.download_from_s3(s3_url, local_path)
             except:
                 print("    Warning: file not downloaded successfully:", s3_url)
 
@@ -273,7 +273,7 @@ region_dict = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
                'se_asia': [-18.0, 29.96, 90.0, 153.96],
                }
 
-plot_opts = lib_sea.create_colour_opts(plot_names)
+plot_opts = forest.util.create_colour_opts(plot_names)
 
 # Set the initial values to be plotted
 init_time = 12

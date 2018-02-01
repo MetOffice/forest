@@ -109,4 +109,4 @@ class SEA_control(object):
                       if 'imerg' in ds_name]
         print('selected new config {0}'.format(imerg_list[new_val]))
         new_config = imerg_list[new_val]
-        self.plot_list[plot_index].set_config()
+        self.plot_list[plot_index].set_config(new_config)
