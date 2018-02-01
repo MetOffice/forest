@@ -10,7 +10,7 @@ import bokeh.plotting
 
 import forest.util
 
-class SEA_plot(object):
+class ModelGpmPlot(object):
     '''
     Main plot class. The plotting function is create_plot().
     '''
@@ -25,7 +25,7 @@ class SEA_plot(object):
                  reg1,
                  reg_dict1):
         '''
-        Initialisation function for SEA_plot class
+        Initialisation function for ModelGpmPlot class
         '''
         self.main_plot = None
         self.current_time = 0
@@ -98,7 +98,7 @@ class SEA_plot(object):
                                                               plot_desc=self.plot_description,
                                                               )
         self.current_title = '\n'.join(textwrap.wrap(str1,
-                                                     SEA_plot.TITLE_TEXT_WIDTH))
+                                                     ModelGpmPlot.TITLE_TEXT_WIDTH))
 
     def create_plot(self):
 

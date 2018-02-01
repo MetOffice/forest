@@ -4,7 +4,7 @@ import bokeh
 import bokeh.model
 import bokeh.layouts
 
-class SEA_control(object):
+class ModelGpmControl(object):
     def __init__(self,
                  datasets,
                  init_time,

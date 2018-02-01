@@ -21,8 +21,8 @@ iris.FUTURE.netcdf_promote = True
 import bokeh.plotting
 
 
-import sea_plot
-import sea_control
+import model_gpm_plot
+import model_gpm_control
 
 import forest.util
 
@@ -254,8 +254,8 @@ for ds_name in datasets:
 
     for time in datasets[ds_name]['data'].keys():
         raw_cube = datasets[ds_name]['data'][time]
-        iris.coord_categorisation.add_categorised_coord(raw_cube, 'agg_time', 'time', conv_func, 
-                                                        units=iris.unit.Unit('hours since 1970-01-01', 
+        iris.coord_categorisation.add_categorised_coord(raw_cube, 'agg_time', 'time', conv_func,
+                                                        units=iris.unit.Unit('hours since 1970-01-01',
                                                                              calendar='gregorian'))
         accum_cube = raw_cube.aggregated_by(['agg_time'], ACCUM)
         temp_cube_list.append(accum_cube)
@@ -286,27 +286,27 @@ init_model_right = GPM_IMERG_EARLY_KEY
 ## Display plots
 
 # Create a plot object for the left model display
-plot_obj_left = sea_plot.SEA_plot(datasets,
-                                  plot_opts,
-                                  'plot_sea_left' + bokeh_id,
-                                  init_var,
-                                  init_model_left,
-                                  init_region,
-                                  region_dict,
-                                  )
+plot_obj_left = model_gpm_plot.ModelGpmPlot(datasets,
+                                            plot_opts,
+                                            'plot_sea_left' + bokeh_id,
+                                            init_var,
+                                            init_model_left,
+                                            init_region,
+                                            region_dict,
+                                            )
 
 plot_obj_left.current_time = init_time
 bokeh_img_left = plot_obj_left.create_plot()
 
 # Create a plot object for the right model display
-plot_obj_right = sea_plot.SEA_plot(datasets,
-                                   plot_opts,
-                                   'plot_sea_right' + bokeh_id,
-                                   init_var,
-                                   init_model_right,
-                                   init_region,
-                                   region_dict,
-                                   )
+plot_obj_right = model_gpm_plot.ModelGpmPlot(datasets,
+                                             plot_opts,
+                                             'plot_sea_right' + bokeh_id,
+                                             init_var,
+                                             init_model_right,
+                                             init_region,
+                                             region_dict,
+                                             )
 
 plot_obj_right.current_time = init_time
 bokeh_img_right = plot_obj_right.create_plot()
@@ -316,11 +316,11 @@ plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
 num_times = 3 * datasets[GPM_IMERG_LATE_KEY]['precipitation'].shape[0]
 
-control1 = sea_control.SEA_control(datasets,
-                                   init_time,
-                                   num_times,
-                                   [plot_obj_left, plot_obj_right],
-                                   [bokeh_img_left, bokeh_img_right],)
+control1 = model_gpm_control.ModelGpmControl(datasets,
+                                             init_time,
+                                             num_times,
+                                             [plot_obj_left, plot_obj_right],
+                                             [bokeh_img_left, bokeh_img_right], )
 try:
     bokeh_mode = os.environ['BOKEH_MODE']
 except:

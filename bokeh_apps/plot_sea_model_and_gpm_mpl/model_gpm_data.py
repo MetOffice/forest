@@ -1,7 +1,7 @@
 import os
 import forest.util
 
-class ForestDataset(object):
+class ModelGpmData(object):
     def __init__(self,
                  config,
                  file_name,
