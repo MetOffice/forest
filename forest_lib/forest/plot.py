@@ -566,7 +566,7 @@ class ForestPlot(object):
         print('update_bokeh_img_plot_from_fig')
         
         if self.bokeh_img_ds:
-            self.current_img_array = forest.get_image_array_from_figure(self.current_figure)
+            self.current_img_array = forest.util.get_image_array_from_figure(self.current_figure)
             self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
             self.bokeh_img_ds.data[u'x'] = [cur_region[2]]
             self.bokeh_img_ds.data[u'y'] = [cur_region[0]]

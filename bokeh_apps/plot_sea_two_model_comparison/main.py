@@ -154,9 +154,6 @@ def main(bokeh_id):
     bokeh_img_right = plot_obj_right.create_plot()
     stats_right = plot_obj_right.create_stats_widget()
 
-    plots_row = bokeh.layouts.row(bokeh_img_left,
-                                bokeh_img_right)
-
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
 

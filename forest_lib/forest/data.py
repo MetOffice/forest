@@ -4,8 +4,6 @@ the data class supports just in time loading.
 """
 import os 
 
-import numpy
-
 import iris
 
 import forest.util
