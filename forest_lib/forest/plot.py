@@ -1,9 +1,5 @@
 import textwrap
 
-import threading
-import time
-
-
 import numpy
 
 import matplotlib
@@ -13,14 +9,11 @@ import matplotlib.cm
 
 import cartopy
 import cartopy.crs
-import cartopy.io.img_tiles
 
-import forest.util
-
-import bokeh.io
-import bokeh.layouts 
 import bokeh.models.widgets
 import bokeh.plotting
+
+import forest.util
 
 class ForestPlot(object):
     '''
@@ -28,7 +21,15 @@ class ForestPlot(object):
     '''
     TITLE_TEXT_WIDTH = 40
     PRESSURE_LEVELS_HPA = range(980,1030,2)
-    def __init__(self, dataset, po1,figname, plot_var, conf1, reg1, rd1, unit_dict):
+    def __init__(self,
+                 dataset,
+                 po1,
+                 figname,
+                 plot_var,
+                 conf1,
+                 reg1,
+                 rd1,
+                 unit_dict):
         '''
         Initialisation function for ForestPlot class
         '''
@@ -54,12 +55,13 @@ class ForestPlot(object):
         self.bokeh_img_ds = None
         self.async = False
         self.unit_dict = unit_dict
+        self.stats_widget = None
 
     
     def _set_config_value(self,new_config):
         self.current_config = new_config 
         print(self.dataset.keys())
-        self.plot_description = self.dataset[self.current_config]['model_name']
+        self.plot_description = self.dataset[self.current_config]['data_type_name']
 
     def setup_pressure_labels(self):
         '''
@@ -103,6 +105,7 @@ class ForestPlot(object):
         '''
         Update the latitude and longitude coordinates for the data.
         '''
+
         self.coords_lat = data_cube.coords('latitude')[0].points
         self.coords_long = data_cube.coords('longitude')[0].points
         
@@ -595,7 +598,8 @@ class ForestPlot(object):
         self.current_figure.canvas.draw_idle()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
-        self.update_stats_widget()
+        if self.stats_widget:
+            self.update_stats_widget()
 
             
     def create_stats_widget(self):
@@ -606,7 +610,10 @@ class ForestPlot(object):
         return self.stats_widget
         
     def update_stats_widget(self):
-        self.stats_widget.text = self.stats_string
+        try:
+            self.stats_widget.text = self.stats_string
+        except AttributeError as e1:
+            print('Unable to update stats as stats widget not initiated')
 
     def set_data_time(self,new_time):
         """
@@ -622,9 +629,9 @@ class ForestPlot(object):
         self.create_matplotlib_fig()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
-            self.update_stats_widget()
+            if self.stats_widget:
+                self.update_stats_widget()
 
-        
     def set_region(self, new_region):
         '''
         Event handler for a change in the selected plot region.
@@ -636,9 +643,9 @@ class ForestPlot(object):
         self.create_matplotlib_fig()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
-            self.update_stats_widget()
-    
-        
+            if self.stats_widget:
+                self.update_stats_widget()
+
     def set_config(self, new_config):
         '''
         Function to set a new value of config and do an update
@@ -648,9 +655,9 @@ class ForestPlot(object):
         self.create_matplotlib_fig()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
-            self.update_stats_widget()
+            if self.stats_widget:
+                self.update_stats_widget()
 
-        
     def link_axes_to_other_plot(self, other_plot):
         try:
             self.bokeh_figure.x_range = other_plot.bokeh_figure.x_range

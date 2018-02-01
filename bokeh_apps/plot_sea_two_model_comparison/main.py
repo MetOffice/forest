@@ -62,11 +62,11 @@ def main(bokeh_id):
     KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
     KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
 
-    datasets = {N1280_GA6_KEY:{'model_name':'N1280 GA6 LAM Model'},
-                KM4P4_RA1T_KEY:{'model_name':'SE Asia 4.4KM RA1-T '},
-                KM1P5_INDO_RA1T_KEY:{'model_name':'Indonesia 1.5KM RA1-T'},
-                KM1P5_MAL_RA1T_KEY:{'model_name':'Malaysia 1.5KM RA1-T'},
-                KM1P5_PHI_RA1T_KEY:{'model_name':'Philipines 1.5KM RA1-T'},
+    datasets = {N1280_GA6_KEY:{'data_type_name':'N1280 GA6 LAM Model'},
+                KM4P4_RA1T_KEY:{'data_type_name':'SE Asia 4.4KM RA1-T '},
+                KM1P5_INDO_RA1T_KEY:{'data_type_name':'Indonesia 1.5KM RA1-T'},
+                KM1P5_MAL_RA1T_KEY:{'data_type_name':'Malaysia 1.5KM RA1-T'},
+                KM1P5_PHI_RA1T_KEY:{'data_type_name':'Philipines 1.5KM RA1-T'},
             }
     for ds_name in datasets.keys():
         datasets[ds_name]['var_lookup'] = forest.data.VAR_LOOKUP_RA1T
