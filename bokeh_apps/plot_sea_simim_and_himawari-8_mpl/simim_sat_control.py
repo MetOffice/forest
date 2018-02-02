@@ -111,4 +111,4 @@ class SimimSatControl(object):
         print('selected new var {0}'.format(new_val))
         current_type = new_val
         for p1 in self.plot_list:
-            p1.set_type(current_type)
+            p1.set_var(current_type)

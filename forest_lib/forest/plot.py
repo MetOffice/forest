@@ -60,7 +60,6 @@ class ForestPlot(object):
     
     def _set_config_value(self,new_config):
         self.current_config = new_config 
-        print(self.dataset.keys())
         self.plot_description = self.dataset[self.current_config]['data_type_name']
 
     def setup_pressure_labels(self):
@@ -460,10 +459,14 @@ class ForestPlot(object):
         Function for creating himawari-8 image plots, called by create_plot()
         when cloud fraction is the selected plot type.
         '''
-
         him8_image = self.dataset['himawari-8']['data'].get_data(self.current_var)[self.current_time]
-        self.current_axes.imshow(him8_image, extent=(90, 154, -18, 30),
-                                 origin='upper')
+        self.main_plot = self.current_axes.imshow(him8_image,
+                                                  extent=(self.data_bounds[2],
+                                                          self.data_bounds[3],
+                                                          self.data_bounds[0],
+                                                          self.data_bounds[1]),
+                                                  origin='upper')
+
 
         # Add coastlines to the map created by contourf.
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
@@ -474,7 +477,10 @@ class ForestPlot(object):
                                                             facecolor='none')
 
         self.current_axes.add_feature(coastline_50m)
-        self.current_axes.set_extent((90, 154, -18, 30))
+        self.current_axes.set_extent((self.data_bounds[2],
+                                      self.data_bounds[3],
+                                      self.data_bounds[0],
+                                      self.data_bounds[1]))
 
         self.update_title(None)
 
@@ -516,7 +522,11 @@ class ForestPlot(object):
                                                             facecolor='none')
 
         self.current_axes.add_feature(coastline_50m)
-        self.current_axes.set_extent((90, 154, -18, 30))
+        self.current_axes.set_extent((self.data_bounds[2],
+                                      self.data_bounds[3],
+                                      self.data_bounds[0],
+                                      self.data_bounds[1]))
+
         self.update_title(None)
 
     def update_sat_simim_imagery(self):
@@ -570,20 +580,18 @@ class ForestPlot(object):
         Main plotting function. Generic elements of the plot are created here, and then the plotting
         function for the specific variable is called using the self.plot_funcs dictionary.
         '''
-        print('create_plot')
         self.create_matplotlib_fig()
         self.create_bokeh_img_plot_from_fig()
         
         return self.bokeh_figure
     
     def create_matplotlib_fig(self):
-        print('create_matplotlib_fig')
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
-                                                       figsize=(4.0,3.0))
+                                                       figsize=(8.0,6.0))
         self.current_figure.clf()
-        self.current_axes = self.current_figure.add_subplot(111, projection=cartopy.crs.PlateCarree())
+        self.current_axes = self.current_figure.add_subplot(111,
+                                                            projection=cartopy.crs.PlateCarree())
         self.current_axes.set_position([0, 0, 1, 1])
-
         self.plot_funcs[self.current_var]()
         if self.main_plot:
             if self.use_mpl_title:
@@ -599,23 +607,17 @@ class ForestPlot(object):
             self.current_figure.canvas.draw()
         
     def create_bokeh_img_plot_from_fig(self):
-        print('create_bokeh_img_plot_from_fig 0')
-        #try:
         self.current_img_array = forest.util.get_image_array_from_figure(self.current_figure)
-        #except:
-        #    self.current_img_array = None
-            
-        print('create_bokeh_img_plot_from_fig 1')
+
+
         cur_region = self.region_dict[self.current_region]
-        print('create_bokeh_img_plot_from_fig 2')
-        
+
         # Set figure navigation limits
         x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3], 
                                         bounds = (cur_region[2], cur_region[3]))
         y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1], 
                                         bounds = (cur_region[0], cur_region[1]))
                                         
-        print('create_bokeh_img_plot_from_fig 3')
         # Initialize figure
         self.bokeh_figure = bokeh.plotting.figure(plot_width = 800, 
                                                   plot_height = 600, 
@@ -623,13 +625,12 @@ class ForestPlot(object):
                                                   y_range = y_limits, 
                                                   tools = 'pan,wheel_zoom,reset,save')
 
-        print('create_bokeh_img_plot_from_fig 4 ')
 
 
         if self.current_img_array is not None:
             self.create_bokeh_img()
         else:
-            print('creating blank plot')
+
             mid_x = (cur_region[2] + cur_region[3]) * 0.5
             mid_y = (cur_region[0] + cur_region[1]) * 0.5
             self.bokeh_figure.text(x=[mid_x], 
@@ -645,8 +646,7 @@ class ForestPlot(object):
     
     def create_bokeh_img(self):
         cur_region = self.region_dict[self.current_region]
-        print('creating bokeh plot from matplotlib plot')
-        # Add mpl image        
+        # Add mpl image
         latitude_range = cur_region[1] - cur_region[0]
         longitude_range = cur_region[3] - cur_region[2]
         self.bokeh_image = self.bokeh_figure.image_rgba(image=[self.current_img_array], 
@@ -664,10 +664,6 @@ class ForestPlot(object):
                                                 (cur_region[1] - cur_region[0]) / \
                                                 (cur_region[3] - cur_region[2]), 2))
 
-        print('Current figure:', self.current_figure.get_figwidth())
-        print('Current figure:', self.current_figure.get_figheight())
-        print('update_bokeh_img_plot_from_fig')
-        
         if self.bokeh_img_ds:
             self.current_img_array = forest.util.get_image_array_from_figure(self.current_figure)
             self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
@@ -691,7 +687,6 @@ class ForestPlot(object):
         Main plot update function. Generic elements of the plot are updated here where possible, and then
         the plot update function for the specific variable is called using the self.plot_funcs dictionary.
         '''
-        print('update_plot')
         self.update_funcs[self.current_var]()
         if self.use_mpl_title:
             self.current_axes.set_title(self.current_title)
