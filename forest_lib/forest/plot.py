@@ -448,10 +448,15 @@ class ForestPlot(object):
         when cloud fraction is the selected plot type.
         '''
         pass
-        # cloud_cube = self.dataset['himawari-8'].get_data(self.current_type)
-        # array_for_update = cloud_cube[self.current_time].data[:-1,:-1].ravel()
-        # self.main_plot.set_array(array_for_update)
-        # self.update_title(None)
+        him8_image = self.dataset['himawari-8']['data'].get_data(self.current_var)[self.current_time]
+        self.current_axes.images.remove(self.main_plot)
+        self.main_plot = self.current_axes.imshow(him8_image,
+                                                  extent=(self.data_bounds[2],
+                                                          self.data_bounds[3],
+                                                          self.data_bounds[0],
+                                                          self.data_bounds[1]),
+                                                  origin='upper')
+        self.update_title(None)
 
     def plot_him8(self):
 
@@ -491,10 +496,10 @@ class ForestPlot(object):
         cloud fraction is the selected plot type.
         '''
         pass
-        # simim_cube = self.dataset['simim']['data']get_data(self.current_var)[self.current_time]
-        # array_for_update = cloud_cube.data[:-1,:-1].ravel()
-        # self.main_plot.set_array(array_for_update)
-        # self.update_title(None)
+        simim_cube = self.dataset['simim']['data'].get_data(self.current_var)[self.current_time]
+        array_for_update = simim_cube.data[:-1,:-1].ravel()
+        self.main_plot.set_array(array_for_update)
+        self.update_title(None)
 
     def plot_simim(self):
 
