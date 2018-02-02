@@ -87,8 +87,14 @@ class ForestPlot(object):
                            'mslp' : self.plot_mslp,
                            'air_temperature' : self.plot_air_temp,
                            'cloud_fraction' :self.plot_cloud,
+                           'himawari-8': self.plot_him8,
+                           'simim': self.plot_simim,
+                           'W': self.plot_sat_simim_imagery,
+                           'I': self.plot_sat_simim_imagery,
+                           'V': self.plot_sat_simim_imagery,
                            'blank': self.create_blank,
                           }
+
         self.update_funcs =  {'precipitation' : self.update_precip,
                            'wind_vectors' : self.update_wind_vectors,
                            'wind_mslp' : self.update_wind_mslp,
@@ -96,11 +102,14 @@ class ForestPlot(object):
                            'mslp' : self.update_mslp,
                            'air_temperature' : self.update_air_temp,
                            'cloud_fraction' :self.update_cloud,
+                           'himawari-8': self.update_him8,
+                           'simim': self.update_simim,
+                           'W': self.update_sat_simim_imagery,
+                           'I': self.update_sat_simim_imagery,
+                           'V': self.update_sat_simim_imagery,
                            'blank': self.create_blank,
                           }
-                          
-    
-        
+
     def update_coords(self, data_cube):
         '''
         Update the latitude and longitude coordinates for the data.
@@ -237,7 +246,7 @@ class ForestPlot(object):
                                                       norm=self.plot_options[self.current_var]['norm']
                                                      )
         
-        ap_cube = sself.dataset[self.current_config]['data'].get_data('mslp')
+        ap_cube = self.dataset[self.current_config]['data'].get_data('mslp')
         lat_mslp = ap_cube.coords('latitude')[0].points
         long_mslp = ap_cube.coords('longitude')[0].points
         self.long_grid_mslp, self.lat_grid_mslp = numpy.meshgrid(long_mslp, lat_mslp)
@@ -433,7 +442,95 @@ class ForestPlot(object):
         self.update_title(cloud_cube)
         self.update_stats(cloud_cube)
         
- 
+    def update_him8(self):
+
+        '''
+        Update function for himawari-8 image plots, called by update_plot()
+        when cloud fraction is the selected plot type.
+        '''
+        pass
+        # cloud_cube = self.dataset['himawari-8'].get_data(self.current_type)
+        # array_for_update = cloud_cube[self.current_time].data[:-1,:-1].ravel()
+        # self.main_plot.set_array(array_for_update)
+        # self.update_title(None)
+
+    def plot_him8(self):
+
+        '''
+        Function for creating himawari-8 image plots, called by create_plot()
+        when cloud fraction is the selected plot type.
+        '''
+
+        him8_image = self.dataset['himawari-8']['data'].get_data(self.current_var)[self.current_time]
+        self.current_axes.imshow(him8_image, extent=(90, 154, -18, 30),
+                                 origin='upper')
+
+        # Add coastlines to the map created by contourf.
+        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
+                                                            'coastline',
+                                                            '50m',
+                                                            edgecolor='g',
+                                                            alpha=0.5,
+                                                            facecolor='none')
+
+        self.current_axes.add_feature(coastline_50m)
+        self.current_axes.set_extent((90, 154, -18, 30))
+
+        self.update_title(None)
+
+    def update_simim(self):
+
+        '''
+        Update function for himawari-8 image plots, called by update_plot() when
+        cloud fraction is the selected plot type.
+        '''
+        pass
+        # simim_cube = self.dataset['simim']['data']get_data(self.current_var)[self.current_time]
+        # array_for_update = cloud_cube.data[:-1,:-1].ravel()
+        # self.main_plot.set_array(array_for_update)
+        # self.update_title(None)
+
+    def plot_simim(self):
+
+        '''
+        Function for creating himawari-8 image plots, called by create_plot()
+        when cloud fraction is the selected plot type.
+        '''
+
+        simim_cube = self.dataset['simim']['data'].get_data(self.current_var)[self.current_time]
+        lats = simim_cube.coords('grid_latitude')[0].points
+        lons = simim_cube.coords('grid_longitude')[0].points
+        self.main_plot = self.current_axes.pcolormesh(lons,
+                                                      lats,
+                                                      simim_cube.data,
+                                                      cmap=self.plot_options[self.current_var]['cmap'],
+                                                      norm=self.plot_options[self.current_var]['norm']
+                                                      )
+
+        # Add coastlines to the map created by contourf
+        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
+                                                            'coastline',
+                                                            '50m',
+                                                            edgecolor='g',
+                                                            alpha=0.5,
+                                                            facecolor='none')
+
+        self.current_axes.add_feature(coastline_50m)
+        self.current_axes.set_extent((90, 154, -18, 30))
+        self.update_title(None)
+
+    def update_sat_simim_imagery(self):
+        if self.current_config == 'himawari-8':
+            self.update_him8()
+        elif self.current_config == 'simim':
+            self.update_simim()
+
+    def plot_sat_simim_imagery(self):
+        if self.current_config == 'himawari-8':
+            self.plot_him8()
+        elif self.current_config == 'simim':
+            self.plot_simim()
+
     def update_stats(self, current_cube):
         stats_str_list = [self.current_title]
         unit_str = self.unit_dict[self.current_var]
@@ -456,7 +553,10 @@ class ForestPlot(object):
         '''
         Update plot title.
         '''
-        datestr1 = forest.util.get_time_str(current_cube.dim_coords[0].points[self.current_time])
+        try:
+            datestr1 = forest.util.get_time_str(current_cube.dim_coords[0].points[self.current_time])
+        except:
+            datestr1 = self.current_time
         
         str1 = '{plot_desc} {var_name} at {fcst_time}'.format(var_name=self.current_var,
                                                               fcst_time=datestr1,

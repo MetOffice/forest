@@ -32,8 +32,8 @@ class SimimSatControl(object):
 
         self.wavelength_dd.on_change('value', self.on_type_change)
 
-        time_list = sorted([time_str + 'UTC' for time_str in self.datasets['simim']['data']['I'].keys()
-                            if time_str in self.datasets['himawari-8']['data']['I'].keys()])
+        time_list = sorted([time_str + 'UTC' for time_str in self.datasets['simim']['data'].get_data('I').keys()
+                            if time_str in self.datasets['simim']['data'].get_data('I').keys()])
 
         self.data_time_dd = \
             bokeh.models.widgets.Dropdown(label='Time',

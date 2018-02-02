@@ -61,7 +61,7 @@ class GpmDataset(object):
 
 
     def __str__(self):
-        return 'Model vs GPM  dataset'
+        return 'GPM  dataset'
 
     def get_data(self, var_name):
         return self.data[var_name]

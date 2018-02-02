@@ -10,6 +10,12 @@ import numpy
 
 import iris
 
+SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
+                   'malaysia': [-2.75, 10.7365, 95.25, 108.737],
+                   'phillipines': [3.1375, 21.349, 115.8, 131.987],
+                   'se_asia': [-18.0, 29.96, 90.0, 153.96],
+                   }
+
 
 def download_from_s3(s3_url, local_path):
     '''
@@ -17,7 +23,7 @@ def download_from_s3(s3_url, local_path):
     '''
     if not os.path.isfile(local_path):
         print('retrieving file from {0}'.format(s3_url))
-        urllib.request.urlretrieve(s3_url, local_path) 
+        urllib.request.urlretrieve(s3_url, local_path)
         print('file {0} downloaded'.format(local_path))
 
     else:
@@ -218,6 +224,48 @@ def create_colour_opts(var_list):
     col_opts_dict['mslp'] = get_air_pressure_colours()
     col_opts_dict['cloud_fraction'] = get_cloud_colours()
     return col_opts_dict
+
+
+def loadct_SPSgreyscale(do_register):
+    ''' A function to make a custom greyscale colormap to match Tigger plots.
+         In a 256 colour setup I need to remove 4 colours (black and the three
+         darkest greys) from  the black end of the greyscale and one (white)
+         from the white end.
+    '''
+
+    n = 256.0
+    color_min = 1.0
+    color_max = 252.0
+    cdict_min = color_min / n
+    cdict_max = color_max / n
+    ncolours = (n - color_min) - (n - color_max)
+    cdict = {'red': [(0.0, cdict_max, cdict_max),
+                     (1.0, cdict_min, cdict_min)],
+             'green': [(0.0, cdict_max, cdict_max),
+                       (1.0, cdict_min, cdict_min)],
+             'blue': [(0.0, cdict_max, cdict_max),
+                      (1.0, cdict_min, cdict_min)]}
+    SPSgreyscale = matplotlib.colors.LinearSegmentedColormap('SPSgreyscale', cdict, int(ncolours))
+    if do_register:
+        matplotlib.pyplot.register_cmap(name='SPSgreyscale', cmap=SPSgreyscale)
+    return SPSgreyscale
+
+
+def get_sat_simim_colours():
+    cmap_sat_simim = loadct_SPSgreyscale(False)
+    norm_sat_simim = matplotlib.colors.Normalize(198, 308)
+
+    return {'cmap': cmap_sat_simim,
+            'norm': norm_sat_simim}
+
+
+def create_satellite_simim_plot_opts():
+    plot_options = {'V': {'norm': matplotlib.colors.Normalize(0, 1),
+                          'cmap': 'binary_r'},
+                    'W': get_sat_simim_colours(),
+                    'I': get_sat_simim_colours()}
+
+    return plot_options
 
 
 def extract_region(selected_region, ds1):

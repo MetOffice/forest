@@ -109,11 +109,7 @@ def main(bokeh_id):
 
 
     # create regions
-    region_dict = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
-                'malaysia': [-2.75, 10.7365, 95.25, 108.737],
-                'phillipines': [3.1375, 21.349, 115.8, 131.987],
-                'se_asia': [-18.0, 29.96, 90.0, 153.96],
-                }
+    region_dict = forest.util.SEA_REGION_DICT
 
     #Setup and display plots
     plot_opts = forest.util.create_colour_opts(plot_names)
