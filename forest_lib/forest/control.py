@@ -39,7 +39,6 @@ class ForestController(object):
                                         button_type='warning')
         self.model_var_dd.on_change('value',self.on_var_change)
         
-            
         self.data_time_slider = bokeh.models.widgets.Slider(start=0, 
                                                     end=self.num_times, 
                                                     value=self.init_time, 
@@ -65,7 +64,6 @@ class ForestController(object):
         self.left_model_dd.on_change('value', 
                                      functools.partial(self.on_config_change, 0))
 
-
         right_model_desc = 'Right display'
         self.right_model_dd = bokeh.models.widgets.Dropdown(menu=dataset_menu_list, 
                                                     label=right_model_desc,
@@ -73,20 +71,26 @@ class ForestController(object):
         self.right_model_dd.on_change('value', 
                                       functools.partial(self.on_config_change, 1))
 
+        colorbar_src = "<img src='plot_sea_two_model_comparison/static/radar_colorbar.png'\>"
+        self.left_colorbar = bokeh.models.widgets.Div(text = colorbar_src, height = 100, width = 800)
+        self.right_colorbar = bokeh.models.widgets.Div(text = colorbar_src, height = 100, width = 800)
+        
         # layout widgets
         self.param_row = bokeh.layouts.row(self.model_var_dd, self.region_dd)
         self.slider_row = bokeh.layouts.row(self.data_time_slider)
         self.config_row = bokeh.layouts.row(self.left_model_dd, self.right_model_dd)
-
+        self.colorbar_row = bokeh.layouts.row(self.left_colorbar, self.right_colorbar)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
         self.stats_row = bokeh.layouts.row(*self.stats_widgets)
+        
         self.main_layout = bokeh.layouts.column(self.param_row, 
-                                        self.slider_row,
-                                        self.config_row,
-                                        self.plots_row,
-                                        self.stats_row,
-                                        ) 
-                                        
+                                                self.slider_row,
+                                                self.config_row,
+                                                self.plots_row,
+                                                self.colorbar_row,
+                                                self.stats_row,
+                                                 ) 
+                                         
     def on_data_time_change(self, attr1, old_val, new_val):
         '''
         Event handler for a change in the selected forecast data time.
