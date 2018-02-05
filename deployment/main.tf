@@ -6,7 +6,7 @@ data "template_file" "bootstrap" {
   template = "${file("boot.sh.tlp")}"
 }
 
-resource "aws_instance" "bokeh_server" {
+resource "aws_instance" "bokeh_server_dev20" {
   ami                   = "ami-e7d6c983"
   instance_type         = "t2.xlarge"	
   key_name              = "kubernetes.cluster.k8s.informaticslab.co.uk-be:87:08:3a:ea:a2:9e:7e:be:c1:97:2a:42:9b:8a:05"
@@ -16,8 +16,8 @@ resource "aws_instance" "bokeh_server" {
        volume_size = 80
    }
   tags {
-    Name = "model_evaluation_tool_server",
-    EndOfLife = "2018-03-31",
+    Name = "forest_server",
+    EndOfLife = "2018-09-30",
     OfficeHours = false,
     Project = "SEAsia",
     ServiceCode = "ZZTLAB",
@@ -80,7 +80,7 @@ resource "aws_security_group_rule" "server_gateway_ssh" {
 
 resource "aws_route53_record" "server_nice_url" {
   zone_id = "Z3USS9SVLB2LY1"
-  name = "forest.informaticslab.co.uk"
+  name = "fdev20.informaticslab.co.uk"
   type = "A"
   ttl = "60"
   records = ["${aws_instance.bokeh_server.public_ip}"]

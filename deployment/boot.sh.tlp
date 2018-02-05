@@ -7,5 +7,5 @@ mkdir -p /opt/met
 cd /opt/
 git clone https://github.com/met-office-lab/model_evaluation_tool.git
 cd model_evaluation_tool
-docker build  -t met .
-docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v $(pwd)/documents:/opt/documents -e  PUBLIC_IP=forest.informaticslab.co.uk met
+docker build  -t met_dev20 .
+docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v $(pwd)/bokeh_apps:/opt/bokeh_apps -v $(pwd)/forest_lib:/opt/forest_lib  -e  PUBLIC_IP=forest.informaticslab.co.uk met_dev20
