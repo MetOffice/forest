@@ -6,7 +6,8 @@ RUN conda install -c conda-forge -c ioam boto3 iris bokeh cartopy  holoviews geo
 RUN conda install -c conda-forge pyke -y
 
 # pysssix stuff
-RUN apt-get install libfuse-dev -y
+RUN apt-get update -y
+RUN apt-get install libfuse-dev --fix-missing -y
 RUN pip install git+git://github.com/met-office-lab/pysssix.git
 RUN mkdir /s3
 
