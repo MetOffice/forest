@@ -28,7 +28,7 @@ resource "aws_instance" "bokeh_server_dev20" {
 }
 
 resource "aws_security_group" "server" {
-  name = "model_evaluation_tool"
+  name = "model_evaluation_tool_dev20"
 }
 
 
@@ -83,5 +83,5 @@ resource "aws_route53_record" "server_nice_url" {
   name = "fdev20.informaticslab.co.uk"
   type = "A"
   ttl = "60"
-  records = ["${aws_instance.bokeh_server.public_ip}"]
+  records = ["${aws_instance.bokeh_server_dev20.public_ip}"]
 }

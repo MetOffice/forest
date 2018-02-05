@@ -4,8 +4,10 @@ yum install -y git
 yum -y install docker
 service docker start
 mkdir -p /opt/met
-cd /opt/
-git clone https://github.com/met-office-lab/model_evaluation_tool.git
-cd model_evaluation_tool
+export REPO_DIR=/opt/model_evaluation_tool
+git clone https://github.com/met-office-lab/model_evaluation_tool.git $REPO_DIR
+cd $REPO_DIR
+git checkout met_20_code_rationalisation
+cd deployment
 docker build  -t met_dev20 .
-docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v $(pwd)/bokeh_apps:/opt/bokeh_apps -v $(pwd)/forest_lib:/opt/forest_lib  -e  PUBLIC_IP=fdev20.informaticslab.co.uk met_dev20
+docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v ${REPO_DIR}/bokeh_apps:/opt/bokeh_apps -v ${REPO_DIR}/forest_lib:/opt/forest_lib  -e  PUBLIC_IP=fdev20.informaticslab.co.uk met_dev20
