@@ -98,16 +98,34 @@ class ForestDataset(object):
     def __str__(self):
         return 'FOREST dataset'
 
+    def check_data(self):
+        """
+        Check that the data represented by this dataset actually exists.
+        """
+        return forest.util.check_remote_file_exists(self.s3_url)
+
     def get_data(self, var_name):
         if self.data[var_name] is None:
-            # get data from aws s3 storage
-            self.retrieve_data()
-
-            # load the data into memory from file (will only load meta data
-            # initially)
-            self.load_data(var_name)
+            if self.check_data():
+                # get data from aws s3 storage
+                self.retrieve_data()
+                # load the data into memory from file (will only load meta data
+                # initially)
+                self.load_data(var_name)
+            else:
+                self.data[var_name] = None
 
         return self.data[var_name]
+
+    def retrieve_data(self):
+        '''
+        '''
+        if self.do_download:
+            if not (os.path.isdir(self.base_local_path)):
+                print('creating directory {0}'.format(self.base_local_path))
+                os.makedirs(self.base_local_path)
+
+            forest.util.download_from_s3(self.s3_url, self.local_path)
 
     def load_data(self, var_name):
         self.loaders[var_name](var_name)
@@ -139,12 +157,3 @@ class ForestDataset(object):
                                                        cube_y_wind,
                                                        10))
 
-    def retrieve_data(self):
-        '''
-        '''
-        if self.do_download:
-            if not (os.path.isdir(self.base_local_path)):
-                print('creating directory {0}'.format(self.base_local_path))
-                os.makedirs(self.base_local_path)
-
-            forest.util.download_from_s3(self.s3_url, self.local_path)

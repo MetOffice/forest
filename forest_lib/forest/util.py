@@ -324,3 +324,13 @@ def get_model_run_times(num_days):
     forecast_dt_str_list = [
         fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
     return forecast_datetimes, forecast_dt_str_list
+
+def check_remote_file_exists(remote_path):
+    file_exists = False
+    try:
+        _ = urllib.request.urlopen(remote_path)
+        print('file {0} found at remote location.'.format(remote_path))
+        file_exists = True
+    except urllib.error.HTTPError:
+        print('warning: file {0} NOT found at remote location.'.format(remote_path))
+    return file_exists

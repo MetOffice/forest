@@ -1,10 +1,5 @@
 import os
-import time
-import sys
-import urllib.request
-import textwrap
-import functools
-import threading
+import copy
 
 import numpy
 import iris
@@ -49,11 +44,42 @@ def add_main_plot(main_layout, bokeh_doc):
 bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
-def main(bokeh_id):
+def get_available_datasets(s3_base,
+                           s3_local_base,
+                           use_s3_mount,
+                           base_path_local,
+                           do_download,
+                           dataset_template):
     fcast_dt_list, fcast_dt_str_list = forest.util.get_model_run_times(7)
 
-    #fcast_time = '20180110T0000Z'
-    fcast_time = fcast_dt_str_list[-2]
+    fcast_time_list = []
+    datasets = {}
+    for fct,fct_str in zip(fcast_dt_list, fcast_dt_str_list):
+        fct_data_dict = copy.deepcopy(dict(dataset_template))
+        model_run_data_present = True
+        for ds_name in dataset_template.keys():
+            fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
+            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(ds_name,
+                                                                       fname1,
+                                                                       s3_base,
+                                                                       s3_local_base,
+                                                                       use_s3_mount,
+                                                                       base_path_local,
+                                                                       do_download,
+                                                                       dataset_template[ds_name]['var_lookup'],
+                                                                       )
+            model_run_data_present = model_run_data_present and fct_data_dict[ds_name]['data'].check_data()
+        # include forecast if all configs are present
+        #TODO: reconsider data structure to allow for some model configs at different times to be present
+        if model_run_data_present:
+            datasets[fct_str] = fct_data_dict
+            fcast_time_list += [fct_str]
+    # select most recent available forecast
+    fcast_time = fcast_time_list[-1]
+    return fcast_time, datasets
+
+
+def main(bokeh_id):
 
     # Setup datasets. Data is not loaded until requested for plotting.
     N1280_GA6_KEY = 'n1280_ga6'
@@ -62,16 +88,16 @@ def main(bokeh_id):
     KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
     KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
 
-    datasets = {N1280_GA6_KEY:{'data_type_name':'N1280 GA6 LAM Model'},
-                KM4P4_RA1T_KEY:{'data_type_name':'SE Asia 4.4KM RA1-T '},
-                KM1P5_INDO_RA1T_KEY:{'data_type_name':'Indonesia 1.5KM RA1-T'},
-                KM1P5_MAL_RA1T_KEY:{'data_type_name':'Malaysia 1.5KM RA1-T'},
-                KM1P5_PHI_RA1T_KEY:{'data_type_name':'Philipines 1.5KM RA1-T'},
-            }
-    for ds_name in datasets.keys():
-        datasets[ds_name]['var_lookup'] = forest.data.VAR_LOOKUP_RA1T
+    dataset_template = {N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model'},
+                        KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T '},
+                        KM1P5_INDO_RA1T_KEY: {'data_type_name': 'Indonesia 1.5KM RA1-T'},
+                        KM1P5_MAL_RA1T_KEY: {'data_type_name': 'Malaysia 1.5KM RA1-T'},
+                        KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T'},
+                        }
+    for ds_name in dataset_template.keys():
+        dataset_template[ds_name]['var_lookup'] = forest.data.VAR_LOOKUP_RA1T
 
-    datasets[N1280_GA6_KEY]['var_lookup'] = forest.data.VAR_LOOKUP_GA6    
+        dataset_template[N1280_GA6_KEY]['var_lookup'] = forest.data.VAR_LOOKUP_GA6
 
     s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
                                                     bucket=bucket_name)
@@ -80,19 +106,17 @@ def main(bokeh_id):
     use_s3_mount = False
     do_download = True
 
+    init_fcast_time, datasets = get_available_datasets(s3_base,
+                                                       s3_local_base,
+                                                       use_s3_mount,
+                                                       base_path_local,
+                                                       do_download,
+                                                       dataset_template)
 
-    for ds_name in datasets.keys():
-        fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fcast_time)
-        datasets[ds_name]['data'] = forest.data.ForestDataset(ds_name, 
-                                                        fname1,
-                                                        s3_base,
-                                                        s3_local_base,
-                                                        use_s3_mount,
-                                                        base_path_local,
-                                                        do_download,
-                                                        datasets[ds_name]['var_lookup'],
-                                                        )
+    print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
 
+    # import pdb
+    # pdb.set_trace()
 
     #set up datasets dictionary
 
@@ -114,14 +138,14 @@ def main(bokeh_id):
     #Setup and display plots
     plot_opts = forest.util.create_colour_opts(plot_names)
 
-    init_time = 4
+    init_data_time = 4
     init_var = plot_names[0] #blank
     init_region = 'se_asia'
     init_model_left = N1280_GA6_KEY # KM4P4_RA1T_KEY
     init_model_right = KM4P4_RA1T_KEY # N1280_GA6_KEY
 
     #Set up plots
-    plot_obj_left = forest.plot.ForestPlot(datasets,
+    plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
                             plot_opts,
                             'plot_left' + bokeh_id,
                             init_var,
@@ -131,11 +155,11 @@ def main(bokeh_id):
                             forest.data.UNIT_DICT,
                             )
 
-    plot_obj_left.current_time = init_time
+    plot_obj_left.current_time = init_data_time
     bokeh_img_left = plot_obj_left.create_plot()
     stats_left = plot_obj_left.create_stats_widget()
 
-    plot_obj_right = forest.plot.ForestPlot(datasets,
+    plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
                         plot_opts,
                         'plot_right' + bokeh_id,
                         init_var,
@@ -146,7 +170,7 @@ def main(bokeh_id):
                         )
 
 
-    plot_obj_right.current_time = init_time
+    plot_obj_right.current_time = init_data_time
     bokeh_img_right = plot_obj_right.create_plot()
     stats_right = plot_obj_right.create_stats_widget()
 
@@ -154,22 +178,22 @@ def main(bokeh_id):
 
 
 
-    num_times = datasets[N1280_GA6_KEY]['data'].get_data('precipitation').shape[0]
-    for ds_name in datasets:
-        num_times = min(num_times, datasets[ds_name]['data'].get_data('precipitation').shape[0])
+    num_times = datasets[init_fcast_time][N1280_GA6_KEY]['data'].get_data('precipitation').shape[0]
+    for ds_name in datasets[init_fcast_time]:
+        num_times = min(num_times, datasets[init_fcast_time][ds_name]['data'].get_data('precipitation').shape[0])
     bokeh_doc = bokeh.plotting.curdoc()
 
     # Set up GUI controller class
-    control1 = forest.control.ForestController(init_time,
-                                        num_times,
-                                        datasets,
-                                        plot_names,
-                                        [plot_obj_left, plot_obj_right],
-                                        [bokeh_img_left, bokeh_img_right],
-                                        [stats_left, stats_right],
-                                        region_dict,
-                                        bokeh_doc,
-                                        )
+    control1 = forest.control.ForestController(init_data_time,
+                                               num_times,
+                                               datasets[init_fcast_time],
+                                               plot_names,
+                                               [plot_obj_left, plot_obj_right],
+                                               [bokeh_img_left, bokeh_img_right],
+                                               [stats_left, stats_right],
+                                               region_dict,
+                                               bokeh_doc,
+                                               )
 
     add_main_plot(control1.main_layout, bokeh_doc)
 
