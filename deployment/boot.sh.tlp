@@ -2,12 +2,12 @@
 yum update -y
 yum install -y git
 yum -y install docker
+yum install emacs -y
 service docker start
 mkdir -p /opt/met
-export REPO_DIR=/opt/model_evaluation_tool
-git clone https://github.com/met-office-lab/model_evaluation_tool.git ${REPO_DIR}
-cd ${REPO_DIR}
+git clone https://github.com/met-office-lab/model_evaluation_tool.git /opt/model_evaluation_tool
+cd /opt/model_evaluation_tool
 git checkout met_20_code_rationalisation
 cd deployment
 docker build  -t met_dev20 .
-docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v ${REPO_DIR}/bokeh_apps:/opt/bokeh_apps -v ${REPO_DIR}/forest_lib:/opt/forest_lib  -e  PUBLIC_IP=fdev20.informaticslab.co.uk met_dev20
+docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v /opt/model_evaluation_tool/bokeh_apps:/opt/bokeh_apps -v /opt/model_evaluation_tool/forest_lib:/opt/forest_lib  -e  PUBLIC_IP=fdev20.informaticslab.co.uk met_dev20
