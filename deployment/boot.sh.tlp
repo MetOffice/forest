@@ -5,8 +5,8 @@ yum -y install docker
 service docker start
 mkdir -p /opt/met
 export REPO_DIR=/opt/model_evaluation_tool
-git clone https://github.com/met-office-lab/model_evaluation_tool.git $REPO_DIR
-cd $REPO_DIR
+git clone https://github.com/met-office-lab/model_evaluation_tool.git ${REPO_DIR}
+cd ${REPO_DIR}
 git checkout met_20_code_rationalisation
 cd deployment
 docker build  -t met_dev20 .
