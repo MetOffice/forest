@@ -1,17 +1,14 @@
 import os
 import copy
-
 import numpy
-import iris
-
 import bokeh.io
 import bokeh.layouts 
 import bokeh.models.widgets
 import bokeh.plotting
-
-
 import matplotlib
 matplotlib.use('agg')
+
+import iris
 
 import forest.util
 import forest.plot
@@ -27,6 +24,11 @@ except:
     is_notebook = False
 
 def add_main_plot(main_layout, bokeh_doc):
+    
+    '''
+    
+    '''
+    
     print('finished creating, executing document add callback')
 
     try:
@@ -44,18 +46,27 @@ def add_main_plot(main_layout, bokeh_doc):
 bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
+
 def get_available_datasets(s3_base,
                            s3_local_base,
                            use_s3_mount,
                            base_path_local,
                            do_download,
                            dataset_template):
+    
+    '''
+    
+    '''
+    
     fcast_dt_list, fcast_dt_str_list = forest.util.get_model_run_times(7)
 
     fcast_time_list = []
     datasets = {}
     for fct,fct_str in zip(fcast_dt_list, fcast_dt_str_list):
-
+        
+        if fct_str != '20180204T1200Z':
+            continue
+        
         fct_data_dict = copy.deepcopy(dict(dataset_template))
         model_run_data_present = True
         for ds_name in dataset_template.keys():
@@ -83,18 +94,22 @@ def get_available_datasets(s3_base,
 
 def main(bokeh_id):
 
+    '''
+    
+    '''
+    
     # Setup datasets. Data is not loaded until requested for plotting.
     N1280_GA6_KEY = 'n1280_ga6'
     KM4P4_RA1T_KEY = 'km4p4_ra1t'
     KM1P5_INDO_RA1T_KEY = 'indon2km1p5_ra1t'
     KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
-    KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
+    #KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
 
     dataset_template = {N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model'},
                         KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T '},
                         KM1P5_INDO_RA1T_KEY: {'data_type_name': 'Indonesia 1.5KM RA1-T'},
                         KM1P5_MAL_RA1T_KEY: {'data_type_name': 'Malaysia 1.5KM RA1-T'},
-                        KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T'},
+                        #KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T'},
                         }
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.VAR_LOOKUP_RA1T
@@ -175,7 +190,7 @@ def main(bokeh_id):
 
     plot_obj_right.current_time = init_data_time
     bokeh_img_right = plot_obj_right.create_plot()
-    colorbar_right = plot_obj_left.create_colorbar_widget()
+    colorbar_right = plot_obj_right.create_colorbar_widget()
     stats_right = plot_obj_right.create_stats_widget()
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
