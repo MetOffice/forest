@@ -1,19 +1,15 @@
- - Use the [AWS CLI to set up your credentals](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-quick-configuration) in `~/.aws`.
+# FOREST meteorology visualisation tool
 
- - build: 
- ```
- docker build  -t bokeh .
- ```
+This repository hosts the code to visualise forecast model output and observation data in a web portal, as well as the scripts and configuration files to deploy the server infrastructure.
 
- - run:
- ```
- docker run -i -t -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v ~/.aws:/root/.aws -v $(pwd)/documents:/opt/documents bokeh bash 
- ```
+## Installation
+TODO
 
- - deploy:
- Requires `terraform` (`brew install terraform`)
- 
- ``` 
- terraform init
- terraform apply
- ```
+## Running locally
+TODO
+
+## Deploying
+TODO
+
+## Background Info
+TODO
