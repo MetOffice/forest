@@ -43,11 +43,6 @@ def main(bokeh_id):
     fcast_time = '20180109T0000Z'
     fcast_time_obj =  datetime.datetime.strptime(fcast_time, '%Y%m%dT%H%MZ')
 
-    N1280_GA6_KEY = 'n1280_ga6'
-    KM4P4_RA1T_KEY = 'km4p4_ra1t'
-    KM1P5_INDO_RA1T_KEY = 'indon2km1p5_ra1t'
-    KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
-    KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
     GPM_IMERG_EARLY_KEY = 'gpm_imerg_early'
     GPM_IMERG_LATE_KEY = 'gpm_imerg_late'
 
@@ -58,19 +53,25 @@ def main(bokeh_id):
     #  cube for each of the available variables as well as asociated metadata such
     #  as model name, file paths etc.
 
-    datasets = {N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model'},
-                KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T '},
-                KM1P5_INDO_RA1T_KEY: {'data_type_name': 'Indonesia 1.5KM RA1-T'},
-                KM1P5_MAL_RA1T_KEY: {'data_type_name': 'Malaysia 1.5KM RA1-T'},
-                KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T'},
-                GPM_IMERG_EARLY_KEY: {'data_type_name': 'GPM IMERG Early'},
-                GPM_IMERG_LATE_KEY: {'data_type_name': 'GPM IMERG Late'},
-                }
-    model_datasets = {N1280_GA6_KEY: datasets[N1280_GA6_KEY],
-                      KM4P4_RA1T_KEY: datasets[KM4P4_RA1T_KEY],
-                      KM1P5_INDO_RA1T_KEY: datasets[KM1P5_INDO_RA1T_KEY],
-                      KM1P5_MAL_RA1T_KEY: datasets[KM1P5_MAL_RA1T_KEY],
-                      KM1P5_PHI_RA1T_KEY: datasets[KM1P5_PHI_RA1T_KEY],
+    datasets = {
+        forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model',
+                                    'config_id': forest.data.GA6_CONF_ID},
+        forest.data.KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T ',
+                                     'config_id': forest.data.RA1T_CONF_ID},
+        forest.data.KM1P5_INDO_RA1T_KEY: {'data_type_name': 'Indonesia 1.5KM RA1-T',
+                                          'config_id': forest.data.RA1T_CONF_ID},
+        forest.data.KM1P5_MAL_RA1T_KEY: {'data_type_name': 'Malaysia 1.5KM RA1-T',
+                                         'config_id': forest.data.RA1T_CONF_ID},
+        forest.data.KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T',
+                                         'config_id': forest.data.RA1T_CONF_ID},
+        GPM_IMERG_EARLY_KEY: {'data_type_name': 'GPM IMERG Early'},
+        GPM_IMERG_LATE_KEY: {'data_type_name': 'GPM IMERG Late'},
+    }
+    model_datasets = {forest.data.N1280_GA6_KEY: datasets[forest.data.N1280_GA6_KEY],
+                      forest.data.KM4P4_RA1T_KEY: datasets[forest.data.KM4P4_RA1T_KEY],
+                      forest.data.KM1P5_INDO_RA1T_KEY: datasets[forest.data.KM1P5_INDO_RA1T_KEY],
+                      forest.data.KM1P5_MAL_RA1T_KEY: datasets[forest.data.KM1P5_MAL_RA1T_KEY],
+                      forest.data.KM1P5_PHI_RA1T_KEY: datasets[forest.data.KM1P5_PHI_RA1T_KEY],
                       }
 
     gpm_datasets = {GPM_IMERG_EARLY_KEY: datasets[GPM_IMERG_EARLY_KEY],
@@ -80,18 +81,8 @@ def main(bokeh_id):
     gpm_datasets[GPM_IMERG_EARLY_KEY][GPM_TYPE_KEY] = 'early'
     gpm_datasets[GPM_IMERG_LATE_KEY][GPM_TYPE_KEY] = 'late'
 
-    datasets[N1280_GA6_KEY]['var_lookup'] = {'precipitation': 'precipitation_flux'}
-    datasets[N1280_GA6_KEY]['units'] = forest.data.UNIT_DICT
-    datasets[KM4P4_RA1T_KEY]['var_lookup'] = {'precipitation': 'stratiform_rainfall_rate'}
-    datasets[KM4P4_RA1T_KEY]['units'] = {'precipitation': 'kg-m-2-hour^-1'}
-
-    datasets[KM1P5_INDO_RA1T_KEY]['units'] = forest.data.UNIT_DICT
-    datasets[KM1P5_MAL_RA1T_KEY]['units'] = forest.data.UNIT_DICT
-    datasets[KM1P5_PHI_RA1T_KEY]['units'] = forest.data.UNIT_DICT
-
-    datasets[KM1P5_INDO_RA1T_KEY]['var_lookup'] = dict(datasets[KM4P4_RA1T_KEY]['var_lookup'])
-    datasets[KM1P5_MAL_RA1T_KEY]['var_lookup'] = dict(datasets[KM4P4_RA1T_KEY]['var_lookup'])
-    datasets[KM1P5_PHI_RA1T_KEY]['var_lookup'] = dict(datasets[KM4P4_RA1T_KEY]['var_lookup'])
+    for ds_name in model_datasets.keys():
+        model_datasets[ds_name]['var_lookup'] = forest.data.get_var_lookup(model_datasets[ds_name]['config_id'])
 
     use_s3_mount = False
     do_download = True
@@ -157,7 +148,7 @@ def main(bokeh_id):
     init_time = 12
     init_var = 'precipitation'
     init_region = 'se_asia'
-    init_model_left = KM4P4_RA1T_KEY
+    init_model_left = forest.data.KM4P4_RA1T_KEY
     init_model_right = GPM_IMERG_EARLY_KEY
 
 

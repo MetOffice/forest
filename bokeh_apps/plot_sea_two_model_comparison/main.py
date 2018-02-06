@@ -96,9 +96,6 @@ def main(bokeh_id):
     '''
     
     # Setup datasets. Data is not loaded until requested for plotting.
-    for ds_name in dataset_template.keys():
-        dataset_template[ds_name]['var_lookup'] = forest.data.VAR_LOOKUP_RA1T
-
     dataset_template = {
         forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model',
                                     'config_id': forest.data.GA6_CONF_ID},
