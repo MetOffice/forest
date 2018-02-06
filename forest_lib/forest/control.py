@@ -18,7 +18,8 @@ class ForestController(object):
     
     """
 
-    def __init__(self, init_time, num_times, datasets, plot_names, plots, bokeh_imgs, stats_widgets, region_dict, bokeh_doc):
+    def __init__(self, init_time, num_times, datasets, plot_names, plots, bokeh_imgs,
+                 colorbar_widgets, stats_widgets, region_dict, bokeh_doc):
         
         """
         
@@ -31,6 +32,7 @@ class ForestController(object):
         self.region_dict = region_dict
         self.plot_names = plot_names
         self.datasets = datasets
+        self.colorbar_widgets = colorbar_widgets
         self.stats_widgets = stats_widgets
         self.create_widgets()
         self.bokeh_doc = bokeh_doc
@@ -82,20 +84,13 @@ class ForestController(object):
         self.right_model_dd.on_change('value',
                                       functools.partial(self.on_config_change, 1))
 
-        colorbar_src = "<img src='plot_sea_two_model_comparison/static/radar_colorbar.png'\>"
-        self.left_colorbar = bokeh.models.widgets.Div(
-            text=colorbar_src, height=100, width=800)
-        self.right_colorbar = bokeh.models.widgets.Div(
-            text=colorbar_src, height=100, width=800)
-
         # layout widgets
         self.param_row = bokeh.layouts.row(self.model_var_dd, self.region_dd)
         self.slider_row = bokeh.layouts.row(self.data_time_slider)
         self.config_row = bokeh.layouts.row(
             self.left_model_dd, self.right_model_dd)
-        self.colorbar_row = bokeh.layouts.row(
-            self.left_colorbar, self.right_colorbar)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
+        self.colorbar_row = bokeh.layouts.row(*self.colorbar_widgets)
         self.stats_row = bokeh.layouts.row(*self.stats_widgets)
 
         self.main_layout = bokeh.layouts.column(self.param_row,
