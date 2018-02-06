@@ -55,6 +55,7 @@ def get_available_datasets(s3_base,
     fcast_time_list = []
     datasets = {}
     for fct,fct_str in zip(fcast_dt_list, fcast_dt_str_list):
+
         fct_data_dict = copy.deepcopy(dict(dataset_template))
         model_run_data_present = True
         for ds_name in dataset_template.keys():
@@ -74,6 +75,7 @@ def get_available_datasets(s3_base,
         if model_run_data_present:
             datasets[fct_str] = fct_data_dict
             fcast_time_list += [fct_str]
+            
     # select most recent available forecast
     fcast_time = fcast_time_list[-1]
     return fcast_time, datasets
@@ -156,6 +158,7 @@ def main(bokeh_id):
 
     plot_obj_left.current_time = init_data_time
     bokeh_img_left = plot_obj_left.create_plot()
+    colorbar_left = plot_obj_left.create_colorbar_widget()
     stats_left = plot_obj_left.create_stats_widget()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
@@ -171,11 +174,10 @@ def main(bokeh_id):
 
     plot_obj_right.current_time = init_data_time
     bokeh_img_right = plot_obj_right.create_plot()
+    colorbar_right = plot_obj_left.create_colorbar_widget()
     stats_right = plot_obj_right.create_stats_widget()
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
-
-
 
     num_times = datasets[init_fcast_time][forest.data.N1280_GA6_KEY]['data'].get_data('precipitation').shape[0]
     for ds_name in datasets[init_fcast_time]:
@@ -189,6 +191,7 @@ def main(bokeh_id):
                                                plot_names,
                                                [plot_obj_left, plot_obj_right],
                                                [bokeh_img_left, bokeh_img_right],
+                                               [colorbar_left, colorbar_right],
                                                [stats_left, stats_right],
                                                region_dict,
                                                bokeh_doc,

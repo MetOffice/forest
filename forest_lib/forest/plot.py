@@ -53,12 +53,14 @@ class ForestPlot(object):
         self.setup_pressure_labels()
         self.current_title = ''
         self.stats_string = ''
+        self.colorbar_link = plot_var + '_colorbar.png'
         self.bokeh_figure = None
         self.bokeh_image = None
         self.bokeh_img_ds = None
         self.async = False
         self.unit_dict = unit_dict
         self.stats_widget = None
+        self.colorbar_widget = None
 
     def _set_config_value(self, new_config):
         self.current_config = new_config
@@ -612,6 +614,15 @@ class ForestPlot(object):
 
         self.stats_string = '</br>'.join(stats_str_list)
 
+        
+    def update_colorbar(self):
+        
+        '''Update the colorbar shown below the plots.
+        
+        '''
+        
+        self.colorbar_link = self.current_var + '_colorbar.png'
+        
     def update_title(self, current_cube):
         '''
         Update plot title.
@@ -752,21 +763,70 @@ class ForestPlot(object):
             self.update_stats_widget()
 
     def create_stats_widget(self):
+        
+        '''
+        
+        '''
+        
         self.stats_widget = bokeh.models.widgets.Div(text=self.stats_string,
                                                      height=400,
                                                      width=800,
                                                      )
         return self.stats_widget
 
+    def create_colorbar_widget(self):
+        
+        '''
+        
+        '''
+ 
+
+
+        colorbar_html = "<img src='plot_sea_two_model_comparison/static/" + \
+                       self.colorbar_link + "'\>"
+
+        self.colorbar_widget = bokeh.models.widgets.Div(text=colorbar_html,
+                                                        height=100,
+                                                        width=800,
+                                                        )
+        return self.colorbar_widget
+    
     def update_stats_widget(self):
+        
+        '''
+        
+        '''
+        
+        print('Updating stats widget')
+        
         try:
             self.stats_widget.text = self.stats_string
         except AttributeError as e1:
             print('Unable to update stats as stats widget not initiated')
 
+    def update_colorbar_widget(self):
+        
+        '''
+        
+        '''
+
+        self.colorbar_link = self.current_var + '_colorbar.png'
+        colorbar_html = "<img src='plot_sea_two_model_comparison/static/" + \
+                       self.colorbar_link + "'\>"
+
+        print(colorbar_html)
+            
+        try:
+            self.colorbar_widget.text = colorbar_html
+        except AttributeError as e1:
+            print('Unable to update colorbar as colorbar widget not initiated')
+            
     def set_data_time(self, new_time):
-        """
-        """
+        
+        '''
+        
+        '''
+        
         print('selected new time {0}'.format(new_time))
         self.current_time = new_time
         self.update_plot()
@@ -779,7 +839,9 @@ class ForestPlot(object):
             self.update_bokeh_img_plot_from_fig()
             if self.stats_widget:
                 self.update_stats_widget()
-
+            if self.colorbar_widget:
+                self.update_colorbar_widget()
+                
     def set_region(self, new_region):
         '''
         Event handler for a change in the selected plot region.
