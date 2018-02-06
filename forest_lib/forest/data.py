@@ -1,6 +1,6 @@
 """
-Module containing a class to manage the datasets for the model evaulation tool. In particular, 
-the data class supports just in time loading.
+Module containing a class to manage the datasets for the model evaulation tool.
+In particular, the data class supports just in time loading.
 """
 import os
 import configparser
@@ -51,10 +51,10 @@ GA6_CONF_ID = 'ga6'
 RA1T_CONF_ID = 'ra1t'
 RA1T_CONF_ID = 'ra1t'
 
-
-
 VAR_LIST_DIR = os.path.dirname(__file__)
 VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
+
+
 def get_var_lookup(config):
     var_list_path = os.path.join(VAR_LIST_DIR,
                                  VAR_LIST_FNAME_BASE.format(config=config))
@@ -64,12 +64,16 @@ def get_var_lookup(config):
     for sect1 in parser1.sections():
         field_dict[sect1] = dict(parser1.items(sect1))
         try:
-            field_dict[sect1]['stash_section'] = int(field_dict[sect1]['stash_section'])
-            field_dict[sect1]['stash_item'] = int(field_dict[sect1]['stash_item'])
-            field_dict[sect1]['accumulate'] = field_dict[sect1]['accumulate'] == 'True'
+            field_dict[sect1]['stash_section'] = \
+                int(field_dict[sect1]['stash_section'])
+            field_dict[sect1]['stash_item'] = \
+                int(field_dict[sect1]['stash_item'])
+            field_dict[sect1]['accumulate'] = \
+                field_dict[sect1]['accumulate'] == 'True'
         except:
             print('warning: stash values not converted to numbers.')
-    return  field_dict
+    return field_dict
+
 
 class ForestDataset(object):
 
@@ -146,17 +150,20 @@ class ForestDataset(object):
     def basic_cube_load(self, var_name):
         field_dict = self.var_lookup[var_name]
         if field_dict['accumulate']:
-            cf1 = lambda cube1: cube1.attributes['STASH'].section == field_dict['stash_section'] and cube1.attributes[
-                                                                                                         'STASH'].item == \
-                                                                                                     field_dict[
-                                                                                                         'stash_item'] and len(
-                cube1.cell_methods) > 0
+            cf1 = lambda cube1: \
+                cube1.attributes['STASH'].section == \
+                field_dict['stash_section'] and \
+                cube1.attributes['STASH'].item == \
+                field_dict['stash_item'] and \
+                len(cube1.cell_methods) > 0
         else:
-            cf1 = lambda cube1: cube1.attributes['STASH'].section == field_dict['stash_section'] and cube1.attributes[
-                                                                                                         'STASH'].item == \
-                                                                                                     field_dict[
-                                                                                                         'stash_item'] and len(
-                cube1.cell_methods) == 0
+            cf1 = lambda cube1: \
+                cube1.attributes['STASH'].section == \
+                field_dict['stash_section'] and \
+                cube1.attributes['STASH'].item == \
+                field_dict['stash_item'] and \
+                len(cube1.cell_methods) == 0
+
         ic1 = iris.Constraint(cube_func=cf1)
 
         self.data[var_name] = iris.load_cube(self.path_to_load, ic1)
@@ -183,4 +190,3 @@ class ForestDataset(object):
         self.data.update(forest.util.calc_wind_vectors(cube_x_wind,
                                                        cube_y_wind,
                                                        10))
-
