@@ -64,9 +64,6 @@ def get_available_datasets(s3_base,
     datasets = {}
     for fct,fct_str in zip(fcast_dt_list, fcast_dt_str_list):
         
-        if fct_str != '20180204T1200Z':
-            continue
-        
         fct_data_dict = copy.deepcopy(dict(dataset_template))
         model_run_data_present = True
         for ds_name in dataset_template.keys():
@@ -99,22 +96,23 @@ def main(bokeh_id):
     '''
     
     # Setup datasets. Data is not loaded until requested for plotting.
-    N1280_GA6_KEY = 'n1280_ga6'
-    KM4P4_RA1T_KEY = 'km4p4_ra1t'
-    KM1P5_INDO_RA1T_KEY = 'indon2km1p5_ra1t'
-    KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
-    #KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
-
-    dataset_template = {N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model'},
-                        KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T '},
-                        KM1P5_INDO_RA1T_KEY: {'data_type_name': 'Indonesia 1.5KM RA1-T'},
-                        KM1P5_MAL_RA1T_KEY: {'data_type_name': 'Malaysia 1.5KM RA1-T'},
-                        #KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T'},
-                        }
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.VAR_LOOKUP_RA1T
 
-        dataset_template[N1280_GA6_KEY]['var_lookup'] = forest.data.VAR_LOOKUP_GA6
+    dataset_template = {
+        forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model',
+                                    'config_id': forest.data.GA6_CONF_ID},
+        forest.data.KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T ',
+                                     'config_id': forest.data.RA1T_CONF_ID},
+        forest.data.KM1P5_INDO_RA1T_KEY: {'data_type_name': 'Indonesia 1.5KM RA1-T',
+                                          'config_id': forest.data.RA1T_CONF_ID},
+        forest.data.KM1P5_MAL_RA1T_KEY: {'data_type_name': 'Malaysia 1.5KM RA1-T',
+                                         'config_id': forest.data.RA1T_CONF_ID},
+        forest.data.KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T',
+                                         'config_id': forest.data.RA1T_CONF_ID},
+        }
+    for ds_name in dataset_template.keys():
+        dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
     s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
                                                     bucket=bucket_name)
@@ -158,8 +156,8 @@ def main(bokeh_id):
     init_data_time = 4
     init_var = plot_names[0] #blank
     init_region = 'se_asia'
-    init_model_left = N1280_GA6_KEY # KM4P4_RA1T_KEY
-    init_model_right = KM4P4_RA1T_KEY # N1280_GA6_KEY
+    init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY
+    init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY
 
     #Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
@@ -195,7 +193,7 @@ def main(bokeh_id):
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
-    num_times = datasets[init_fcast_time][N1280_GA6_KEY]['data'].get_data('precipitation').shape[0]
+    num_times = datasets[init_fcast_time][forest.data.N1280_GA6_KEY]['data'].get_data('precipitation').shape[0]
     for ds_name in datasets[init_fcast_time]:
         num_times = min(num_times, datasets[init_fcast_time][ds_name]['data'].get_data('precipitation').shape[0])
     bokeh_doc = bokeh.plotting.curdoc()

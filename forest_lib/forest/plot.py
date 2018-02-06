@@ -613,20 +613,13 @@ class ForestPlot(object):
         stats_str_list += ['RMS = {0:.4f} {1}'.format(rms_val, unit_str)]
 
         self.stats_string = '</br>'.join(stats_str_list)
-
-        
-    def update_colorbar(self):
-        
-        '''Update the colorbar shown below the plots.
-        
-        '''
-        
-        self.colorbar_link = self.current_var + '_colorbar.png'
         
     def update_title(self, current_cube):
+        
+        '''Update plot title.
+        
         '''
-        Update plot title.
-        '''
+        
         try:
             datestr1 = forest.util.get_time_str(
                 current_cube.dim_coords[0].points[self.current_time])
@@ -641,16 +634,22 @@ class ForestPlot(object):
                                                      ForestPlot.TITLE_TEXT_WIDTH))
 
     def create_plot(self):
-        '''
-        Main plotting function. Generic elements of the plot are created here, and then the plotting
+        
+        '''Main plotting function. Generic elements of the plot are created here, and then the plotting
         function for the specific variable is called using the self.plot_funcs dictionary.
         '''
+        
         self.create_matplotlib_fig()
         self.create_bokeh_img_plot_from_fig()
 
         return self.bokeh_figure
 
     def create_matplotlib_fig(self):
+        
+        '''
+        
+        '''
+        
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
                                                        figsize=(8.0, 6.0))
         self.current_figure.clf()
@@ -674,6 +673,11 @@ class ForestPlot(object):
             self.current_figure.canvas.draw()
 
     def create_bokeh_img_plot_from_fig(self):
+        
+        '''
+        
+        '''
+        
         self.current_img_array = forest.util.get_image_array_from_figure(
             self.current_figure)
 
@@ -710,6 +714,11 @@ class ForestPlot(object):
         self.bokeh_figure.title.text = self.current_title
 
     def create_bokeh_img(self):
+        
+        '''
+        
+        '''
+        
         cur_region = self.region_dict[self.current_region]
         # Add mpl image
         latitude_range = cur_region[1] - cur_region[0]
@@ -723,6 +732,10 @@ class ForestPlot(object):
 
     def update_bokeh_img_plot_from_fig(self):
 
+        '''
+        
+        '''
+        
         cur_region = self.region_dict[self.current_region]
         self.current_figure.set_figwidth(4)
         self.current_figure.set_figheight(round(self.current_figure.get_figwidth() *
@@ -749,10 +762,11 @@ class ForestPlot(object):
                 self.current_img_array = None
 
     def update_plot(self):
-        '''
-        Main plot update function. Generic elements of the plot are updated here where possible, and then
+        
+        '''Main plot update function. Generic elements of the plot are updated here where possible, and then
         the plot update function for the specific variable is called using the self.plot_funcs dictionary.
         '''
+        
         self.update_funcs[self.current_var]()
         if self.use_mpl_title:
             self.current_axes.set_title(self.current_title)
@@ -828,11 +842,18 @@ class ForestPlot(object):
         '''
         
         print('selected new time {0}'.format(new_time))
+        
         self.current_time = new_time
         self.update_plot()
 
     def set_var(self, new_var):
+        
+        '''
+        
+        '''
+        
         print('selected new var {0}'.format(new_var))
+        
         self.current_var = new_var
         self.create_matplotlib_fig()
         if not self.async:
@@ -843,9 +864,11 @@ class ForestPlot(object):
                 self.update_colorbar_widget()
                 
     def set_region(self, new_region):
+        
+        '''Event handler for a change in the selected plot region.
+        
         '''
-        Event handler for a change in the selected plot region.
-        '''
+        
         print('selected new region {0}'.format(new_region))
 
         self.current_region = new_region
@@ -857,9 +880,11 @@ class ForestPlot(object):
                 self.update_stats_widget()
 
     def set_config(self, new_config):
+        
+        '''Function to set a new value of config and do an update
+        
         '''
-        Function to set a new value of config and do an update
-        '''
+        
         print('setting new config {0}'.format(new_config))
         self._set_config_value(new_config)
         self.create_matplotlib_fig()
@@ -869,6 +894,11 @@ class ForestPlot(object):
                 self.update_stats_widget()
 
     def link_axes_to_other_plot(self, other_plot):
+        
+        '''
+        
+        '''
+        
         try:
             self.bokeh_figure.x_range = other_plot.bokeh_figure.x_range
             self.bokeh_figure.y_range = other_plot.bokeh_figure.y_range

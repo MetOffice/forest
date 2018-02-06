@@ -3,6 +3,7 @@ Module containing a class to manage the datasets for the model evaulation tool. 
 the data class supports just in time loading.
 """
 import os
+import configparser
 
 import iris
 
@@ -41,22 +42,34 @@ UNIT_DICT = {'precipitation': 'kg-m-2-hour^-1',
              WIND_STREAM_NAME: 'miles-hour^-1',
              }
 
-VAR_LOOKUP_GA6 = {'precipitation': 'precipitation_flux',
-                  'cloud_fraction': 'cloud_area_fraction_assuming_maximum_random_overlap',
-                  'air_temperature': 'air_temperature',
-                  'x_wind': 'x_wind',
-                  'y_wind': 'y_wind',
-                  'mslp': 'air_pressure_at_sea_level',
-                  }
+N1280_GA6_KEY = 'n1280_ga6'
+KM4P4_RA1T_KEY = 'km4p4_ra1t'
+KM1P5_INDO_RA1T_KEY = 'indon2km1p5_ra1t'
+KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
+KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
+GA6_CONF_ID = 'ga6'
+RA1T_CONF_ID = 'ra1t'
+RA1T_CONF_ID = 'ra1t'
 
-VAR_LOOKUP_RA1T = {'precipitation': 'stratiform_rainfall_rate',
-                   'cloud_fraction': 'cloud_area_fraction_assuming_maximum_random_overlap',
-                   'air_temperature': 'air_temperature',
-                   'x_wind': 'x_wind',
-                   'y_wind': 'y_wind',
-                   'mslp': 'air_pressure_at_sea_level',
-                   }
 
+
+VAR_LIST_DIR = os.path.dirname(__file__)
+VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
+def get_var_lookup(config):
+    var_list_path = os.path.join(VAR_LIST_DIR,
+                                 VAR_LIST_FNAME_BASE.format(config=config))
+    parser1 = configparser.RawConfigParser()
+    parser1.read(var_list_path)
+    field_dict = {}
+    for sect1 in parser1.sections():
+        field_dict[sect1] = dict(parser1.items(sect1))
+        try:
+            field_dict[sect1]['stash_section'] = int(field_dict[sect1]['stash_section'])
+            field_dict[sect1]['stash_item'] = int(field_dict[sect1]['stash_item'])
+            field_dict[sect1]['accumulate'] = field_dict[sect1]['accumulate'] == 'True'
+        except:
+            print('warning: stash values not converted to numbers.')
+    return  field_dict
 
 class ForestDataset(object):
 
@@ -131,8 +144,22 @@ class ForestDataset(object):
         self.loaders[var_name](var_name)
 
     def basic_cube_load(self, var_name):
-        self.data[var_name] = iris.load_cube(self.path_to_load,
-                                             self.var_lookup[var_name])
+        field_dict = self.var_lookup[var_name]
+        if field_dict['accumulate']:
+            cf1 = lambda cube1: cube1.attributes['STASH'].section == field_dict['stash_section'] and cube1.attributes[
+                                                                                                         'STASH'].item == \
+                                                                                                     field_dict[
+                                                                                                         'stash_item'] and len(
+                cube1.cell_methods) > 0
+        else:
+            cf1 = lambda cube1: cube1.attributes['STASH'].section == field_dict['stash_section'] and cube1.attributes[
+                                                                                                         'STASH'].item == \
+                                                                                                     field_dict[
+                                                                                                         'stash_item'] and len(
+                cube1.cell_methods) == 0
+        ic1 = iris.Constraint(cube_func=cf1)
+
+        self.data[var_name] = iris.load_cube(self.path_to_load, ic1)
         if UNIT_DICT[var_name]:
             self.data[var_name].convert_units(UNIT_DICT[var_name])
 
