@@ -83,5 +83,5 @@ resource "aws_route53_record" "server_nice_url" {
   name = "forest.informaticslab.co.uk"
   type = "A"
   ttl = "60"
-  records = ["${aws_instance.bokeh_server.public_ip}"]
+  records = ["${aws_instance.forest_bokeh_server.public_ip}"]
 }
