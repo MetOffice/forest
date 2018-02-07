@@ -39,51 +39,56 @@ class ModelGpmControl(object):
 
     def create_widgets(self):
         
-        '''# Set up bokeh widgets
+        '''Set up bokeh widgets
         
         '''
         
         def create_dropdown_opt_list(iterable1):
             return [(k1, k1) for k1 in iterable1]
 
-
         self.data_time_slider = bokeh.models.widgets.Slider(start=0,
-                                                       end=self.num_times,
-                                                       value=self.init_time,
-                                                       step=3,
-                                                       title="Data time",
-                                                       width=800)
+                                                            end=self.num_times,
+                                                            value=self.init_time,
+                                                            step=3,
+                                                            title="Data time",
+                                                            width=800)
 
         self.data_time_slider.on_change('value', self.on_data_time_change)
 
         self.model_menu_list = create_dropdown_opt_list([ds_name for ds_name in self.datasets.keys()
-                                                    if 'imerg' not in ds_name])
+                                                         if 'imerg' not in ds_name])
         self.gpm_imerg_menu_list = create_dropdown_opt_list([ds_name for ds_name in self.datasets.keys()
-                                                        if 'imerg' in ds_name])
+                                                             if 'imerg' in ds_name])
 
         model_dd_desc = 'Model display'
         self.model_dd = bokeh.models.widgets.Dropdown(menu=self.model_menu_list,
-                                                 label=model_dd_desc,
-                                                 button_type='warning',
-                                                 width=800)
+                                                      label=model_dd_desc,
+                                                      button_type='warning',
+                                                      width=800)
         self.model_dd.on_change('value', functools.partial(self.on_config_change, 0))
 
         self.imerg_rbg = bokeh.models.widgets.RadioButtonGroup(labels=[ds_name for ds_name
-                                                                  in self.datasets.keys()
-                                                                  if 'imerg' in ds_name],
-                                                          button_type='warning',
-                                                          width=800)
+                                                                       in self.datasets.keys()
+                                                                       if 'imerg' in ds_name],
+                                                               button_type='warning',
+                                                               width=800)
         self.imerg_rbg.on_change('active', functools.partial(self.on_imerg_change, 1))
 
+        self.colorbar_div = bokeh.models.widgets.Div(text="<img src='plot_sea_model_and_gpm_mpl/static/" + \
+                                                          "precipitation_colorbar.png'\>", width=800, height=100)
+        
         # Set layout for widgets
         self.slider_row = bokeh.layouts.row(self.data_time_slider)
         self.config_row = bokeh.layouts.row(self.model_dd, self.imerg_rbg, width=1600)
-
         self.plots_row = bokeh.layouts.row(*self.bokeh_img_list)
+        self.colorbar_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
+                                              self.colorbar_div,
+                                              bokeh.models.Spacer(width=400, height=100))
 
         self.main_layout = bokeh.layouts.column(self.slider_row,
                                                 self.config_row,
                                                 self.plots_row,
+                                                self.colorbar_row,
                                                 )
 
     def on_data_time_change(self, attr1, old_val, new_val):
