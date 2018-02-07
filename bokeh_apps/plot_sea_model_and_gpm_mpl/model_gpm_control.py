@@ -5,6 +5,11 @@ import bokeh.model
 import bokeh.layouts
 
 class ModelGpmControl(object):
+    
+    '''
+    
+    '''
+    
     def __init__(self,
                  datasets,
                  init_time,
@@ -12,6 +17,11 @@ class ModelGpmControl(object):
                  plot_list,
                  bokeh_img_list,
                  ):
+        
+        '''
+        
+        '''
+        
         self.datasets =datasets
         self.init_time = init_time
         self.num_times = num_times
@@ -20,10 +30,19 @@ class ModelGpmControl(object):
         self.create_widgets()
 
     def __str__(self):
+        
+        '''
+        
+        '''
+        
         return 'MVC-style controller class for model rainfall vs GPM app.'
 
     def create_widgets(self):
-        # Set up bokeh widgets
+        
+        '''# Set up bokeh widgets
+        
+        '''
+        
         def create_dropdown_opt_list(iterable1):
             return [(k1, k1) for k1 in iterable1]
 
@@ -68,43 +87,53 @@ class ModelGpmControl(object):
                                                 )
 
     def on_data_time_change(self, attr1, old_val, new_val):
+        
+        '''Event handler for a change in the selected forecast data time.
+        
         '''
-        Event handler for a change in the selected forecast data time.
-        '''
+        
         print('selected new time {0}'.format(new_val))
         current_time = int(new_val / 3)
         for p1 in self.plot_list:
             p1.set_data_time(current_time)
 
     def on_date_slider_change(self, attr1, old_val, new_val):
+        
+        '''Event handler for a change in the selected forecast data date.
+        
         '''
-        Event handler for a change in the selected forecast data date.
-        '''
+        
         print('selected new date {0}'.format(new_val))
         current_time = new_val.strftime('%Y%m%d') + self.current_time[-4:]
         for p1 in self.plot_list:
             p1.set_data_time(current_time)
 
     def on_hour_slider_change(self, attr1, old_val, new_val):
+        
+        '''Event handler for a change in the selected forecast data date.
+        
         '''
-        Event handler for a change in the selected forecast data date.
-        '''
+        
         print('selected new date {0}'.format(new_val))
         current_time = self.current_time[:-4] + '{:02d}00'.format(new_val)
         for p1 in self.plot_list:
             p1.set_data_time(current_time)
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
+        
+        '''Event handler for a change in the selected model configuration output.
+        
         '''
-        Event handler for a change in the selected model configuration output.
-        '''
+        
         print('selected new config {0}'.format(new_val))
         self.plot_list[plot_index].set_config(new_val)
 
     def on_imerg_change(self, plot_index, attr1, old_val, new_val):
+        
+        '''Event handler for a change in the selected model configuration output.
+        
         '''
-        Event handler for a change in the selected model configuration output.
-        '''
+        
         imerg_list = [ds_name for ds_name in self.datasets.keys()
                       if 'imerg' in ds_name]
         print('selected new config {0}'.format(imerg_list[new_val]))
