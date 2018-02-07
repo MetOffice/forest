@@ -1,3 +1,7 @@
+'''
+
+'''
+
 import time
 import os
 import urllib.request
@@ -18,9 +22,11 @@ SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
 
 
 def download_from_s3(s3_url, local_path):
+    
+    '''Download files from AWS S3 if not present
+    
     '''
-    Download files from AWS S3 if not present
-    '''
+    
     if not os.path.isfile(local_path):
         print('retrieving file from {0}'.format(s3_url))
         urllib.request.urlretrieve(s3_url, local_path)
@@ -31,9 +37,11 @@ def download_from_s3(s3_url, local_path):
 
 
 def get_radar_colours():
+    
+    '''set up radar colours
+    
     '''
-    set up radar colours
-    '''
+    
     radar_colours1 = [(144 / 255.0, 144 / 255.0, 144 / 255.0, 0.0),
                       (122 / 255.0, 147 / 255.0, 212 / 255.0, 0.9),
                       (82 / 255.0, 147 / 255.0, 212 / 255.0, 0.95),
@@ -54,9 +62,11 @@ def get_radar_colours():
 
 
 def get_wind_colours():
+    
+    '''Setup colormap for displaying wind speeds, based on Spectral_r colormap
+    
     '''
-    Setup colormap for displaying wind speeds, based on Spectral_r colormap
-    '''
+    
     cm1 = matplotlib.cm.get_cmap('Spectral_r')
     wind_colours = cm1(
         numpy.array([0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]))
@@ -72,9 +82,11 @@ def get_wind_colours():
 
 
 def get_cloud_colours():
+    
+    '''Setup colormap for displaying cloud fraction, based on Greys_r colormap
+    
     '''
-    Setup colormap for displaying cloud fraction, based on Greys_r colormap
-    '''
+    
     cm1 = matplotlib.cm.get_cmap('Greys_r')
     cloud_colours = cm1(numpy.arange(0.0, 1.01, 0.11))
 #    cloud_colours[0,3] = 0.0
@@ -90,9 +102,11 @@ def get_cloud_colours():
 
 
 def get_air_pressure_colours():
+    
+    '''Setup colormap for displaying air pressure , based on BuGn colormap
+    
     '''
-    Setup colormap for displaying air pressure , based on BuGn colormap
-    '''
+    
     cm1 = matplotlib.cm.get_cmap('BuGn')
     ap_colors = cm1(numpy.array(numpy.arange(0.0, 1.01, 1.0 / 12.0)))
 
@@ -107,9 +121,11 @@ def get_air_pressure_colours():
 
 
 def get_air_temp_colours():
+    
+    '''Setup colormap for displaying air pressure , based on viridis colormap
+    
     '''
-    Setup colormap for displaying air pressure , based on viridis colormap
-    '''
+    
     cm1 = matplotlib.cm.get_cmap('viridis')
     air_temp_colours = cm1(numpy.array(numpy.arange(0.0, 1.01, 1.0 / 10.0)))
 
@@ -125,9 +141,11 @@ def get_air_temp_colours():
 
 
 def get_time_str(time_in_hrs):
+    
+    '''Create formatted human-readable date/time string, calculated from epoch time in hours.
+    
     '''
-    Create formatted human-readable date/time string, calculated from epoch time in hours.
-    '''
+    
     datestamp1_raw = time.gmtime(time_in_hrs * 3600)
     datestr1 = '{0:04d}-{1:02d}-{2:02d} {3:02d}h{4:02d}Z'.format(datestamp1_raw.tm_year,
                                                                  datestamp1_raw.tm_mon,
@@ -138,19 +156,23 @@ def get_time_str(time_in_hrs):
 
 
 def convert_vector_to_mag_angle(U, V):
+    
+    '''Convert U, V to magnitude and angle
+    
     '''
-    Convert U, V to magnitude and angle
-    '''
+    
     mag = numpy.sqrt(U ** 2 + V ** 2)
     angle = (numpy.pi / 2.) - numpy.arctan2(U / mag, V / mag)
     return mag, angle
 
 
 def calc_wind_vectors(wind_x, wind_y, sf):
-    '''
-    Given cubes of x-wind and y-wind, subsample grid based on a scale factor (sf)
+    
+    '''Given cubes of x-wind and y-wind, subsample grid based on a scale factor (sf)
     and calculate the magnitude and angle of the vectors at each point on the grid.
+    
     '''
+    
     wv_dict = {}
 
     longitude_pts = wind_x.coord('longitude').points
@@ -176,10 +198,12 @@ def calc_wind_vectors(wind_x, wind_y, sf):
 
 
 def create_plot_opts_dict(var_list):
-    '''
-    Create a dictionary of plot options for use with holoviews library for each of the
+    
+    '''Create a dictionary of plot options for use with holoviews library for each of the
     standard plot types.
+    
     '''
+    
     plot_opts_dict = dict([(s1, None) for s1 in var_list])
     plot_opts_dict['air_temperature'] = {'Image': {'plot': {'colorbar': True,
                                                             'width': 1000,
@@ -215,10 +239,11 @@ def create_plot_opts_dict(var_list):
 
 
 def create_colour_opts(var_list):
-    '''
-    Create a dictionary of plot options for use with matplotlib library for each of the
+    
+    '''Create a dictionary of plot options for use with matplotlib library for each of the
     standard plot types.
     '''
+    
     col_opts_dict = dict([(s1, None) for s1 in var_list])
     col_opts_dict['precipitation'] = get_radar_colours()
     col_opts_dict['air_temperature'] = get_air_temp_colours()
@@ -231,6 +256,7 @@ def create_colour_opts(var_list):
 
 
 def loadct_SPSgreyscale(do_register):
+    
     ''' A function to make a custom greyscale colormap to match Tigger plots.
          In a 256 colour setup I need to remove 4 colours (black and the three
          darkest greys) from  the black end of the greyscale and one (white)
@@ -257,6 +283,11 @@ def loadct_SPSgreyscale(do_register):
 
 
 def get_sat_simim_colours():
+    
+    '''
+    
+    '''
+    
     cmap_sat_simim = loadct_SPSgreyscale(False)
     norm_sat_simim = matplotlib.colors.Normalize(198, 308)
 
@@ -265,6 +296,11 @@ def get_sat_simim_colours():
 
 
 def create_satellite_simim_plot_opts():
+    
+    '''
+    
+    '''
+    
     plot_options = {'V': {'norm': matplotlib.colors.Normalize(0, 1),
                           'cmap': 'binary_r'},
                     'W': get_sat_simim_colours(),
@@ -274,13 +310,25 @@ def create_satellite_simim_plot_opts():
 
 
 def extract_region(selected_region, ds1):
+    
+    '''Function to extract a regional subset of an iris cube based on latitude and longitude constraints.
+    
     '''
-    Function to extract a regional subset of an iris cube based on latitude and longitude constraints.
-    '''
+    
     def get_lat(cell):
+        
+        '''
+        
+        '''
+        
         return region_dict[selected_region][0] < cell < region_dict[selected_region][1]
 
     def get_long(cell):
+        
+        '''
+        
+        '''
+        
         return region_dict[selected_region][2] < cell < region_dict[selected_region][3]
 
     con1 = iris.Constraint(latitude=get_lat,
@@ -290,9 +338,11 @@ def extract_region(selected_region, ds1):
 
 
 def get_image_array_from_figure(fig):
+    
+    """Get the RGB buffer from the matplotlib figure.
+    
     """
-    Get the RGB buffer from the matplotlib figure.
-    """
+    
     h, w = fig.canvas.get_width_height()
     print(' width={0}\n height={1}'.format(w, h))
 
@@ -310,9 +360,11 @@ def get_image_array_from_figure(fig):
 
 
 def get_model_run_times(num_days):
+    
+    """Create a list of model times from the last num_days days
+    
     """
-    Create a list of model times from the last num_days days
-    """
+    
     lastweek = datetime.datetime.now() + datetime.timedelta(days=-num_days)
     lw_mn_str = '{dt.year:04}{dt.month:02}{dt.day:02}T0000Z'.format(
         dt=lastweek)
@@ -326,6 +378,11 @@ def get_model_run_times(num_days):
     return forecast_datetimes, forecast_dt_str_list
 
 def check_remote_file_exists(remote_path):
+    
+    """
+    
+    """
+    
     file_exists = False
     try:
         _ = urllib.request.urlopen(remote_path)
