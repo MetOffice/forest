@@ -90,7 +90,9 @@ s3_base_simim = s3_base_str.format(server = server_address,
                                    data_type = SIMIM_KEY)
 s3_local_base_simim = os.path.join(os.sep, 's3', bucket_name, SIMIM_KEY)
 base_path_local_simim= os.path.join(base_dir,SIMIM_KEY)
-fnames_list_simim = ['sea4-{it}_HIM8_{date}_s4{run}_T{time}.nc'.format(it=im_type, date=fcast_time[:8], run=fcast_time[9:11], time = vt)
+fnames_list_simim = ['sea4-{it}_HIM8_{date}_s4{run}_T{time}.nc'.format(it=im_type, 
+                                                                       date=fcast_time[:8], run=fcast_time[9:11], 
+                                                                       time = vt)
                for vt in range(12, 39, 3) for im_type in ['simbt', 'simvis']]
 time_list_simim =  [vt for vt in range(12, 39, 3) for im_type in ['simbt', 'simvis']]
 
@@ -133,6 +135,7 @@ plot_obj_left = forest.plot.ForestPlot(datasets,
                                        )
 
 plot_obj_left.current_time = init_time
+colorbar = plot_obj_left.create_colorbar_widget()
 bokeh_img_left = plot_obj_left.create_plot()
 
 # Create a plot object for the right model display
@@ -153,7 +156,13 @@ plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
 plot_list1 = [plot_obj_left, plot_obj_right]
 bokeh_imgs1 = [bokeh_img_left, bokeh_img_right]
-control1 = simim_sat_control.SimimSatControl(datasets, init_time, fcast_time_obj, plot_list1, bokeh_imgs1)
+control1 = simim_sat_control.SimimSatControl(datasets, 
+                                             init_time, 
+                                             fcast_time_obj, 
+                                             plot_list1, 
+                                             bokeh_imgs1,
+                                             colorbar,
+                                            )
 
 
 try:
