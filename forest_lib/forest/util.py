@@ -197,47 +197,6 @@ def calc_wind_vectors(wind_x, wind_y, sf):
     return wv_dict
 
 
-def create_plot_opts_dict(var_list):
-    
-    '''Create a dictionary of plot options for use with holoviews library for each of the
-    standard plot types.
-    
-    '''
-    
-    plot_opts_dict = dict([(s1, None) for s1 in var_list])
-    plot_opts_dict['air_temperature'] = {'Image': {'plot': {'colorbar': True,
-                                                            'width': 1000,
-                                                            'height': 800},
-                                                   'style': get_air_temp_colours(),
-                                                   }
-                                         }
-    plot_opts_dict['mslp'] = {'Image': {'plot': {'colorbar': True,
-                                                 'width': 1000,
-                                                 'height': 800},
-                                        'style': get_air_pressure_colours(),
-                                        }
-                              }
-    plot_opts_dict['cloud_fraction'] = {'Image': {'plot': {'colorbar': True,
-                                                           'width': 1000,
-                                                           'height': 800},
-                                                  'style': get_cloud_colours(),
-                                                  }
-                                        }
-    plot_opts_dict['precipitation'] = {'Image': {'plot': {'colorbar': True,
-                                                          'width': 1000,
-                                                          'height': 800},
-                                                 'style': get_radar_colours(),
-                                                 }
-                                       }
-    plot_opts_dict['wind_speed'] = {'Image': {'plot': {'colorbar': True,
-                                                       'width': 1000,
-                                                       'height': 800},
-                                              'style': get_wind_colours(),
-                                              }
-                                    }
-    return plot_opts_dict
-
-
 def create_colour_opts(var_list):
     
     '''Create a dictionary of plot options for use with matplotlib library for each of the
