@@ -514,7 +514,6 @@ class ForestPlot(object):
         Update function for himawari-8 image plots, called by update_plot()
         when cloud fraction is the selected plot type.
         '''
-        pass
         him8_image = self.dataset[
             'himawari-8']['data'].get_data(self.current_var)[self.current_time]
         self.current_axes.images.remove(self.main_plot)
@@ -558,10 +557,9 @@ class ForestPlot(object):
 
     def update_simim(self):
         '''
-        Update function for himawari-8 image plots, called by update_plot() when
-        cloud fraction is the selected plot type.
+        Update function for himawari-8 image plots, called by update_plot()
+        when cloud fraction is the selected plot type.
         '''
-        pass
         simim_cube = self.dataset['simim']['data'].get_data(
             self.current_var)[self.current_time]
         array_for_update = simim_cube.data[:-1, :-1].ravel()
@@ -825,10 +823,8 @@ class ForestPlot(object):
 
         '''
 
-
-
         colorbar_html = "<img src='plot_sea_two_model_comparison/static/" + \
-                       self.colorbar_link + "'\>"
+                        self.colorbar_link + "'\>"
 
         self.colorbar_widget = bokeh.models.widgets.Div(text=colorbar_html,
                                                         height=100,
@@ -857,7 +853,7 @@ class ForestPlot(object):
 
         self.colorbar_link = self.current_var + '_colorbar.png'
         colorbar_html = "<img src='plot_sea_two_model_comparison/static/" + \
-                       self.colorbar_link + "'\>"
+                        self.colorbar_link + "'\>"
 
         print(colorbar_html)
 

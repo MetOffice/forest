@@ -7,6 +7,7 @@ import bokeh.plotting
 
 import tornado
 
+
 # set up bokeh widgets
 def create_dropdown_opt_list(iterable1):
     return [(k1, k1) for k1 in iterable1]
@@ -15,16 +16,25 @@ def create_dropdown_opt_list(iterable1):
 class ForestController(object):
 
     """
-    
+
     """
 
-    def __init__(self, init_time, num_times, datasets, plot_names, plots, bokeh_imgs,
-                 colorbar_widgets, stats_widgets, region_dict, bokeh_doc):
-        
+    def __init__(self,
+                 init_time,
+                 num_times,
+                 datasets,
+                 plot_names,
+                 plots,
+                 bokeh_imgs,
+                 colorbar_widgets,
+                 stats_widgets,
+                 region_dict,
+                 bokeh_doc):
+
         """
-        
+
         """
-        
+
         self.plots = plots
         self.bokeh_imgs = bokeh_imgs
         self.init_time = init_time
@@ -38,11 +48,11 @@ class ForestController(object):
         self.bokeh_doc = bokeh_doc
 
     def create_widgets(self):
-        
+
         """
-        
+
         """
-        
+
         self.model_var_list_desc = 'Attribute to visualise'
 
         self.model_var_dd = \
@@ -52,11 +62,12 @@ class ForestController(object):
                                           button_type='warning')
         self.model_var_dd.on_change('value', self.on_var_change)
 
-        self.data_time_slider = bokeh.models.widgets.Slider(start=0,
-                                                            end=self.num_times,
-                                                            value=self.init_time,
-                                                            step=1,
-                                                            title="Data time")
+        self.data_time_slider = \
+            bokeh.models.widgets.Slider(start=0,
+                                        end=self.num_times,
+                                        value=self.init_time,
+                                        step=1,
+                                        title="Data time")
 
         self.data_time_slider.on_change('value', self.on_data_time_change)
 
@@ -71,18 +82,22 @@ class ForestController(object):
         dataset_menu_list = create_dropdown_opt_list(self.datasets.keys())
         left_model_desc = 'Left display'
 
-        self.left_model_dd = bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                                           label=left_model_desc,
-                                                           button_type='warning')
+        self.left_model_dd = \
+            bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
+                                          label=left_model_desc,
+                                          button_type='warning')
         self.left_model_dd.on_change('value',
-                                     functools.partial(self.on_config_change, 0))
+                                     functools.partial(self.on_config_change,
+                                                       0))
 
         right_model_desc = 'Right display'
-        self.right_model_dd = bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                                            label=right_model_desc,
-                                                            button_type='warning')
+        self.right_model_dd = \
+            bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
+                                          label=right_model_desc,
+                                          button_type='warning')
         self.right_model_dd.on_change('value',
-                                      functools.partial(self.on_config_change, 1))
+                                      functools.partial(self.on_config_change,
+                                                        1))
 
         # layout widgets
         self.param_row = bokeh.layouts.row(self.model_var_dd, self.region_dd)
@@ -102,58 +117,58 @@ class ForestController(object):
                                                 )
 
     def on_data_time_change(self, attr1, old_val, new_val):
-        
+
         '''Event handler for a change in the selected forecast data time.
-        
+
         '''
-        
+
         print('data time handler')
-        
+
         for p1 in self.plots:
             p1.set_data_time(new_val)
         self._update_bokeh_plot()
 
     def on_var_change(self, attr1, old_val, new_val):
-        
+
         '''Event handler for a change in the selected plot type.
-        
+
         '''
-        
+
         print('var change handler')
-        
+
         for p1 in self.plots:
             p1.set_var(new_val)
         self._update_bokeh_plot()
 
     def on_region_change(self, attr1, old_val, new_val):
-        
+
         '''Event handler for a change in the selected plot region.
-        
+
         '''
-        
+
         print('region change handler')
-        
+
         for p1 in self.plots:
             p1.set_region(new_val)
         self._update_bokeh_plot()
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
-        
+
         '''Event handler for a change in the selected model configuration output.
-        
+
         '''
-        
+
         print('config change handler')
         
         self.plots[plot_index].set_config(new_val)
         self._update_bokeh_plot()
 
     def _update_bokeh_plot(self):
-        
+
         '''
-        
+
         '''
-        
+
         print('updating bokeh plot')
         
         for p1 in self.plots:
