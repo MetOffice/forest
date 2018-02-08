@@ -126,7 +126,6 @@ class ForestController(object):
 
         for p1 in self.plots:
             p1.set_data_time(new_val)
-        self._update_bokeh_plot()
 
     def on_var_change(self, attr1, old_val, new_val):
 
@@ -138,7 +137,6 @@ class ForestController(object):
 
         for p1 in self.plots:
             p1.set_var(new_val)
-        self._update_bokeh_plot()
 
     def on_region_change(self, attr1, old_val, new_val):
 
@@ -150,7 +148,6 @@ class ForestController(object):
 
         for p1 in self.plots:
             p1.set_region(new_val)
-        self._update_bokeh_plot()
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
 
@@ -161,15 +158,3 @@ class ForestController(object):
         print('config change handler')
         
         self.plots[plot_index].set_config(new_val)
-        self._update_bokeh_plot()
-
-    def _update_bokeh_plot(self):
-
-        '''
-
-        '''
-
-        print('updating bokeh plot')
-        
-        for p1 in self.plots:
-            p1.update_bokeh_img_plot_from_fig()
