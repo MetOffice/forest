@@ -164,6 +164,7 @@ control1 = simim_sat_control.SimimSatControl(datasets,
                                              colorbar,
                                             )
 
+print('         ', __file__.split('/')[-2])
 
 try:
     bokeh_mode = os.environ['BOKEH_MODE']
