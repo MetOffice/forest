@@ -220,14 +220,16 @@ def create_colour_opts(var_list):
     return col_opts_dict
 
 
-def loadct_SPSgreyscale(do_register):
-
-    ''' A function to make a custom greyscale colormap to match Tigger plots.
-         In a 256 colour setup I need to remove 4 colours (black and the three
-         darkest greys) from  the black end of the greyscale and one (white)
-         from the white end.
+def get_sat_simim_colours():
+    
     '''
-
+    Make a custom greyscale colormap to match Tigger plots.
+    
+    In a 256 colour setup I need to remove 4 colours (black and the three
+    darkest greys) from  the black end of the greyscale and one (white)
+    from the white end.
+    '''
+    
     n = 256.0
     color_min = 1.0
     color_max = 252.0
@@ -242,18 +244,8 @@ def loadct_SPSgreyscale(do_register):
                       (1.0, cdict_min, cdict_min)]}
     SPSgreyscale = matplotlib.colors.LinearSegmentedColormap(
         'SPSgreyscale', cdict, int(ncolours))
-    if do_register:
-        matplotlib.pyplot.register_cmap(name='SPSgreyscale', cmap=SPSgreyscale)
-    return SPSgreyscale
 
-
-def get_sat_simim_colours():
-
-    '''
-
-    '''
-
-    cmap_sat_simim = loadct_SPSgreyscale(False)
+    cmap_sat_simim = SPSgreyscale
     norm_sat_simim = matplotlib.colors.Normalize(198, 308)
 
     return {'cmap': cmap_sat_simim,
@@ -274,7 +266,7 @@ def create_satellite_simim_plot_opts():
     return plot_options
 
 
-def extract_region(selected_region, ds1):
+def extract_region(region_dict, selected_region, ds1):
 
     '''Function to extract a regional subset of an iris cube based on latitude
     and longitude constraints.
