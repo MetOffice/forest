@@ -108,21 +108,10 @@ class ForestController(object):
         '''
         
         print('data time handler')
+        
         for p1 in self.plots:
             p1.set_data_time(new_val)
         self._update_bokeh_plot()
-
-    def data_time_async(self, new_val):
-        
-        '''
-        
-        '''
-        
-        print('data_time_async')
-        for p1 in self.plots:
-            p1.set_data_time(new_val)
-        self.bokeh_doc.add_next_tick_callback(self._update_bokeh_plot)
-        print('data_time_async')
 
     def on_var_change(self, attr1, old_val, new_val):
         
@@ -131,21 +120,10 @@ class ForestController(object):
         '''
         
         print('var change handler')
+        
         for p1 in self.plots:
             p1.set_var(new_val)
         self._update_bokeh_plot()
-
-    def var_change_async(self, new_val):
-        
-        '''
-        
-        '''
-        
-        print('var_change_async')
-        for p1 in self.plots:
-            p1.set_var(new_val)
-        self.bokeh_doc.add_next_tick_callback(self._update_bokeh_plot)
-        print('var_change_async')
 
     def on_region_change(self, attr1, old_val, new_val):
         
@@ -154,22 +132,10 @@ class ForestController(object):
         '''
         
         print('region change handler')
+        
         for p1 in self.plots:
             p1.set_region(new_val)
         self._update_bokeh_plot()
-
-    def region_change_async(self, new_val):
-        
-        '''
-        
-        '''
-        
-        print('region_change_async')
-
-        for p1 in self.plots:
-            p1.set_region(new_val)
-        self.bokeh_doc.add_next_tick_callback(self._update_bokeh_plot)
-        print('region_change_async')
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
         
@@ -178,20 +144,9 @@ class ForestController(object):
         '''
         
         print('config change handler')
+        
         self.plots[plot_index].set_config(new_val)
         self._update_bokeh_plot()
-
-    def config_change_async(self, new_val):
-        
-        '''
-        
-        '''
-        
-        print('config_change_async')
-        for p1 in self.plots:
-            p1.set_config(new_val)
-        self.bokeh_doc.add_next_tick_callback(self._update_bokeh_plot)
-        print('config_change_async')
 
     def _update_bokeh_plot(self):
         
@@ -200,5 +155,6 @@ class ForestController(object):
         '''
         
         print('updating bokeh plot')
+        
         for p1 in self.plots:
             p1.update_bokeh_img_plot_from_fig()
