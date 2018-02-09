@@ -88,7 +88,7 @@ def get_available_datasets(s3_base,
     fcast_time = fcast_time_list[-1]
     return fcast_time, datasets
 
-
+@forest.util.timer
 def main(bokeh_id):
 
     '''
@@ -112,11 +112,13 @@ def main(bokeh_id):
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
     s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
-                                                    bucket=bucket_name)
-    s3_local_base = os.path.join(os.sep,'s3',bucket_name, 'model_data')
+                                                     bucket=bucket_name)
+    s3_local_base = os.path.expanduser(os.path.join('~/s3',
+                                                    bucket_name,
+                                                    'model_data'))
     base_path_local = os.path.expanduser('~/SEA_data/model_data/')
-    use_s3_mount = False
-    do_download = True
+    use_s3_mount = True
+    do_download = False
 
     init_fcast_time, datasets = get_available_datasets(s3_base,
                                                        s3_local_base,
@@ -126,9 +128,6 @@ def main(bokeh_id):
                                                        dataset_template)
 
     print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
-
-    # import pdb
-    # pdb.set_trace()
 
     #set up datasets dictionary
 
@@ -190,9 +189,9 @@ def main(bokeh_id):
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
-    num_times = datasets[init_fcast_time][forest.data.N1280_GA6_KEY]['data'].get_data('precipitation').shape[0]
+    num_times = datasets[init_fcast_time][forest.data.N1280_GA6_KEY]['data'].get_data('precipitation',False).shape[0]
     for ds_name in datasets[init_fcast_time]:
-        num_times = min(num_times, datasets[init_fcast_time][ds_name]['data'].get_data('precipitation').shape[0])
+        num_times = min(num_times, datasets[init_fcast_time][ds_name]['data'].get_data('precipitation',False).shape[0])
     bokeh_doc = bokeh.plotting.curdoc()
 
     # Set up GUI controller class

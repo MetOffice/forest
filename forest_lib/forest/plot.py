@@ -14,6 +14,7 @@ import bokeh.models.widgets
 import bokeh.plotting
 
 import forest.util
+import forest.data
 
 
 class ForestPlot(object):
@@ -128,14 +129,20 @@ class ForestPlot(object):
         self.main_plot = None
         self.current_title = 'Blank plot'
 
+    def get_data(self, var_name=None):
+        if var_name:
+            data_cube = self.dataset[self.current_config]['data'].get_data(var_name)
+        else:
+            data_cube = self.dataset[self.current_config]['data'].get_data(self.current_var)
+        return data_cube
+
     def update_precip(self):
         '''
         Update function for precipitation plots, called by update_plot() when
         precipitation is the selected plot type.
         '''
-        data_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
-        array_for_update = data_cube[self.current_time].data[:-1, :-1].ravel()
+        data_cube = self.get_data()
+        array_for_update = data_cube[self.current_time.data][:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(data_cube)
         self.update_stats(data_cube)
@@ -145,16 +152,14 @@ class ForestPlot(object):
         Function for creating precipitation plots, called by create_plot when
         precipitation is the selected plot type.
         '''
-        data_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
 
+        data_cube = self.get_data()
         self.update_coords(data_cube)
         self.current_axes.coastlines(resolution='110m')
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
-                                         data_cube[
-                                             self.current_time].data,
+                                         self.get_data()[self.current_time].data,
                                          cmap=self.plot_options[
                                              self.current_var]['cmap'],
                                          norm=self.plot_options[
@@ -169,15 +174,13 @@ class ForestPlot(object):
         wind vectors is the selected plot type.
         '''
 
-        wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed')
-        array_for_update = wind_speed_cube[
-            self.current_time].data[:-1, :-1].ravel()
+        wind_speed_cube = self.get_data('wind_speed')
+        array_for_update = wind_speed_cube[self.current_time].data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
         self.update_stats(wind_speed_cube)
-        wv_u_data = self.dataset[self.current_config]['data'].get_data('wv_U')
-        wv_v_data = self.dataset[self.current_config]['data'].get_data('wv_V')
+        wv_u_data = self.get_data('wv_U')
+        wv_v_data = self.get_data('wv_V')
         self.quiver_plot.set_UVC(wv_u_data[self.current_time],
                                  wv_v_data[self.current_time])
 
@@ -187,8 +190,7 @@ class ForestPlot(object):
         wind vectors is the selected plot type.
         '''
 
-        wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed')
+        wind_speed_cube = self.get_data('wind_speed')
         self.update_coords(wind_speed_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -514,6 +516,7 @@ class ForestPlot(object):
         Update function for himawari-8 image plots, called by update_plot()
         when cloud fraction is the selected plot type.
         '''
+        pass
         him8_image = self.dataset[
             'himawari-8']['data'].get_data(self.current_var)[self.current_time]
         self.current_axes.images.remove(self.main_plot)
@@ -557,9 +560,10 @@ class ForestPlot(object):
 
     def update_simim(self):
         '''
-        Update function for himawari-8 image plots, called by update_plot()
-        when cloud fraction is the selected plot type.
+        Update function for himawari-8 image plots, called by update_plot() when
+        cloud fraction is the selected plot type.
         '''
+        pass
         simim_cube = self.dataset['simim']['data'].get_data(
             self.current_var)[self.current_time]
         array_for_update = simim_cube.data[:-1, :-1].ravel()
@@ -571,9 +575,9 @@ class ForestPlot(object):
         Function for creating himawari-8 image plots, called by create_plot()
         when cloud fraction is the selected plot type.
         '''
-
-        simim_cube = self.dataset['simim']['data'].get_data(
-            self.current_var)[self.current_time]
+        data_cube = self.dataset['simim']['data'].get_data(self.current_var)
+        print(data_cube.keys())
+        simim_cube = data_cube[self.current_time]
         lats = simim_cube.coords('grid_latitude')[0].points
         lons = simim_cube.coords('grid_longitude')[0].points
         self.main_plot = \
@@ -654,6 +658,7 @@ class ForestPlot(object):
             '\n'.join(textwrap.wrap(str1,
                                     ForestPlot.TITLE_TEXT_WIDTH))
 
+    @forest.util.timer
     def create_plot(self):
 
         '''Main plotting function. Generic elements of the plot are created
@@ -823,8 +828,10 @@ class ForestPlot(object):
 
         '''
 
+
+
         colorbar_html = "<img src='plot_sea_two_model_comparison/static/" + \
-                        self.colorbar_link + "'\>"
+                       self.colorbar_link + "'\>"
 
         self.colorbar_widget = bokeh.models.widgets.Div(text=colorbar_html,
                                                         height=100,
@@ -853,7 +860,7 @@ class ForestPlot(object):
 
         self.colorbar_link = self.current_var + '_colorbar.png'
         colorbar_html = "<img src='plot_sea_two_model_comparison/static/" + \
-                        self.colorbar_link + "'\>"
+                       self.colorbar_link + "'\>"
 
         print(colorbar_html)
 

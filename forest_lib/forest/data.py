@@ -121,7 +121,7 @@ class ForestDataset(object):
         """
         return forest.util.check_remote_file_exists(self.s3_url)
 
-    def get_data(self, var_name):
+    def get_data(self, var_name, convert_units=True):
         if self.data[var_name] is None:
             if self.check_data():
                 # get data from aws s3 storage
@@ -129,6 +129,10 @@ class ForestDataset(object):
                 # load the data into memory from file (will only load meta data
                 # initially)
                 self.load_data(var_name)
+                if convert_units:
+                    if UNIT_DICT[var_name]:
+                        self.data[var_name].convert_units(UNIT_DICT[var_name])
+
             else:
                 self.data[var_name] = None
 
@@ -167,8 +171,6 @@ class ForestDataset(object):
         ic1 = iris.Constraint(cube_func=cf1)
 
         self.data[var_name] = iris.load_cube(self.path_to_load, ic1)
-        if UNIT_DICT[var_name]:
-            self.data[var_name].convert_units(UNIT_DICT[var_name])
 
     def wind_speed_loader(self, var_name):
         # process wind cubes to calculate wind speed

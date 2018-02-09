@@ -50,7 +50,10 @@ class GpmDataset(object):
         self.base_local_path = base_local_path
         self.do_download = do_download
         self.s3_url_list = [os.path.join(self.s3_base, fn1) for fn1 in self.file_name_list]
-        self.local_path_list = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list]
+        if self.use_s3_mount:
+            self.local_path_list = [os.path.join(self.s3_local_base, fn1) for fn1 in self.file_name_list]
+        else:
+            self.local_path_list = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list]
         self.raw_data = None
         self.times_list = times_list
         self.data = dict([(v1,None) for v1 in forest.data.VAR_NAMES])
@@ -84,10 +87,10 @@ class GpmDataset(object):
         for file_name, cube_tim_str in zip(self.local_path_list,
                                            self.times_list):
 
-            if os.path.isfile(file_name):
-                print('loading data from file {0}'.format(file_name))
+            try:
                 cube_list = iris.load(file_name)
-            else:
+                print('GPM: loaded data from file {0}'.format(file_name))
+            except OSError:
                 continue
             self.raw_data.update({cube_tim_str: cube_list[0]})
 

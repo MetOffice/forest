@@ -84,17 +84,20 @@ def main(bokeh_id):
     for ds_name in model_datasets.keys():
         model_datasets[ds_name]['var_lookup'] = forest.data.get_var_lookup(model_datasets[ds_name]['config_id'])
 
-    use_s3_mount = False
-    do_download = True
+    use_s3_mount = True
+    do_download = False
     use_jh_paths = True
     base_dir = os.path.expanduser('~/SEA_data')
+    s3_local_mnt = os.path.expanduser(os.path.join('~',
+                                                   's3',
+                                                   bucket_name))
 
     base_path_local_model = os.path.join(base_dir, 'model_data')
     base_path_local_gpm = os.path.join(base_dir, 'gpm_imerg') + '/'
 
     s3_base_str_model = '{server}/{bucket}/model_data/'
     s3_base_model = s3_base_str_model.format(server=server_address, bucket=bucket_name)
-    s3_local_base_model = os.path.join(os.sep,'s3',bucket_name, 'model_data')
+    s3_local_base_model = os.path.join(s3_local_mnt, 'model_data')
 
     for ds_name in model_datasets.keys():
         fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name,
@@ -111,7 +114,7 @@ def main(bokeh_id):
 
     s3_base_str_gpm = '{server}/{bucket}/gpm_imerg/'
     s3_base_gpm = s3_base_str_gpm.format(server=server_address, bucket=bucket_name)
-    s3_local_base_gpm = os.path.join(os.sep,'s3',bucket_name, 'gpm_imerg')
+    s3_local_base_gpm = os.path.join(s3_local_mnt, 'gpm_imerg')
 
     for ds_name in gpm_datasets.keys():
         imerg_type = gpm_datasets[ds_name][GPM_TYPE_KEY]

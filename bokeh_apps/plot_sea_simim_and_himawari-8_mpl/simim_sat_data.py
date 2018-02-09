@@ -41,7 +41,10 @@ class SimimDataset(object):
         self.base_local_path = base_local_path
         self.do_download = do_download
         self.s3_url_list = [os.path.join(self.s3_base, fn1) for fn1 in self.file_name_list]
-        self.local_path_list = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list]
+        if self.use_s3_mount:
+            self.local_path_list = [os.path.join(self.s3_local_base, fn1) for fn1 in self.file_name_list]
+        else:
+            self.local_path_list = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list]
         self.forecast_time_obj = forecast_time_obj
         self.data = dict([(v1, None) for v1 in SIMIM_SAT_VARS])
 
@@ -61,9 +64,10 @@ class SimimDataset(object):
         for file_name in self.local_path_list:
             cube_time_td = datetime.timedelta(hours=int(file_name[-5:-3]))
             cube_time_str = ((self.forecast_time_obj + cube_time_td).strftime('%Y%m%d%H%M'))
-            if os.path.isfile(file_name):
+            try:
+                print('loading file {0}'.format(file_name))
                 cube_list = iris.load(file_name)
-            else:
+            except OSError:
                 continue
             if 'simbt' in file_name:
                 self.data['W'].update({cube_time_str: cube_list[0]})
@@ -106,13 +110,16 @@ class SatelliteDataset(object):
         self.local_path_list = {}
         for im_type in file_name_list.keys():
             self.s3_url_list[im_type] = [os.path.join(self.s3_base, fn1) for fn1 in self.file_name_list[im_type]]
-            self.local_path_list[im_type] = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list[im_type]]
-
+            if self.use_s3_mount:
+                self.local_path_list[im_type] = [os.path.join(self.s3_local_base, fn1) for fn1 in self.file_name_list[im_type]]
+            else:
+                self.local_path_list[im_type] = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list[im_type]]
         self.data = dict([(v1, None) for v1 in SIMIM_SAT_VARS])
 
         self.retrieve_data()
 
         self.load_data()
+
 
     def __str__(self):
         return 'Satellite Image dataset'
@@ -128,6 +135,8 @@ class SatelliteDataset(object):
                 try:
                     data_time1 = file_name[-16:-4]
                     im_array_dict.update({data_time1: matplotlib.pyplot.imread(file_name)})
+                    print('satellite data: file {0} loaded successfully'.format(file_name))
+
                 except:
                     pass
             self.data[im_type].update(im_array_dict)
