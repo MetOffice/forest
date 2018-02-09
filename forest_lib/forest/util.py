@@ -334,3 +334,15 @@ def check_remote_file_exists(remote_path):
     except urllib.error.HTTPError:
         print('warning: file {0} NOT found at remote location.'.format(remote_path))
     return file_exists
+
+
+def timer(func):
+    def timed_func(*args, **kwargs):
+        start_time = time.time()
+        ret_val = func(*args, **kwargs)
+        end_time = time.time()
+        duration_in_seconds = end_time - start_time
+        print('function {0} ran for a duration of {1}.seconds'.format(str(func), duration_in_seconds))
+        return ret_val
+
+    return timed_func

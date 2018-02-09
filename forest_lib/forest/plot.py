@@ -655,7 +655,7 @@ class ForestPlot(object):
         self.current_title = \
             '\n'.join(textwrap.wrap(str1,
                                     ForestPlot.TITLE_TEXT_WIDTH))
-
+    @forest.util.timer
     def create_plot(self):
 
         '''Main plotting function. Generic elements of the plot are created
