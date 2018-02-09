@@ -11,7 +11,7 @@ resource "aws_instance" "forest_bokeh_server" {
   instance_type         = "t2.xlarge"	
   key_name              = "kubernetes.cluster.k8s.informaticslab.co.uk-be:87:08:3a:ea:a2:9e:7e:be:c1:97:2a:42:9b:8a:05"
   user_data             = "${data.template_file.bootstrap.rendered}"
-  # iam_instance_profile  = "seasia-bokeh-on-ec2"
+  iam_instance_profile  = "seasia-bokeh-on-ec2"
   root_block_device {
        volume_size = 80
    }
