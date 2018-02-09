@@ -32,7 +32,8 @@ class ForestPlot(object):
                  conf1,
                  reg1,
                  rd1,
-                 unit_dict):
+                 unit_dict,
+                 app_path):
         '''
         Initialisation function for ForestPlot class
         '''
@@ -45,6 +46,7 @@ class ForestPlot(object):
         self.current_var = plot_var
         self._set_config_value(conf1)
         self.current_region = reg1
+        self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
         self.show_colorbar = False
         self.show_axis_ticks = False
@@ -61,7 +63,7 @@ class ForestPlot(object):
         self.unit_dict = unit_dict
         self.stats_widget = None
         self.colorbar_widget = None
-
+        
     def _set_config_value(self, new_config):
         self.current_config = new_config
         self.plot_description = self.dataset[
@@ -823,9 +825,9 @@ class ForestPlot(object):
 
         '''
 
-        colorbar_html = "<img src='plot_sea_two_model_comparison/static/" + \
+        colorbar_html = "<img src='" + self.app_path + "/static/" + \
                         self.colorbar_link + "'\>"
-
+            
         self.colorbar_widget = bokeh.models.widgets.Div(text=colorbar_html,
                                                         height=100,
                                                         width=800,

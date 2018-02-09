@@ -120,6 +120,7 @@ init_time = '201801091200'
 init_var = 'I'
 init_region = 'se_asia'
 region_dict = forest.util.SEA_REGION_DICT
+app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
 ## Display plots
 
@@ -132,7 +133,7 @@ plot_obj_left = forest.plot.ForestPlot(datasets,
                                        init_region,
                                        region_dict,
                                        simim_sat_data.UNIT_DICT,
-                                       )
+                                       app_path)
 
 plot_obj_left.current_time = init_time
 colorbar = plot_obj_left.create_colorbar_widget()
@@ -147,6 +148,7 @@ plot_obj_right = forest.plot.ForestPlot(datasets,
                                         init_region,
                                         region_dict,
                                         simim_sat_data.UNIT_DICT,
+                                        app_path,
                                         )
 
 plot_obj_right.current_time = init_time
@@ -163,8 +165,6 @@ control1 = simim_sat_control.SimimSatControl(datasets,
                                              bokeh_imgs1,
                                              colorbar,
                                             )
-
-print('         ', __file__.split('/')[-2])
 
 try:
     bokeh_mode = os.environ['BOKEH_MODE']
