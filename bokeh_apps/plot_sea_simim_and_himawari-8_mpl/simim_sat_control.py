@@ -5,10 +5,12 @@ import bokeh.layouts
 
 
 class SimimSatControl(object):
-    def __init__(self, datasets, init_time, fcast_time_obj, plot_list, bokeh_imgs):
+    def __init__(self, datasets, init_time, fcast_time_obj, 
+                 plot_list, bokeh_imgs, colorbar_widget):
         self.datasets = datasets
         self.plot_list = plot_list
         self.bokeh_imgs = bokeh_imgs
+        self.colorbar_widget = colorbar_widget
         self.init_time = init_time
         self.fcast_time_obj = fcast_time_obj
         self.wavelengths_list = ['W', 'I']
@@ -63,13 +65,18 @@ class SimimSatControl(object):
         self.hour_slider.on_change('value', self.on_hour_slider_change)
 
         # Set layout for widgets
-        self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
         self.dd_row = bokeh.layouts.row(self.wavelength_dd, self.data_time_dd)
         self.slider_row = bokeh.layouts.row(self.date_slider, self.hour_slider)
-
+        self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
+        self.colorbar_row = bokeh.layouts.row(self.colorbar_widget)
+        
+        print(self.colorbar_widget)
+        
         self.main_layout = bokeh.layouts.column(self.dd_row,
                                                 self.slider_row,
-                                                self.plots_row)
+                                                self.plots_row,
+                                                self.colorbar_row,
+                                               )
 
 
 

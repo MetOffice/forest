@@ -150,6 +150,7 @@ def main(bokeh_id):
     init_region = 'se_asia'
     init_model_left = forest.data.KM4P4_RA1T_KEY
     init_model_right = GPM_IMERG_EARLY_KEY
+    app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
 
     ## Display plots
@@ -162,7 +163,7 @@ def main(bokeh_id):
                                            init_region,
                                            region_dict,
                                            forest.data.UNIT_DICT,
-                                           )
+                                           app_path)
     # Create a plot object for the left model display
 
     plot_obj_left.current_time = init_time
@@ -177,7 +178,8 @@ def main(bokeh_id):
                                             init_region,
                                             region_dict,
                                             forest.data.UNIT_DICT,
-                                            )
+                                            app_path,
+                                           )
 
     plot_obj_right.current_time = init_time
     bokeh_img_right = plot_obj_right.create_plot()
