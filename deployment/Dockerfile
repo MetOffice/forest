@@ -11,6 +11,15 @@ RUN apt-get install libfuse-dev --fix-missing -y
 RUN pip install git+git://github.com/met-office-lab/pysssix.git
 RUN mkdir /s3
 
+RUN apt-get install libfuse-dev --fix-missing -y
+RUN wget -O goofys https://github.com/kahing/goofys/releases/download/v0.19.0/goofys
+RUN chmod u+x goofys
+RUN mkdir -p /root/bin
+RUN mv goofys /root/bin
+ENV PATH="/root/bin/:${PATH}"
+RUN mkdir /s3
+
+
 # TODO use a differnet user rather than root.
 
 RUN apt-get update

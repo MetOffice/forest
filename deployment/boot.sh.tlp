@@ -3,6 +3,7 @@ yum update -y
 yum install -y git
 yum -y install docker
 yum install emacs -y
+yum install -y fuse-devel fuse
 service docker start
 mkdir -p /opt/met
 git clone https://github.com/met-office-lab/model_evaluation_tool.git /opt/model_evaluation_tool
