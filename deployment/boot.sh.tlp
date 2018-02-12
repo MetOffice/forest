@@ -4,11 +4,23 @@ yum install -y git
 yum -y install docker
 yum install emacs -y
 yum install -y fuse-devel fuse
+
+wget -O goofys https://github.com/kahing/goofys/releases/download/v0.19.0/goofys
+chmod u+x goofys
+mkdir -p /root/bin
+mv goofys /root/bin
+export PATH=/root/bin/:${PATH}
+mkdir -p /opt/s3/stephen-sea-public-london
+goofys stephen-sea-public-london ~/s3/stephen-sea-public-london
+
 service docker start
+
+export FOREST_SRC_DIR=/opt/model_evaluation_tool
 mkdir -p /opt/met
-git clone https://github.com/met-office-lab/model_evaluation_tool.git /opt/model_evaluation_tool
+git clone https://github.com/met-office-lab/model_evaluation_tool.git ${FOREST_SRC_DIR}
 cd /opt/model_evaluation_tool
 git checkout met_21_optimisation
-cd deployment
+
+cd ${FOREST_SRC_DIR}deployment
 docker build  -t forest .
-docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v /opt/model_evaluation_tool/bokeh_apps:/opt/bokeh_apps -v /opt/model_evaluation_tool/forest_lib:/opt/forest_lib  -e  PUBLIC_IP=fdev21.informaticslab.co.uk forest
+docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v ${FOREST_SRC_DIR}/bokeh_apps:/opt/bokeh_apps -v ${FOREST_SRC_DIR}/forest_lib:/opt/forest_lib  -v /opt/s3:/opt/s3 -e  PUBLIC_IP=fdev21.informaticslab.co.uk forest
