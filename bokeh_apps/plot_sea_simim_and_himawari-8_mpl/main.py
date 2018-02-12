@@ -34,14 +34,14 @@ bokeh_id = __name__
 bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
-fcast_time = '20180109T0000Z'
-fcast_time_obj =  datetime.datetime.strptime(fcast_time, '%Y%m%dT%H%MZ')
+now_time_obj = datetime.datetime.utcnow()
+fcast_time_obj = (now_time_obj - datetime.timedelta(days = 2)).replace(hour=0, minute=0)
+fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
 
 do_download = True
 use_s3_mount = False
 use_jh_paths = True
 base_dir = os.path.expanduser('~/SEA_data/')
-
 
 SIMIM_KEY = 'simim'
 HIMAWARI8_KEY = 'himawari-8'
@@ -106,17 +106,12 @@ datasets[SIMIM_KEY]['data'] = simim_sat_data.SimimDataset(SIMIM_KEY,
                                                           time_list_simim,
                                                           fcast_time_obj)
 
-
-# Write Himawari-8 image data to Numpy arrays in a dictionary indexed by time
-#  string
-
-
 ## Setup plots
 
 plot_options = forest.util.create_satellite_simim_plot_opts()
 
 # Set the initial values to be plotted
-init_time = '201801091200'
+init_time = (fcast_time_obj + datetime.timedelta(hours=12)).strftime('%Y%m%d%H%M')
 init_var = 'I'
 init_region = 'se_asia'
 region_dict = forest.util.SEA_REGION_DICT
