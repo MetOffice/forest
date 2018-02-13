@@ -1,8 +1,7 @@
 import os
 import datetime
-
+import numpy as np
 import iris
-
 import matplotlib.pyplot
 
 import forest.data
@@ -20,7 +19,20 @@ UNIT_DICT = {'W': None,
              'I': None,
              }
 
+DATA_TIMESTEPS = {'W' : {0: np.arange(12, 39, 3),
+                         12: np.arange(12, 39, 3)},
+                  'I' : {0: np.arange(12, 39, 3),
+                         12: np.arange(12, 39, 3)},
+                  'V' : {0: np.array((6, 24, 27, 30)),
+                         12: np.array((18, 36, 39, 42))},
+                  }
+
 class SimimDataset(object):
+    
+    '''
+    
+    '''
+    
     def __init__(self,
                  config,
                  file_name_list,
@@ -46,16 +58,46 @@ class SimimDataset(object):
         self.data = dict([(v1, None) for v1 in SIMIM_SAT_VARS])
 
         self.retrieve_data()
-
         self.load_data()
 
     def __str__(self):
+        
+        '''
+        
+        '''
+        
         return 'Simulated Imagery dataset'
 
     def get_data(self, var_name):
+        
+        '''
+        
+        '''
+        
         return self.data[var_name]
 
+    def retrieve_data(self):
+        
+        '''
+        
+        '''
+        
+        if self.do_download:
+            if not (os.path.isdir(self.base_local_path)):
+                print('creating directory {0}'.format(self.base_local_path))
+                os.makedirs(self.base_local_path)
+            for s3_url, local_path in zip(self.s3_url_list, self.local_path_list):
+                try:
+                    forest.util.download_from_s3(s3_url, local_path)
+                except:
+                    print("    Warning: file not downloaded successfully:", s3_url)
+                    
     def load_data(self):
+        
+        '''
+        
+        '''
+        
         self.data = dict((it1,{}) for it1 in HIMAWARI_KEYS.keys())
 
         for file_name in self.local_path_list:
@@ -66,26 +108,18 @@ class SimimDataset(object):
             else:
                 continue
             if 'simbt' in file_name:
-                self.data['W'].update({cube_time_str: cube_list[0]})
-                self.data['I'].update({cube_time_str: cube_list[2]})
+                self.data['W'].update({cube_time_str: cube_list[2]})
+                self.data['I'].update({cube_time_str: cube_list[0]})
             elif 'simvis' in file_name:
                 self.data['V'].update({cube_time_str: cube_list[0]})
 
-    def retrieve_data(self):
-        '''
-        '''
-        if self.do_download:
-            if not (os.path.isdir(self.base_local_path)):
-                print('creating directory {0}'.format(self.base_local_path))
-                os.makedirs(self.base_local_path)
-            for s3_url, local_path in zip(self.s3_url_list, self.local_path_list):
-                try:
-                    forest.util.download_from_s3(s3_url, local_path)
-                except:
-                    print("    Warning: file not downloaded successfully:", s3_url)
-
 
 class SatelliteDataset(object):
+    
+    '''
+    
+    '''
+    
     def __init__(self,
                  config,
                  file_name_list,
@@ -95,6 +129,11 @@ class SatelliteDataset(object):
                  base_local_path,
                  do_download,
                  ):
+        
+        '''
+        
+        '''
+        
         self.config = config
         self.file_name_list = file_name_list
         self.s3_base = s3_base
@@ -109,32 +148,31 @@ class SatelliteDataset(object):
             self.local_path_list[im_type] = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list[im_type]]
 
         self.data = dict([(v1, None) for v1 in SIMIM_SAT_VARS])
-
         self.retrieve_data()
-
         self.load_data()
 
     def __str__(self):
+        
+        '''
+        
+        '''
+        
         return 'Satellite Image dataset'
 
     def get_data(self, var_name):
+        
+        '''
+        
+        '''
+        
         return self.data[var_name]
 
-    def load_data(self):
-        self.data = dict((it1,{}) for it1 in self.local_path_list.keys())
-        for im_type in self.local_path_list:
-            im_array_dict = {}
-            for file_name in self.local_path_list[im_type]:
-                try:
-                    data_time1 = file_name[-16:-4]
-                    im_array_dict.update({data_time1: matplotlib.pyplot.imread(file_name)})
-                except:
-                    pass
-            self.data[im_type].update(im_array_dict)
-
     def retrieve_data(self):
+        
         '''
+        
         '''
+        
         if self.do_download:
             if not (os.path.isdir(self.base_local_path)):
                 print('creating directory {0}'.format(self.base_local_path))
@@ -146,3 +184,20 @@ class SatelliteDataset(object):
                         forest.util.download_from_s3(s3_url, local_path)
                     except:
                         print("    Warning: file not downloaded successfully:", s3_url)
+                        
+    def load_data(self):
+        
+        '''
+        
+        '''
+        
+        self.data = dict((it1,{}) for it1 in self.local_path_list.keys())
+        for im_type in self.local_path_list:
+            im_array_dict = {}
+            for file_name in self.local_path_list[im_type]:
+                try:
+                    data_time1 = file_name[-16:-4]
+                    im_array_dict.update({data_time1: matplotlib.pyplot.imread(file_name)})
+                except:
+                    pass
+            self.data[im_type].update(im_array_dict)
