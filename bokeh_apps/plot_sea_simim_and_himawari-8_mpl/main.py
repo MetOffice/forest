@@ -30,7 +30,6 @@ def main(bokeh_id):
     now_time_obj = datetime.datetime.utcnow()
     two_days_ago_obj = now_time_obj - datetime.timedelta(days = 3)
     fcast_hour = 12*int(now_time_obj.hour/12)
-    print(fcast_hour)
     fcast_time_obj = two_days_ago_obj.replace(hour=fcast_hour, minute=0)
     fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
 
