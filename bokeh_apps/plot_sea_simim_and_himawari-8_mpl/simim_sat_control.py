@@ -43,6 +43,8 @@ class SimimSatControl(object):
             '''
             
             return [(k1, k1) for k1 in iterable1]
+        
+        
 
         # Create wavelength selection dropdown widget
         self.wavelength_dd = \
@@ -93,9 +95,6 @@ class SimimSatControl(object):
                                                 self.colorbar_row,
                                                )
 
-
-
-
     def on_data_time_change(self, attr1, old_val, new_val):
         
         '''Event handler for a change in the selected forecast data time.
@@ -139,7 +138,14 @@ class SimimSatControl(object):
         '''
 
         print('selected new var {0}'.format(new_val))
-        
+
         current_type = new_val
+        
+        # Update time dropdown menu with times for new variable
+        time_list = sorted([time_str + 'UTC' for time_str in 
+                    self.datasets['simim']['data'].get_data(new_val).keys()
+                    if time_str in self.datasets['simim']['data'].get_data(new_val).keys()])
+        self.data_time_dd.menu = [(k1, k1) for k1 in time_list]
+
         for p1 in self.plot_list:
             p1.set_var(current_type)
