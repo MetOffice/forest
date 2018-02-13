@@ -12,11 +12,14 @@ import forest.util
 WIND_SPEED_NAME = 'wind_speed'
 WIND_VECTOR_NAME = 'wind_vectors'
 WIND_STREAM_NAME = 'wind_streams'
+WIND_MSLP_NAME = 'wind_mslp'
+WIND_UNIT_MPH = 'miles-hour^-1'
 
 VAR_NAMES = ['precipitation',
              'air_temperature',
              WIND_SPEED_NAME,
              WIND_VECTOR_NAME,
+             WIND_MSLP_NAME,
              'cloud_fraction',
              'mslp',
              'x_wind',
@@ -28,19 +31,21 @@ WIND_VECTOR_VARS = ['wv_X',
                     'wv_U',
                     'wv_V',
                     'wv_X_grid',
-                    'wv_X_grid',
+                    'wv_Y_grid',
                     ]
 
 UNIT_DICT = {'precipitation': 'kg-m-2-hour^-1',
              'cloud_fraction': None,
              'air_temperature': 'celsius',
-             'x_wind': 'miles-hour^-1',
-             'y_wind': 'miles-hour^-1',
-             WIND_SPEED_NAME: 'miles-hour^-1',
+             'x_wind': WIND_UNIT_MPH,
+             'y_wind': WIND_UNIT_MPH,
+             WIND_SPEED_NAME: WIND_UNIT_MPH,
              'mslp': 'hectopascals',
-             WIND_VECTOR_NAME: 'miles-hour^-1',
-             WIND_STREAM_NAME: 'miles-hour^-1',
+             WIND_VECTOR_NAME: WIND_UNIT_MPH,
+             WIND_STREAM_NAME: WIND_UNIT_MPH,
+             WIND_MSLP_NAME: WIND_UNIT_MPH,
              }
+UNIT_DICT.update(dict([(var1,WIND_UNIT_MPH) for var1 in WIND_VECTOR_VARS]))
 
 N1280_GA6_KEY = 'n1280_ga6'
 KM4P4_RA1T_KEY = 'km4p4_ra1t'
@@ -49,7 +54,7 @@ KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
 KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
 GA6_CONF_ID = 'ga6'
 RA1T_CONF_ID = 'ra1t'
-RA1T_CONF_ID = 'ra1t'
+
 
 VAR_LIST_DIR = os.path.dirname(__file__)
 VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
@@ -129,12 +134,19 @@ class ForestDataset(object):
                 # load the data into memory from file (will only load meta data
                 # initially)
                 self.load_data(var_name)
-                if convert_units:
-                    if UNIT_DICT[var_name]:
-                        self.data[var_name].convert_units(UNIT_DICT[var_name])
 
             else:
                 self.data[var_name] = None
+
+        if self.data and convert_units and UNIT_DICT[var_name]:
+            try:
+                if self.data[var_name].units != UNIT_DICT[var_name]:
+                    if UNIT_DICT[var_name]:
+                        self.data[var_name].convert_units(UNIT_DICT[var_name])
+                        print('unit conversion applied to {0}'.format(
+                            var_name))
+            except (KeyError,AttributeError):
+                print('unit conversion not a applicable to {0}'.format(var_name))
 
         return self.data[var_name]
 

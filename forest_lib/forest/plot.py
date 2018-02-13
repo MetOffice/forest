@@ -131,9 +131,10 @@ class ForestPlot(object):
 
     def get_data(self, var_name=None):
         if var_name:
-            data_cube = self.dataset[self.current_config]['data'].get_data(var_name)
+            data_cube = self.dataset[self.current_config]['data'].get_data(var_name, True)
         else:
-            data_cube = self.dataset[self.current_config]['data'].get_data(self.current_var)
+            data_cube = self.dataset[self.current_config]['data'].get_data(self.current_var,
+                                                                           True)
         return data_cube
 
     def update_precip(self):
@@ -142,7 +143,7 @@ class ForestPlot(object):
         precipitation is the selected plot type.
         '''
         data_cube = self.get_data()
-        array_for_update = data_cube[self.current_time.data][:-1, :-1].ravel()
+        array_for_update = data_cube[self.current_time].data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(data_cube)
         self.update_stats(data_cube)
@@ -155,6 +156,7 @@ class ForestPlot(object):
 
         data_cube = self.get_data()
         self.update_coords(data_cube)
+        self.current_axes.coastlines(resolution='110m')
         self.current_axes.coastlines(resolution='110m')
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -253,6 +255,8 @@ class ForestPlot(object):
                                           self.current_time].data,
                                       levels=ForestPlot.PRESSURE_LEVELS_HPA,
                                       colors='k')
+
+
         self.current_axes.clabel(self.mslp_contour,
                                  inline=False,
                                  fmt=self.mslp_contour_label_dict)
@@ -347,6 +351,7 @@ class ForestPlot(object):
         Function for creating wind streamline plots, called by create_plot when
         wind streamlines is the selected plot type.
         '''
+        n=0
         wind_speed_cube = self.dataset[self.current_config][
             'data'].get_data('wind_speed')
         self.update_coords(wind_speed_cube)
@@ -576,7 +581,6 @@ class ForestPlot(object):
         when cloud fraction is the selected plot type.
         '''
         data_cube = self.dataset['simim']['data'].get_data(self.current_var)
-        print(data_cube.keys())
         simim_cube = data_cube[self.current_time]
         lats = simim_cube.coords('grid_latitude')[0].points
         lons = simim_cube.coords('grid_longitude')[0].points
@@ -845,7 +849,6 @@ class ForestPlot(object):
 
         '''
 
-        print('Updating stats widget')
 
         try:
             self.stats_widget.text = self.stats_string
@@ -862,7 +865,6 @@ class ForestPlot(object):
         colorbar_html = "<img src='plot_sea_two_model_comparison/static/" + \
                        self.colorbar_link + "'\>"
 
-        print(colorbar_html)
 
         try:
             self.colorbar_widget.text = colorbar_html
