@@ -28,7 +28,7 @@ def main(bokeh_id):
 
     # Set datetime objects and string for controlling data download
     now_time_obj = datetime.datetime.utcnow()
-    two_days_ago_obj = now_time_obj - datetime.timedelta(days = 4)
+    two_days_ago_obj = now_time_obj - datetime.timedelta(days = 3)
     fcast_hour = 12*(now_time_obj.hour%12)
     fcast_time_obj = two_days_ago_obj.replace(hour=fcast_hour, minute=0)
     fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
@@ -96,12 +96,13 @@ def main(bokeh_id):
                                                  time=vt)
                             for vt in simim_sat_data.DATA_TIMESTEPS['I'][fcast_hour]]
     vis_fnames_list_simim = [simim_fmt_str.format(it='simvis', 
-                                                 date=fcast_time[:8], 
-                                                 run=fcast_time[9:11], 
-                                                 time=vt)
-                            for vt in simim_sat_data.DATA_TIMESTEPS['V'][fcast_hour]]
+                                                  date=fcast_time[:8], 
+                                                  run=fcast_time[9:11], 
+                                                  time=vt)
+                             for vt in simim_sat_data.DATA_TIMESTEPS['V'][fcast_hour]]
     fnames_list_simim = bt_fnames_list_simim + vis_fnames_list_simim
     time_list_simim = [None]
+    
     datasets[SIMIM_KEY]['data'] = simim_sat_data.SimimDataset(SIMIM_KEY,
                                                               fnames_list_simim,
                                                               s3_base_simim,
