@@ -854,7 +854,7 @@ class ForestPlot(object):
         '''
 
         self.colorbar_link = self.current_var + '_colorbar.png'
-        colorbar_html = "<img src='plot_sea_two_model_comparison/static/" + \
+        colorbar_html = "<img src='" + self.app_path + "/static/" + \
                         self.colorbar_link + "'\>"
 
         print(colorbar_html)
