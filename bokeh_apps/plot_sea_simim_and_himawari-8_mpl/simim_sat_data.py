@@ -55,7 +55,7 @@ class SimimDataset(object):
     def __str__(self):
         return 'Simulated Imagery dataset'
 
-    def get_data(self, var_name):
+    def get_data(self, var_name, convert_units=False):
         return self.data[var_name]
 
     def load_data(self):
