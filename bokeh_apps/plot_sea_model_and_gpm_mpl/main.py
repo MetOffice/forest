@@ -1,24 +1,19 @@
-### SE Asia Model and GPM IMERG Matplotlib example Bokeh app script
+''' SE Asia Model and GPM IMERG Matplotlib example Bokeh app script
 
 # This script demonstrates creating plots of model rainfall data and GPM IMERG
 #  data for SE Asia using the Matplotlib plotting library to provide images to
 #  a Bokeh Server App.
 
-## Setup notebook
-# Do module imports
+'''
 
 import os
 import datetime
 import math
-
 import numpy
-
 import matplotlib
 matplotlib.use('agg')
-
 import iris
 iris.FUTURE.netcdf_promote = True
-
 import bokeh.plotting
 
 import forest.util
@@ -30,19 +25,27 @@ import model_gpm_data
 
 
 
-## Extract
-# Extract data from S3. The data can either be downloaded in full before 
-#  loading, or downloaded on demand using the /s3 filemount. This is 
-#  controlled by the do_download flag.
-
 def main(bokeh_id):
 
+    '''Main app function
+     
+    '''
+    
+    # Set datetime objects and string for controlling data download
+    now_time_obj = datetime.datetime.utcnow()
+    five_days_ago_obj = now_time_obj - datetime.timedelta(days = 5)
+    fcast_hour = 12*int(now_time_obj.hour/12)
+    fcast_time_obj = five_days_ago_obj.replace(hour=fcast_hour, minute=0)
+    fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
+    print(fcast_time)
+    
+    # Extract data from S3. The data can either be downloaded in full before 
+    #  loading, or downloaded on demand using the /s3 filemount. This is 
+    #  controlled by the do_download flag.
+    
     bucket_name = 'stephen-sea-public-london'
     server_address = 'https://s3.eu-west-2.amazonaws.com'
-
-    fcast_time = '20180109T0000Z'
-    fcast_time_obj =  datetime.datetime.strptime(fcast_time, '%Y%m%dT%H%MZ')
-
+    
     GPM_IMERG_EARLY_KEY = 'gpm_imerg_early'
     GPM_IMERG_LATE_KEY = 'gpm_imerg_late'
 
@@ -67,6 +70,7 @@ def main(bokeh_id):
         GPM_IMERG_EARLY_KEY: {'data_type_name': 'GPM IMERG Early'},
         GPM_IMERG_LATE_KEY: {'data_type_name': 'GPM IMERG Late'},
     }
+    
     model_datasets = {forest.data.N1280_GA6_KEY: datasets[forest.data.N1280_GA6_KEY],
                       forest.data.KM4P4_RA1T_KEY: datasets[forest.data.KM4P4_RA1T_KEY],
                       forest.data.KM1P5_INDO_RA1T_KEY: datasets[forest.data.KM1P5_INDO_RA1T_KEY],
@@ -77,6 +81,7 @@ def main(bokeh_id):
     gpm_datasets = {GPM_IMERG_EARLY_KEY: datasets[GPM_IMERG_EARLY_KEY],
                     GPM_IMERG_LATE_KEY: datasets[GPM_IMERG_LATE_KEY],
                     }
+    
     GPM_TYPE_KEY = 'gpm_type'
     gpm_datasets[GPM_IMERG_EARLY_KEY][GPM_TYPE_KEY] = 'early'
     gpm_datasets[GPM_IMERG_LATE_KEY][GPM_TYPE_KEY] = 'late'
@@ -119,7 +124,6 @@ def main(bokeh_id):
         times_list = [(fcast_time_obj + datetime.timedelta(days=dd)).strftime('%Y%m%d') for dd in range(4)]
         fnames_list = [fname_fmt.format(im=imerg_type, datetime=dt_str) for dt_str in times_list]
 
-
         datasets[ds_name]['data'] = model_gpm_data.GpmDataset(ds_name,
                                                               fnames_list,
                                                               s3_base_gpm,
@@ -131,10 +135,7 @@ def main(bokeh_id):
                                                               )
 
     plot_names = ['precipitation']
-
     var_names = ['precipitation']
-
-
 
     ## Setup plots
     # Set up plot colours and geoviews datasets before creating and showing plots
@@ -152,7 +153,6 @@ def main(bokeh_id):
     init_model_right = GPM_IMERG_EARLY_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
-
     ## Display plots
 
     plot_obj_left = forest.plot.ForestPlot(datasets,
@@ -163,7 +163,8 @@ def main(bokeh_id):
                                            init_region,
                                            region_dict,
                                            forest.data.UNIT_DICT,
-                                           app_path)
+                                           app_path)  
+    
     # Create a plot object for the left model display
 
     plot_obj_left.current_time = init_time
@@ -186,7 +187,6 @@ def main(bokeh_id):
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
-
     num_times = 3 * datasets[GPM_IMERG_LATE_KEY]['data'].get_data('precipitation').shape[0]
 
     control1 = model_gpm_control.ModelGpmControl(datasets,
@@ -194,6 +194,7 @@ def main(bokeh_id):
                                                  num_times,
                                                  [plot_obj_left, plot_obj_right],
                                                  [bokeh_img_left, bokeh_img_right], )
+
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
     except:

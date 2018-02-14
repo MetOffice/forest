@@ -13,7 +13,8 @@ import forest.data
 
 
 def conv_func(coord, value):
-    ''' A function to create a new time coordinate in an iris cube, with values
+    
+    '''Create a new time coordinate in an iris cube, with values
      to the previous hour divisible by three, i.e. 04:30 becomes 03:00.
 
     '''
@@ -22,13 +23,15 @@ def conv_func(coord, value):
 
 
 def half_hour_rate_to_accum(data, axis=0):
-    ''' A function to convert half hour rain rates into accumulations
+    
+    '''Convert half hour rain rates into accumulations
 
     '''
 
     accum_array = numpy.sum(data, axis=0) / 2
 
     return accum_array
+
 
 class GpmDataset(object):
 
@@ -42,6 +45,11 @@ class GpmDataset(object):
                  do_download,
                  times_list,
                  ):
+        
+        '''
+        
+        '''
+        
         self.config = config
         self.file_name_list = file_name_list
         self.s3_base = s3_base
@@ -56,19 +64,31 @@ class GpmDataset(object):
         self.data = dict([(v1,None) for v1 in forest.data.VAR_NAMES])
 
         self.retrieve_data()
-
         self.load_data()
 
 
     def __str__(self):
+        
+        '''
+        
+        '''
+        
         return 'GPM  dataset'
 
     def get_data(self, var_name):
+        
+        '''
+        
+        '''
+        
         return self.data[var_name]
 
     def retrieve_data(self):
+        
         '''
+        
         '''
+        
         if self.do_download:
             if not (os.path.isdir(self.base_local_path)):
                 print('creating directory {0}'.format(self.base_local_path))
@@ -77,8 +97,11 @@ class GpmDataset(object):
                 forest.util.download_from_s3(s3_url, local_path)
 
     def load_data(self):
+        
         """
+        
         """
+        
         self.raw_data = {}
 
         for file_name, cube_tim_str in zip(self.local_path_list,
@@ -108,5 +131,3 @@ class GpmDataset(object):
             temp_cube_list.append(accum_cube)
 
         self.data['precipitation'] = temp_cube_list.concatenate_cube()
-
-
