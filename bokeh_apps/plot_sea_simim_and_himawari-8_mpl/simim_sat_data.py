@@ -23,7 +23,7 @@ DATA_TIMESTEPS = {'W' : {0: np.arange(12, 39, 3),
                          12: np.arange(12, 39, 3)},
                   'I' : {0: np.arange(12, 39, 3),
                          12: np.arange(12, 39, 3)},
-                  'V' : {0: np.array((6, 24, 27, 30)),
+                  'V' : {0: np.array((24, 27, 30)),
                          12: np.array((18, 36, 39, 42))},
                   }
 
