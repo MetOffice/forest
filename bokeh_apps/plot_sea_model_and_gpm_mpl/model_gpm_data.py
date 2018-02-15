@@ -1,7 +1,5 @@
 import os
-
 import math
-
 import numpy
 
 import iris
@@ -44,6 +42,7 @@ class GpmDataset(object):
                  base_local_path,
                  do_download,
                  times_list,
+                 fcast_hour,
                  ):
         
         '''
@@ -61,6 +60,7 @@ class GpmDataset(object):
         self.local_path_list = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list]
         self.raw_data = None
         self.times_list = times_list
+        self.fcast_hour = fcast_hour
         self.data = dict([(v1,None) for v1 in forest.data.VAR_NAMES])
 
         self.retrieve_data()
@@ -121,6 +121,7 @@ class GpmDataset(object):
         temp_cube_list = iris.cube.CubeList()
 
         for time1 in self.raw_data.keys():
+            
             print('aggregating time {0}'.format(time1))
 
             raw_cube = self.raw_data[time1]
@@ -131,3 +132,10 @@ class GpmDataset(object):
             temp_cube_list.append(accum_cube)
 
         self.data['precipitation'] = temp_cube_list.concatenate_cube()
+        
+        # Cut out the first 12 hours of data if using a 12Z run
+        if self.fcast_hour == 12:
+            midday_time = self.data['precipitation'].coords('time')[0].points[0] + 12
+            midday_constraint = iris.Constraint(time=lambda t: t >= midday_time)
+            self.data['precipitation'] = self.data['precipitation'].extract(midday_constraint)
+            print(self.data['precipitation'])

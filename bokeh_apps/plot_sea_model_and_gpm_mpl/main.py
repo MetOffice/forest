@@ -37,7 +37,6 @@ def main(bokeh_id):
     fcast_hour = 12*int(now_time_obj.hour/12)
     fcast_time_obj = five_days_ago_obj.replace(hour=fcast_hour, minute=0)
     fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
-    print(fcast_time)
     
     # Extract data from S3. The data can either be downloaded in full before 
     #  loading, or downloaded on demand using the /s3 filemount. This is 
@@ -132,6 +131,7 @@ def main(bokeh_id):
                                                               base_path_local_gpm,
                                                               do_download,
                                                               times_list,
+                                                              fcast_hour,
                                                               )
 
     plot_names = ['precipitation']
@@ -146,7 +146,7 @@ def main(bokeh_id):
     plot_opts = forest.util.create_colour_opts(plot_names)
 
     # Set the initial values to be plotted
-    init_time = 12
+    init_time = 8
     init_var = 'precipitation'
     init_region = 'se_asia'
     init_model_left = forest.data.KM4P4_RA1T_KEY
