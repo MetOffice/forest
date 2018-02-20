@@ -100,6 +100,8 @@ class SimimDataset(object):
         
         self.data = dict((it1,{}) for it1 in HIMAWARI_KEYS.keys())
 
+        param_number_dict = {'206': 'W', '207': 'X', '208': 'I'}
+        
         for file_name in self.local_path_list:
             cube_time_td = datetime.timedelta(hours=int(file_name[-5:-3]))
             cube_time_str = ((self.forecast_time_obj + cube_time_td).strftime('%Y%m%d%H%M'))
@@ -108,8 +110,15 @@ class SimimDataset(object):
             else:
                 continue
             if 'simbt' in file_name:
-                self.data['W'].update({cube_time_str: cube_list[2]})
-                self.data['I'].update({cube_time_str: cube_list[0]})
+                param_number_avail = False
+                for cube in cube_list:
+                    if 'parameterNumber' in cube.attributes.keys():
+                        param_number = cube.attributes['parameterNumber']
+                        data_type = param_number_dict[str(param_number)]
+                        self.data[data_type].update({cube_time_str: cube})
+                if not param_number_avail:
+                    self.data['W'].update({cube_time_str: cube_list[2]})
+                    self.data['I'].update({cube_time_str: cube_list[0]})
             elif 'simvis' in file_name:
                 self.data['V'].update({cube_time_str: cube_list[0]})
 
