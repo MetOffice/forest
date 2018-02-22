@@ -113,6 +113,7 @@ class SimimDataset(object):
                 param_number_avail = False
                 for cube in cube_list:
                     if 'parameterNumber' in cube.attributes.keys():
+                        param_number_avail = True
                         param_number = cube.attributes['parameterNumber']
                         if str(param_number) == '207':
                             continue
