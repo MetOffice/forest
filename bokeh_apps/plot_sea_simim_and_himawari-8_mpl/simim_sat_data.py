@@ -7,7 +7,7 @@ import matplotlib.pyplot
 import forest.data
 import forest.util
 
-SIMIM_SAT_VARS = ['W', 'V','I']
+SIMIM_SAT_VARS = ['W', 'V', 'I']
 
 HIMAWARI_KEYS = {'W': 'LWIN11',
                  'V': 'LVIN10',
@@ -114,6 +114,8 @@ class SimimDataset(object):
                 for cube in cube_list:
                     if 'parameterNumber' in cube.attributes.keys():
                         param_number = cube.attributes['parameterNumber']
+                        if str(param_number) == '207':
+                            continue
                         data_type = param_number_dict[str(param_number)]
                         self.data[data_type].update({cube_time_str: cube})
                 if not param_number_avail:
