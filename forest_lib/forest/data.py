@@ -6,6 +6,7 @@ loading.
 
 import os
 import configparser
+import math
 
 import iris
 
@@ -272,7 +273,27 @@ class ForestDataset(object):
         
         '''
         
-        accum_multiplier = int(var_name[13:-2])
-        self.data['precipitation'].data *= 3
-        self.data['precipitation'].units = 'km-m-2'
-        self.data.update({var_name: self.data['precipitation']})
+        accum_multiplier = float(var_name[13:-2])
+        
+        def conv_func(coord, value):
+    
+            '''Create aggregate time by rounding time down to nearest
+            accumulation step
+
+            '''
+
+            return math.floor(value / accum_multiplier) * accum_multiplier 
+        
+        temp_cube = self.data['precipitation']
+        temp_cube.data *= 3
+        temp_cube.units = 'kg-m-2'
+        
+        iris.coord_categorisation.add_categorised_coord(temp_cube, 'agg_time', 
+                                                        'time', conv_func,
+                                                        units=iris.unit.Unit('hours since 1970-01-01',
+                                                                             calendar='gregorian'))
+        accum_cube = temp_cube.aggregated_by(['agg_time'], iris.analysis.SUM)
+        
+        print(accum_cube)
+        
+        self.data.update({var_name: accum_cube})
