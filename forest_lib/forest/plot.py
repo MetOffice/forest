@@ -99,6 +99,10 @@ class ForestPlot(object):
         '''
         
         self.plot_funcs = {'precipitation': self.plot_precip,
+                           'accum_precip_3hr': self.plot_precip,
+                           'accum_precip_6hr': self.plot_precip,
+                           'accum_precip_12hr': self.plot_precip,
+                           'accum_precip_24hr': self.plot_precip,
                            'wind_vectors': self.plot_wind_vectors,
                            'wind_mslp': self.plot_wind_mslp,
                            'wind_streams': self.plot_wind_streams,
@@ -114,6 +118,10 @@ class ForestPlot(object):
                            }
 
         self.update_funcs = {'precipitation': self.update_precip,
+                             'accum_precip_3hr': self.update_precip,
+                             'accum_precip_6hr': self.update_precip,
+                             'accum_precip_12hr': self.update_precip,
+                             'accum_precip_24hr': self.update_precip,
                              'wind_vectors': self.update_wind_vectors,
                              'wind_mslp': self.update_wind_mslp,
                              'wind_streams': self.update_wind_streams,

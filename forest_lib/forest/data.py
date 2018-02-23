@@ -34,6 +34,10 @@ WIND_VECTOR_VARS = ['wv_X',
                     ]
 
 UNIT_DICT = {'precipitation': 'kg-m-2-hour^-1',
+             'accum_precip_3hr': 'mm',
+             'accum_precip_6hr': 'mm',
+             'accum_precip_12hr': 'mm',
+             'accum_precip_24hr': 'mm',
              'cloud_fraction': None,
              'air_temperature': 'celsius',
              'x_wind': 'miles-hour^-1',
@@ -259,19 +263,14 @@ class ForestDataset(object):
         '''
         
         self.get_data('precipitation')
-        self.data.update(self.accum_precip())
+        self.accum_precip(var_name)
 
-    def accum_precip(self):
-        
-    
-    def add_accum_precip_keys(self, timespan):
+    def accum_precip(self, var_name):
     
         '''Create precipitation accumulation cube from existing precip
         data.
         
         '''
         
-        var_name = 'precip_accum_{}hr'.format(timespan)
-        self.data.update({var_name: None})
-        print(self.data['precipitation'])
+        print('xxxx', self.data['precipitation'])
         self.data.update({var_name: self.data['precipitation']})

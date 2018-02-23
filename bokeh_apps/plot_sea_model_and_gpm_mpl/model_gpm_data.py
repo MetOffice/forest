@@ -132,6 +132,7 @@ class GpmDataset(object):
             temp_cube_list.append(accum_cube)
 
         self.data['precipitation'] = temp_cube_list.concatenate_cube()
+        self.data['accum_precip_3hr'] = self.data['precipitation']
         
         # Cut out the first 12 hours of data if using a 12Z run
         if self.fcast_hour == 12:
