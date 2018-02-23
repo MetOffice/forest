@@ -134,8 +134,33 @@ class GpmDataset(object):
         self.data['precipitation'] = temp_cube_list.concatenate_cube()
         self.data['accum_precip_3hr'] = self.data['precipitation']
         
+        # Create 6, 12 and 24 accumulations
+        for accum_step in [6, 12, 24]:
+            
+            var_name = 'accum_precip_{}hr'.format(accum_step)
+            temp_cube = self.data['accum_precip_3hr']
+            
+            agg_lambda = lambda coord, value: math.floor(value / float(accum_step)) * accum_step
+            
+            def agg_func(coord, value):
+    
+                '''Create aggregate time by rounding time down to nearest
+                accumulation step
+
+                '''
+
+                return math.floor(value / float(accum_step)) * accum_step
+ 
+            agg_var_name = 'agg_time_' + str(accum_step)
+
+            iris.coord_categorisation.add_categorised_coord(temp_cube, agg_var_name, 'agg_time', agg_lambda,
+                                                            units=iris.unit.Unit('hours since 1970-01-01',
+                                                                                 calendar='gregorian'))
+            self.data[var_name] = temp_cube.aggregated_by([agg_var_name], iris.analysis.SUM)
+
         # Cut out the first 12 hours of data if using a 12Z run
         if self.fcast_hour == 12:
             midday_time = self.data['precipitation'].coords('time')[0].points[0] + 12
             midday_constraint = iris.Constraint(time=lambda t: t >= midday_time)
-            self.data['precipitation'] = self.data['precipitation'].extract(midday_constraint)
+            for accum_key in [key for key in self.data.keys() if 'accum' in key]:
+                self.data[accum_key] = self.data[accum_key].extract(midday_constraint)
