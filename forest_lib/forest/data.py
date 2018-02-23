@@ -120,6 +120,10 @@ class ForestDataset(object):
         self.loaders[WIND_VECTOR_NAME] = self.wind_vector_loader
         for wv_var in WIND_VECTOR_VARS:
             self.loaders[wv_var] = self.wind_vector_loader
+        for accum_precip_var in ['accum_precip_{}hr'.format(hr) 
+                                 for hr in [3, 6, 12, 24]
+                                ]:
+            self.loaders[accum_precip_var] = self.accum_precip_loader
 
         self.data = dict([(v1, None) for v1 in self.loaders.keys()])
         if self.use_s3_local_mount:
@@ -238,8 +242,29 @@ class ForestDataset(object):
         self.data.update(forest.util.calc_wind_vectors(cube_x_wind,
                                                        cube_y_wind,
                                                        10))
-                                                       
-    def accumulate_precip(self, timespan):
+     
+    def add_accum_precip_keys(self, timespan):
+    
+        '''Create precipitation accumulation cube dict keys. 
+        
+        '''
+        
+        var_name = 'precip_accum_{}hr'.format(timespan)
+        self.data.update({var_name: None})
+        
+    def accum_precip_loader(self, var_name):
+        
+        '''
+        
+        '''
+        
+        self.get_data('precipitation')
+        self.data.update(self.accum_precip())
+
+    def accum_precip(self):
+        
+    
+    def add_accum_precip_keys(self, timespan):
     
         '''Create precipitation accumulation cube from existing precip
         data.
@@ -247,4 +272,6 @@ class ForestDataset(object):
         '''
         
         var_name = 'precip_accum_{}hr'.format(timespan)
-        self.data.update({var_name : None})
+        self.data.update({var_name: None})
+        print(self.data['precipitation'])
+        self.data.update({var_name: self.data['precipitation']})

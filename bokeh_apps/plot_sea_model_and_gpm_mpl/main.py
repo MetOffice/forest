@@ -112,8 +112,9 @@ def main(bokeh_id):
                                                               do_download,
                                                               datasets[ds_name]['var_lookup']
                                                               )
-        datasets[ds_name]['data'].accumulate_precip(1)
-
+        for accum_step in [3, 6, 12, 24]:
+            datasets[ds_name]['data'].add_accum_precip_keys(accum_step)
+        
     s3_base_str_gpm = '{server}/{bucket}/gpm_imerg/'
     s3_base_gpm = s3_base_str_gpm.format(server=server_address, bucket=bucket_name)
     s3_local_base_gpm = os.path.join(os.sep,'s3',bucket_name, 'gpm_imerg')
