@@ -134,16 +134,13 @@ def main(bokeh_id):
                                                               fcast_hour,
                                                               )
 
-    plot_names = ['precipitation']
-    var_names = ['precipitation']
-
     ## Setup plots
     # Set up plot colours and geoviews datasets before creating and showing plots
 
     # create regions dict, for selecting which map region to display
     region_dict = forest.util.SEA_REGION_DICT
 
-    plot_opts = forest.util.create_colour_opts(plot_names)
+    plot_opts = forest.util.create_colour_opts(['precipitation'])
 
     # Set the initial values to be plotted
     init_time = 12
