@@ -138,4 +138,3 @@ class GpmDataset(object):
             midday_time = self.data['precipitation'].coords('time')[0].points[0] + 12
             midday_constraint = iris.Constraint(time=lambda t: t >= midday_time)
             self.data['precipitation'] = self.data['precipitation'].extract(midday_constraint)
-            print(self.data['precipitation'])
