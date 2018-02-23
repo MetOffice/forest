@@ -146,7 +146,7 @@ def main(bokeh_id):
     plot_opts = forest.util.create_colour_opts(plot_names)
 
     # Set the initial values to be plotted
-    init_time = 8
+    init_time = 12
     init_var = 'precipitation'
     init_region = 'se_asia'
     init_model_left = forest.data.KM4P4_RA1T_KEY
