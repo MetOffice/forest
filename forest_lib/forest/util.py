@@ -23,7 +23,7 @@ SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
 
 def download_from_s3(s3_url, local_path):
 
-    '''Download files from AWS S3 if not present
+    '''Download files from AWS S3 if not present.
 
     '''
 
@@ -38,7 +38,7 @@ def download_from_s3(s3_url, local_path):
 
 def get_radar_colours():
 
-    '''set up radar colours
+    '''Set up radar colours.
 
     '''
 
@@ -63,7 +63,8 @@ def get_radar_colours():
 
 def get_wind_colours():
 
-    '''Setup colormap for displaying wind speeds, based on Spectral_r colormap
+    '''Setup colormap for displaying wind speeds, based on Spectral_r 
+    colormap.
 
     '''
 
@@ -84,7 +85,8 @@ def get_wind_colours():
 
 def get_cloud_colours():
 
-    '''Setup colormap for displaying cloud fraction, based on Greys_r colormap
+    '''Setup colormap for displaying cloud fraction, based on Greys_r 
+    colormap.
 
     '''
 
@@ -105,7 +107,7 @@ def get_cloud_colours():
 
 def get_air_pressure_colours():
 
-    '''Setup colormap for displaying air pressure , based on BuGn colormap
+    '''Setup colormap for displaying air pressure , based on BuGn colormap.
 
     '''
 
@@ -124,7 +126,7 @@ def get_air_pressure_colours():
 
 def get_air_temp_colours():
 
-    '''Setup colormap for displaying air pressure , based on viridis colormap
+    '''Setup colormap for displaying air pressure , based on viridis colormap.
 
     '''
 
@@ -145,9 +147,9 @@ def get_air_temp_colours():
 
 def get_time_str(time_in_hrs):
 
-    '''
-    Create formatted human-readable date/time string, calculated from
+    '''Create formatted human-readable date/time string, calculated from
     epoch time in hours.
+    
     '''
 
     datestamp1_raw = time.gmtime(time_in_hrs * 3600)
@@ -177,6 +179,7 @@ def calc_wind_vectors(wind_x, wind_y, sf):
     '''Given cubes of x-wind and y-wind, subsample grid based on a scale
     factor (sf) and calculate the magnitude and angle of the vectors at each
     point on the grid.
+    
     '''
 
     wv_dict = {}
@@ -207,6 +210,7 @@ def create_colour_opts(var_list):
 
     '''Create a dictionary of plot options for use with matplotlib library for
     each of the standard plot types.
+    
     '''
 
     col_opts_dict = dict([(s1, None) for s1 in var_list])
@@ -226,12 +230,12 @@ def create_colour_opts(var_list):
 
 def get_sat_simim_colours():
     
-    '''
-    Make a custom greyscale colormap to match Tigger plots.
+    '''Make a custom greyscale colormap to match Tigger plots.
     
     In a 256 colour setup I need to remove 4 colours (black and the three
     darkest greys) from  the black end of the greyscale and one (white)
     from the white end.
+    
     '''
     
     n = 256.0
@@ -274,6 +278,7 @@ def extract_region(region_dict, selected_region, ds1):
 
     '''Function to extract a regional subset of an iris cube based on latitude
     and longitude constraints.
+    
     '''
 
     def get_lat(cell):
@@ -322,8 +327,8 @@ def get_image_array_from_figure(fig):
 
 def get_model_run_times(num_days):
 
-    """
-    Create a list of model times from the last num_days days
+    """Create a list of model times from the last num_days days.
+    
     """
 
     lastweek = datetime.datetime.now() + datetime.timedelta(days=-num_days)
@@ -342,9 +347,10 @@ def get_model_run_times(num_days):
 
 
 def check_remote_file_exists(remote_path):
-    """
-    CHeck whether a file at the remote location specified by remore path
+
+    """Check whether a file at the remote location specified by remore path
     exists by trying to open a url request.
+    
     """
 
     file_exists = False
@@ -361,7 +367,17 @@ def check_remote_file_exists(remote_path):
 
 
 def timer(func):
+
+    '''
+    
+    '''
+    
     def timed_func(*args, **kwargs):
+    
+        '''
+        
+        '''
+        
         start_time = time.time()
         ret_val = func(*args, **kwargs)
         end_time = time.time()
