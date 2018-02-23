@@ -238,3 +238,13 @@ class ForestDataset(object):
         self.data.update(forest.util.calc_wind_vectors(cube_x_wind,
                                                        cube_y_wind,
                                                        10))
+                                                       
+    def accumulate_precip(self, timespan):
+    
+        '''Create precipitation accumulation cube from existing precip
+        data.
+        
+        '''
+        
+        var_name = 'precip_accum_{}hr'.format(timespan)
+        self.data.update({var_name : None})
