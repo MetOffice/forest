@@ -57,8 +57,6 @@ class ModelGpmControl(object):
 
         self.model_menu_list = create_dropdown_opt_list([ds_name for ds_name in self.datasets.keys()
                                                          if 'imerg' not in ds_name])
-        self.gpm_imerg_menu_list = create_dropdown_opt_list([ds_name for ds_name in self.datasets.keys()
-                                                             if 'imerg' in ds_name])
 
         model_dd_desc = 'Model display'
         self.model_dd = bokeh.models.widgets.Dropdown(menu=self.model_menu_list,
@@ -74,12 +72,20 @@ class ModelGpmControl(object):
                                                                width=800)
         self.imerg_rbg.on_change('active', functools.partial(self.on_imerg_change, 1))
 
+        
+        self.accum_rbg = bokeh.models.widgets.RadioButtonGroup(labels=['{}hr'.format(val) for
+                                                                      val in [3, 6, 12, 24]],
+                                                               button_type='warning',
+                                                               width=800)
+        #self.accum_rbg.on_change('active', functools.partial(self.on_accum_change, 1))
+        
         self.colorbar_div = bokeh.models.widgets.Div(text="<img src='plot_sea_model_and_gpm_mpl/static/" + \
                                                           "precipitation_colorbar.png'\>", width=800, height=100)
         
         # Set layout for widgets
         self.slider_row = bokeh.layouts.row(self.data_time_slider)
         self.config_row = bokeh.layouts.row(self.model_dd, self.imerg_rbg, width=1600)
+        self.accum_row = bokeh.layouts.row(self.accum_rbg)
         self.plots_row = bokeh.layouts.row(*self.bokeh_img_list)
         self.colorbar_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
                                               self.colorbar_div,
@@ -87,6 +93,7 @@ class ModelGpmControl(object):
 
         self.main_layout = bokeh.layouts.column(self.slider_row,
                                                 self.config_row,
+                                                self.accum_row,
                                                 self.plots_row,
                                                 self.colorbar_row,
                                                 )
@@ -144,3 +151,4 @@ class ModelGpmControl(object):
         print('selected new config {0}'.format(imerg_list[new_val]))
         new_config = imerg_list[new_val]
         self.plot_list[plot_index].set_config(new_config)
+        
