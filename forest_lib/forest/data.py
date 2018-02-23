@@ -272,5 +272,7 @@ class ForestDataset(object):
         
         '''
         
-        print('xxxx', self.data['precipitation'])
+        accum_multiplier = int(var_name[13:-2])
+        self.data['precipitation'].data *= 3
+        self.data['precipitation'].units = 'km-m-2'
         self.data.update({var_name: self.data['precipitation']})
