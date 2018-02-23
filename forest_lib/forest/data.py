@@ -1,7 +1,9 @@
+"""Module containing a class to manage the datasets for the model 
+evaulation tool. In particular, the data class supports just in time 
+loading.
+
 """
-Module containing a class to manage the datasets for the model evaulation tool.
-In particular, the data class supports just in time loading.
-"""
+
 import os
 import configparser
 
@@ -56,6 +58,11 @@ VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
 
 
 def get_var_lookup(config):
+
+    '''
+    
+    '''
+    
     var_list_path = os.path.join(VAR_LIST_DIR,
                                  VAR_LIST_FNAME_BASE.format(config=config))
     parser1 = configparser.RawConfigParser()
@@ -77,6 +84,10 @@ def get_var_lookup(config):
 
 class ForestDataset(object):
 
+    '''
+    
+    '''
+    
     def __init__(self,
                  config,
                  file_name,
@@ -99,6 +110,10 @@ class ForestDataset(object):
         self.local_path = os.path.join(self.base_local_path,
                                        self.file_name)
 
+        '''
+        
+        '''
+        
         # set up data loader functions
         self.loaders = dict([(v1, self.basic_cube_load) for v1 in VAR_NAMES])
         self.loaders[WIND_SPEED_NAME] = self.wind_speed_loader
@@ -113,15 +128,27 @@ class ForestDataset(object):
             self.path_to_load = self.local_path
 
     def __str__(self):
+    
+        '''
+        
+        '''
+        
         return 'FOREST dataset'
 
     def check_data(self):
+    
         """
         Check that the data represented by this dataset actually exists.
         """
+        
         return forest.util.check_remote_file_exists(self.s3_url)
 
     def get_data(self, var_name):
+    
+        '''
+        
+        '''
+        
         if self.data[var_name] is None:
             if self.check_data():
                 # get data from aws s3 storage
@@ -135,8 +162,11 @@ class ForestDataset(object):
         return self.data[var_name]
 
     def retrieve_data(self):
+    
         '''
+        
         '''
+        
         if self.do_download:
             if not (os.path.isdir(self.base_local_path)):
                 print('creating directory {0}'.format(self.base_local_path))
@@ -145,9 +175,19 @@ class ForestDataset(object):
             forest.util.download_from_s3(self.s3_url, self.local_path)
 
     def load_data(self, var_name):
+    
+        '''
+        
+        '''
+        
         self.loaders[var_name](var_name)
 
     def basic_cube_load(self, var_name):
+    
+        '''
+        
+        '''
+        
         field_dict = self.var_lookup[var_name]
         if field_dict['accumulate']:
             cf1 = lambda cube1: \
@@ -171,7 +211,10 @@ class ForestDataset(object):
             self.data[var_name].convert_units(UNIT_DICT[var_name])
 
     def wind_speed_loader(self, var_name):
-        # process wind cubes to calculate wind speed
+    
+        '''Process wind cubes to calculate wind speed
+        
+        '''
 
         cube_pow = iris.analysis.maths.exponentiate
         print('calculating wind speed for {0}'.format(self.config_name))
@@ -184,6 +227,11 @@ class ForestDataset(object):
         self.data[WIND_SPEED_NAME].rename(WIND_SPEED_NAME)
 
     def wind_vector_loader(self, var_name):
+    
+        '''
+        
+        '''
+        
         cube_x_wind = self.get_data('x_wind')
         cube_y_wind = self.get_data('y_wind')
 
