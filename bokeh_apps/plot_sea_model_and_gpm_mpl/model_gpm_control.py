@@ -22,7 +22,7 @@ class ModelGpmControl(object):
         
         '''
         
-        self.datasets =datasets
+        self.datasets = datasets
         self.init_time = init_time
         self.num_times = num_times
         self.plot_list = plot_list
@@ -77,7 +77,7 @@ class ModelGpmControl(object):
                                                                       val in [3, 6, 12, 24]],
                                                                button_type='warning',
                                                                width=800)
-        #self.accum_rbg.on_change('active', functools.partial(self.on_accum_change, 1))
+        self.accum_rbg.on_change('active', functools.partial(self.on_accum_change, 1))
         
         self.colorbar_div = bokeh.models.widgets.Div(text="<img src='plot_sea_model_and_gpm_mpl/static/" + \
                                                           "precipitation_colorbar.png'\>", width=800, height=100)
@@ -152,3 +152,15 @@ class ModelGpmControl(object):
         new_config = imerg_list[new_val]
         self.plot_list[plot_index].set_config(new_config)
         
+    def on_accum_change(self, plot_index, attr1, old_val, new_val):
+        
+        '''Event handler for a change in the selected model configuration output.
+        
+        '''
+        
+        # Change slider step based on new accumulation range
+        self.data_time_slider.step = int(self.accum_rbg.labels[new_val][:-2])
+        print('selected new accumulation time span {0}'.format(self.accum_rbg.labels[new_val]))
+        new_var = 'accum_precip_{0}'.format(self.accum_rbg.labels[new_val])
+        for plot in self.plot_list:
+            plot.set_var(new_var)

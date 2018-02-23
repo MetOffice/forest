@@ -281,9 +281,11 @@ class ForestDataset(object):
         temp_cube.data *= 3
         temp_cube.units = 'kg-m-2'
         
-        iris.coord_categorisation.add_categorised_coord(temp_cube, 'agg_time', 'time', conv_lambda,
+        agg_name = 'agg_time_{}'.format(var_name[13:])
+        
+        iris.coord_categorisation.add_categorised_coord(temp_cube, agg_name, 'time', conv_lambda,
                                                         units=iris.unit.Unit('hours since 1970-01-01',
                                                                              calendar='gregorian'))
-        accum_cube = temp_cube.aggregated_by(['agg_time'], iris.analysis.SUM)
+        accum_cube = temp_cube.aggregated_by([agg_name], iris.analysis.SUM)
                 
         self.data.update({var_name: accum_cube})

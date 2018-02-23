@@ -119,7 +119,7 @@ class GpmDataset(object):
                                          units_func=lambda units: 1)
 
         temp_cube_list = iris.cube.CubeList()
-
+        
         for time1 in self.raw_data.keys():
             
             print('aggregating time {0}'.format(time1))
