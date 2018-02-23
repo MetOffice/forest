@@ -112,6 +112,7 @@ def main(bokeh_id):
                                                               do_download,
                                                               datasets[ds_name]['var_lookup']
                                                               )
+        datasets[ds_name]['data'].accumulate_precip(1)
 
     s3_base_str_gpm = '{server}/{bucket}/gpm_imerg/'
     s3_base_gpm = s3_base_str_gpm.format(server=server_address, bucket=bucket_name)
@@ -133,7 +134,7 @@ def main(bokeh_id):
                                                               times_list,
                                                               fcast_hour,
                                                               )
-        datasets[ds_name].accumulate_precip(1)
+
 
     ## Setup plots
     # Set up plot colours and geoviews datasets before creating and showing plots
