@@ -9,6 +9,7 @@ import configparser
 import math
 
 import iris
+import cf_units
 
 import forest.util
 
@@ -284,7 +285,7 @@ class ForestDataset(object):
         agg_name = 'agg_time_{}'.format(var_name[13:])
         
         iris.coord_categorisation.add_categorised_coord(temp_cube, agg_name, 'time', conv_lambda,
-                                                        units=iris.unit.Unit('hours since 1970-01-01',
+                                                        units=cf_units.Unit('hours since 1970-01-01',
                                                                              calendar='gregorian'))
         accum_cube = temp_cube.aggregated_by([agg_name], iris.analysis.SUM)
                 
