@@ -1,9 +1,10 @@
 import os
 import math
 import numpy
+import datetime as dt
 
 import iris
-import iris.unit
+import cf_units
 import iris.coord_categorisation
 
 import forest.util
@@ -126,7 +127,7 @@ class GpmDataset(object):
 
             raw_cube = self.raw_data[time1]
             iris.coord_categorisation.add_categorised_coord(raw_cube, 'agg_time', 'time', conv_func,
-                                                            units=iris.unit.Unit('hours since 1970-01-01',
+                                                            units=cf_units.Unit('hours since 1970-01-01',
                                                                                  calendar='gregorian'))
             accum_cube = raw_cube.aggregated_by(['agg_time'], ACCUM)
             temp_cube_list.append(accum_cube)
@@ -154,13 +155,15 @@ class GpmDataset(object):
             agg_var_name = 'agg_time_' + str(accum_step)
 
             iris.coord_categorisation.add_categorised_coord(temp_cube, agg_var_name, 'agg_time', agg_lambda,
-                                                            units=iris.unit.Unit('hours since 1970-01-01',
+                                                            units=cf_units.Unit('hours since 1970-01-01',
                                                                                  calendar='gregorian'))
             self.data[var_name] = temp_cube.aggregated_by([agg_var_name], iris.analysis.SUM)
 
         # Cut out the first 12 hours of data if using a 12Z run
         if self.fcast_hour == 12:
-            midday_time = self.data['precipitation'].coords('time')[0].points[0] + 12
-            midday_constraint = iris.Constraint(time=lambda t: t >= midday_time)
+            midday_time_float = self.data['precipitation'].coords('time')[0].points[0]
+            print('xxxx', midday_time_float)
+            print('xxxx', dt.datetime(1970, 1, 1) + dt.timedelta(hours=int(midday_time_float)))
+            midday_constraint = iris.Constraint(time=lambda t: t.point.day >= 12)
             for accum_key in [key for key in self.data.keys() if 'accum' in key]:
                 self.data[accum_key] = self.data[accum_key].extract(midday_constraint)
