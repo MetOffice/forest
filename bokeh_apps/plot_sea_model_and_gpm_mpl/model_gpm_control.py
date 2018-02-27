@@ -106,7 +106,8 @@ class ModelGpmControl(object):
         '''
         
         print('selected new time {0}'.format(new_val))
-        current_time = int(new_val / 3)
+        time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
+        current_time = int(new_val / time_step)
         for p1 in self.plot_list:
             p1.set_data_time(current_time)
 
