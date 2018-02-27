@@ -15,8 +15,6 @@ import forest.plot
 import forest.control
 import forest.data
 
-import pdb
-
 iris.FUTURE.netcdf_promote = True
 
 

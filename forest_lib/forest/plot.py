@@ -1,8 +1,6 @@
 import textwrap
 
 import multiprocessing
-import pdb
-
 import numpy
 
 import matplotlib
@@ -81,7 +79,6 @@ class ForestPlot(object):
         return self.dataset[self.current_config]['data_type_name']
 
     def create_matplotlib_fig(self):
-        print('create_matplotlib_fig start')
         self.mpl_plot = ForestMplPlot(self.dataset,
                                  self.plot_options,
                                  self.figure_name,
@@ -92,8 +89,6 @@ class ForestPlot(object):
                                  self.unit_dict,
                                  self.current_time,
                                  )
-
-        print('created ForestMplPlot')
 
         self.mpl_plot.create_plot()
         self.stats_string = self.mpl_plot.stats_string
@@ -539,7 +534,6 @@ class ForestMplPlot(object):
         Update function for precipitation plots, called by update_plot() when
         precipitation is the selected plot type.
         '''
-        print('updating precip')
         data_cube = self.get_data()
         array_for_update = data_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
@@ -787,12 +781,8 @@ class ForestMplPlot(object):
         Function for creating air temperature plots, called by create_plot when
         air temperature is the selected plot type.
         '''
-        print('start plot air temp')
-
         at_cube = self.get_data(self.current_var)
-        print('plot air temp 01')
         self.update_coords(at_cube)
-        print('plot air temp 02')
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
@@ -804,18 +794,14 @@ class ForestMplPlot(object):
                                          )
 
         # Add coastlines to the map created by contourf.
-        print('plot air temp 03')
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
                                                             'coastline',
                                                             self.coast_res,
                                                             edgecolor='0.5',
                                                             facecolor='none')
         self.current_axes.add_feature(coastline_50m)
-        print('plot air temp 04')
         self.update_title(at_cube)
-        print('plot air temp 05')
         self.update_stats(at_cube)
-        print('end plot air temp')
 
     def update_mslp(self):
         '''
@@ -995,7 +981,6 @@ class ForestMplPlot(object):
             self.plot_simim()
 
     def update_stats(self, current_cube):
-        # pdb.set_trace()
         stats_str_list = [self.current_title]
         unit_str = self.unit_dict[self.current_var]
         data_at_time = current_cube

@@ -12,8 +12,6 @@ import iris
 
 import forest.util
 
-import pdb
-
 WIND_SPEED_NAME = 'wind_speed'
 WIND_VECTOR_NAME = 'wind_vectors'
 WIND_STREAM_NAME = 'wind_streams'
