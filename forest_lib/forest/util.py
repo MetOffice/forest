@@ -228,7 +228,7 @@ def create_colour_opts(var_list):
     return col_opts_dict
 
 
-def get_sat_simim_colours():
+def get_sat_simim_colours(min_bt, max_bt):
     
     '''Make a custom greyscale colormap to match Tigger plots.
     
@@ -254,7 +254,7 @@ def get_sat_simim_colours():
         'SPSgreyscale', cdict, int(ncolours))
 
     cmap_sat_simim = SPSgreyscale
-    norm_sat_simim = matplotlib.colors.Normalize(198, 308)
+    norm_sat_simim = matplotlib.colors.Normalize(min_bt, max_bt)
 
     return {'cmap': cmap_sat_simim,
             'norm': norm_sat_simim}
@@ -268,8 +268,8 @@ def create_satellite_simim_plot_opts():
 
     plot_options = {'V': {'norm': matplotlib.colors.Normalize(0, 1),
                           'cmap': 'binary_r'},
-                    'W': get_sat_simim_colours(),
-                    'I': get_sat_simim_colours()}
+                    'W': get_sat_simim_colours(198, 273),
+                    'I': get_sat_simim_colours(198, 308)}
 
     return plot_options
 
