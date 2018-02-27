@@ -81,7 +81,7 @@ class ModelGpmControl(object):
         self.accum_rbg.on_change('active', functools.partial(self.on_accum_change, 1))
         
         self.colorbar_div = bokeh.models.widgets.Div(text="<img src='plot_sea_model_and_gpm_mpl/static/" + \
-                                                          "precipitation_colorbar.png'\>", width=800, height=100)
+                                                          "precip_accum_colorbar.png'\>", width=800, height=100)
         
         # Set layout for widgets
         self.slider_row = bokeh.layouts.row(self.data_time_slider)
