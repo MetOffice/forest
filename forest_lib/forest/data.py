@@ -3,6 +3,7 @@ Module containing a class to manage the datasets for the model evaulation tool.
 In particular, the data class supports just in time loading.
 """
 import os
+import datetime
 import configparser
 import functools
 
@@ -11,6 +12,8 @@ import numpy
 import iris
 
 import forest.util
+
+import pdb
 
 WIND_SPEED_NAME = 'wind_speed'
 WIND_VECTOR_NAME = 'wind_vectors'
@@ -235,6 +238,7 @@ class ForestDataset(object):
         self.loaders[var_name](var_name, time_ix)
 
     def _basic_cube_load(self, var_name, time_ix):
+        time_obj = datetime.datetime.fromtimestamp(time_ix*3600)
         field_dict = self.var_lookup[var_name]
         cf1 = lambda cube1: \
             cube1.attributes['STASH'].section == \
@@ -242,18 +246,16 @@ class ForestDataset(object):
             cube1.attributes['STASH'].item == \
             field_dict['stash_item']
 
-        def time_comp(time_ix, eps1, cell1):
-            return abs(cell1.point - time_ix)<eps1
+        def time_comp(selected_time, eps1, cell1):
+            return abs(cell1.point - selected_time).total_seconds() < eps1
 
         coord_constraint_dict = {}
         if time_ix != ForestDataset.TIME_INDEX_ALL:
             coord_constraint_dict['time'] = \
-                functools.partial(time_comp, time_ix, 1e-5)
+                functools.partial(time_comp, time_obj, 1)
 
         ic1 = iris.Constraint(cube_func=cf1,
                               coord_values=coord_constraint_dict)
-
-        ic2 = iris.Constraint(cube_func=cf1)
 
         self.data[var_name][time_ix] = iris.load_cube(self.path_to_load, ic1)
 

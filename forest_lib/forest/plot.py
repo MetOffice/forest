@@ -356,6 +356,13 @@ class ForestPlot(object):
             print('bokeh plot linking failed.')
 
 
+    def plot_finished_callback(self):
+        pass
+
+    def update_doc_callback(self):
+        pass
+
+
 class ForestMplPlot(object):
 
     def __init__(self,
