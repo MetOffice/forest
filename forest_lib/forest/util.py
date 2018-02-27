@@ -270,7 +270,7 @@ def get_image_array_from_figure(fig):
     return buf
 
 
-def get_model_run_times(num_days):
+def get_model_run_times(num_days,model_run_period=12):
     """
     Create a list of model times from the last num_days days
     """
@@ -281,7 +281,7 @@ def get_model_run_times(num_days):
     fmt_str = '{dt.year:04}{dt.month:02}{dt.day:02}T{dt.hour:02}{dt.minute:02}Z'
 
     forecast_datetimes = [
-        lw_midnight + datetime.timedelta(hours=step1) for step1 in range(0, 144, 12)]
+        lw_midnight + datetime.timedelta(hours=step1) for step1 in range(0, num_days*24, model_run_period)]
     forecast_dt_str_list = [
         fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
     return forecast_datetimes, forecast_dt_str_list

@@ -7,6 +7,8 @@ import bokeh.plotting
 
 import tornado
 
+import forest.data
+
 
 # set up bokeh widgets
 def create_dropdown_opt_list(iterable1):
@@ -20,8 +22,8 @@ class ForestController(object):
     """
 
     def __init__(self,
-                 init_time,
-                 num_times,
+                 times1,
+                 init_time_ix,
                  datasets,
                  plot_names,
                  plots,
@@ -37,15 +39,18 @@ class ForestController(object):
 
         self.plots = plots
         self.bokeh_imgs = bokeh_imgs
-        self.init_time = init_time
-        self.num_times = num_times
         self.region_dict = region_dict
         self.plot_names = plot_names
         self.datasets = datasets
+        self.available_times = times1
+        self.init_time_index = init_time_ix
+        self.init_time = times1[init_time_ix]
+        self.num_times = self.available_times.shape[0]
         self.colorbar_widgets = colorbar_widgets
         self.stats_widgets = stats_widgets
         self.create_widgets()
         self.bokeh_doc = bokeh_doc
+
 
     def create_widgets(self):
 
@@ -65,7 +70,7 @@ class ForestController(object):
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
                                         end=self.num_times,
-                                        value=self.init_time,
+                                        value=self.init_time_index,
                                         step=1,
                                         title="Data time")
 
@@ -125,7 +130,22 @@ class ForestController(object):
         print('data time handler')
 
         for p1 in self.plots:
-            p1.set_data_time(new_val)
+            new_time1 = self.available_times[new_val]
+            p1.set_data_time(new_time1)
+
+
+    def _refresh_times(self, new_var):
+        self.available_times = forest.data.get_available_times(self.datasets,
+                                                          new_var)
+        try:
+            new_time = self.available_times[self.data_time_slider.value]
+        except IndexError:
+            new_time = self.available_times[0]
+            self.data_time_slider.value = 0
+
+        self.data_time_slider.end = self.available_times.shape[0]
+        return new_time
+
 
     def on_var_change(self, attr1, old_val, new_val):
 
@@ -134,8 +154,11 @@ class ForestController(object):
         '''
 
         print('var change handler')
-
+        new_time = self._refresh_times(new_val)
         for p1 in self.plots:
+            # different variables have different times available, soneed to
+            # set time when selecting a variable
+            p1.current_time = new_time
             p1.set_var(new_val)
 
     def on_region_change(self, attr1, old_val, new_val):

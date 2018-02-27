@@ -15,7 +15,10 @@ import forest.plot
 import forest.control
 import forest.data
 
+import pdb
+
 iris.FUTURE.netcdf_promote = True
+
 
 try:
     get_ipython
@@ -145,11 +148,17 @@ def main(bokeh_id):
     #Setup and display plots
     plot_opts = forest.util.create_colour_opts(plot_names)
 
-    init_data_time = 4
+    init_data_time_index = 4
     init_var = plot_names[0] #blank
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY
     init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY
+
+    available_times = \
+        forest.data.get_available_times(datasets[init_fcast_time],
+                                        init_var)
+    init_data_time = available_times[init_data_time_index]
+
 
     #Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
@@ -185,14 +194,14 @@ def main(bokeh_id):
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
-    num_times = datasets[init_fcast_time][forest.data.N1280_GA6_KEY]['data'].get_data('precipitation',False).shape[0]
-    for ds_name in datasets[init_fcast_time]:
-        num_times = min(num_times, datasets[init_fcast_time][ds_name]['data'].get_data('precipitation',False).shape[0])
+
+
+    num_times = available_times.shape[0]
     bokeh_doc = bokeh.plotting.curdoc()
 
     # Set up GUI controller class
-    control1 = forest.control.ForestController(init_data_time,
-                                               num_times,
+    control1 = forest.control.ForestController(available_times,
+                                               init_data_time_index,
                                                datasets[init_fcast_time],
                                                plot_names,
                                                [plot_obj_left, plot_obj_right],

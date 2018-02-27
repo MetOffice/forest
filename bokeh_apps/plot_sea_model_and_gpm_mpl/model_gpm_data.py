@@ -66,7 +66,9 @@ class GpmDataset(object):
     def __str__(self):
         return 'GPM  dataset'
 
-    def get_data(self, var_name, convert_units=True):
+    def get_data(self, var_name, convert_units=False, selected_time=None):
+        if selected_time:
+            return self.data[var_name][selected_time]
         return self.data[var_name]
 
     def retrieve_data(self):
