@@ -76,7 +76,8 @@ class ModelGpmControl(object):
         self.accum_rbg = bokeh.models.widgets.RadioButtonGroup(labels=['{}hr'.format(val) for
                                                                       val in [3, 6, 12, 24]],
                                                                button_type='warning',
-                                                               width=800)
+                                                               width=800,
+                                                               active=0)
         self.accum_rbg.on_change('active', functools.partial(self.on_accum_change, 1))
         
         self.colorbar_div = bokeh.models.widgets.Div(text="<img src='plot_sea_model_and_gpm_mpl/static/" + \

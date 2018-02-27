@@ -161,9 +161,6 @@ class GpmDataset(object):
 
         # Cut out the first 12 hours of data if using a 12Z run
         if self.fcast_hour == 12:
-            midday_time_float = self.data['precipitation'].coords('time')[0].points[0]
-            print('xxxx', midday_time_float)
-            print('xxxx', dt.datetime(1970, 1, 1) + dt.timedelta(hours=int(midday_time_float)))
-            midday_constraint = iris.Constraint(time=lambda t: t.point.day >= 12)
-            for accum_key in [key for key in self.data.keys() if 'accum' in key]:
-                self.data[accum_key] = self.data[accum_key].extract(midday_constraint)
+            self.data['accum_precip_3hr'] = self.data['accum_precip_3hr'][4:]
+            self.data['accum_precip_6hr'] = self.data['accum_precip_6hr'][2:]
+            self.data['accum_precip_12hr'] = self.data['accum_precip_12hr'][:]

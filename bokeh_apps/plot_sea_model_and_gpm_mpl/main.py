@@ -147,7 +147,7 @@ def main(bokeh_id):
 
     # Set the initial values to be plotted
     init_time = 12
-    init_var = 'accum_precip_6hr'
+    init_var = 'accum_precip_3hr'
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY
     init_model_right = GPM_IMERG_EARLY_KEY
