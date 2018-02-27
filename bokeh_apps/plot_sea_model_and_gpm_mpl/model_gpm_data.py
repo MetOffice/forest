@@ -126,7 +126,10 @@ class GpmDataset(object):
             print('aggregating time {0}'.format(time1))
 
             raw_cube = self.raw_data[time1]
-            iris.coord_categorisation.add_categorised_coord(raw_cube, 'agg_time', 'time', conv_func,
+            iris.coord_categorisation.add_categorised_coord(raw_cube, 
+                                                            'agg_time', 
+                                                            'time', 
+                                                            conv_func,
                                                             units=cf_units.Unit('hours since 1970-01-01',
                                                                                  calendar='gregorian'))
             accum_cube = raw_cube.aggregated_by(['agg_time'], ACCUM)
@@ -154,13 +157,21 @@ class GpmDataset(object):
  
             agg_var_name = 'agg_time_' + str(accum_step)
 
-            iris.coord_categorisation.add_categorised_coord(temp_cube, agg_var_name, 'agg_time', agg_lambda,
+            iris.coord_categorisation.add_categorised_coord(temp_cube, 
+                                                            agg_var_name, 
+                                                            'agg_time', 
+                                                            agg_lambda,
                                                             units=cf_units.Unit('hours since 1970-01-01',
                                                                                  calendar='gregorian'))
             self.data[var_name] = temp_cube.aggregated_by([agg_var_name], iris.analysis.SUM)
 
         # Cut out the first 12 hours of data if using a 12Z run
         if self.fcast_hour == 12:
-            self.data['accum_precip_3hr'] = self.data['accum_precip_3hr'][4:]
-            self.data['accum_precip_6hr'] = self.data['accum_precip_6hr'][2:]
-            self.data['accum_precip_12hr'] = self.data['accum_precip_12hr'][:]
+            time_0 = self.data['precipitation'].coords('time')[0].points[0]
+            midday_time_int = int(time_0 + 11)
+            midday_time_obj = dt.datetime(1970, 1, 1) \
+                              + dt.timedelta(hours=midday_time_int)
+            midday_constraint = iris.Constraint(time=lambda t: t.point >= midday_time_obj)
+            
+            for acc_key in [key for key in self.data.keys() if 'accum' in key]:
+                self.data[acc_key] = self.data[acc_key].extract(midday_constraint)
