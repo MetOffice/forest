@@ -187,6 +187,7 @@ class ForestPlot(object):
                                              self.current_var]['cmap'],
                                          norm=self.plot_options[
                                              self.current_var]['norm'],
+                                         edgecolor='face',
                                          transform=cartopy.crs.PlateCarree())
         self.update_title(data_cube)
         self.update_stats(data_cube)
