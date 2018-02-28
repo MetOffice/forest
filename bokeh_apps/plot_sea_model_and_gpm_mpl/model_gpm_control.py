@@ -84,17 +84,17 @@ class ModelGpmControl(object):
                                                           "precip_accum_colorbar.png'\>", width=800, height=100)
         
         # Set layout for widgets
-        self.slider_row = bokeh.layouts.row(self.data_time_slider)
-        self.config_row = bokeh.layouts.row(self.model_dd, self.imerg_rbg, width=1600)
-        self.accum_row = bokeh.layouts.row(self.accum_rbg)
+        self.time_row = bokeh.layouts.row(self.data_time_slider)
+        self.major_config_row = bokeh.layouts.row(self.model_dd, self.imerg_rbg, width=1600)
+        self.minor_config_row = bokeh.layouts.row(self.accum_rbg)
         self.plots_row = bokeh.layouts.row(*self.bokeh_img_list)
         self.colorbar_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
                                               self.colorbar_div,
                                               bokeh.models.Spacer(width=400, height=100))
 
-        self.main_layout = bokeh.layouts.column(self.slider_row,
-                                                self.config_row,
-                                                self.accum_row,
+        self.main_layout = bokeh.layouts.column(self.time_row,
+                                                self.major_config_row,
+                                                self.minor_config_row,
                                                 self.plots_row,
                                                 self.colorbar_row,
                                                 )
