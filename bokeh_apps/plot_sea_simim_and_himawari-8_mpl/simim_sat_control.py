@@ -83,8 +83,9 @@ class SimimSatControl(object):
         self.hour_slider.on_change('value', self.on_hour_slider_change)
 
         # Set layout rows for widgets
-        self.dd_row = bokeh.layouts.row(self.wavelength_dd, self.data_time_dd)
+        self.time_row = bokeh.layouts.row(self.data_time_dd)
         #self.slider_row = bokeh.layouts.row(self.date_slider, self.hour_slider)
+        self.major_config_row = bokeh.layouts.row(self.wavelength_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
         self.colorbar_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
                                               self.colorbar_div,
@@ -92,8 +93,9 @@ class SimimSatControl(object):
         
         
         # Create main layout
-        self.main_layout = bokeh.layouts.column(self.dd_row,
+        self.main_layout = bokeh.layouts.column(self.time_row,
                                                 #self.slider_row,
+                                                self.major_config_row,
                                                 self.plots_row,
                                                 self.colorbar_row,
                                                )
