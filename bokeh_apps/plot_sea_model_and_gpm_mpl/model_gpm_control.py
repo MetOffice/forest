@@ -46,15 +46,24 @@ class ModelGpmControl(object):
         def create_dropdown_opt_list(iterable1):
             return [(k1, k1) for k1 in iterable1]
 
+        self.time_prev_button = bokeh.models.widgets.Button(label='Prev',
+                                                            button_type='warning',
+                                                            width=100)
+        self.time_prev_button.on_click(self.on_time_prev)
+        
         self.data_time_slider = bokeh.models.widgets.Slider(start=0,
                                                             end=self.num_times,
                                                             value=self.init_time,
                                                             step=3,
                                                             title="Data time",
-                                                            width=800)
-
+                                                            width=400)
         self.data_time_slider.on_change('value', self.on_data_time_change)
 
+        self.time_next_button = bokeh.models.widgets.Button(label='Next',
+                                                            button_type='warning',
+                                                            width=100)
+        self.time_next_button.on_click(self.on_time_next)
+        
         self.model_menu_list = create_dropdown_opt_list([ds_name for ds_name in self.datasets.keys()
                                                          if 'imerg' not in ds_name])
 
@@ -62,7 +71,7 @@ class ModelGpmControl(object):
         self.model_dd = bokeh.models.widgets.Dropdown(menu=self.model_menu_list,
                                                       label=model_dd_desc,
                                                       button_type='warning',
-                                                      width=800)
+                                                      width=400)
         self.model_dd.on_change('value', functools.partial(self.on_config_change, 0))
 
         self.imerg_rbg = bokeh.models.widgets.RadioButtonGroup(labels=[ds_name for ds_name
@@ -84,7 +93,10 @@ class ModelGpmControl(object):
                                                           "precip_accum_colorbar.png'\>", width=800, height=100)
         
         # Set layout for widgets
-        self.time_row = bokeh.layouts.row(self.data_time_slider)
+        self.time_row = bokeh.layouts.row(self.time_prev_button,
+                                          self.data_time_slider,
+                                          self.time_next_button
+                                         )
         self.major_config_row = bokeh.layouts.row(self.model_dd, self.imerg_rbg, width=1600)
         self.minor_config_row = bokeh.layouts.row(self.accum_rbg)
         self.plots_row = bokeh.layouts.row(*self.bokeh_img_list)
@@ -111,6 +123,34 @@ class ModelGpmControl(object):
         for p1 in self.plot_list:
             p1.set_data_time(current_time)
 
+    def on_time_prev(self):
+        
+        '''Event handler for changing to previous time step
+        
+        '''
+        
+        print('selected previous time step')       
+        time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
+        current_time = int(self.data_time_slider.value - time_step)
+        if current_time >= 0:
+            self.data_time_slider.value = current_time
+        else:
+            print('Cannot select time < 0')
+
+    def on_time_next(self):
+        
+        '''
+        
+        '''
+        
+        print('selected next time step')       
+        time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
+        current_time = int(self.data_time_slider.value + time_step)
+        if current_time < self.num_times:
+            self.data_time_slider.value = current_time
+        else:
+            print('Cannot select time > num_times')        
+            
     def on_date_slider_change(self, attr1, old_val, new_val):
         
         '''Event handler for a change in the selected forecast data date.
