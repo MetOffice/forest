@@ -16,7 +16,7 @@ class SimimSatControl(object):
         self.plot_list = plot_list
         self.bokeh_imgs = bokeh_imgs
         self.colorbar_div = colorbar_widget
-        self.init_time = init_time
+        self.current_time = init_time
         self.fcast_time_obj = fcast_time_obj
         self.wavelengths_list = ['W', 'I', 'V']
 
@@ -58,12 +58,12 @@ class SimimSatControl(object):
         self.time_prev_button.on_click(self.on_time_prev)
         
         # Create time selection dropdown widget
-        time_list = sorted([time_str + 'UTC' for time_str in 
-                            self.datasets['simim']['data'].get_data('I').keys()
-                            if time_str in self.datasets['simim']['data'].get_data('I').keys()])
+        self.time_list = sorted([time_str + 'UTC' for time_str in 
+                                 self.datasets['simim']['data'].get_data('I').keys()
+                                 if time_str in self.datasets['simim']['data'].get_data('I').keys()])
         self.data_time_dd = \
             bokeh.models.widgets.Dropdown(label='Time',
-                                          menu=create_dropdown_opt_list(time_list),
+                                          menu=create_dropdown_opt_list(self.time_list),
                                           button_type='warning')
         self.data_time_dd.on_change('value', self.on_data_time_change)
 
@@ -118,9 +118,9 @@ class SimimSatControl(object):
         
         print('selected new time {0}'.format(new_val))
         
-        current_time = new_val[:-3]
+        self.current_time = new_val[:-3]
         for p1 in self.plot_list:
-            p1.set_data_time(current_time)
+            p1.set_data_time(self.current_time)
 
     def on_time_prev(self):
         
@@ -128,7 +128,8 @@ class SimimSatControl(object):
         
         '''
         
-        print('selected previous time step')       
+        print('selected previous time step')   
+        print(self.time_list.index(self.current_time + 'UTC'))
 
     def on_time_next(self):
         
@@ -137,7 +138,8 @@ class SimimSatControl(object):
         '''
         
         print('selected next time step')     
-            
+        print(self.time_list.index(self.current_time + 'UTC'))
+        
     def on_date_slider_change(self, attr1, old_val, new_val):
         
         '''Event handler for a change in the selected forecast data date.
@@ -146,7 +148,7 @@ class SimimSatControl(object):
         
         print('selected new date {0}'.format(new_val))
         
-        current_time = new_val.strftime('%Y%m%d') + self.plot_list[0].current_time[-4:]
+        self.current_time = new_val.strftime('%Y%m%d') + self.plot_list[0].current_time[-4:]
         for p1 in self.plot_list:
             p1.set_data_time(current_time)
 
@@ -158,7 +160,7 @@ class SimimSatControl(object):
         
         print('selected new date {0}'.format(new_val))
         
-        current_time = self.plot_list[0].current_time[:-4] + '{:02d}00'.format(new_val)
+        self.current_time = self.plot_list[0].current_time[:-4] + '{:02d}00'.format(new_val)
         for p1 in self.plot_list:
             p1.set_data_time(current_time)
 
@@ -173,10 +175,10 @@ class SimimSatControl(object):
         current_type = new_val
         
         # Update time dropdown menu with times for new variable
-        time_list = sorted([time_str + 'UTC' for time_str in 
-                    self.datasets['simim']['data'].get_data(new_val).keys()
-                    if time_str in self.datasets['simim']['data'].get_data(new_val).keys()])
-        self.data_time_dd.menu = [(k1, k1) for k1 in time_list]
+        self.time_list = sorted([time_str + 'UTC' for time_str in 
+                                 self.datasets['simim']['data'].get_data(new_val).keys()
+                                 if time_str in self.datasets['simim']['data'].get_data(new_val).keys()])
+        self.data_time_dd.menu = [(k1, k1) for k1 in self.time_list]
 
         for p1 in self.plot_list:
             p1.set_var(current_type)
