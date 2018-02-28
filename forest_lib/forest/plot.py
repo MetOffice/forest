@@ -885,8 +885,8 @@ class ForestPlot(object):
         '''
 
         self.stats_widget = bokeh.models.widgets.Div(text=self.stats_string,
-                                                     height=400,
-                                                     width=800,
+                                                     height=200,
+                                                     width=400,
                                                      )
         return self.stats_widget
 

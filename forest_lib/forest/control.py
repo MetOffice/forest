@@ -26,7 +26,7 @@ class ForestController(object):
                  plot_names,
                  plots,
                  bokeh_imgs,
-                 colorbar_widgets,
+                 colorbar_widget,
                  stats_widgets,
                  region_dict,
                  bokeh_doc):
@@ -42,7 +42,7 @@ class ForestController(object):
         self.region_dict = region_dict
         self.plot_names = plot_names
         self.datasets = datasets
-        self.colorbar_widgets = colorbar_widgets
+        self.colorbar_div = colorbar_widget
         self.stats_widgets = stats_widgets
         self.create_widgets()
         self.bokeh_doc = bokeh_doc
@@ -105,15 +105,17 @@ class ForestController(object):
         self.config_row = bokeh.layouts.row(
             self.left_model_dd, self.right_model_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
-        self.colorbar_row = bokeh.layouts.row(*self.colorbar_widgets)
-        self.stats_row = bokeh.layouts.row(*self.stats_widgets)
+        self.info_row = bokeh.layouts.row(self.stats_widgets[0], 
+                                          self.colorbar_div,
+                                          self.stats_widgets[1])
+        #self.stats_row = bokeh.layouts.row(*self.stats_widgets)
 
         self.main_layout = bokeh.layouts.column(self.param_row,
                                                 self.slider_row,
                                                 self.config_row,
                                                 self.plots_row,
-                                                self.colorbar_row,
-                                                self.stats_row,
+                                                self.info_row,
+                                                #self.stats_row,
                                                 )
 
     def on_data_time_change(self, attr1, old_val, new_val):

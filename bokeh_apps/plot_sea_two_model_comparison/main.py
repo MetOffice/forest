@@ -171,7 +171,6 @@ def main(bokeh_id):
 
     plot_obj_left.current_time = init_data_time
     bokeh_img_left = plot_obj_left.create_plot()
-    colorbar_left = plot_obj_left.create_colorbar_widget()
     stats_left = plot_obj_left.create_stats_widget()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
@@ -187,8 +186,9 @@ def main(bokeh_id):
 
     plot_obj_right.current_time = init_data_time
     bokeh_img_right = plot_obj_right.create_plot()
-    colorbar_right = plot_obj_right.create_colorbar_widget()
     stats_right = plot_obj_right.create_stats_widget()
+
+    colorbar_widget = plot_obj_left.create_colorbar_widget()
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
@@ -204,7 +204,7 @@ def main(bokeh_id):
                                                plot_names,
                                                [plot_obj_left, plot_obj_right],
                                                [bokeh_img_left, bokeh_img_right],
-                                               [colorbar_left, colorbar_right],
+                                               colorbar_widget,
                                                [stats_left, stats_right],
                                                region_dict,
                                                bokeh_doc,
