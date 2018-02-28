@@ -1,22 +1,21 @@
 import os
 import copy
 import numpy
+import multiprocessing
+
 import bokeh.io
-import bokeh.layouts 
+import bokeh.layouts
 import bokeh.models.widgets
 import bokeh.plotting
 import matplotlib
 matplotlib.use('agg')
-
-import iris
 
 import forest.util
 import forest.plot
 import forest.control
 import forest.data
 
-iris.FUTURE.netcdf_promote = True
-
+NUM_PROCESSES = 4
 
 try:
     get_ipython
@@ -140,6 +139,9 @@ def main(bokeh_id):
                   # 'blank',
                   ]
 
+    bokeh_doc = bokeh.plotting.curdoc()
+
+
     # create regions
     region_dict = forest.util.SEA_REGION_DICT
 
@@ -157,17 +159,19 @@ def main(bokeh_id):
                                         init_var)
     init_data_time = available_times[init_data_time_index]
 
-
+    plot_pool = multiprocessing.Pool(NUM_PROCESSES)
     #Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
-                            plot_opts,
-                            'plot_left' + bokeh_id,
-                            init_var,
-                            init_model_left,
-                            init_region,
-                            region_dict,
-                            forest.data.UNIT_DICT,
-                            )
+                                           plot_opts,
+                                           'plot_left' + bokeh_id,
+                                           init_var,
+                                           init_model_left,
+                                           init_region,
+                                           region_dict,
+                                           forest.data.UNIT_DICT,
+                                           bokeh_doc,
+                                           plot_pool,
+                                           )
 
     plot_obj_left.current_time = init_data_time
     bokeh_img_left = plot_obj_left.create_plot()
@@ -175,14 +179,16 @@ def main(bokeh_id):
     stats_left = plot_obj_left.create_stats_widget()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
-                        plot_opts,
-                        'plot_right' + bokeh_id,
-                        init_var,
-                        init_model_right,
-                        init_region,
-                        region_dict,
-                        forest.data.UNIT_DICT,
-                        )
+                                            plot_opts,
+                                            'plot_right' + bokeh_id,
+                                            init_var,
+                                            init_model_right,
+                                            init_region,
+                                            region_dict,
+                                            forest.data.UNIT_DICT,
+                                            bokeh_doc,
+                                            plot_pool,
+                                            )
 
 
     plot_obj_right.current_time = init_data_time
@@ -195,7 +201,6 @@ def main(bokeh_id):
 
 
     num_times = available_times.shape[0]
-    bokeh_doc = bokeh.plotting.curdoc()
 
     # Set up GUI controller class
     control1 = forest.control.ForestController(available_times,

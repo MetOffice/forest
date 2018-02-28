@@ -1,7 +1,8 @@
 import textwrap
 
-import multiprocessing
 import numpy
+
+import iris
 
 import matplotlib
 matplotlib.use('agg')
@@ -17,6 +18,34 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
+import pdb
+
+def do_plotting_async(dataset,
+                 plot_options,
+                 figure_name,
+                 current_var,
+                 current_config,
+                 current_region,
+                 region_dict,
+                 unit_dict,
+                 current_time,):
+    print('starting async function')
+    cl1 = iris.load(dataset[current_config]['data'].path_to_load)
+    mpl_plot = ForestMplPlot(dataset,
+                             plot_options,
+                             figure_name,
+                             current_var,
+                             current_config,
+                             current_region,
+                             region_dict,
+                             unit_dict,
+                             current_time)
+    print('async function 1')
+    mpl_plot.create_plot()
+    print('async function 2')
+    return (mpl_plot.current_img_array,
+            mpl_plot.current_title,
+            mpl_plot.stats_string)
 
 class ForestPlot(object):
 
@@ -39,7 +68,10 @@ class ForestPlot(object):
                  conf1,
                  reg1,
                  rd1,
-                 unit_dict):
+                 unit_dict,
+                 bokeh_doc,
+                 plot_pool,
+                 ):
         '''
         Initialisation function for ForestPlot class
         '''
@@ -51,6 +83,8 @@ class ForestPlot(object):
         self.current_var = plot_var
         self.current_config = conf1
         self.current_region = reg1
+        self.bokeh_doc = bokeh_doc
+        self.plot_pool = plot_pool
         self.current_time = \
             self.dataset[self.current_config]['data'].get_times(self.current_var)[0]
         self.data_bounds = self.region_dict[self.current_region]
@@ -74,28 +108,51 @@ class ForestPlot(object):
         self.bokeh_fig_width = 8
         self.coast_res = '50m'
         self.bokeh_fig_size = (800, 600)
+        self.do_async = True
 
     def __str__(self):
         return self.dataset[self.current_config]['data_type_name']
 
     def create_matplotlib_fig(self):
-        self.mpl_plot = ForestMplPlot(self.dataset,
-                                 self.plot_options,
-                                 self.figure_name,
-                                 self.current_var,
-                                 self.current_config,
-                                 self.current_region,
-                                 self.region_dict,
-                                 self.unit_dict,
-                                 self.current_time,
-                                 )
 
-        self.mpl_plot.create_plot()
-        self.stats_string = self.mpl_plot.stats_string
-        self.current_title = self.mpl_plot.current_title
-        self.current_img_array = self.mpl_plot.current_img_array
+        args1 = (self.dataset,
+                 self.plot_options,
+                 self.figure_name,
+                 self.current_var,
+                 self.current_config,
+                 self.current_region,
+                 self.region_dict,
+                 self.unit_dict,
+                 self.current_time,
+                 )
+        if self.do_async:
+            self.plot_pool.apply_async(do_plotting_async,
+                                       args1,
+                                       callback=self.plot_finished_callback,
+                                       error_callback=self.on_plot_error)
+            self.display_mode = ForestPlot.DISPLAY_MODE_LOADING
+        else:
+            self.current_img_array, self.current_title, self.stats_string = do_plotting_async(*args1)
+            self.display_mode = ForestPlot.DISPLAY_MODE_PLOT
 
-        self.display_mode = ForestPlot.DISPLAY_MODE_PLOT
+
+    def plot_finished_callback(self, result):
+        print('executing plot_finished callback')
+        self.current_img_array = result[0]
+        self.current_title = result[1]
+        self.stats_string =  result[2]
+
+        print('finished plot_finished callback')
+        self.bokeh_doc.add_next_tick_callback(self.update_doc_callback)
+
+    def on_plot_error(self, plot_error1):
+        print('ERROR: creating plot - {0}'.format(str(plot_error1)))
+
+    def update_doc_callback(self):
+        print('update bokeh document')
+        ForestPlot.DISPLAY_MODE_PLOT
+        self.update_bokeh_img_plot_from_fig()
+        print('finished updating bokeh document')
 
     def _update_mpl_params(self):
         self.mpl_plot.current_time = self.current_time
@@ -165,7 +222,7 @@ class ForestPlot(object):
             self.plot_msg_txt = 'Data missing'
             arr_to_plot = numpy.zeros((40, 30, 3), dtype='uint8')
         self.bokeh_image = \
-            self.bokeh_figure.image_rgba(image=[self.current_img_array],
+            self.bokeh_figure.image_rgba(image=[arr_to_plot],
                                          x=[cur_region[2]],
                                          y=[cur_region[0]],
                                          dw=[longitude_range],
@@ -356,13 +413,6 @@ class ForestPlot(object):
             print('bokeh plot linking failed.')
 
 
-    def plot_finished_callback(self):
-        pass
-
-    def update_doc_callback(self):
-        pass
-
-
 class ForestMplPlot(object):
 
     def __init__(self,
@@ -463,7 +513,9 @@ class ForestMplPlot(object):
                              'blank': self.create_blank,
                              }
 
+    @forest.util.timer
     def create_plot(self):
+        print('starting function ForestMplPlot.create_plot')
         self.create_matplotlib_fig()
 
     def update_plot(self):
@@ -486,15 +538,20 @@ class ForestMplPlot(object):
         '''
 
         '''
+        print('ForestMplPlot.create_matplotlib_fig 1')
         self.current_figure = \
             matplotlib.pyplot.figure(self.figure_name,
                                      figsize=self.current_fig_size)
+        print('ForestMplPlot.create_matplotlib_fig 2')
         self.current_figure.clf()
+        print('ForestMplPlot.create_matplotlib_fig 3')
         self.current_axes = \
             self.current_figure.add_subplot(
                 111,
                 projection=cartopy.crs.PlateCarree())
+        print('ForestMplPlot.create_matplotlib_fig 3')
         self.current_axes.set_position([0, 0, 1, 1])
+        print('ForestMplPlot.create_matplotlib_fig 4')
         self.plot_funcs[self.current_var]()
         if self.main_plot:
             if self.use_mpl_title:
@@ -511,21 +568,27 @@ class ForestMplPlot(object):
 
             self.current_figure.canvas.draw()
 
+        print('ForestMplPlot.create_matplotlib_fig 5')
         self.current_img_array = forest.util.get_image_array_from_figure(
             self.current_figure)
+        print('ForestMplPlot.create_matplotlib_fig 6')
 
     def create_blank(self):
         self.current_title = 'Blank plot'
         self.stats_string = ''
 
     def get_data(self, var_name=None):
+        print('ForestMplPlot.get_data 1')
         current_ds = self.dataset[self.current_config]['data']
+        print('ForestMplPlot.get_data 2')
         var_to_load = var_name
         if not var_to_load:
             var_to_load = self.current_var
+        print('ForestMplPlot.get_data 3')
         data_cube = current_ds.get_data(var_to_load,
                                         convert_units=True,
                                         selected_time=self.current_time)
+        print('ForestMplPlot.get_data 4')
         return data_cube
 
     def update_coords(self, data_cube):
@@ -552,11 +615,13 @@ class ForestMplPlot(object):
         Function for creating precipitation plots, called by create_plot when
         precipitation is the selected plot type.
         '''
+        print('ForestMplPlot.plot_precip 1')
 
         data_cube = self.get_data()
+        print('ForestMplPlot.plot_precip 2')
         self.update_coords(data_cube)
         self.current_axes.coastlines(resolution='110m')
-        self.current_axes.coastlines(resolution='110m')
+        print('ForestMplPlot.plot_precip 3')
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
@@ -566,8 +631,10 @@ class ForestMplPlot(object):
                                          norm=self.plot_options[
                                              self.current_var]['norm'],
                                          transform=cartopy.crs.PlateCarree())
+        print('ForestMplPlot.plot_precip 4')
         self.update_title(data_cube)
         self.update_stats(data_cube)
+        print('ForestMplPlot.plot_precip 4')
 
     def update_wind_vectors(self):
         '''

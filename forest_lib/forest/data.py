@@ -14,7 +14,6 @@ import iris
 import forest.util
 
 import pdb
-
 WIND_SPEED_NAME = 'wind_speed'
 WIND_VECTOR_NAME = 'wind_vectors'
 WIND_STREAM_NAME = 'wind_streams'
@@ -157,12 +156,12 @@ class ForestDataset(object):
         return file_exists
 
     def get_times(self, var_name):
-        if self.times[var_name] is None:
-            self.load_times(var_name)
-        return self.times[var_name]
+        # if self.times[var_name] is None:
+
+        return self.load_times(var_name)
 
     def load_times(self, var_name):
-        self.time_loaders[var_name](var_name)
+        return self.time_loaders[var_name](var_name)
 
     def _basic_time_load(self, var_name):
         field_dict = self.var_lookup[var_name]
@@ -175,54 +174,74 @@ class ForestDataset(object):
         ic1 = iris.Constraint(cube_func=cf1)
 
         cube1 = iris.load_cube(self.path_to_load, ic1)
-        self.times[var_name] = cube1.coord('time').points
-        self.data[var_name] = dict([(t1,None) for t1 in self.times[var_name]])
+        # self.times[var_name] = cube1.coord('time').points
+        # self.data[var_name] = dict([(t1,None) for t1 in self.times[var_name]])
+        return cube1.coord('time').points
 
     def _wind_time_load(self):
-        self._basic_time_load('x_wind')
-        self.times['y_wind'] = self.times['y_wind']
-        for var1 in WIND_VECTOR_VARS:
-            self.times[var1] = self.times['x_wind']
+        return self._basic_time_load('x_wind')
+        # self.times['y_wind'] = self.times['y_wind']
+        # for var1 in WIND_VECTOR_VARS:
+        #     self.times[var1] = self.times['x_wind']
 
     def get_data(self, var_name, convert_units=True, selected_time=None):
+        print('ForestData.get_data 1')
         time_ix = selected_time
         if time_ix is None:
             time_ix = ForestDataset.TIME_INDEX_ALL
         else:
             print('loading data for time {0}'.format(time_ix))
 
+        print('ForestData.get_data 2')
 
         # first time we look at this data, populate dictionary with
         # available times for this variable
+        times1 = None
         if self.data[var_name] is None:
+            print('ForestData.get_data 3-1')
             if self.check_data():
+                print('ForestData.get_data 3-2')
                 # get data from aws s3 storage
                 self.retrieve_data()
+                print('ForestData.get_data 3-3')
                 # load the data into memory from file (will only load meta data
                 # initially)
-                self.load_times(var_name)
-        if self.data[var_name][time_ix] is None:
-            if self.check_data():
-                # get data from aws s3 storage
-                self.retrieve_data()
-                # load the data into memory from file (will only load meta data
-                # initially)
-                self.load_data(var_name, time_ix)
+                times1 = self.load_times(var_name)
+                print('ForestData.get_data 3-4')
 
-            else:
-                self.data[var_name][time_ix] = None
+        print('ForestData.get_data 4')
+        dc1 = None
+        # if self.data[var_name][time_ix] is None:
+        #     print('ForestData.get_data 4-1')
+        if self.check_data():
+            print('ForestData.get_data 4-2')
+            # get data from aws s3 storage
+            self.retrieve_data()
+            print('ForestData.get_data 4-3')
+            # load the data into memory from file (will only load meta data
+            # initially)
+            dc1 = self.load_data(var_name, time_ix)
+            print('ForestData.get_data 4-4')
 
-        if self.data and convert_units and UNIT_DICT[var_name]:
+        # else:
+        #     self.data[var_name][time_ix] = None
+
+        print('ForestData.get_data 5')
+
+        if dc1 and convert_units and UNIT_DICT[var_name]:
             try:
-                if self.data[var_name][time_ix].units != UNIT_DICT[var_name]:
+                print('ForestData.get_data 6-1')
+                if dc1.units != UNIT_DICT[var_name]:
                     if UNIT_DICT[var_name]:
-                        self.data[var_name][time_ix].convert_units(UNIT_DICT[var_name])
+                        print('ForestData.get_data 6-2')
+                        dc1.convert_units(UNIT_DICT[var_name])
                         print('unit conversion applied to {0}'.format(
                             var_name))
             except (KeyError,AttributeError):
                 print('unit conversion not a applicable to {0}'.format(var_name))
 
-        return self.data[var_name][time_ix]
+        print('ForestData.get_data 7')
+        return dc1
 
     def retrieve_data(self):
         '''
@@ -235,9 +254,10 @@ class ForestDataset(object):
             forest.util.download_from_s3(self.s3_url, self.local_path)
 
     def load_data(self, var_name,time_ix):
-        self.loaders[var_name](var_name, time_ix)
+        return self.loaders[var_name](var_name, time_ix)
 
     def _basic_cube_load(self, var_name, time_ix):
+        print('FortestData._basic_cube_load 1')
         time_obj = datetime.datetime.fromtimestamp(time_ix*3600)
         field_dict = self.var_lookup[var_name]
         cf1 = lambda cube1: \
@@ -245,19 +265,43 @@ class ForestDataset(object):
             field_dict['stash_section'] and \
             cube1.attributes['STASH'].item == \
             field_dict['stash_item']
-
-        def time_comp(selected_time, eps1, cell1):
-            return abs(cell1.point - selected_time).total_seconds() < eps1
-
         coord_constraint_dict = {}
-        if time_ix != ForestDataset.TIME_INDEX_ALL:
-            coord_constraint_dict['time'] = \
-                functools.partial(time_comp, time_obj, 1)
+
+        if int(iris.__version__.split('.')[0]) == 1:
+            def time_comp(time_index, eps1, cell1):
+                return abs(cell1.point - time_index) < eps1
+
+            print('FortestData._basic_cube_load 2')
+            if time_ix != ForestDataset.TIME_INDEX_ALL:
+                coord_constraint_dict['time'] = \
+                    functools.partial(time_comp, time_ix, 1e-5)
+
+        elif int(iris.__version__.split('.')[0]) == 2:
+            def time_comp(selected_time, eps1, cell1):
+                return abs(cell1.point - selected_time).total_seconds() < eps1
+
+            print('FortestData._basic_cube_load 2')
+            if time_ix != ForestDataset.TIME_INDEX_ALL:
+                coord_constraint_dict['time'] = \
+                    functools.partial(time_comp, time_obj, 1)
 
         ic1 = iris.Constraint(cube_func=cf1,
                               coord_values=coord_constraint_dict)
 
-        self.data[var_name][time_ix] = iris.load_cube(self.path_to_load, ic1)
+        print('FortestData._basic_cube_load 3')
+
+        print('path to load {0}'.format(self.path_to_load))
+        print('time to load {0}'.format(str(time_obj)))
+        print('stash to load section {0} item {1}'.format(field_dict['stash_section'], field_dict['stash_item'] ) )
+
+        # pdb.set_trace()
+        dc1 = iris.load_cube(self.path_to_load, ic1)
+
+        print('FortestData._basic_cube_load 4')
+        return dc1
+
+        print('ForestData._basic_cube_load 5')
+
 
     def _wind_speed_loader(self, var_name, time_ix):
         # process wind cubes to calculate wind speed
