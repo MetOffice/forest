@@ -62,17 +62,28 @@ class ForestController(object):
                                           button_type='warning')
         self.model_var_dd.on_change('value', self.on_var_change)
 
+        # Create previous timestep button widget
+        self.time_prev_button = bokeh.models.widgets.Button(label='Prev',
+                                                            button_type='warning',
+                                                            width=100)
+        self.time_prev_button.on_click(self.on_time_prev)
+        
+        # Create time selection slider widget
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
                                         end=self.num_times,
                                         value=self.init_time,
                                         step=1,
                                         title="Data time")
-
         self.data_time_slider.on_change('value', self.on_data_time_change)
 
+        # Create next timestep button widget
+        self.time_next_button = bokeh.models.widgets.Button(label='Next',
+                                                            button_type='warning',
+                                                            width=100)
+        self.time_next_button.on_click(self.on_time_next)
+        
         self.region_desc = 'Region'
-
         region_menu_list = create_dropdown_opt_list(self.region_dict.keys())
         self.region_dd = bokeh.models.widgets.Dropdown(menu=region_menu_list,
                                                        label=self.region_desc,
@@ -100,24 +111,50 @@ class ForestController(object):
                                                         1))
 
         # layout widgets
-        self.param_row = bokeh.layouts.row(self.model_var_dd, self.region_dd)
-        self.slider_row = bokeh.layouts.row(self.data_time_slider)
-        self.config_row = bokeh.layouts.row(
+        self.major_config_row = bokeh.layouts.row(self.model_var_dd, self.region_dd)
+        self.time_row = bokeh.layouts.row(self.time_prev_button,
+                                            self.data_time_slider,
+                                            self.time_next_button)
+        self.minor_config_row = bokeh.layouts.row(
             self.left_model_dd, self.right_model_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
         self.info_row = bokeh.layouts.row(self.stats_widgets[0], 
                                           self.colorbar_div,
                                           self.stats_widgets[1])
-        #self.stats_row = bokeh.layouts.row(*self.stats_widgets)
 
-        self.main_layout = bokeh.layouts.column(self.param_row,
-                                                self.slider_row,
-                                                self.config_row,
+        self.main_layout = bokeh.layouts.column(self.time_row,
+                                                self.major_config_row,
+                                                self.minor_config_row,
                                                 self.plots_row,
                                                 self.info_row,
-                                                #self.stats_row,
                                                 )
 
+    def on_time_prev(self):
+        
+        '''Event handler for changing to previous time step
+        
+        '''
+        
+        print('selected previous time step')       
+        current_time = int(self.data_time_slider.value - 1)
+        if current_time >= 0:
+            self.data_time_slider.value = current_time
+        else:
+            print('Cannot select time < 0')
+
+    def on_time_next(self):
+        
+        '''
+        
+        '''
+        
+        print('selected next time step')       
+        current_time = int(self.data_time_slider.value + 1)
+        if current_time < self.num_times:
+            self.data_time_slider.value = current_time
+        else:
+            print('Cannot select time > num_times')      
+        
     def on_data_time_change(self, attr1, old_val, new_val):
 
         '''Event handler for a change in the selected forecast data time.
