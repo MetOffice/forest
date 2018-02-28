@@ -44,8 +44,6 @@ class SimimSatControl(object):
             
             return [(k1, k1) for k1 in iterable1]
         
-        
-
         # Create wavelength selection dropdown widget
         self.wavelength_dd = \
             bokeh.models.widgets.Dropdown(label='Wavelength',
@@ -53,6 +51,12 @@ class SimimSatControl(object):
                                           button_type='warning')
         self.wavelength_dd.on_change('value', self.on_type_change)
 
+        # Create previous timestep button widget
+        self.time_prev_button = bokeh.models.widgets.Button(label='Prev',
+                                                            button_type='warning',
+                                                            width=100)
+        self.time_prev_button.on_click(self.on_time_prev)
+        
         # Create time selection dropdown widget
         time_list = sorted([time_str + 'UTC' for time_str in 
                             self.datasets['simim']['data'].get_data('I').keys()
@@ -63,6 +67,12 @@ class SimimSatControl(object):
                                           button_type='warning')
         self.data_time_dd.on_change('value', self.on_data_time_change)
 
+        # Create next timestep button widget
+        self.time_next_button = bokeh.models.widgets.Button(label='Next',
+                                                            button_type='warning',
+                                                            width=100)
+        self.time_next_button.on_click(self.on_time_next)
+        
         # Create data slider widget
         #start_date = self.fcast_time_obj.date()
         #end_date = (start_date + datetime.timedelta(days=1))
@@ -83,7 +93,10 @@ class SimimSatControl(object):
         #self.hour_slider.on_change('value', self.on_hour_slider_change)
 
         # Set layout rows for widgets
-        self.time_row = bokeh.layouts.row(self.data_time_dd)
+        self.time_row = bokeh.layouts.row(self.time_prev_button,
+                                          self.data_time_dd,
+                                          self.time_next_button
+                                         )
         self.major_config_row = bokeh.layouts.row(self.wavelength_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
         self.info_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
@@ -109,6 +122,22 @@ class SimimSatControl(object):
         for p1 in self.plot_list:
             p1.set_data_time(current_time)
 
+    def on_time_prev(self):
+        
+        '''Event handler for changing to previous time step
+        
+        '''
+        
+        print('selected previous time step')       
+
+    def on_time_next(self):
+        
+        '''
+        
+        '''
+        
+        print('selected next time step')     
+            
     def on_date_slider_change(self, attr1, old_val, new_val):
         
         '''Event handler for a change in the selected forecast data date.

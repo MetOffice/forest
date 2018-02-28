@@ -46,11 +46,13 @@ class ModelGpmControl(object):
         def create_dropdown_opt_list(iterable1):
             return [(k1, k1) for k1 in iterable1]
 
+        # Create previous timestep button widget
         self.time_prev_button = bokeh.models.widgets.Button(label='Prev',
                                                             button_type='warning',
                                                             width=100)
         self.time_prev_button.on_click(self.on_time_prev)
         
+        # Create time selection slider widget
         self.data_time_slider = bokeh.models.widgets.Slider(start=0,
                                                             end=self.num_times,
                                                             value=self.init_time,
@@ -59,6 +61,7 @@ class ModelGpmControl(object):
                                                             width=400)
         self.data_time_slider.on_change('value', self.on_data_time_change)
 
+        # Create next timestep button widget
         self.time_next_button = bokeh.models.widgets.Button(label='Next',
                                                             button_type='warning',
                                                             width=100)
