@@ -15,7 +15,7 @@ class SimimSatControl(object):
         self.datasets = datasets
         self.plot_list = plot_list
         self.bokeh_imgs = bokeh_imgs
-        self.colorbar_widget = colorbar_widget
+        self.colorbar_div = colorbar_widget
         self.init_time = init_time
         self.fcast_time_obj = fcast_time_obj
         self.wavelengths_list = ['W', 'I', 'V']
@@ -86,7 +86,10 @@ class SimimSatControl(object):
         self.dd_row = bokeh.layouts.row(self.wavelength_dd, self.data_time_dd)
         #self.slider_row = bokeh.layouts.row(self.date_slider, self.hour_slider)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
-        self.colorbar_row = bokeh.layouts.row(self.colorbar_widget)
+        self.colorbar_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
+                                              self.colorbar_div,
+                                              bokeh.models.Spacer(width=400, height=100))
+        
         
         # Create main layout
         self.main_layout = bokeh.layouts.column(self.dd_row,
