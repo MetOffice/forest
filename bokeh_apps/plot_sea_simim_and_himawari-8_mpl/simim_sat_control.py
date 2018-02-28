@@ -129,7 +129,14 @@ class SimimSatControl(object):
         '''
         
         print('selected previous time step')   
-        print(self.time_list.index(self.current_time + 'UTC'))
+        current_index = self.time_list.index(self.current_time + 'UTC')
+        if current_index > 0:
+            self.current_time = self.time_list[current_index - 1][:-3]
+            for p1 in self.plot_list:
+                p1.set_data_time(self.current_time)  
+        else:
+            print('No previous time step')
+                
 
     def on_time_next(self):
         
@@ -138,7 +145,13 @@ class SimimSatControl(object):
         '''
         
         print('selected next time step')     
-        print(self.time_list.index(self.current_time + 'UTC'))
+        current_index = self.time_list.index(self.current_time + 'UTC')
+        if current_index < len(self.time_list) - 1:
+            self.current_time = self.time_list[current_index + 1][:-3]
+            for p1 in self.plot_list:
+                p1.set_data_time(self.current_time)  
+        else:
+            print('No next time step')
         
     def on_date_slider_change(self, attr1, old_val, new_val):
         
@@ -178,6 +191,7 @@ class SimimSatControl(object):
         self.time_list = sorted([time_str + 'UTC' for time_str in 
                                  self.datasets['simim']['data'].get_data(new_val).keys()
                                  if time_str in self.datasets['simim']['data'].get_data(new_val).keys()])
+
         self.data_time_dd.menu = [(k1, k1) for k1 in self.time_list]
 
         for p1 in self.plot_list:
