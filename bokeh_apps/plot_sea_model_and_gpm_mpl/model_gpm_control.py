@@ -88,7 +88,7 @@ class ModelGpmControl(object):
         self.major_config_row = bokeh.layouts.row(self.model_dd, self.imerg_rbg, width=1600)
         self.minor_config_row = bokeh.layouts.row(self.accum_rbg)
         self.plots_row = bokeh.layouts.row(*self.bokeh_img_list)
-        self.colorbar_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
+        self.info_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
                                               self.colorbar_div,
                                               bokeh.models.Spacer(width=400, height=100))
 
@@ -96,7 +96,7 @@ class ModelGpmControl(object):
                                                 self.major_config_row,
                                                 self.minor_config_row,
                                                 self.plots_row,
-                                                self.colorbar_row,
+                                                self.info_row,
                                                 )
 
     def on_data_time_change(self, attr1, old_val, new_val):
