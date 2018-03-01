@@ -155,9 +155,12 @@ class ForestController(object):
         # Layout widgets
         self.major_config_row = bokeh.layouts.row(self.model_var_dd, 
                                                   self.region_dd)
-        self.time_row = bokeh.layouts.row(self.time_prev_button,
-                                          self.data_time_slider,
-                                          self.time_next_button)
+        self.time_row = \
+            bokeh.layouts.row(self.time_prev_button,
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.data_time_slider,
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.time_next_button)
         self.minor_config_row = bokeh.layouts.row(self.left_model_dd, 
                                                   self.right_model_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)

@@ -72,10 +72,12 @@ class SimimSatControl(object):
         self.time_next_button.on_click(self.on_time_next)
 
         # Set layout rows for widgets
-        self.time_row = bokeh.layouts.row(self.time_prev_button,
-                                          self.data_time_dd,
-                                          self.time_next_button
-                                         )
+        self.time_row = \
+            bokeh.layouts.row(self.time_prev_button,
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.data_time_dd,
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.time_next_button)
         self.major_config_row = bokeh.layouts.row(self.wavelength_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
         self.info_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
