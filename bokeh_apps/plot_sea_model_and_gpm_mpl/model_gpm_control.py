@@ -4,6 +4,27 @@ import bokeh
 import bokeh.model
 import bokeh.layouts
 
+
+MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
+                 'km4p4_ra1t': 'SE Asia 4.4km', 
+                 'indon2km1p5_ra1t': 'Indonesia 1.5km', 
+                 'mal2km1p5_ra1t': 'Malaysia 1.5km', 
+                 'phi2km1p5_ra1t': 'Philippines 1.5km'}
+
+
+def create_dropdown_opt_list_from_dict(dict1, iterable1):
+    
+    '''Create list of 2-tuples from dictionary for creating dropdown 
+        menu labels.
+    
+    '''
+    
+    dd_tuple_list = [(dict1[k1], k1) if k1 in dict1.keys()
+                     else (k1, k1) for k1 in iterable1]
+
+    return dd_tuple_list
+
+
 class ModelGpmControl(object):
     
     '''
@@ -47,72 +68,98 @@ class ModelGpmControl(object):
             return [(k1, k1) for k1 in iterable1]
 
         # Create previous timestep button widget
-        self.time_prev_button = bokeh.models.widgets.Button(label='Prev',
-                                                            button_type='warning',
-                                                            width=100)
+        self.time_prev_button = \
+            bokeh.models.widgets.Button(label='Prev',
+                                        button_type='warning',
+                                        width=100)
         self.time_prev_button.on_click(self.on_time_prev)
         
         # Create time selection slider widget
-        self.data_time_slider = bokeh.models.widgets.Slider(start=0,
-                                                            end=self.num_times,
-                                                            value=self.init_time,
-                                                            step=3,
-                                                            title="Data time",
-                                                            width=400)
+        self.data_time_slider = \
+            bokeh.models.widgets.Slider(start=0,
+                                        end=self.num_times,
+                                        value=self.init_time,
+                                        step=3,
+                                        title="Data time",
+                                        width=400)
         self.data_time_slider.on_change('value', self.on_data_time_change)
 
         # Create next timestep button widget
-        self.time_next_button = bokeh.models.widgets.Button(label='Next',
-                                                            button_type='warning',
-                                                            width=100)
+        self.time_next_button = \
+            bokeh.models.widgets.Button(label='Next',
+                                        button_type='warning',
+                                        width=100)
         self.time_next_button.on_click(self.on_time_next)
         
-        self.model_menu_list = create_dropdown_opt_list([ds_name for ds_name in self.datasets.keys()
-                                                         if 'imerg' not in ds_name])
-
-        model_dd_desc = 'Model display'
-        self.model_dd = bokeh.models.widgets.Dropdown(menu=self.model_menu_list,
-                                                      label=model_dd_desc,
+        # Create model selection dropdown menu widget
+        model_list = [ds_name for ds_name in self.datasets.keys()
+                      if 'imerg' not in ds_name]
+        model_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
+                                                             model_list)
+        self.model_dd = bokeh.models.widgets.Dropdown(menu=model_menu_list,
+                                                      label= 'Model display',
                                                       button_type='warning',
                                                       width=400)
-        self.model_dd.on_change('value', functools.partial(self.on_config_change, 0))
+        self.model_dd.on_change('value', 
+                                functools.partial(self.on_config_change, 0))
 
-        self.imerg_rbg = bokeh.models.widgets.RadioButtonGroup(labels=[ds_name for ds_name
-                                                                       in self.datasets.keys()
-                                                                       if 'imerg' in ds_name],
-                                                               button_type='warning',
-                                                               width=800)
-        self.imerg_rbg.on_change('active', functools.partial(self.on_imerg_change, 1))
+        # Create GPM IMERG selection radio button group widget
+        imerg_labels = [ds_name for ds_name in self.datasets.keys() if 'imerg' in ds_name]
+        self.imerg_rbg = \
+            bokeh.models.widgets.RadioButtonGroup(labels=imerg_labels,
+                                                  button_type='warning',
+                                                  width=800)
+        self.imerg_rbg.on_change('active', 
+                                 functools.partial(self.on_imerg_change, 1))
 
+        # Create accumulation selection label div widget
+        accum_div_text = '<p style="vertical-align:middle;">Accumulation window:</p>'
+        self.accum_div = bokeh.models.widgets.Div(text=accum_div_text,
+                                                  height=60,
+                                                  width=150)
         
-        self.accum_rbg = bokeh.models.widgets.RadioButtonGroup(labels=['{}hr'.format(val) for
-                                                                      val in [3, 6, 12, 24]],
-                                                               button_type='warning',
-                                                               width=800,
-                                                               active=0)
-        self.accum_rbg.on_change('active', functools.partial(self.on_accum_change, 1))
+        # Create accumulation selection radio button group widget
+        accum_labels = ['{}hr'.format(val) for val in [3, 6, 12, 24]]
+        self.accum_rbg = \
+            bokeh.models.widgets.RadioButtonGroup(labels=accum_labels,
+                                                  button_type='warning',
+                                                  width=800,
+                                                  active=0)
+        self.accum_rbg.on_change('active', 
+                                 functools.partial(self.on_accum_change, 1))
         
-        self.colorbar_div = bokeh.models.widgets.Div(text="<img src='plot_sea_model_and_gpm_mpl/static/" + \
-                                                          "precip_accum_colorbar.png'\>", width=800, height=100)
+        # Create colorbar div widget
+        colorbar_link = "<img src='plot_sea_model_and_gpm_mpl/static/" + \
+                        "precip_accum_colorbar.png'\>"
+        self.colorbar_div = bokeh.models.widgets.Div(text=colorbar_link, 
+                                                     width=800, 
+                                                     height=100)
         
         # Set layout for widgets
-        self.time_row = bokeh.layouts.row(self.time_prev_button,
-                                          self.data_time_slider,
-                                          self.time_next_button
-                                         )
-        self.major_config_row = bokeh.layouts.row(self.model_dd, self.imerg_rbg, width=1600)
-        self.minor_config_row = bokeh.layouts.row(self.accum_rbg)
+        self.time_row = \
+            bokeh.layouts.row(self.time_prev_button,
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.data_time_slider,
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.time_next_button)
+        self.major_config_row = \
+            bokeh.layouts.row(self.model_dd, 
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.imerg_rbg)
+        self.minor_config_row = bokeh.layouts.row(self.accum_div,
+                                                  self.accum_rbg)
         self.plots_row = bokeh.layouts.row(*self.bokeh_img_list)
-        self.info_row = bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
-                                              self.colorbar_div,
-                                              bokeh.models.Spacer(width=400, height=100))
+        self.info_row = \
+            bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
+                              self.colorbar_div,
+                              bokeh.models.Spacer(width=400, height=100))
 
         self.main_layout = bokeh.layouts.column(self.time_row,
                                                 self.major_config_row,
                                                 self.minor_config_row,
                                                 self.plots_row,
                                                 self.info_row,
-                                                )
+                                               )
 
     def on_data_time_change(self, attr1, old_val, new_val):
         
