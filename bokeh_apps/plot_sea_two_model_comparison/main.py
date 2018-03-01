@@ -140,7 +140,7 @@ def main(bokeh_id):
                   ]
 
     bokeh_doc = bokeh.plotting.curdoc()
-
+    bokeh_doc.update_semaphore = multiprocessing.Semaphore()
 
     # create regions
     region_dict = forest.util.SEA_REGION_DICT

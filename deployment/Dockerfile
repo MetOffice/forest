@@ -3,7 +3,7 @@ RUN mkdir /opt/notebooks
 
 # Librarys
 RUN conda install -c conda-forge -c ioam boto3=1.5.36 --yes
-RUN conda install -c conda-forge -c iris=2.0.0 bokeh=0.12.13 cartopy=0.16.0 --yes
+RUN conda install -c conda-forge -c iris=1.13.0 bokeh=0.12.13 cartopy=0.16.0 --yes
 RUN conda install -c conda-forge pyke=1.1.1 --yes
 
 # pysssix stuff

@@ -143,16 +143,19 @@ class ForestPlot(object):
         self.stats_string =  result[2]
 
         print('finished plot_finished callback')
+        self.bokeh_doc.update_semaphore.acquire()
         self.bokeh_doc.add_next_tick_callback(self.update_doc_callback)
 
     def on_plot_error(self, plot_error1):
         print('ERROR: creating plot - {0}'.format(str(plot_error1)))
 
     def update_doc_callback(self):
-        print('update bokeh document')
+        print('update bokeh document for {0}'.format(str(self)))
         ForestPlot.DISPLAY_MODE_PLOT
+        self.plot_msg_txt = ''
         self.update_bokeh_img_plot_from_fig()
         print('finished updating bokeh document')
+        self.bokeh_doc.update_semaphore.release()
 
     def _update_mpl_params(self):
         self.mpl_plot.current_time = self.current_time
@@ -515,7 +518,6 @@ class ForestMplPlot(object):
 
     @forest.util.timer
     def create_plot(self):
-        print('starting function ForestMplPlot.create_plot')
         self.create_matplotlib_fig()
 
     def update_plot(self):
@@ -538,20 +540,15 @@ class ForestMplPlot(object):
         '''
 
         '''
-        print('ForestMplPlot.create_matplotlib_fig 1')
         self.current_figure = \
             matplotlib.pyplot.figure(self.figure_name,
                                      figsize=self.current_fig_size)
-        print('ForestMplPlot.create_matplotlib_fig 2')
         self.current_figure.clf()
-        print('ForestMplPlot.create_matplotlib_fig 3')
         self.current_axes = \
             self.current_figure.add_subplot(
                 111,
                 projection=cartopy.crs.PlateCarree())
-        print('ForestMplPlot.create_matplotlib_fig 3')
         self.current_axes.set_position([0, 0, 1, 1])
-        print('ForestMplPlot.create_matplotlib_fig 4')
         self.plot_funcs[self.current_var]()
         if self.main_plot:
             if self.use_mpl_title:
@@ -568,27 +565,21 @@ class ForestMplPlot(object):
 
             self.current_figure.canvas.draw()
 
-        print('ForestMplPlot.create_matplotlib_fig 5')
         self.current_img_array = forest.util.get_image_array_from_figure(
             self.current_figure)
-        print('ForestMplPlot.create_matplotlib_fig 6')
 
     def create_blank(self):
         self.current_title = 'Blank plot'
         self.stats_string = ''
 
     def get_data(self, var_name=None):
-        print('ForestMplPlot.get_data 1')
         current_ds = self.dataset[self.current_config]['data']
-        print('ForestMplPlot.get_data 2')
         var_to_load = var_name
         if not var_to_load:
             var_to_load = self.current_var
-        print('ForestMplPlot.get_data 3')
         data_cube = current_ds.get_data(var_to_load,
                                         convert_units=True,
                                         selected_time=self.current_time)
-        print('ForestMplPlot.get_data 4')
         return data_cube
 
     def update_coords(self, data_cube):
@@ -615,13 +606,10 @@ class ForestMplPlot(object):
         Function for creating precipitation plots, called by create_plot when
         precipitation is the selected plot type.
         '''
-        print('ForestMplPlot.plot_precip 1')
 
         data_cube = self.get_data()
-        print('ForestMplPlot.plot_precip 2')
         self.update_coords(data_cube)
         self.current_axes.coastlines(resolution='110m')
-        print('ForestMplPlot.plot_precip 3')
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
@@ -631,10 +619,8 @@ class ForestMplPlot(object):
                                          norm=self.plot_options[
                                              self.current_var]['norm'],
                                          transform=cartopy.crs.PlateCarree())
-        print('ForestMplPlot.plot_precip 4')
         self.update_title(data_cube)
         self.update_stats(data_cube)
-        print('ForestMplPlot.plot_precip 4')
 
     def update_wind_vectors(self):
         '''
