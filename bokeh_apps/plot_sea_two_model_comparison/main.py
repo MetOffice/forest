@@ -17,12 +17,6 @@ import forest.data
 
 iris.FUTURE.netcdf_promote = True
 
-try:
-    get_ipython
-    is_notbook = True
-except:
-    is_notebook = False
-
 def add_main_plot(main_layout, bokeh_doc):
     
     '''
