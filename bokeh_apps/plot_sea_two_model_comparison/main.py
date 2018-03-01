@@ -121,24 +121,17 @@ def main(bokeh_id):
 
     print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
 
-    # import pdb
-    # pdb.set_trace()
-
-    #set up datasets dictionary
-
     plot_names = ['precipitation',
-                'air_temperature',
-                'wind_vectors',
-                    'wind_mslp',
-                'wind_streams',
-                'mslp',
-                'cloud_fraction',
-                #'blank',
-                ]
+                  'air_temperature',
+                  'wind_vectors',
+                  'wind_mslp',
+                  'wind_streams',
+                  'mslp',
+                  'cloud_fraction',
+                  #'blank',
+                 ]
 
-
-
-    # create regions
+    #Create regions
     region_dict = forest.util.SEA_REGION_DICT
 
     #Setup and display plots

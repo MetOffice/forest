@@ -8,16 +8,33 @@ import bokeh.plotting
 import tornado
 
 
-# set up bokeh widgets
+
+
 def create_dropdown_opt_list(iterable1):
+    
+    '''Create list of 2-tuples with matching values from list for
+        creating dropdown menu labels.
+    
+    '''
+    
     return [(k1, k1) for k1 in iterable1]
+
+
+def create_dropdown_opt_list_from_dict(dict1):
+    
+    '''Create list of 2-tuples from dictionary for creating dropdown 
+        menu labels.
+    
+    '''
+    
+    return [(dict1[k1], k1) for k1 in dict1]
 
 
 class ForestController(object):
 
-    """
+    '''
 
-    """
+    '''
 
     def __init__(self,
                  init_time,
@@ -31,9 +48,9 @@ class ForestController(object):
                  region_dict,
                  bokeh_doc):
 
-        """
-
-        """
+        '''
+        
+        '''
 
         self.plots = plots
         self.bokeh_imgs = bokeh_imgs
@@ -49,9 +66,9 @@ class ForestController(object):
 
     def create_widgets(self):
 
-        """
-
-        """
+        '''
+        
+        '''
 
         self.model_var_list_desc = 'Attribute to visualise'
 
@@ -136,7 +153,8 @@ class ForestController(object):
         
         '''
         
-        print('selected previous time step')       
+        print('selected previous time step')
+        
         current_time = int(self.data_time_slider.value - 1)
         if current_time >= 0:
             self.data_time_slider.value = current_time
@@ -149,7 +167,8 @@ class ForestController(object):
         
         '''
         
-        print('selected next time step')       
+        print('selected next time step')
+        
         current_time = int(self.data_time_slider.value + 1)
         if current_time < self.num_times:
             self.data_time_slider.value = current_time
@@ -163,7 +182,6 @@ class ForestController(object):
         '''
 
         print('data time handler')
-        print(dir(self.data_time_slider.properties))
         
         for p1 in self.plots:
             p1.set_data_time(new_val)
