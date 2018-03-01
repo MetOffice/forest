@@ -73,25 +73,6 @@ class SimimSatControl(object):
                                                             button_type='warning',
                                                             width=100)
         self.time_next_button.on_click(self.on_time_next)
-        
-        # Create data slider widget
-        #start_date = self.fcast_time_obj.date()
-        #end_date = (start_date + datetime.timedelta(days=1))
-        #value_date = datetime.datetime.strptime(self.init_time[:8], '%Y%m%d').date()
-        #self.date_slider = bokeh.models.widgets.sliders.DateSlider(start=start_date,
-        #                                                      end=end_date,
-        #                                                      value=value_date,
-        #                                                      step=86400000,
-        #                                                      title='Select hour')
-        #self.date_slider.on_change('value', self.on_date_slider_change)
-
-        # Create hour slider widget
-        #self.hour_slider = bokeh.models.widgets.sliders.Slider(start=0,
-        #                                                       end=21,
-        #                                                       value=12,
-        #                                                       step=3,
-        #                                                       title='Select hour')
-        #self.hour_slider.on_change('value', self.on_hour_slider_change)
 
         # Set layout rows for widgets
         self.time_row = bokeh.layouts.row(self.time_prev_button,
