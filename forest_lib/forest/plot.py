@@ -143,7 +143,7 @@ class ForestPlot(object):
         self.stats_string =  result[2]
 
         print('finished plot_finished callback')
-        self.bokeh_doc.update_semaphore.acquire()
+        # self.bokeh_doc.update_semaphore.acquire()
         self.bokeh_doc.add_next_tick_callback(self.update_doc_callback)
 
     def on_plot_error(self, plot_error1):
@@ -151,18 +151,16 @@ class ForestPlot(object):
 
     def update_doc_callback(self):
         print('update bokeh document for {0}'.format(str(self)))
-        ForestPlot.DISPLAY_MODE_PLOT
+        self.display_mode = ForestPlot.DISPLAY_MODE_PLOT
         self.plot_msg_txt = ''
         self.update_bokeh_img_plot_from_fig()
-        print('finished updating bokeh document')
-        self.bokeh_doc.update_semaphore.release()
+        if self.stats_widget:
+            self.update_stats_widget()
+        if self.colorbar_widget:
+            self.update_colorbar_widget()
 
-    def _update_mpl_params(self):
-        self.mpl_plot.current_time = self.current_time
-        self.mpl_plot.current_var = self.current_var
-        self.mpl_plot.current_config = self.current_config
-        self.mpl_plot.current_region = self.current_region
-        self.mpl_plot.data_bounds = self.data_bounds
+        print('finished updating bokeh document')
+        # self.bokeh_doc.update_semaphore.release()
 
     @forest.util.timer
     def create_plot(self):
@@ -213,6 +211,7 @@ class ForestPlot(object):
 
         cur_region = self.region_dict[self.current_region]
         # Add mpl image
+        arr_to_plot = None
         latitude_range = cur_region[1] - cur_region[0]
         longitude_range = cur_region[3] - cur_region[2]
         if self.display_mode == ForestPlot.DISPLAY_MODE_PLOT:
@@ -252,6 +251,21 @@ class ForestPlot(object):
         '''
 
         cur_region = self.region_dict[self.current_region]
+        arr_to_plot = None
+        latitude_range = cur_region[1] - cur_region[0]
+        longitude_range = cur_region[3] - cur_region[2]
+        if self.display_mode == ForestPlot.DISPLAY_MODE_PLOT:
+            self.plot_msg_txt = ''
+            arr_to_plot = self.current_img_array
+            print('mode plot')
+        elif self.display_mode == ForestPlot.DISPLAY_MODE_LOADING:
+            self.plot_msg_txt = 'Plot loading'
+            arr_to_plot = numpy.zeros((40,30,3),dtype='uint8')
+            print('mode data loading')
+        elif self.display_mode == ForestPlot.DISPLAY_MODE_MISSING_DATA:
+            self.plot_msg_txt = 'Data missing'
+            arr_to_plot = numpy.zeros((40, 30, 3), dtype='uint8')
+            print('mode missing data')
 
         if self.bokeh_img_ds:
             self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
@@ -267,11 +281,14 @@ class ForestPlot(object):
                 self.bokeh_figure.title.text = self.current_title
             except:
                 self.current_img_array = None
+
         if self.plot_msg:
             if self.plot_msg_txt:
                 self.plot_msg.glyph.text = self.plot_msg_txt
             else:
+                self.plot_msg.glyph.text = ''
                 self.plot_msg.visible = False
+                print('turing off plot message')
 
     def update_plot(self):
 
@@ -357,7 +374,8 @@ class ForestPlot(object):
         print('selected new time {0}'.format(new_time))
 
         self.current_time = new_time
-        self.update_plot()
+        self.create_matplotlib_fig()
+        self.update_bokeh_img_plot_from_fig()
 
     def set_var(self, new_var):
 
@@ -370,10 +388,7 @@ class ForestPlot(object):
         self.current_var = new_var
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
-        if self.stats_widget:
-            self.update_stats_widget()
-        if self.colorbar_widget:
-            self.update_colorbar_widget()
+
 
     def set_region(self, new_region):
 
@@ -387,8 +402,7 @@ class ForestPlot(object):
         self.data_bounds = self.region_dict[self.current_region]
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
-        if self.stats_widget:
-            self.update_stats_widget()
+
 
     def set_config(self, new_config):
 
@@ -397,11 +411,9 @@ class ForestPlot(object):
         '''
 
         print('setting new config {0}'.format(new_config))
-        self.current_confog = new_config
+        self.current_config = new_config
         self.create_matplotlib_fig()
         self.update_bokeh_img_plot_from_fig()
-        if self.stats_widget:
-            self.update_stats_widget()
 
     def link_axes_to_other_plot(self, other_plot):
 
