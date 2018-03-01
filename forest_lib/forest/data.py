@@ -124,6 +124,24 @@ class ForestDataset(object):
     - accum_precip_loader() -- Load precip. data and calc. accums.
     - accum_precip() -- Calculate precip. accumulations.
     
+    Attributes
+    ----------
+    
+    - config_name -- Str; Name of data configuration.
+    - var_lookup -- Dict; Links variable names to data keys.
+    - file_name -- Str; Specifies netCDF file name.
+    - s3_base_url -- Str; S3 data basepath.
+    - s3_url -- Str; Combined S3 basepath and filename.
+    - s3_local_base -- Str; Local S3 data basepath.
+    - s3_local_path -- Str; Combined S3 local basepath and filename.
+    - use_s3_local_mount -- Bool; Specify whether to use S3 mount.
+    - base_local_path -- Str; Local basepath to data.
+    - do_download -- Bool; Specify whether to do data download.
+    - local_path -- Str; Combined local basepath and filename.
+    - loaders -- Dict; Dictionary of loader functions for vars.
+    - data -- Dict; Loaded data cubes.
+    - path_to_load -- Str; local/S3 path, based on do_download.
+    
     """
     
     def __init__(self,
