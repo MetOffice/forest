@@ -5,6 +5,7 @@ import bokeh.layouts
 
 
 class SimimSatControl(object):
+    
     def __init__(self, datasets, init_time, fcast_time_obj, 
                  plot_list, bokeh_imgs, colorbar_widget):
         
@@ -19,6 +20,9 @@ class SimimSatControl(object):
         self.current_time = init_time
         self.fcast_time_obj = fcast_time_obj
         self.wavelengths_list = ['W', 'I', 'V']
+        self.dd_label_dict = {'W': u'Water vapour (6.2\u03BCm)',
+                              'I': u'Infra-red (10.4\u03BCm)', 
+                              'V': u'Visible (0.64\u03BCm)'}
 
         self.create_widgets()
 
@@ -36,19 +40,12 @@ class SimimSatControl(object):
         
         '''
         
-        def create_dropdown_opt_list(iterable1):
-            
-            '''
-            
-            '''
-            
-            return [(k1, k1) for k1 in iterable1]
-        
         # Create wavelength selection dropdown widget
-        self.wavelength_dd = \
-            bokeh.models.widgets.Dropdown(label='Wavelength',
-                                          menu=create_dropdown_opt_list(self.wavelengths_list),
-                                          button_type='warning')
+        wl_dd_list = [(self.dd_label_dict[k1], k1) for 
+                      k1 in self.dd_label_dict.keys()]
+        self.wavelength_dd = bokeh.models.widgets.Dropdown(label='Wavelength',
+                                                           menu=wl_dd_list,
+                                                           button_type='warning')
         self.wavelength_dd.on_change('value', self.on_type_change)
 
         # Create previous timestep button widget
@@ -61,11 +58,11 @@ class SimimSatControl(object):
         self.time_list = sorted([time_str + 'UTC' for time_str in 
                                  self.datasets['simim']['data'].get_data('I').keys()
                                  if time_str in self.datasets['simim']['data'].get_data('I').keys()])
-        self.data_time_dd = \
-            bokeh.models.widgets.Dropdown(label='Time',
-                                          menu=create_dropdown_opt_list(self.time_list),
-                                          button_type='warning',
-                                          width=300)
+        time_dd_list = [(k1, k1) for k1 in self.time_list]
+        self.data_time_dd = bokeh.models.widgets.Dropdown(label='Time',
+                                                          menu=time_dd_list,
+                                                          button_type='warning',
+                                                          width=300)
         self.data_time_dd.on_change('value', self.on_data_time_change)
 
         # Create next timestep button widget
@@ -119,7 +116,6 @@ class SimimSatControl(object):
         else:
             print('No previous time step')
                 
-
     def on_time_next(self):
         
         '''
@@ -134,30 +130,6 @@ class SimimSatControl(object):
                 p1.set_data_time(self.current_time)  
         else:
             print('No next time step')
-        
-    def on_date_slider_change(self, attr1, old_val, new_val):
-        
-        '''Event handler for a change in the selected forecast data date.
-        
-        '''
-        
-        print('selected new date {0}'.format(new_val))
-        
-        self.current_time = new_val.strftime('%Y%m%d') + self.plot_list[0].current_time[-4:]
-        for p1 in self.plot_list:
-            p1.set_data_time(current_time)
-
-    def on_hour_slider_change(self, attr1, old_val, new_val):
-        
-        '''Event handler for a change in the selected forecast data date.
-        
-        '''
-        
-        print('selected new date {0}'.format(new_val))
-        
-        self.current_time = self.plot_list[0].current_time[:-4] + '{:02d}00'.format(new_val)
-        for p1 in self.plot_list:
-            p1.set_data_time(current_time)
 
     def on_type_change(self, attr1, old_val, new_val):
 
@@ -165,8 +137,7 @@ class SimimSatControl(object):
         
         '''
 
-        print('selected new var {0}'.format(new_val))
-
+        print('selected new wavelength {0}'.format(new_val))
         current_type = new_val
         
         # Update time dropdown menu with times for new variable
