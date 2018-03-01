@@ -1,4 +1,25 @@
-"""
+"""Module for containing miscellaneous Forest functions.
+
+Functions
+---------
+
+- download_from_s3() --
+- get_radar_colours() -- Set dictionary of precipitation colormap.
+- get_wind_colours() -- Set dictionary of wind speed colormap.
+- get_cloud_colours() -- Set dictionary of cloud fraction colormap.
+- get_air_pressure_colours() -- Set dictionary of mslp colormap.
+- get_air_temp_colours() -- Set dictionary of temperature colormap.
+- get_time_str() -- Convert epoch time into string.
+- convert_vector_to_mag_angle() -- Convert winds, Cartesian to Polar.
+- calc_wind_vectors() -- Calculate wind vectors from components.
+- create_colour_opts() -- Create dict of colormaps.
+- get_sat_simim_colours() -- Set dictionary of Sim Im colormap.
+- create_satellite_simim_plot_opts() -- Create dict of colormaps.
+- extract_region() -- Subset a cube into a restricted region.
+- get_image_array_from_figure() -- Convert figure into RGBA array.
+- get_model_run_times() -- Get dates of recent model runs.
+- check_remote_file_exists() -- Check if remote file exists.
+- timer() -- Timer function for testing other functions.
 
 """
 
@@ -23,24 +44,27 @@ SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
 
 def download_from_s3(s3_url, local_path):
 
-    '''Download files from AWS S3 if not present.
-
-    '''
+    """Download files from AWS S3 if not already downloaded.
+    
+    Arguments
+    ---------
+     
+    - s3_url -- Str; URL of S3 bucket.
+    - local_path -- Str; path to save downloaded files to.
+    
+    """
 
     if not os.path.isfile(local_path):
         print('retrieving file from {0}'.format(s3_url))
         urllib.request.urlretrieve(s3_url, local_path)
         print('file {0} downloaded'.format(local_path))
-
     else:
         print(local_path, ' - File already downloaded')
-
+        
 
 def get_radar_colours():
 
-    '''Set up radar colours.
-
-    '''
+    """Return dictionary of precip. colormap and normalisation."""
 
     radar_colours1 = [(220 / 255.0, 220 / 255.0, 220 / 255.0, 1.0),
                       (122 / 255.0, 147 / 255.0, 212 / 255.0, 0.9),
@@ -58,15 +82,14 @@ def get_radar_colours():
     cmap_radar, norm_radar = matplotlib.colors.from_levels_and_colors(
         radar_levels, radar_colours1, extend='max')
     cmap_radar.set_name = 'radar'
+    
     return {'cmap': cmap_radar, 'norm': norm_radar}
 
 
 def get_wind_colours():
 
-    '''Setup colormap for displaying wind speeds, based on Spectral_r 
-    colormap.
+    """Return dictionary of wind speed colormap and normalisation."""
 
-    '''
 
     cm1 = matplotlib.cm.get_cmap('Spectral_r')
     wind_colours = cm1(
@@ -85,55 +108,48 @@ def get_wind_colours():
 
 def get_cloud_colours():
 
-    '''Setup colormap for displaying cloud fraction, based on Greys_r 
-    colormap.
-
-    '''
+    """Return dictionary of cloud fraction colormap and normalisation."""
 
     cm1 = matplotlib.cm.get_cmap('Greys_r')
     cloud_colours = cm1(numpy.arange(0.0, 1.01, 0.11))
-#    cloud_colours[0,3] = 0.0
-#    cloud_colours[1,3] = 0.1
 
-    # specify wind levels in miles per hour
+    # Specify cloud fraction levels
     cloud_levels = numpy.arange(0.0, 1.01, 0.1)
 
     cmap_cloud_fraction, norm_cloud_fraction = \
         matplotlib.colors.from_levels_and_colors(cloud_levels,
                                                  cloud_colours)
     cmap_cloud_fraction.set_name = 'cloud_fraction'
+    
     return {'cmap': cmap_cloud_fraction, 'norm': norm_cloud_fraction}
 
 
 def get_air_pressure_colours():
 
-    '''Setup colormap for displaying air pressure , based on BuGn colormap.
-
-    '''
+    """Return dictionary of MSLP colormap and normalisation."""
 
     cm1 = matplotlib.cm.get_cmap('BuGn')
     ap_colors = cm1(numpy.array(numpy.arange(0.0, 1.01, 1.0 / 12.0)))
 
-    # specify wind levels in miles per hour
+    # Specify MSLP levels
     ap_levels = numpy.arange(970.0, 1030.0, 5.0)
 
     cmap_ap, norm_ap = matplotlib.colors.from_levels_and_colors(ap_levels,
                                                                 ap_colors,
                                                                 extend='both')
     cmap_ap.set_name = 'air_pressure'
+    
     return {'cmap': cmap_ap, 'norm': norm_ap}
 
 
 def get_air_temp_colours():
 
-    '''Setup colormap for displaying air pressure , based on viridis colormap.
-
-    '''
+    """Return dictionary of air temp. colormap and normalisation."""
 
     cm1 = matplotlib.cm.get_cmap('viridis')
-    air_temp_colours = cm1(numpy.array(numpy.arange(0.0, 1.01, 1.0 / 10.0)))
+    air_temp_colours = cm1(numpy.array(numpy.arange(0.0, 1.01, 0.1)))
 
-    # specify wind levels in miles per hour
+    # Specify temperature levels
     air_temp_levels = numpy.array(
         [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0])
 
@@ -147,10 +163,17 @@ def get_air_temp_colours():
 
 def get_time_str(time_in_hrs):
 
-    '''Create formatted human-readable date/time string, calculated from
+    """Convert epoch time into string.
+    
+    Create formatted human-readable date/time string, calculated from
     epoch time in hours.
     
-    '''
+    Arguments
+    ---------
+    
+    - time_in_hrs -- Epoch time variable.
+    
+    """
 
     datestamp1_raw = time.gmtime(time_in_hrs * 3600)
     datestr1 = \
@@ -160,27 +183,43 @@ def get_time_str(time_in_hrs):
             datestamp1_raw.tm_mday,
             datestamp1_raw.tm_hour,
             datestamp1_raw.tm_min)
+        
     return datestr1
 
 
 def convert_vector_to_mag_angle(U, V):
 
-    '''Convert U, V to magnitude and angle
+    """Convert U, V to magnitude and angle.
+    
+    Arguments
+    ---------
+    
+    - U -- Zonal wind component array.
+    - V -- Meridional wind component array.
 
-    '''
+    """
 
     mag = numpy.sqrt(U ** 2 + V ** 2)
     angle = (numpy.pi / 2.) - numpy.arctan2(U / mag, V / mag)
+    
     return mag, angle
 
 
 def calc_wind_vectors(wind_x, wind_y, sf):
 
-    '''Given cubes of x-wind and y-wind, subsample grid based on a scale
+    """Return wind vector dict calculated from wind components.
+    
+    Given cubes of x-wind and y-wind, subsample grid based on a scale
     factor (sf) and calculate the magnitude and angle of the vectors at each
     point on the grid.
     
-    '''
+    Arguments
+    ---------
+    
+    - wind_x -- Zonal wind component cube.
+    - wind_y -- Meridional wind component cube.
+    
+    """
 
     wv_dict = {}
 
@@ -197,7 +236,8 @@ def calc_wind_vectors(wind_x, wind_y, sf):
     wv_dict['wv_V'] = wind_y.data[:, ::sf, ::sf]
     wind_mag, wind_angle = convert_vector_to_mag_angle(wv_dict['wv_U'],
                                                        wv_dict['wv_V'])
-    # where wind speed is zero, there is an error calculating angle,
+    
+    # Where wind speed is zero, there is an error calculating angle,
     # so set angle to 0.0 as it has physical meaning where speed is zero.
     wind_angle[numpy.isnan(wind_angle)] = 0.0
     wv_dict['wv_mag'] = wind_mag
@@ -208,10 +248,17 @@ def calc_wind_vectors(wind_x, wind_y, sf):
 
 def create_colour_opts(var_list):
 
-    '''Create a dictionary of plot options for use with matplotlib library for
+    """Return dictionary of variable colormaps functions.
+    
+    Create a dictionary of plot options for use with matplotlib library for
     each of the standard plot types.
     
-    '''
+    Arguments
+    ---------
+    
+    - var_list -- List of variables to create colormap dict keys for.
+    
+    """
 
     col_opts_dict = dict([(s1, None) for s1 in var_list])
     col_opts_dict['precipitation'] = get_radar_colours()
@@ -225,18 +272,25 @@ def create_colour_opts(var_list):
     col_opts_dict['wind_mslp'] = get_wind_colours()
     col_opts_dict['mslp'] = get_air_pressure_colours()
     col_opts_dict['cloud_fraction'] = get_cloud_colours()
+    
     return col_opts_dict
 
 
 def get_sat_simim_colours(min_bt, max_bt):
     
-    '''Make a custom greyscale colormap to match Tigger plots.
+    """Return dictionary of MSLP colormap and normalisation.
     
-    In a 256 colour setup I need to remove 4 colours (black and the three
-    darkest greys) from  the black end of the greyscale and one (white)
+    In a 256 colour setup, remove 4 colours (black and the three
+    darkest greys) from the black end of the greyscale and one (white)
     from the white end.
     
-    '''
+    Arguments
+    ---------
+    
+    - min_bt -- Numeric; Lower limit of brightness temp. colormap.
+    - max_bt -- Numeric; Upper limit of brightness temp. colormap.
+    
+    """
     
     n = 256.0
     color_min = 1.0
@@ -256,15 +310,12 @@ def get_sat_simim_colours(min_bt, max_bt):
     cmap_sat_simim = SPSgreyscale
     norm_sat_simim = matplotlib.colors.Normalize(min_bt, max_bt)
 
-    return {'cmap': cmap_sat_simim,
-            'norm': norm_sat_simim}
+    return {'cmap': cmap_sat_simim, 'norm': norm_sat_simim}
 
 
 def create_satellite_simim_plot_opts():
 
-    '''
-
-    '''
+    """Return dictionary of Sim Im colormap functions."""
 
     plot_options = {'V': {'norm': matplotlib.colors.Normalize(0, 1),
                           'cmap': 'binary_r'},
@@ -276,37 +327,48 @@ def create_satellite_simim_plot_opts():
 
 def extract_region(region_dict, selected_region, ds1):
 
-    '''Function to extract a regional subset of an iris cube based on latitude
+    """Extract sub-region from cube data.
+    
+    Function to extract a regional subset of an iris cube based on latitude
     and longitude constraints.
     
-    '''
+    Arguments
+    ---------
+    
+    - region_dict -- Dict; Dictionary of regions and their limits.
+    - selected_region -- Str; Key to region_dict for selected region.
+    - ds1 -- Cube; Data cube to constrain.
+    
+    """
 
     def get_lat(cell):
 
-        '''
-
-        '''
+        """Set latitude constraint"""
+        
         region_bounds = region_dict[selected_region]
         return region_bounds[0] < cell < region_bounds[1]
 
     def get_long(cell):
 
-        '''
-
-        '''
+        """Set longitude constraint"""
+        
         region_bounds = region_dict[selected_region]
         return region_bounds[2] < cell < region_bounds[3]
 
-    con1 = iris.Constraint(latitude=get_lat,
-                           longitude=get_long,
-                           )
+    con1 = iris.Constraint(latitude=get_lat, longitude=get_long)
+    
     return ds1.extract(con1)
 
 
 def get_image_array_from_figure(fig):
 
     """Get the RGB buffer from the matplotlib figure.
-
+    
+    Arguments
+    ---------
+    
+    - fig -- matplotlib Figure; Figure to convert into buffer array.
+    
     """
 
     h, w = fig.canvas.get_width_height()
@@ -318,16 +380,22 @@ def get_image_array_from_figure(fig):
     print('buf shape', buf.shape)
     buf.shape = (w, h, 4)
 
-    # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to
-    # have it in RGBA mode
+    # canvas.tostring_argb gives pixmap in ARGB format. 
+    # Roll the ALPHA channel to convert to RGBA format.
     buf = numpy.roll(buf, 3, axis=2)
     buf = numpy.flip(buf, axis=0)
+    
     return buf
 
 
 def get_model_run_times(num_days):
 
     """Create a list of model times from the last num_days days.
+    
+    Arguments
+    ---------
+    
+    - num_days -- Int; Set number of days to go back and get dates for.
     
     """
 
@@ -343,13 +411,21 @@ def get_model_run_times(num_days):
         for step1 in range(0, 144, 12)]
     forecast_dt_str_list = [
         fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
+    
     return forecast_datetimes, forecast_dt_str_list
 
 
 def check_remote_file_exists(remote_path):
 
-    """Check whether a file at the remote location specified by remore path
-    exists by trying to open a url request.
+    """Check whether a remote file exists; return Bool.
+    
+    Check whether a file at the remote location specified by remore 
+    path exists by trying to open a url request.
+    
+    Arguments
+    ---------
+    
+    - remote_path -- Str; Path to check for file at.
     
     """
 
@@ -368,21 +444,26 @@ def check_remote_file_exists(remote_path):
 
 def timer(func):
 
-    '''
+    """Timer function.
     
-    '''
+        Arguments
+    ---------
+    
+    - func -- Function; Function to test.
+    
+    """
     
     def timed_func(*args, **kwargs):
     
-        '''
-        
-        '''
+        """Times other functions."""
         
         start_time = time.time()
         ret_val = func(*args, **kwargs)
         end_time = time.time()
         duration_in_seconds = end_time - start_time
-        print('function {0} ran for a duration of {1}.seconds'.format(str(func), duration_in_seconds))
+        print('function {0} ran for a duration of {1}.seconds'.format(str(func), 
+                                                                      duration_in_seconds))
+        
         return ret_val
 
     return timed_func
