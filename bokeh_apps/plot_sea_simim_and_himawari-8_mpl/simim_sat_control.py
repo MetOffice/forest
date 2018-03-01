@@ -64,7 +64,8 @@ class SimimSatControl(object):
         self.data_time_dd = \
             bokeh.models.widgets.Dropdown(label='Time',
                                           menu=create_dropdown_opt_list(self.time_list),
-                                          button_type='warning')
+                                          button_type='warning',
+                                          width=300)
         self.data_time_dd.on_change('value', self.on_data_time_change)
 
         # Create next timestep button widget

@@ -74,7 +74,8 @@ class ForestController(object):
                                         end=self.num_times,
                                         value=self.init_time,
                                         step=1,
-                                        title="Data time")
+                                        title="Data time",
+                                        width=400)
         self.data_time_slider.on_change('value', self.on_data_time_change)
 
         # Create next timestep button widget
@@ -162,7 +163,8 @@ class ForestController(object):
         '''
 
         print('data time handler')
-
+        print(dir(self.data_time_slider.properties))
+        
         for p1 in self.plots:
             p1.set_data_time(new_val)
 
