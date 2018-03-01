@@ -7,7 +7,24 @@ import bokeh.plotting
 
 import tornado
 
+MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
+                 'km4p4_ra1t': 'SE Asia 4.4km', 
+                 'indon2km1p5_ra1t': 'Indonesia 1.5km', 
+                 'mal2km1p5_ra1t': 'Malaysia 1.5km', 
+                 'phi2km1p5_ra1t': 'Philippines 1.5km'}
 
+VARIABLE_DD_DICT = {'precipitation': 'Precipitation', 
+                    'air_temperature': 'Air Temperature', 
+                    'wind_vectors': 'Wind vectors', 
+                    'wind_mslp': 'Wind and MSLP', 
+                    'wind_streams': 'Wind streamlines', 
+                    'mslp': 'MSLP', 
+                    'cloud_fraction': 'Cloud fraction'}
+
+REGION_DD_DICT = {'indonesia': 'Indonesia', 
+                  'malaysia': 'Malaysia', 
+                  'phillipines': 'Philippines', 
+                  'se_asia': 'SE Asia'}
 
 
 def create_dropdown_opt_list(iterable1):
@@ -20,14 +37,17 @@ def create_dropdown_opt_list(iterable1):
     return [(k1, k1) for k1 in iterable1]
 
 
-def create_dropdown_opt_list_from_dict(dict1):
+def create_dropdown_opt_list_from_dict(dict1, iterable1):
     
     '''Create list of 2-tuples from dictionary for creating dropdown 
         menu labels.
     
     '''
     
-    return [(dict1[k1], k1) for k1 in dict1]
+    dd_tuple_list = [(dict1[k1], k1) if k1 in dict1.keys()
+                     else (k1, k1) for k1 in iterable1]
+
+    return dd_tuple_list
 
 
 class ForestController(object):
@@ -70,19 +90,21 @@ class ForestController(object):
         
         '''
 
-        self.model_var_list_desc = 'Attribute to visualise'
-
+        # Create variable selection dropdown widget
+        variable_menu_list = \
+            create_dropdown_opt_list_from_dict(VARIABLE_DD_DICT,
+                                               self.plot_names)
         self.model_var_dd = \
-            bokeh.models.widgets.Dropdown(label=self.model_var_list_desc,
-                                          menu=create_dropdown_opt_list(
-                                              self.plot_names),
+            bokeh.models.widgets.Dropdown(label='Variable to visualise',
+                                          menu=variable_menu_list,
                                           button_type='warning')
         self.model_var_dd.on_change('value', self.on_var_change)
 
         # Create previous timestep button widget
-        self.time_prev_button = bokeh.models.widgets.Button(label='Prev',
-                                                            button_type='warning',
-                                                            width=100)
+        self.time_prev_button = \
+            bokeh.models.widgets.Button(label='Prev',
+                                        button_type='warning',
+                                        width=100)
         self.time_prev_button.on_click(self.on_time_prev)
         
         # Create time selection slider widget
@@ -96,45 +118,48 @@ class ForestController(object):
         self.data_time_slider.on_change('value', self.on_data_time_change)
 
         # Create next timestep button widget
-        self.time_next_button = bokeh.models.widgets.Button(label='Next',
-                                                            button_type='warning',
-                                                            width=100)
+        self.time_next_button = \
+            bokeh.models.widgets.Button(label='Next',
+                                        button_type='warning',
+                                        width=100)
         self.time_next_button.on_click(self.on_time_next)
         
-        self.region_desc = 'Region'
-        region_menu_list = create_dropdown_opt_list(self.region_dict.keys())
+        # Create region selection dropdown menu region
+        region_menu_list = \
+            create_dropdown_opt_list_from_dict(REGION_DD_DICT,
+                                               self.region_dict.keys())
         self.region_dd = bokeh.models.widgets.Dropdown(menu=region_menu_list,
-                                                       label=self.region_desc,
+                                                       label='Region',
                                                        button_type='warning')
         self.region_dd.on_change('value', self.on_region_change)
 
-        dataset_menu_list = create_dropdown_opt_list(self.datasets.keys())
-        left_model_desc = 'Left display'
-
+        # Create left figure model selection dropdown menu widget
+        dataset_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
+                                                               self.datasets.keys())
         self.left_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label=left_model_desc,
+                                          label='Left display',
                                           button_type='warning')
         self.left_model_dd.on_change('value',
                                      functools.partial(self.on_config_change,
                                                        0))
-
-        right_model_desc = 'Right display'
+        # Create right figure model selection dropdown menu widget
         self.right_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label=right_model_desc,
+                                          label='Right display',
                                           button_type='warning')
         self.right_model_dd.on_change('value',
                                       functools.partial(self.on_config_change,
                                                         1))
 
-        # layout widgets
-        self.major_config_row = bokeh.layouts.row(self.model_var_dd, self.region_dd)
+        # Layout widgets
+        self.major_config_row = bokeh.layouts.row(self.model_var_dd, 
+                                                  self.region_dd)
         self.time_row = bokeh.layouts.row(self.time_prev_button,
-                                            self.data_time_slider,
-                                            self.time_next_button)
-        self.minor_config_row = bokeh.layouts.row(
-            self.left_model_dd, self.right_model_dd)
+                                          self.data_time_slider,
+                                          self.time_next_button)
+        self.minor_config_row = bokeh.layouts.row(self.left_model_dd, 
+                                                  self.right_model_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
         self.info_row = bokeh.layouts.row(self.stats_widgets[0], 
                                           self.colorbar_div,
