@@ -212,7 +212,6 @@ class ModelGpmControl(object):
     def on_time_prev(self):
         
         """Event handler for changing to previous time step."""
-
         
         print('selected previous time step')      
         
