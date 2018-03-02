@@ -3,7 +3,7 @@
 Functions
 ---------
 
-- None
+None
 
 Classes
 -------
@@ -80,29 +80,38 @@ class ForestPlot(object):
     Attributes
     ----------
     
-    - region_dict -- Dict;
-    - main_plot = None
-    - current_time = 0
-    - plot_options = po1
-    - dataset = dataset
-    - figure_name = figname
-    - current_var = plot_var
-    - current_region = reg1
-    - app_path = app_path
-    - data_bounds = self.region_dict[self.current_region]
-    - show_colorbar = False
-    - show_axis_ticks = False
-    - use_mpl_title = False
-    - current_title = ''
-    - stats_string = ''
-    - colorbar_link = plot_var + '_colorbar.png'
-    - bokeh_figure = None
-    - bokeh_image = None
-    - bokeh_img_ds = None
-    - async = False
-    - unit_dict = unit_dict
-    - stats_widget = None
-    - colorbar_widget = None
+    - region_dict -- Dict; Dict of regions and their lat/lon bounds.
+    - main_plot -- matplotlib.pyplot plot; Curent plot object.
+    - current_time -- Int; Current data time step.
+    - plot_options -- Dict; Dict of colormaps and normalisations.
+    - dataset -- ForestDataset; Dataset containing data to plot.
+    - figure_name -- Str; Used to set matplotlib figure name.
+    - current_var -- Str; Name of current plot variable.
+    - current_region -- Str; Name of current plot region.
+    - app_path -- Str; Path to app. Needed to find static/ dir.
+    - data_bounds -- List; Lat/lon limits of plot region.
+    - show_axis_ticks -- Bool; Include ticks in matplotlib plot.
+    - use_mpl_title -- Bool; Include title in matplotlib plot.
+    - current_title -- Str; Current title.
+    - stats_string -- Str; HTML used for stats string.
+    - colorbar_link -- Str; Local path to colorbar PNG.
+    - bokeh_figure -- bokeh.plotting.figure; Bokeh figure object.
+    - bokeh_image -- bokeh.plotting.figure.image_rgba: Image object.
+    - bokeh_img_ds -- bokeh...image_rgba.datasource: Image data.
+    - async -- Bool; Set asynchronous.
+    - unit_dict -- Dict; Dict of units for each variable.
+    - stats_widget -- bokeh.models.widgets.Div; Stats widget object.
+    - colorbar_widget -- bokeh.models.widgets.Div; C'bar widget object.
+    - current_config -- Str; Current data configuration.
+    - plot_description -- Str; Descriptive name of current config.
+    - mslp_contour_label_dict -- Dict; Dict of MSLP levels and labels.
+    - plot_funcs -- Dict; Dict of plotting methods.
+    - update_funcs -- Dict; Dict of update methods.
+    - coords_lat -- Numpy array; 1-D array of latitude coords.
+    - coords_lon -- Numpy array; 1-D array of longitude coords.
+    - quiver_plot -- matplotlib plot; Wind quiver plot.
+    - mslp_contour -- matplotlib plot; MSLP contour plot.
+    - wind_stream_plot -- matplotlib plot; Wind stream plot.
         
     """
     
@@ -133,7 +142,6 @@ class ForestPlot(object):
         self.current_region = reg1
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
-        self.show_colorbar = False
         self.show_axis_ticks = False
         self.use_mpl_title = False
         self.setup_plot_funcs()
@@ -892,9 +900,6 @@ class ForestPlot(object):
                 self.data_bounds[0], self.data_bounds[1])
             self.current_axes.xaxis.set_visible(self.show_axis_ticks)
             self.current_axes.yaxis.set_visible(self.show_axis_ticks)
-            if self.show_colorbar:
-                self.current_figure.colorbar(self.main_plot,
-                                             orientation='horizontal')
 
             self.current_figure.canvas.draw()
 

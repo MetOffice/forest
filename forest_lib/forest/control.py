@@ -1,10 +1,24 @@
+"""Module containing a class to manage the widgets for Forest. 
+
+Functions
+---------
+
+- create_dropdown_opt_list() -- Used to set dropdown labels.
+- create_dropdown_opt_list_from dict() -- Used to set dropdown labels.
+
+Classes
+-------
+
+- ForestController -- Main class for defining Forest widgets.
+
+"""
+
+
 import functools
 import threading
-
 import bokeh.models.widgets
 import bokeh.layouts
 import bokeh.plotting
-
 import tornado
 
 MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
@@ -29,20 +43,34 @@ REGION_DD_DICT = {'indonesia': 'Indonesia',
 
 def create_dropdown_opt_list(iterable1):
     
-    '''Create list of 2-tuples with matching values from list for
-        creating dropdown menu labels.
+    """Return list of 2-tuples with matching values. 
     
-    '''
+    Used for creating dropdown menu labels which match return values.
+    
+    Arguments
+    ---------
+    
+    - iterable1 -- Iterable; Used to set 2-tuple values.
+    
+    """
     
     return [(k1, k1) for k1 in iterable1]
 
 
 def create_dropdown_opt_list_from_dict(dict1, iterable1):
     
-    '''Create list of 2-tuples from dictionary for creating dropdown 
-        menu labels.
+    """Create list of 2-tuples with values from dictionary.
     
-    '''
+    Used for creating descriptive dropdown menu labels which do not 
+    match return values.
+    
+    Arguments
+    ---------
+    
+    - dict1 -- Dict; Used to replace iterable if iterable value == key.
+    - iterable -- Iterable; Used to set 2-tuple values.
+    
+    """
     
     dd_tuple_list = [(dict1[k1], k1) if k1 in dict1.keys()
                      else (k1, k1) for k1 in iterable1]
@@ -52,9 +80,24 @@ def create_dropdown_opt_list_from_dict(dict1, iterable1):
 
 class ForestController(object):
 
-    '''
-
-    '''
+    """Main widget configuration class.
+    
+    Methods
+    -------
+    
+    - __init__() -- Factory method.
+    - create_widgets() -- Configure widgets and widget layout.
+    - on_time_prev() -- Event handler for changing to prev time step.
+    - on_data_tine_change() -- Event handler for a change in data time.
+    - on_time_next() -- Event handler for changing to next time step.
+    - on_var_change() -- Event handler for a change in the plot var.
+    - on_region_change() -- Event handler for a change in plot region.
+    - on_config_change() -- Event handler for a change in the config.
+    
+    Attributes
+    ----------
+    
+    """
 
     def __init__(self,
                  init_time,
@@ -68,9 +111,7 @@ class ForestController(object):
                  region_dict,
                  bokeh_doc):
 
-        '''
-        
-        '''
+        """Initialisation function for ForestController class."""
 
         self.plots = plots
         self.bokeh_imgs = bokeh_imgs
@@ -86,19 +127,7 @@ class ForestController(object):
 
     def create_widgets(self):
 
-        '''
-        
-        '''
-
-        # Create variable selection dropdown widget
-        variable_menu_list = \
-            create_dropdown_opt_list_from_dict(VARIABLE_DD_DICT,
-                                               self.plot_names)
-        self.model_var_dd = \
-            bokeh.models.widgets.Dropdown(label='Variable to visualise',
-                                          menu=variable_menu_list,
-                                          button_type='warning')
-        self.model_var_dd.on_change('value', self.on_var_change)
+        """Configure widgets and widget layout."""
 
         # Create previous timestep button widget
         self.time_prev_button = \
@@ -123,6 +152,16 @@ class ForestController(object):
                                         button_type='warning',
                                         width=100)
         self.time_next_button.on_click(self.on_time_next)
+
+        # Create variable selection dropdown widget
+        variable_menu_list = \
+            create_dropdown_opt_list_from_dict(VARIABLE_DD_DICT,
+                                               self.plot_names)
+        self.model_var_dd = \
+            bokeh.models.widgets.Dropdown(label='Variable to visualise',
+                                          menu=variable_menu_list,
+                                          button_type='warning')
+        self.model_var_dd.on_change('value', self.on_var_change)
         
         # Create region selection dropdown menu region
         region_menu_list = \
@@ -153,14 +192,14 @@ class ForestController(object):
                                                         1))
 
         # Layout widgets
-        self.major_config_row = bokeh.layouts.row(self.model_var_dd, 
-                                                  self.region_dd)
         self.time_row = \
             bokeh.layouts.row(self.time_prev_button,
                               bokeh.models.Spacer(width=20, height=60),
                               self.data_time_slider,
                               bokeh.models.Spacer(width=20, height=60),
                               self.time_next_button)
+        self.major_config_row = bokeh.layouts.row(self.model_var_dd, 
+                                                  self.region_dd)
         self.minor_config_row = bokeh.layouts.row(self.left_model_dd, 
                                                   self.right_model_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
@@ -177,9 +216,7 @@ class ForestController(object):
 
     def on_time_prev(self):
         
-        '''Event handler for changing to previous time step
-        
-        '''
+        """Event handler for changing to previous time step."""
         
         print('selected previous time step')
         
@@ -188,12 +225,28 @@ class ForestController(object):
             self.data_time_slider.value = current_time
         else:
             print('Cannot select time < 0')
+      
+    def on_data_time_change(self, attr1, old_val, new_val):
+
+        """Event handler for a change in the selected forecast data time.
+
+        Arguments
+        ---------
+        
+        - attr1 -- Str; Attribute of slider which changes.
+        - old_val -- Int; Old value from slider.
+        - new_val -- Int; New value from slider.
+
+        """
+
+        print('data time handler')
+        
+        for p1 in self.plots:
+            p1.set_data_time(new_val)
 
     def on_time_next(self):
         
-        '''
-        
-        '''
+        """Event handler for changing to next time step."""
         
         print('selected next time step')
         
@@ -201,24 +254,20 @@ class ForestController(object):
         if current_time < self.num_times:
             self.data_time_slider.value = current_time
         else:
-            print('Cannot select time > num_times')      
-        
-    def on_data_time_change(self, attr1, old_val, new_val):
-
-        '''Event handler for a change in the selected forecast data time.
-
-        '''
-
-        print('data time handler')
-        
-        for p1 in self.plots:
-            p1.set_data_time(new_val)
-
+            print('Cannot select time > num_times')            
+            
     def on_var_change(self, attr1, old_val, new_val):
 
-        '''Event handler for a change in the selected plot type.
+        """Event handler for a change in the selected plot variable.
 
-        '''
+        Arguments
+        ---------
+        
+        - attr1 -- Str; Attribute of dropdown which changes.
+        - old_val -- Int; Old value from dropdown.
+        - new_val -- Int; New value from dropdown.
+
+        """
 
         print('var change handler')
 
@@ -227,9 +276,16 @@ class ForestController(object):
 
     def on_region_change(self, attr1, old_val, new_val):
 
-        '''Event handler for a change in the selected plot region.
+        """Event handler for a change in the selected plot region.
 
-        '''
+        Arguments
+        ---------
+        
+        - attr1 -- Str; Attribute of dropdown which changes.
+        - old_val -- Int; Old value from dropdown.
+        - new_val -- Int; New value from dropdown.
+
+        """
 
         print('region change handler')
 
@@ -238,9 +294,17 @@ class ForestController(object):
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
 
-        '''Event handler for a change in the selected model configuration output.
+        """Event handler for a change in the selected data configuration.
 
-        '''
+        Arguments
+        ---------
+        
+        - plot_index -- Int; Selects which plot to change config for.
+        - attr1 -- Str; Attribute of dropdown which changes.
+        - old_val -- Int; Old value from dropdown.
+        - new_val -- Int; New value from dropdown.
+
+        """
 
         print('config change handler')
         
