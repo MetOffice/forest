@@ -101,7 +101,6 @@ def main(bokeh_id):
                                                   time=vt)
                              for vt in simim_sat_data.DATA_TIMESTEPS['V'][fcast_hour]]
     fnames_list_simim = bt_fnames_list_simim + vis_fnames_list_simim
-    time_list_simim = [None]
     
     datasets[SIMIM_KEY]['data'] = simim_sat_data.SimimDataset(SIMIM_KEY,
                                                               fnames_list_simim,
@@ -110,7 +109,6 @@ def main(bokeh_id):
                                                               use_s3_mount,
                                                               base_path_local_simim,
                                                               do_download,
-                                                              time_list_simim,
                                                               fcast_time_obj)
 
     ## Setup plots
