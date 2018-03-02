@@ -284,7 +284,7 @@ class ForestPlot(object):
             'data'].get_data(self.current_var)
 
         self.update_coords(data_cube)
-        self.current_axes.coastlines(resolution='110m')
+        self.current_axes.coastlines(resolution='50m')
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,

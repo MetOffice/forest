@@ -96,6 +96,30 @@ class ForestController(object):
     
     Attributes
     ----------
+   
+    - plots -- List; List of ForestPlot objects.
+    - bokeh_imgs -- List; List of bokeh image objects.
+    - init_time -- Int; Index of initial time step.
+    - num_times -- Int; Number of data time steps available.
+    - region_dict -- Dict; Dict of regions and their lat/lon bounds.
+    - plot_names -- List; List of plot names
+    - datasets -- Dict; Dict of Forest datasets.
+    - colorbar_div -- bokeh.models.widgets.Div; C'bar div widget.
+    - stats_widgets -- bokeh.models.widgets.Div; Stats div widget.
+    - bokeh_doc -- bokeh curdoc object;
+    - time_prev_button -- bokeh.models.widgets.Button; Prev button.
+    - data_time_slider -- bokeh.models.widgets.Slider; Time slider.
+    - time_next_button -- bokeh.models.widgets.Button; Next button.
+    - model_var_dd -- bokeh.models.widgets.Dropdown; Var dropdown.
+    - region_dd -- bokeh.models.widgets.Dropdown; Region dropdown.
+    - left_model_dd -- bokeh.models.widgets.Dropdown; Model dropdown.
+    - right_model_dd -- bokeh.models.widgets.Dropdown; Model dropdown.
+    - time_row -- bokeh.layouts.row object; Set time row.
+    - major_config_row -- bokeh.layouts.row object; Set mjr config row.
+    - minor_config_row -- bokeh.layouts.row object; Set mnr config row.
+    - plots_row -- bokeh.layouts.row object; Set plots row.
+    - info_row -- bokeh.layouts.row object; Set info row.
+    - main_layout -- bokeh.layouts.column object; Set row layout.
     
     """
 
