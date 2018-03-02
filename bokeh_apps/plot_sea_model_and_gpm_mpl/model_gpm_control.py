@@ -247,7 +247,6 @@ class ModelGpmControl(object):
         
         """Event handler for changing to next time step."""
 
-        
         print('selected next time step')   
         
         time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
@@ -296,7 +295,6 @@ class ModelGpmControl(object):
         
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
         
-
         """Event handler for a change in the selected precip accum.
 
         Arguments
