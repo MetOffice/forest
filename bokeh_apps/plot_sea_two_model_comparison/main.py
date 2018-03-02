@@ -1,3 +1,12 @@
+"""SE Asia Two Model Matplotlib example Bokeh app script
+
+This script demonstrates creating plots of model data for SE Asia using
+the Matplotlib plotting library to provide images to a Bokeh Server 
+App.
+
+"""
+
+
 import os
 import copy
 import numpy
@@ -7,7 +16,6 @@ import bokeh.models.widgets
 import bokeh.plotting
 import matplotlib
 matplotlib.use('agg')
-
 import iris
 
 import forest.util
@@ -19,9 +27,15 @@ iris.FUTURE.netcdf_promote = True
 
 def add_main_plot(main_layout, bokeh_doc):
     
-    '''
+    """Add main plot to document.
     
-    '''
+    Arguments
+    ---------
+    
+    - main_layout -- bokeh.layouts.column object; Bokeh layout.
+    - bokeh_doc -- bokeh.plotting.curdoc(); CUrrent document.
+    
+    """
     
     print('finished creating, executing document add callback')
 
@@ -48,9 +62,19 @@ def get_available_datasets(s3_base,
                            do_download,
                            dataset_template):
     
-    '''
+    """Gets Forest datasets.
     
-    '''
+    Arguments
+    ---------
+    
+    - s3_base -- Str; S3 data basepath.
+    - s3_local_base -- Str; Local S3 data basepath.
+    - use_s3_mount -- Bool; Specify whether to use S3 mount.
+    - base_local_path -- Str; Local basepath to data.
+    - do_download -- Bool; Specify whether to do data download.
+    - dataset_temlate -- Dict; Prepopulated dict for holding datasets.
+    
+    """
     
     fcast_dt_list, fcast_dt_str_list = forest.util.get_model_run_times(7)
 
@@ -85,9 +109,7 @@ def get_available_datasets(s3_base,
 
 def main(bokeh_id):
 
-    '''
-    
-    '''
+    """Main app function"""
     
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {

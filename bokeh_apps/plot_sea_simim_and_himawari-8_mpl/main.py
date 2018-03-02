@@ -1,10 +1,10 @@
-'''SE Asia Sim. Im. and Himawari-8 Matplotlib app
+"""SE Asia Sim. Im. and Himawari-8 Matplotlib app
 
- This script creates plots of simulated satellite imagery and 
-  Himawari-8 imagery for SE Asia using the Matplotlib plotting 
-  library to provide images to a Bokeh Server app.
+This script creates plots of simulated satellite imagery and 
+Himawari-8 imagery for SE Asia using the Matplotlib plotting 
+library to provide images to a Bokeh Server app.
 
-'''
+"""
 
 import os
 import datetime
@@ -22,9 +22,7 @@ import simim_sat_data
 
 def main(bokeh_id):
     
-    '''Main function of app
-    
-    '''
+    """Main function of app"""
 
     # Set datetime objects and string for controlling data download
     now_time_obj = datetime.datetime.utcnow()
