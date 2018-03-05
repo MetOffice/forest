@@ -91,8 +91,7 @@ def main(bokeh_id):
     '''
     
     '''
-    pdb.set_trace()
-    
+
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
         forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model',
