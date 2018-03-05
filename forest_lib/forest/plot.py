@@ -24,7 +24,9 @@ import bokeh.models.widgets
 import bokeh.plotting
 
 import forest.util
+import forest.data
 
+import pdb
 
 class ForestPlot(object):
 
@@ -127,13 +129,14 @@ class ForestPlot(object):
                  reg1,
                  rd1,
                  unit_dict,
-                 app_path):
+                 app_path,
+                 init_time):
                  
         """Initialisation function for ForestPlot class."""
         
         self.region_dict = rd1
         self.main_plot = None
-        self.current_time = 0
+        self.current_time = init_time
         self.plot_options = po1
         self.dataset = dataset
         self.figure_name = figname
@@ -156,6 +159,12 @@ class ForestPlot(object):
         self.unit_dict = unit_dict
         self.stats_widget = None
         self.colorbar_widget = None
+
+        self.current_figsize = (8.0, 6.0)
+        self.bokeh_fig_size = (800,600)
+        self.coast_res = '50m'
+
+
         
     def _set_config_value(self, new_config):
     
@@ -265,8 +274,8 @@ class ForestPlot(object):
         """
         
         data_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
-        array_for_update = data_cube[self.current_time].data[:-1, :-1].ravel()
+            'data'].get_data(self.current_var, self.current_time)
+        array_for_update = data_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(data_cube)
         self.update_stats(data_cube)
@@ -281,15 +290,14 @@ class ForestPlot(object):
         """
         
         data_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
+            'data'].get_data(self.current_var, self.current_time)
 
         self.update_coords(data_cube)
         self.current_axes.coastlines(resolution='50m')
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
-                                         data_cube[
-                                             self.current_time].data,
+                                         data_cube.data,
                                          cmap=self.plot_options[
                                              self.current_var]['cmap'],
                                          norm=self.plot_options[
@@ -309,16 +317,15 @@ class ForestPlot(object):
         """
 
         wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed')
-        array_for_update = wind_speed_cube[
-            self.current_time].data[:-1, :-1].ravel()
+            'data'].get_data('wind_speed', self.current_time)
+        array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
         self.update_stats(wind_speed_cube)
         wv_u_data = self.dataset[self.current_config]['data'].get_data('wv_U')
         wv_v_data = self.dataset[self.current_config]['data'].get_data('wv_V')
-        self.quiver_plot.set_UVC(wv_u_data[self.current_time],
-                                 wv_v_data[self.current_time])
+        self.quiver_plot.set_UVC(wv_u_data,
+                                 wv_v_data)
 
     def plot_wind_vectors(self):
     
@@ -330,13 +337,12 @@ class ForestPlot(object):
         """
 
         wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed')
+            'data'].get_data('wind_speed', self.current_time)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
-                                         wind_speed_cube[
-                                             self.current_time].data,
+                                         wind_speed_cube.data,
                                          cmap=self.plot_options[
                                              self.current_var]['cmap'],
                                          norm=self.plot_options[
@@ -346,20 +352,20 @@ class ForestPlot(object):
         # Add coastlines to the map created by contourf.
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
                                                             'coastline',
-                                                            '50m',
+                                                            self.coast_res,
                                                             edgecolor='0.5',
                                                             facecolor='none')
         self.current_axes.add_feature(coastline_50m)
 
         self.quiver_plot = \
             self.current_axes.quiver(
-                self.dataset[self.current_config]['data'].get_data('wv_X'),
+                self.dataset[self.current_config]['data'].get_data('wv_X', self.current_time),
                 self.dataset[self.current_config][
-                    'data'].get_data('wv_Y'),
+                    'data'].get_data('wv_Y', self.current_time),
                 self.dataset[self.current_config][
-                    'data'].get_data('wv_U')[self.current_time],
+                    'data'].get_data('wv_U', self.current_time),
                 self.dataset[self.current_config][
-                    'data'].get_data('wv_V')[self.current_time],
+                    'data'].get_data('wv_V', self.current_time),
                 units='height')
         qk = self.current_axes.quiverkey(self.quiver_plot,
                                          0.9,
@@ -381,20 +387,18 @@ class ForestPlot(object):
         """
         
         wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed')
-        array_for_update = wind_speed_cube[
-            self.current_time].data[:-1, :-1].ravel()
+            'data'].get_data('wind_speed', self.current_time)
+        array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         # to update contours, remove old elements and generate new contours
         for c1 in self.mslp_contour.collections:
             self.current_axes.collections.remove(c1)
 
-        ap_cube = self.dataset[self.current_config]['data'].get_data('mslp')
+        ap_cube = self.dataset[self.current_config]['data'].get_data('mslp', self.current_time)
         self.mslp_contour = \
             self.current_axes.contour(self.long_grid_mslp,
                                       self.lat_grid_mslp,
-                                      ap_cube[
-                                          self.current_time].data,
+                                      ap_cube.data,
                                       levels=ForestPlot.PRESSURE_LEVELS_HPA,
                                       colors='k')
         self.current_axes.clabel(self.mslp_contour,
@@ -414,20 +418,19 @@ class ForestPlot(object):
         """
         
         wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed')
+            'data'].get_data('wind_speed', self.current_time)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
-                                         wind_speed_cube[
-                                             self.current_time].data,
+                                         wind_speed_cube.data,
                                          cmap=self.plot_options[
                                              self.current_var]['cmap'],
                                          norm=self.plot_options[
                                              self.current_var]['norm']
                                          )
 
-        ap_cube = self.dataset[self.current_config]['data'].get_data('mslp')
+        ap_cube = self.dataset[self.current_config]['data'].get_data('mslp', self.current_time)
         lat_mslp = ap_cube.coords('latitude')[0].points
         long_mslp = ap_cube.coords('longitude')[0].points
         self.long_grid_mslp, self.lat_grid_mslp = numpy.meshgrid(
@@ -435,8 +438,7 @@ class ForestPlot(object):
         self.mslp_contour = \
             self.current_axes.contour(self.long_grid_mslp,
                                       self.lat_grid_mslp,
-                                      ap_cube[
-                                          self.current_time].data,
+                                      ap_cube.data,
                                       levels=ForestPlot.PRESSURE_LEVELS_HPA,
                                       colors='k')
         self.current_axes.clabel(self.mslp_contour,
@@ -446,7 +448,7 @@ class ForestPlot(object):
         # Add coastlines to the map created by contourf.
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
                                                             'coastline',
-                                                            '50m',
+                                                            self.coast_res,
                                                             edgecolor='0.5',
                                                             facecolor='none')
 
@@ -463,9 +465,8 @@ class ForestPlot(object):
         """
         
         wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed')
-        array_for_update = wind_speed_cube[
-            self.current_time].data[:-1, :-1].ravel()
+            'data'].get_data('wind_speed', self.current_time)
+        array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
         self.update_stats(wind_speed_cube)
@@ -479,13 +480,13 @@ class ForestPlot(object):
         self.wind_stream_plot = \
             self.current_axes.streamplot(
                 self.dataset[self.current_config]['data'].get_data(
-                    'wv_X_grid'),
+                    'wv_X_grid', self.current_time),
                 self.dataset[self.current_config][
-                    'data'].get_data('wv_Y_grid'),
+                    'data'].get_data('wv_Y_grid', self.current_time),
                 self.dataset[self.current_config][
-                    'data'].get_data('wv_U')[self.current_time],
+                    'data'].get_data('wv_U', self.current_time),
                 self.dataset[self.current_config][
-                    'data'].get_data('wv_V')[self.current_time],
+                    'data'].get_data('wv_V', self.current_time),
                 color='k',
                 density=[0.5, 1.0])
         # we need to manually keep track of arrows so they can be removed when
@@ -503,7 +504,7 @@ class ForestPlot(object):
         """
         
         wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed')
+            'data'].get_data('wind_speed', self.current_time)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -520,13 +521,13 @@ class ForestPlot(object):
         self.wind_stream_plot = \
             self.current_axes.streamplot(
                 self.dataset[self.current_config]['data'].get_data(
-                    'wv_X_grid'),
+                    'wv_X_grid', self.current_time),
                 self.dataset[self.current_config][
-                    'data'].get_data('wv_Y_grid'),
+                    'data'].get_data('wv_Y_grid', self.current_time),
                 self.dataset[self.current_config][
-                    'data'].get_data('wv_U')[self.current_time],
+                    'data'].get_data('wv_U', self.current_time),
                 self.dataset[self.current_config][
-                    'data'].get_data('wv_V')[self.current_time],
+                    'data'].get_data('wv_V', self.current_time),
                 color='k',
                 density=[0.5, 1.0])
 
@@ -538,7 +539,7 @@ class ForestPlot(object):
         # Add coastlines to the map created by contourf.
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
                                                             'coastline',
-                                                            '50m',
+                                                            self.coast_res,
                                                             edgecolor='0.5',
                                                             facecolor='none')
         self.current_axes.add_feature(coastline_50m)
@@ -554,8 +555,8 @@ class ForestPlot(object):
         """
         
         at_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
-        array_for_update = at_cube[self.current_time].data[:-1, :-1].ravel()
+            'data'].get_data(self.current_var, self.current_time)
+        array_for_update = at_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(at_cube)
         self.update_stats(at_cube)
@@ -570,13 +571,12 @@ class ForestPlot(object):
         """
         
         at_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
+            'data'].get_data(self.current_var, self.current_time)
         self.update_coords(at_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
-                                         at_cube[
-                                             self.current_time].data,
+                                         at_cube.data,
                                          cmap=self.plot_options[
                                              self.current_var]['cmap'],
                                          norm=self.plot_options[
@@ -586,7 +586,7 @@ class ForestPlot(object):
         # Add coastlines to the map created by contourf.
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
                                                             'coastline',
-                                                            '50m',
+                                                            self.coast_res,
                                                             edgecolor='0.5',
                                                             facecolor='none')
         self.current_axes.add_feature(coastline_50m)
@@ -602,8 +602,8 @@ class ForestPlot(object):
         '''
         
         ap_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
-        array_for_update = ap_cube[self.current_time].data[:-1, :-1].ravel()
+            'data'].get_data(self.current_var, self.current_time)
+        array_for_update = ap_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(ap_cube)
         self.update_stats(ap_cube)
@@ -617,13 +617,12 @@ class ForestPlot(object):
         """
         
         ap_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
+            'data'].get_data(self.current_var, self.current_time)
         self.update_coords(ap_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
-                                         ap_cube[
-                                             self.current_time].data,
+                                         ap_cube.data,
                                          cmap=self.plot_options[
                                              self.current_var]['cmap'],
                                          norm=self.plot_options[
@@ -633,7 +632,7 @@ class ForestPlot(object):
         # Add coastlines to the map created by contourf.
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
                                                             'coastline',
-                                                            '50m',
+                                                            self.coast_res,
                                                             edgecolor='0.5',
                                                             facecolor='none')
         self.current_axes.add_feature(coastline_50m)
@@ -650,8 +649,8 @@ class ForestPlot(object):
         """
         
         cloud_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
-        array_for_update = cloud_cube[self.current_time].data[:-1, :-1].ravel()
+            'data'].get_data(self.current_var, self.current_time)
+        array_for_update = cloud_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(cloud_cube)
         self.update_stats(cloud_cube)
@@ -666,12 +665,12 @@ class ForestPlot(object):
         """
         
         cloud_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var)
+            'data'].get_data(self.current_var, self.current_time)
         self.update_coords(cloud_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
-                                         cloud_cube[self.current_time].data,
+                                         cloud_cube.data,
                                          cmap=self.plot_options[
                                              self.current_var]['cmap'],
                                          norm=self.plot_options[
@@ -681,7 +680,7 @@ class ForestPlot(object):
         # Add coastlines to the map created by contourf.
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
                                                             'coastline',
-                                                            '50m',
+                                                            self.coast_res,
                                                             edgecolor='0.5',
                                                             facecolor='none')
         self.current_axes.add_feature(coastline_50m)
@@ -698,7 +697,7 @@ class ForestPlot(object):
         """
         
         him8_image = self.dataset[
-            'himawari-8']['data'].get_data(self.current_var)[self.current_time]
+            'himawari-8']['data'].get_data(self.current_var, self.current_time)
         self.current_axes.images.remove(self.main_plot)
         self.main_plot = self.current_axes.imshow(him8_image,
                                                   extent=(self.data_bounds[2],
@@ -718,7 +717,7 @@ class ForestPlot(object):
         """
         
         him8_image = self.dataset[
-            'himawari-8']['data'].get_data(self.current_var)[self.current_time]
+            'himawari-8']['data'].get_data(self.current_var, self.current_time)
         self.main_plot = self.current_axes.imshow(him8_image,
                                                   extent=(self.data_bounds[2],
                                                           self.data_bounds[3],
@@ -729,7 +728,7 @@ class ForestPlot(object):
         # Add coastlines to the map created by contourf.
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
                                                             'coastline',
-                                                            '50m',
+                                                            self.coast_res,
                                                             edgecolor='g',
                                                             alpha=0.5,
                                                             facecolor='none')
@@ -752,7 +751,7 @@ class ForestPlot(object):
         """
         
         simim_cube = self.dataset['simim']['data'].get_data(
-            self.current_var)[self.current_time]
+            self.current_var, self.current_time)
         array_for_update = simim_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(None)
@@ -767,7 +766,7 @@ class ForestPlot(object):
         """
 
         simim_cube = self.dataset['simim']['data'].get_data(
-            self.current_var)[self.current_time]
+            self.current_var, self.current_time)
         lats = simim_cube.coords('grid_latitude')[0].points
         lons = simim_cube.coords('grid_longitude')[0].points
         self.main_plot = \
@@ -783,7 +782,7 @@ class ForestPlot(object):
         # Add coastlines to the map created by contourf
         coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
                                                             'coastline',
-                                                            '50m',
+                                                            self.coast_res,
                                                             edgecolor='g',
                                                             alpha=0.5,
                                                             facecolor='none')
@@ -816,16 +815,22 @@ class ForestPlot(object):
 
     def update_stats(self, current_cube):
     
+<<<<<<< HEAD
+        '''
+        
+        '''
+        data_to_process = current_cube.data
+=======
         """Update plot stats widget."""
         
+>>>>>>> 446fafbde10f79e15325f74cc21dc6a40ded36f2
         stats_str_list = [self.current_title]
         unit_str = self.unit_dict[self.current_var]
-        data_at_time = current_cube[self.current_time].data
-        max_val = numpy.max(data_at_time)
-        min_val = numpy.min(data_at_time)
-        mean_val = numpy.mean(data_at_time)
-        std_val = numpy.std(data_at_time)
-        rms_val = numpy.sqrt(numpy.mean(numpy.power(data_at_time, 2.0)))
+        max_val = numpy.max(data_to_process)
+        min_val = numpy.min(data_to_process)
+        mean_val = numpy.mean(data_to_process)
+        std_val = numpy.std(data_to_process)
+        rms_val = numpy.sqrt(numpy.mean(numpy.power(data_to_process, 2.0)))
 
         stats_str_list += ['Max = {0:.4f} {1}'.format(max_val, unit_str)]
         stats_str_list += ['Min = {0:.4f} {1}'.format(min_val, unit_str)]
@@ -847,8 +852,7 @@ class ForestPlot(object):
         """
 
         try:
-            datestr1 = forest.util.get_time_str(
-                current_cube.dim_coords[0].points[self.current_time])
+            datestr1 = forest.util.get_time_str(self.current_time)
         except:
             datestr1 = self.current_time
 
@@ -883,7 +887,7 @@ class ForestPlot(object):
         """Create matplotlib figure."""
 
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
-                                                       figsize=(8.0, 6.0))
+                                                       figsize=self.current_figsize)
         self.current_figure.clf()
         self.current_axes = \
             self.current_figure.add_subplot(
@@ -920,8 +924,8 @@ class ForestPlot(object):
 
         # Initialize figure
         self.bokeh_figure = \
-            bokeh.plotting.figure(plot_width=800,
-                                  plot_height=600,
+            bokeh.plotting.figure(plot_width=self.bokeh_fig_size[0],
+                                  plot_height=self.bokeh_fig_size[1],
                                   x_range=x_limits,
                                   y_range=y_limits,
                                   tools='pan,wheel_zoom,reset,save')
@@ -962,7 +966,7 @@ class ForestPlot(object):
         """Update Bokeh image data using new matplotlib figure."""
 
         cur_region = self.region_dict[self.current_region]
-        self.current_figure.set_figwidth(8)
+        self.current_figure.set_figwidth(self.current_figsize[0])
         self.current_figure.set_figheight(
             round(self.current_figure.get_figwidth() *
                   (cur_region[1] - cur_region[0]) /

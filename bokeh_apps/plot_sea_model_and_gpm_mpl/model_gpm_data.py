@@ -116,7 +116,10 @@ class GpmDataset(object):
         self.base_local_path = base_local_path
         self.do_download = do_download
         self.s3_url_list = [os.path.join(self.s3_base, fn1) for fn1 in self.file_name_list]
-        self.local_path_list = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list]
+        if self.use_s3_mount:
+            self.local_path_list = [os.path.join(self.s3_local_base, fn1) for fn1 in self.file_name_list]
+        else:
+            self.local_path_list = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list]
         self.raw_data = None
         self.times_list = times_list
         self.fcast_hour = fcast_hour
@@ -132,17 +135,23 @@ class GpmDataset(object):
         
         return 'GPM  dataset'
 
-    def get_data(self, var_name):
+    def get_data(self, var_name, convert_units=False, selected_time=None):
         
         """Return data
         
         Arguments
         ---------
         
+<<<<<<< HEAD
+        '''
+        if selected_time is not None:
+            return self.data[var_name][selected_time]
+=======
         - var_name -- Str; Variable name to use as key to self.data
         
         """
         
+>>>>>>> 446fafbde10f79e15325f74cc21dc6a40ded36f2
         return self.data[var_name]
 
     def retrieve_data(self):

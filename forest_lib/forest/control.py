@@ -19,7 +19,13 @@ import threading
 import bokeh.models.widgets
 import bokeh.layouts
 import bokeh.plotting
+<<<<<<< HEAD
+
+import forest.data
+
+=======
 import tornado
+>>>>>>> 446fafbde10f79e15325f74cc21dc6a40ded36f2
 
 MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
                  'km4p4_ra1t': 'SE Asia 4.4km', 
@@ -124,8 +130,8 @@ class ForestController(object):
     """
 
     def __init__(self,
-                 init_time,
-                 num_times,
+                 times1,
+                 init_time_ix,
                  datasets,
                  plot_names,
                  plots,
@@ -139,11 +145,14 @@ class ForestController(object):
 
         self.plots = plots
         self.bokeh_imgs = bokeh_imgs
-        self.init_time = init_time
-        self.num_times = num_times
         self.region_dict = region_dict
         self.plot_names = plot_names
         self.datasets = datasets
+        self.available_times = times1
+        self.init_time_index = init_time_ix
+
+        self.init_time = self.available_times[self.init_time_index]
+        self.num_times = self.available_times.shape[0]
         self.colorbar_div = colorbar_widget
         self.stats_widgets = stats_widgets
         self.create_widgets()
@@ -164,7 +173,7 @@ class ForestController(object):
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
                                         end=self.num_times,
-                                        value=self.init_time,
+                                        value=self.init_time_index,
                                         step=1,
                                         title="Data time",
                                         width=400)
@@ -287,15 +296,42 @@ class ForestController(object):
         Arguments
         ---------
         
+<<<<<<< HEAD
+        for p1 in self.plots:
+            new_time1 = self.available_times[new_val]
+            p1.set_data_time(new_time1)
+
+
+    def _refresh_times(self, new_var):
+        self.available_times = forest.data.get_available_times(self.datasets,
+                                                          new_var)
+        try:
+            new_time = self.available_times[self.data_time_slider.value]
+        except IndexError:
+            new_time = self.available_times[0]
+            self.data_time_slider.value = 0
+
+        self.data_time_slider.end = self.available_times.shape[0]
+        return new_time
+
+
+    def on_var_change(self, attr1, old_val, new_val):
+
+        '''Event handler for a change in the selected plot type.
+=======
         - attr1 -- Str; Attribute of dropdown which changes.
         - old_val -- Int; Old value from dropdown.
         - new_val -- Int; New value from dropdown.
+>>>>>>> 446fafbde10f79e15325f74cc21dc6a40ded36f2
 
         """
 
         print('var change handler')
-
+        new_time = self._refresh_times(new_val)
         for p1 in self.plots:
+            # different variables have different times available, soneed to
+            # set time when selecting a variable
+            p1.current_time = new_time
             p1.set_var(new_val)
 
     def on_region_change(self, attr1, old_val, new_val):

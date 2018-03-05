@@ -45,7 +45,7 @@ SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
                    'phillipines': [3.1375, 21.349, 115.8, 131.987],
                    'se_asia': [-18.0, 29.96, 90.0, 153.96],
                    }
-
+NUM_HOURS_IN_DAY = 24
 
 def download_from_s3(s3_url, local_path):
 
@@ -393,7 +393,7 @@ def get_image_array_from_figure(fig):
     return buf
 
 
-def get_model_run_times(num_days):
+def get_model_run_times(num_days, model_run_period=12):
 
     """Create a list of model times from the last num_days days.
     
@@ -401,6 +401,7 @@ def get_model_run_times(num_days):
     ---------
     
     - num_days -- Int; Set number of days to go back and get dates for.
+    - model_run_period -- Int; period of model runs in hours i.e. their is a model run every model_run_period hours.
     
     """
 
@@ -413,7 +414,7 @@ def get_model_run_times(num_days):
 
     forecast_datetimes = [
         lw_midnight + datetime.timedelta(hours=step1)
-        for step1 in range(0, 144, 12)]
+        for step1 in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
     forecast_dt_str_list = [
         fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
     

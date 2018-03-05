@@ -96,7 +96,10 @@ class SimimDataset(object):
         self.base_local_path = base_local_path
         self.do_download = do_download
         self.s3_url_list = [os.path.join(self.s3_base, fn1) for fn1 in self.file_name_list]
-        self.local_path_list = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list]
+        if self.use_s3_mount:
+            self.local_path_list = [os.path.join(self.s3_local_base, fn1) for fn1 in self.file_name_list]
+        else:
+            self.local_path_list = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list]
         self.forecast_time_obj = forecast_time_obj
         self.data = dict([(v1, None) for v1 in SIMIM_SAT_VARS])
 
@@ -109,17 +112,23 @@ class SimimDataset(object):
         
         return 'Simulated Imagery dataset'
 
-    def get_data(self, var_name):
+    def get_data(self, var_name, convert_units=False, selected_time=None):
         
         """Return data
         
         Arguments
         ---------
         
+<<<<<<< HEAD
+        '''
+        if selected_time is not None:
+            return self.data[var_name][selected_time]
+=======
         - var_name -- Str; Variable name to use as key to self.data
         
         """
         
+>>>>>>> 446fafbde10f79e15325f74cc21dc6a40ded36f2
         return self.data[var_name]
 
     def retrieve_data(self):
@@ -222,7 +231,12 @@ class SatelliteDataset(object):
         for im_type in file_name_list.keys():
             self.s3_url_list[im_type] = [os.path.join(self.s3_base, fn1) for fn1 in self.file_name_list[im_type]]
             self.local_path_list[im_type] = [os.path.join(self.base_local_path, fn1) for fn1 in self.file_name_list[im_type]]
-
+            if self.use_s3_mount:
+                self.local_path_list[im_type] = [os.path.join(self.s3_local_base, fn1) for fn1 in
+                                                 self.file_name_list[im_type]]
+            else:
+                self.local_path_list[im_type] = [os.path.join(self.base_local_path, fn1) for fn1 in
+                                                 self.file_name_list[im_type]]
         self.data = dict([(v1, None) for v1 in SIMIM_SAT_VARS])
         self.retrieve_data()
         self.load_data()
@@ -233,17 +247,23 @@ class SatelliteDataset(object):
         
         return 'Satellite Image dataset'
 
-    def get_data(self, var_name):
+    def get_data(self, var_name, convert_units=False, selected_time=None):
         
         """Return data
         
         Arguments
         ---------
         
+<<<<<<< HEAD
+        '''
+        if selected_time is not None:
+            return self.data[var_name][selected_time]
+=======
         - var_name -- Str; Variable name to use as key to self.data
         
         """
         
+>>>>>>> 446fafbde10f79e15325f74cc21dc6a40ded36f2
         return self.data[var_name]
 
     def retrieve_data(self):

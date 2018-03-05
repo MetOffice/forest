@@ -9,11 +9,14 @@ App.
 
 import os
 import copy
+
 import numpy
 import bokeh.io
 import bokeh.layouts 
 import bokeh.models.widgets
 import bokeh.plotting
+import bokeh.layouts
+
 import matplotlib
 matplotlib.use('agg')
 import iris
@@ -23,7 +26,7 @@ import forest.plot
 import forest.control
 import forest.data
 
-iris.FUTURE.netcdf_promote = True
+import pdb
 
 def add_main_plot(main_layout, bokeh_doc):
     
@@ -106,10 +109,17 @@ def get_available_datasets(s3_base,
     fcast_time = fcast_time_list[-1]
     return fcast_time, datasets
 
-
+@forest.util.timer
 def main(bokeh_id):
 
+<<<<<<< HEAD
+    '''
+    
+    '''
+    pdb.set_trace()
+=======
     """Main app function"""
+>>>>>>> 446fafbde10f79e15325f74cc21dc6a40ded36f2
     
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
@@ -129,10 +139,13 @@ def main(bokeh_id):
 
     s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
                                                     bucket=bucket_name)
-    s3_local_base = os.path.join(os.sep,'s3',bucket_name, 'model_data')
+    s3_local_base = os.path.expanduser(os.path.join('~',
+                                                    's3',
+                                                    bucket_name,
+                                                    'model_data'))
     base_path_local = os.path.expanduser('~/SEA_data/model_data/')
-    use_s3_mount = False
-    do_download = True
+    use_s3_mount = True
+    do_download = False
 
     init_fcast_time, datasets = get_available_datasets(s3_base,
                                                        s3_local_base,
@@ -150,8 +163,8 @@ def main(bokeh_id):
                   'wind_streams',
                   'mslp',
                   'cloud_fraction',
-                  #'blank',
                  ]
+    bokeh_doc = bokeh.plotting.curdoc()
 
     #Create regions
     region_dict = forest.util.SEA_REGION_DICT
@@ -159,41 +172,47 @@ def main(bokeh_id):
     #Setup and display plots
     plot_opts = forest.util.create_colour_opts(plot_names)
 
-    init_data_time = 4
+    init_data_time_index = 4
     init_var = plot_names[0] #blank
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY
     init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
-    
-    #Set up plots
-    plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
-                            plot_opts,
-                            'plot_left' + bokeh_id,
-                            init_var,
-                            init_model_left,
-                            init_region,
-                            region_dict,
-                            forest.data.UNIT_DICT,
-                            app_path,
-                            )
 
-    plot_obj_left.current_time = init_data_time
+    available_times = \
+        forest.data.get_available_times(datasets[init_fcast_time],
+                                        init_var)
+    init_data_time = available_times[init_data_time_index]
+    num_times = available_times.shape[0]
+
+    # Set up plots
+    plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
+                                           plot_opts,
+                                           'plot_left' + bokeh_id,
+                                           init_var,
+                                           init_model_left,
+                                           init_region,
+                                           region_dict,
+                                           forest.data.UNIT_DICT,
+                                           app_path,
+                                           init_data_time,
+                                           )
+
     bokeh_img_left = plot_obj_left.create_plot()
     stats_left = plot_obj_left.create_stats_widget()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
-                        plot_opts,
-                        'plot_right' + bokeh_id,
-                        init_var,
-                        init_model_right,
-                        init_region,
-                        region_dict,
-                        forest.data.UNIT_DICT,
-                        app_path,
-                        )
+                                            plot_opts,
+                                            'plot_right' + bokeh_id,
+                                            init_var,
+                                            init_model_right,
+                                            init_region,
+                                            region_dict,
+                                            forest.data.UNIT_DICT,
+                                            app_path,
+                                            init_data_time,
+                                            )
 
-    plot_obj_right.current_time = init_data_time
     bokeh_img_right = plot_obj_right.create_plot()
     stats_right = plot_obj_right.create_stats_widget()
 
@@ -201,14 +220,9 @@ def main(bokeh_id):
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
-    num_times = datasets[init_fcast_time][forest.data.N1280_GA6_KEY]['data'].get_data('precipitation').shape[0]
-    for ds_name in datasets[init_fcast_time]:
-        num_times = min(num_times, datasets[init_fcast_time][ds_name]['data'].get_data('precipitation').shape[0])
-    bokeh_doc = bokeh.plotting.curdoc()
-
     # Set up GUI controller class
-    control1 = forest.control.ForestController(init_data_time,
-                                               num_times,
+    control1 = forest.control.ForestController(available_times,
+                                               init_data_time_index,
                                                datasets[init_fcast_time],
                                                plot_names,
                                                [plot_obj_left, plot_obj_right],
