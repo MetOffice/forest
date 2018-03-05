@@ -1,65 +1,17 @@
-"""Module containing a class to manage the widgets for Sim Im vs Him-8. 
-
-Functions
----------
-
-None
-
-Classes
--------
-
-- SimimSatControl -- Main class for defining Model vs GPM widgets.
-
-"""
-
 import datetime
 import bokeh.models
 import bokeh.layouts
 
 
-class SimimSatControl(object):
- 
-    """Main widget configuration class.
-    
-    Methods
-    -------
-    
-    - __init__() -- Factory method.
-    - __str__() -- String method.
-    - create_widgets() -- Configure widgets and widget layout.
-    - on_time_prev() -- Event handler for changing to prev time step.
-    - on_data_tine_change() -- Event handler for a change in data time.
-    - on_time_next() -- Event handler for changing to next time step.
-    - on_type_change() -- Event handler for a change in wavelength.
-    
-    Attributes
-    ----------
-    
-    - datasets -- Dict; Dict of Forest datasets.
-    - plot_list -- List; List of ForestPlot objects.
-    - bokeh_imgs -- List; List of bokeh image objects.
-    - colorbar_div -- bokeh.models.widgets.Div; C'bar widget object.
-    - current_time -- Int; Index of current time step.
-    - fcast_time_obj -- datetime object; Date/time of model run.
-    - wavelengths_list -- List; Single-letter keys for wavelengths.
-    - dd_label_dict -- Dict; Dropdown labels for wavelengths.
-    - time_list -- List; Time strings of current wavelength data times.
-    - time_prev_button -- bokeh.models.widgets.Button; Prev button.
-    - data_time_slider -- bokeh.models.widgets.Slider; Time slider.
-    - time_next_button -- bokeh.models.widgets.Button; Next button.
-    - wavelength_dd -- bokeh.models.widgets.Dropdown; Model dropdown.
-    - time_row -- bokeh.layouts.row object; Set time row.
-    - major_config_row -- bokeh.layouts.row object; Set mjr config row.
-    - plots_row -- bokeh.layouts.row object; Set plots row.
-    - info_row -- bokeh.layouts.row object; Set info row.
-    - main_layout -- bokeh.layouts.column object; Set row layout.
-    
-    """
 
+class SimimSatControl(object):
+    
     def __init__(self, datasets, init_time, fcast_time_obj, 
                  plot_list, bokeh_imgs, colorbar_widget):
         
-        """Initialisation function for ForestController class."""
+        '''
+        
+        '''
         
         self.datasets = datasets
         self.plot_list = plot_list
@@ -76,13 +28,25 @@ class SimimSatControl(object):
 
     def __str__(self):
         
-        """Return string"""
+        '''
         
-        return "SimimSatControl object"
+        '''
+        
+        pass
 
     def create_widgets(self):
 
-        """Configure widgets and widget layout."""
+        '''
+        
+        '''
+        
+        # Create wavelength selection dropdown widget
+        wl_dd_list = [(self.dd_label_dict[k1], k1) for 
+                      k1 in self.dd_label_dict.keys()]
+        self.wavelength_dd = bokeh.models.widgets.Dropdown(label='Wavelength',
+                                                           menu=wl_dd_list,
+                                                           button_type='warning')
+        self.wavelength_dd.on_change('value', self.on_type_change)
 
         # Create previous timestep button widget
         self.time_prev_button = bokeh.models.widgets.Button(label='Prev',
@@ -106,15 +70,7 @@ class SimimSatControl(object):
                                                             button_type='warning',
                                                             width=100)
         self.time_next_button.on_click(self.on_time_next)
-        
-        # Create wavelength selection dropdown widget
-        wl_dd_list = [(self.dd_label_dict[k1], k1) for 
-                      k1 in self.dd_label_dict.keys()]
-        self.wavelength_dd = bokeh.models.widgets.Dropdown(label='Wavelength',
-                                                           menu=wl_dd_list,
-                                                           button_type='warning')
-        self.wavelength_dd.on_change('value', self.on_type_change)
-        
+
         # Set layout rows for widgets
         self.time_row = \
             bokeh.layouts.row(self.time_prev_button,
@@ -135,9 +91,23 @@ class SimimSatControl(object):
                                                 self.info_row,
                                                )
 
+    def on_data_time_change(self, attr1, old_val, new_val):
+        
+        '''Event handler for a change in the selected forecast data time.
+        
+        '''
+        
+        print('selected new time {0}'.format(new_val))
+        
+        self.current_time = new_val[:-3]
+        for p1 in self.plot_list:
+            p1.set_data_time(self.current_time)
+
     def on_time_prev(self):
         
-        """Event handler for changing to previous time step."""
+        '''Event handler for changing to previous time step
+        
+        '''
         
         print('selected previous time step')   
         current_index = self.time_list.index(self.current_time + 'UTC')
@@ -147,29 +117,12 @@ class SimimSatControl(object):
                 p1.set_data_time(self.current_time)  
         else:
             print('No previous time step')
-            
-    def on_data_time_change(self, attr1, old_val, new_val):
-        
-        """Event handler for a change in the selected forecast data time.
-
-        Arguments
-        ---------
-        
-        - attr1 -- Str; Attribute of dropdown which changes.
-        - old_val -- Int; Old value from dropdown.
-        - new_val -- Int; New value from dropdown.
-
-        """
-        
-        print('selected new time {0}'.format(new_val))
-        
-        self.current_time = new_val[:-3]
-        for p1 in self.plot_list:
-            p1.set_data_time(self.current_time)
                 
     def on_time_next(self):
         
-        """Event handler for changing to next time step."""
+        '''
+        
+        '''
         
         print('selected next time step')     
         current_index = self.time_list.index(self.current_time + 'UTC')
@@ -182,16 +135,9 @@ class SimimSatControl(object):
 
     def on_type_change(self, attr1, old_val, new_val):
 
-        """Event handler for a change in the selected wavelength.
-
-        Arguments
-        ---------
+        '''Event handler for a change in the selected plot type.
         
-        - attr1 -- Str; Attribute of dropdown which changes.
-        - old_val -- Int; Old value from dropdown.
-        - new_val -- Int; New value from dropdown.
-
-        """
+        '''
 
         print('selected new wavelength {0}'.format(new_val))
         current_type = new_val

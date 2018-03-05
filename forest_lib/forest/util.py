@@ -21,11 +21,6 @@ Functions
 - check_remote_file_exists() -- Check if remote file exists.
 - timer() -- Timer function for testing other functions.
 
-Classes
--------
-
-None
-
 """
 
 import time

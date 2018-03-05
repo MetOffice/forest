@@ -1,21 +1,3 @@
-"""Module containing a class to manage the datasets for Sim Im vs Him-8. 
-
-In particular, the SimimDataset and SatelliteDataset classes supports 
-just in time loading.
-
-Functions
----------
-
-None
-
-Classes
--------
-
-- SimimDataset -- Main class for containing simulated imagery data.
-- SatelliteDataset -- Main class for containing satellite imagery data.
-
-"""
-
 import os
 import datetime
 import numpy as np
@@ -47,33 +29,9 @@ DATA_TIMESTEPS = {'W' : {0: np.arange(12, 39, 3),
 
 class SimimDataset(object):
     
-    """Declare main class for holding Forest data.
+    '''
     
-    Methods
-    -------
-    
-    - __init__() -- Factory method.
-    - __str__() -- String method.
-    - get_data() -- Return self.data.
-    - retrieve_data() -- Download data from S3 bucket.
-    - load_data() -- Read Sim Im data into Iris cubes.
-    
-    Attributes
-    ----------
-    
-    - config -- Str; Name of data configuration.
-    - file_name_list -- List; Specifies netCDF file names.
-    - s3_base -- Str; S3 data basepath.
-    - s3_local_base -- Str; Local S3 data basepath.
-    - use_s3_mount -- Bool; Specify whether to use S3 mount.
-    - base_local_path -- Str; Local basepath to data.
-    - do_download -- Bool; Specify whether to do data download.
-    - s3_url_list -- List; Combined S3 basepath and filenames.
-    - local_path_list -- List; Combined local basepath and filenames.
-    - forecast_time_obj -- datetime object; Time of model run used.
-    - data -- Dict; Loaded data cubes.
-    
-    """
+    '''
     
     def __init__(self,
                  config,
@@ -83,13 +41,12 @@ class SimimDataset(object):
                  use_s3_mount,
                  base_local_path,
                  do_download,
+                 times_list,
                  forecast_time_obj,
                  ):
-        
-        """SimimDataset factory function"""
-        
         self.config = config
         self.file_name_list = file_name_list
+        self.times_list = times_list
         self.s3_base = s3_base
         self.s3_local_base = s3_local_base
         self.use_s3_mount = use_s3_mount
@@ -108,32 +65,26 @@ class SimimDataset(object):
 
     def __str__(self):
         
-        """Return string"""
+        '''
+        
+        '''
         
         return 'Simulated Imagery dataset'
 
     def get_data(self, var_name, convert_units=False, selected_time=None):
         
-        """Return data
+        '''
         
-        Arguments
-        ---------
-        
-<<<<<<< HEAD
         '''
         if selected_time is not None:
             return self.data[var_name][selected_time]
-=======
-        - var_name -- Str; Variable name to use as key to self.data
-        
-        """
-        
->>>>>>> 446fafbde10f79e15325f74cc21dc6a40ded36f2
         return self.data[var_name]
 
     def retrieve_data(self):
         
-        """Download data from S3 bucket."""
+        '''
+        
+        '''
         
         if self.do_download:
             if not (os.path.isdir(self.base_local_path)):
@@ -147,7 +98,9 @@ class SimimDataset(object):
                     
     def load_data(self):
         
-        """Load data into cubes."""
+        '''
+        
+        '''
         
         self.data = dict((it1,{}) for it1 in HIMAWARI_KEYS.keys())
 
@@ -179,33 +132,9 @@ class SimimDataset(object):
 
 class SatelliteDataset(object):
     
+    '''
     
-    """Declare main class for holding Forest data.
-    
-    Methods
-    -------
-    
-    - __init__() -- Factory method.
-    - __str__() -- String method.
-    - get_data() -- Return self.data.
-    - retrieve_data() -- Download data from S3 bucket.
-    - load_data() -- Read satellite data into Numpy arrays.
-    
-    Attributes
-    ----------
-    
-    - config -- Str; Name of data configuration.
-    - file_name_list -- List; Specifies netCDF file names.
-    - s3_base -- Str; S3 data basepath.
-    - s3_local_base -- Str; Local S3 data basepath.
-    - use_s3_mount -- Bool; Specify whether to use S3 mount.
-    - base_local_path -- Str; Local basepath to data.
-    - do_download -- Bool; Specify whether to do data download.
-    - s3_url_list -- List; Combined S3 basepath and filenames.
-    - local_path_list -- List; Combined local basepath and filenames.
-    - data -- Dict; Loaded data cubes.
-    
-    """
+    '''
     
     def __init__(self,
                  config,
@@ -217,7 +146,9 @@ class SatelliteDataset(object):
                  do_download,
                  ):
         
-        """SimimDataset factory function"""
+        '''
+        
+        '''
         
         self.config = config
         self.file_name_list = file_name_list
@@ -243,32 +174,26 @@ class SatelliteDataset(object):
 
     def __str__(self):
         
-        """Return string"""
+        '''
+        
+        '''
         
         return 'Satellite Image dataset'
 
     def get_data(self, var_name, convert_units=False, selected_time=None):
         
-        """Return data
+        '''
         
-        Arguments
-        ---------
-        
-<<<<<<< HEAD
         '''
         if selected_time is not None:
             return self.data[var_name][selected_time]
-=======
-        - var_name -- Str; Variable name to use as key to self.data
-        
-        """
-        
->>>>>>> 446fafbde10f79e15325f74cc21dc6a40ded36f2
         return self.data[var_name]
 
     def retrieve_data(self):
         
-        """Download data from S3 bucket."""
+        '''
+        
+        '''
         
         if self.do_download:
             if not (os.path.isdir(self.base_local_path)):
@@ -284,7 +209,9 @@ class SatelliteDataset(object):
                         
     def load_data(self):
         
-        """Load data into arrays."""
+        '''
+        
+        '''
         
         self.data = dict((it1,{}) for it1 in self.local_path_list.keys())
         for im_type in self.local_path_list:
