@@ -1,10 +1,10 @@
-''' SE Asia Model and GPM IMERG Matplotlib example Bokeh app script
+"""SE Asia Model and GPM IMERG Matplotlib example Bokeh app script
 
-# This script demonstrates creating plots of model rainfall data and GPM IMERG
-#  data for SE Asia using the Matplotlib plotting library to provide images to
-#  a Bokeh Server App.
+This script demonstrates creating plots of model rainfall data and GPM IMERG
+data for SE Asia using the Matplotlib plotting library to provide images to
+a Bokeh Server App.
 
-'''
+"""
 
 import os
 import datetime
@@ -24,12 +24,9 @@ import model_gpm_control
 import model_gpm_data
 
 
-
 def main(bokeh_id):
 
-    '''Main app function
-     
-    '''
+    """Main app function"""
     
     # Set datetime objects and string for controlling data download
     now_time_obj = datetime.datetime.utcnow()

@@ -1,6 +1,16 @@
-"""Module containing a class to manage the datasets for the model 
-evaulation tool. In particular, the data class supports just in time 
-loading.
+"""Module containing a class to manage the datasets for Forest. 
+
+In particular, the ForestDataset class supports just in time loading.
+
+Functions
+---------
+
+- get_var_lookup() -- Read config files into dictionary.
+
+Classes
+-------
+
+- ForestDataset -- Main class for containing Forest data.
 
 """
 
@@ -65,9 +75,14 @@ VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
 
 def get_var_lookup(config):
 
-    '''
+    """Read config files into dictionary.
     
-    '''
+    Arguments
+    ---------
+    
+    - config -- Str; set config type to read file for.
+    
+    """
     
     var_list_path = os.path.join(VAR_LIST_DIR,
                                  VAR_LIST_FNAME_BASE.format(config=config))
@@ -85,14 +100,49 @@ def get_var_lookup(config):
                 field_dict[sect1]['accumulate'] == 'True'
         except:
             print('warning: stash values not converted to numbers.')
+            
     return field_dict
 
 
 class ForestDataset(object):
 
-    '''
+    """Declare main class for holding Forest data.
     
-    '''
+    Methods
+    -------
+    
+    - __init__() -- Factory method.
+    - __str__() -- String method.
+    - check_data() -- Check data exists.
+    - get_data() -- Call self.retrieve_data() and self.load_data().
+    - retrieve_data() -- Download data from S3 bucket.
+    - load_data() -- Call loader methods.
+    - basic_cube_load() -- Load simple data into a cube.
+    - wind_speed_loader() -- Load x/y wind data, create speed cube.
+    - wind_vector_loader() -- Load x/y wind data, create vector cube.
+    - add_accum_precip_keys() -- Add precip. accum. keys to data dict.
+    - accum_precip_loader() -- Load precip. data and calc. accums.
+    - accum_precip() -- Calculate precip. accumulations.
+    
+    Attributes
+    ----------
+    
+    - config_name -- Str; Name of data configuration.
+    - var_lookup -- Dict; Links variable names to data keys.
+    - file_name -- Str; Specifies netCDF file name.
+    - s3_base_url -- Str; S3 data basepath.
+    - s3_url -- Str; Combined S3 basepath and filename.
+    - s3_local_base -- Str; Local S3 data basepath.
+    - s3_local_path -- Str; Combined S3 local basepath and filename.
+    - use_s3_local_mount -- Bool; Specify whether to use S3 mount.
+    - base_local_path -- Str; Local basepath to data.
+    - do_download -- Bool; Specify whether to do data download.
+    - local_path -- Str; Combined local basepath and filename.
+    - loaders -- Dict; Dictionary of loader functions for vars.
+    - data -- Dict; Loaded data cubes.
+    - path_to_load -- Str; local/S3 path, based on do_download.
+    
+    """
     
     def __init__(self,
                  config,
@@ -103,6 +153,9 @@ class ForestDataset(object):
                  base_local_path,
                  do_download,
                  var_lookup):
+        
+        """ForestDataset factory function"""
+        
         self.config_name = config
         self.var_lookup = var_lookup
         self.file_name = file_name
@@ -115,10 +168,6 @@ class ForestDataset(object):
         self.do_download = do_download
         self.local_path = os.path.join(self.base_local_path,
                                        self.file_name)
-
-        '''
-        
-        '''
         
         # set up data loader functions
         self.loaders = dict([(v1, self.basic_cube_load) for v1 in VAR_NAMES])
@@ -139,32 +188,33 @@ class ForestDataset(object):
 
     def __str__(self):
     
-        '''
-        
-        '''
+        """Return string"""
         
         return 'FOREST dataset'
 
     def check_data(self):
     
-        """
-        Check that the data represented by this dataset actually exists.
-        """
+        """Check that the data represented by this dataset exists."""
         
         return forest.util.check_remote_file_exists(self.s3_url)
 
     def get_data(self, var_name):
     
-        '''
+        """Calls functions to retrieve and load data.
         
-        '''
+        Arguments
+        ---------
+        
+        - var_name -- Str; Redundant: used to match other loaders.
+        
+        """
         
         if self.data[var_name] is None:
             if self.check_data():
-                # get data from aws s3 storage
+                # Get data from aws s3 storage
                 self.retrieve_data()
-                # load the data into memory from file (will only load meta data
-                # initially)
+                # Load the data into memory from file (will only load 
+                # metadata initially)
                 self.load_data(var_name)
             else:
                 self.data[var_name] = None
@@ -173,9 +223,7 @@ class ForestDataset(object):
 
     def retrieve_data(self):
     
-        '''
-        
-        '''
+        """Download data from S3 bucket."""
         
         if self.do_download:
             if not (os.path.isdir(self.base_local_path)):
@@ -186,17 +234,27 @@ class ForestDataset(object):
 
     def load_data(self, var_name):
     
-        '''
+        """Call loader function.
         
-        '''
+        Arguments
+        ---------
+        
+        - var_name -- Str; Var name used as dict key to select loader.
+
+        """
         
         self.loaders[var_name](var_name)
 
     def basic_cube_load(self, var_name):
     
-        '''
+        """Load simple cubes.
+
+        Arguments
+        ---------
         
-        '''
+        - var_name -- Str; Var name used to define data to load.
+
+        """
         
         field_dict = self.var_lookup[var_name]
         if field_dict['accumulate']:
@@ -222,12 +280,18 @@ class ForestDataset(object):
 
     def wind_speed_loader(self, var_name):
     
-        '''Process wind cubes to calculate wind speed
+        """Process wind cubes to calculate wind speed.
         
-        '''
+        Arguments
+        ---------
+        
+        - var_name -- Str; Redundant: used to match other loaders.
+        
+        """
+
+        print('calculating wind speed for {0}'.format(self.config_name))
 
         cube_pow = iris.analysis.maths.exponentiate
-        print('calculating wind speed for {0}'.format(self.config_name))
         cube_x_wind = self.get_data('x_wind')
         cube_y_wind = self.get_data('y_wind')
 
@@ -238,9 +302,14 @@ class ForestDataset(object):
 
     def wind_vector_loader(self, var_name):
     
-        '''
+        """Gets wind data and calculates wind vectors.
+
+        Arguments
+        ---------
         
-        '''
+        - var_name -- Str; Redundant: used to match other loaders.
+
+        """
         
         cube_x_wind = self.get_data('x_wind')
         cube_y_wind = self.get_data('y_wind')
@@ -251,28 +320,42 @@ class ForestDataset(object):
      
     def add_accum_precip_keys(self, timespan):
     
-        '''Create precipitation accumulation cube dict keys. 
+        """Create precipitation accumulation cube dict keys.
         
-        '''
+        Arguments
+        ---------
+        
+        - timespan -- Str; Define precip. accum. window.
+        
+        """
         
         var_name = 'precip_accum_{}hr'.format(timespan)
         self.data.update({var_name: None})
         
     def accum_precip_loader(self, var_name):
         
-        '''
+        """Gets data and creates accumulated precipitation cube.
+
+        Arguments
+        ---------
         
-        '''
+        - var_name -- Str; Precip accum variable name.
+
+        """
         
         self.get_data('precipitation')
         self.accum_precip(var_name)
 
     def accum_precip(self, var_name):
     
-        '''Create precipitation accumulation cube from existing precip
-        data.
+        """Create precip. accum. cube from existing precip. data.
         
-        '''
+        Arguments
+        ---------
+        
+        - var_name -- Str; Hour in var_name defines accum window.
+        
+        """
         
         accum_multiplier = float(var_name[13:-2])
         
@@ -284,9 +367,12 @@ class ForestDataset(object):
         
         agg_name = 'agg_time_{}'.format(var_name[13:])
         
-        iris.coord_categorisation.add_categorised_coord(temp_cube, agg_name, 'time', conv_lambda,
-                                                        units=cf_units.Unit('hours since 1970-01-01',
-                                                                             calendar='gregorian'))
+        time_unit = cf_units.Unit('hours since 1970-01-01', calendar='gregorian')
+        iris.coord_categorisation.add_categorised_coord(temp_cube, 
+                                                        agg_name, 
+                                                        'time', 
+                                                        conv_lambda,
+                                                        units=time_unit)
         accum_cube = temp_cube.aggregated_by([agg_name], iris.analysis.SUM)
                 
         self.data.update({var_name: accum_cube})
