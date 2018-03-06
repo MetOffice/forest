@@ -7,6 +7,8 @@ import matplotlib.pyplot
 import forest.data
 import forest.util
 
+import pdb
+
 SIMIM_SAT_VARS = ['W', 'V', 'I']
 
 HIMAWARI_KEYS = {'W': 'LWIN11',
@@ -76,9 +78,13 @@ class SimimDataset(object):
         '''
         
         '''
-        if selected_time is not None:
-            return self.data[var_name][selected_time]
-        return self.data[var_name]
+        try:
+            if selected_time is not None:
+                return self.data[var_name][selected_time]
+            return self.data[var_name]
+        except KeyError as ke1:
+            print('data {0} var={1} time={2} not available'.format(self.config, var_name, selected_time))
+        return None
 
     def retrieve_data(self):
         
@@ -185,9 +191,13 @@ class SatelliteDataset(object):
         '''
         
         '''
-        if selected_time is not None:
-            return self.data[var_name][selected_time]
-        return self.data[var_name]
+        try:
+            if selected_time is not None:
+                return self.data[var_name][selected_time]
+            return self.data[var_name]
+        except KeyError as ke1:
+            print('data {0} var={1} time={2} not available'.format(self.config, var_name, selected_time))
+        return None
 
     def retrieve_data(self):
         
@@ -221,5 +231,5 @@ class SatelliteDataset(object):
                     data_time1 = file_name[-16:-4]
                     im_array_dict.update({data_time1: matplotlib.pyplot.imread(file_name)})
                 except:
-                    pass
+                    print('failed to load file {0}'.format(file_name))
             self.data[im_type].update(im_array_dict)

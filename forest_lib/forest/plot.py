@@ -565,7 +565,7 @@ class ForestPlot(object):
         '''
         
         him8_image = self.dataset[
-            'himawari-8']['data'].get_data(self.current_var, self.current_time)
+            'himawari-8']['data'].get_data(self.current_var, selected_time=self.current_time)
         self.current_axes.images.remove(self.main_plot)
         self.main_plot = self.current_axes.imshow(him8_image,
                                                   extent=(self.data_bounds[2],
@@ -581,9 +581,10 @@ class ForestPlot(object):
         when cloud fraction is the selected plot type.
         
         '''
-        
-        him8_image = self.dataset[
-            'himawari-8']['data'].get_data(self.current_var, self.current_time)
+
+        him8_data = self.dataset['himawari-8']['data']
+        him8_image = him8_data.get_data(self.current_var,
+                                        selected_time=self.current_time)
         self.main_plot = self.current_axes.imshow(him8_image,
                                                   extent=(self.data_bounds[2],
                                                           self.data_bounds[3],
@@ -615,7 +616,7 @@ class ForestPlot(object):
         '''
         
         simim_cube = self.dataset['simim']['data'].get_data(
-            self.current_var, self.current_time)
+            self.current_var, selected_time=self.current_time)
         array_for_update = simim_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(None)
@@ -627,10 +628,10 @@ class ForestPlot(object):
         
         '''
 
-        simim_cube = self.dataset['simim']['data'].get_data(
-            self.current_var, self.current_time)
-        lats = simim_cube.coords('grid_latitude')[0].points
-        lons = simim_cube.coords('grid_longitude')[0].points
+        simim_cube = self.dataset['simim']['data'].get_data(self.current_var,
+                                                            selected_time=self.current_time)
+        lats = simim_cube.coord('grid_latitude').points
+        lons = simim_cube.coord('grid_longitude').points
         self.main_plot = \
             self.current_axes.pcolormesh(lons,
                                          lats,

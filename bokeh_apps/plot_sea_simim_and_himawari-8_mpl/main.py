@@ -28,7 +28,7 @@ def main(bokeh_id):
 
     # Set datetime objects and string for controlling data download
     now_time_obj = datetime.datetime.utcnow()
-    two_days_ago_obj = now_time_obj - datetime.timedelta(days = 3)
+    two_days_ago_obj = now_time_obj - datetime.timedelta(days = 5)
     fcast_hour = 12*int(now_time_obj.hour/12)
     fcast_time_obj = two_days_ago_obj.replace(hour=fcast_hour, minute=0)
     fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
