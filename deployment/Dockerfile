@@ -10,6 +10,7 @@ RUN apt-get update -y
 RUN apt-get install libfuse-dev --fix-missing -y
 RUN pip install git+git://github.com/met-office-lab/pysssix.git
 RUN mkdir /s3
+RUN ln -s /opt/SEA_data ~/SEA_data
 
 # TODO use a differnet user rather than root.
 
