@@ -13,7 +13,7 @@ resource "aws_instance" "forest_bokeh_server" {
   user_data             = "${data.template_file.bootstrap.rendered}"
   # iam_instance_profile  = "seasia-bokeh-on-ec2"
   root_block_device {
-       volume_size = 80
+       volume_size = 120
    }
   tags {
     Name = "forest_server",
