@@ -10,4 +10,4 @@ cd /opt/model_evaluation_tool
 cd deployment
 docker build  -t forest .
 mkdir /opt/SEA_data
-docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v /opt/model_evaluation_tool/bokeh_apps:/opt/bokeh_apps -v /opt/model_evaluation_tool/forest_lib:/opt/forest_lib /opt/SEA_data:/opt/SEA_data -e  PUBLIC_IP=forest.informaticslab.co.uk forest
+docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v /opt/model_evaluation_tool/bokeh_apps:/opt/bokeh_apps -v /opt/model_evaluation_tool/forest_lib:/opt/forest_lib -v /opt/SEA_data:/opt/SEA_data -e  PUBLIC_IP=forest.informaticslab.co.uk forest
