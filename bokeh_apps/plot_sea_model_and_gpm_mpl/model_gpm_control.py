@@ -4,6 +4,7 @@ import bokeh
 import bokeh.model
 import bokeh.layouts
 
+import forest.data
 
 MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
                  'km4p4_ra1t': 'SE Asia 4.4km', 
@@ -33,8 +34,8 @@ class ModelGpmControl(object):
     
     def __init__(self,
                  datasets,
-                 init_time,
-                 num_times,
+                 init_time_ix,
+                 available_times,
                  plot_list,
                  bokeh_img_list,
                  ):
@@ -44,8 +45,10 @@ class ModelGpmControl(object):
         '''
         
         self.datasets = datasets
-        self.init_time = init_time
-        self.num_times = num_times
+        self.available_times = available_times
+        self.init_time_ix = init_time_ix
+        self.init_time = self.available_times[self.init_time_ix]
+        self.num_times = self.available_times.shape[0]
         self.plot_list = plot_list
         self.bokeh_img_list = bokeh_img_list
         self.create_widgets()
@@ -78,8 +81,8 @@ class ModelGpmControl(object):
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
                                         end=self.num_times,
-                                        value=self.init_time,
-                                        step=3,
+                                        value=self.init_time_ix,
+                                        step=1,
                                         title="Data time",
                                         width=400)
         self.data_time_slider.on_change('value', self.on_data_time_change)
@@ -168,10 +171,9 @@ class ModelGpmControl(object):
         '''
         
         print('selected new time {0}'.format(new_val))
-        time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
-        current_time = int(new_val / time_step)
+        new_time = self.available_times[new_val]
         for p1 in self.plot_list:
-            p1.set_data_time(current_time)
+            p1.set_data_time(new_time)
 
     def on_time_prev(self):
         
@@ -180,8 +182,7 @@ class ModelGpmControl(object):
         '''
         
         print('selected previous time step')       
-        time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
-        current_time = int(self.data_time_slider.value - time_step)
+        current_time = self.data_time_slider.value - 1
         if current_time >= 0:
             self.data_time_slider.value = current_time
         else:
@@ -194,41 +195,29 @@ class ModelGpmControl(object):
         '''
         
         print('selected next time step')       
-        time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
-        current_time = int(self.data_time_slider.value + time_step)
+        current_time = self.data_time_slider.value + 1
         if current_time < self.num_times:
             self.data_time_slider.value = current_time
         else:
-            print('Cannot select time > num_times')        
-            
-    def on_date_slider_change(self, attr1, old_val, new_val):
-        
-        '''Event handler for a change in the selected forecast data date.
-        
-        '''
-        
-        print('selected new date {0}'.format(new_val))
-        current_time = new_val.strftime('%Y%m%d') + self.current_time[-4:]
-        for p1 in self.plot_list:
-            p1.set_data_time(current_time)
+            print('Cannot select time > num_times')
 
-    def on_hour_slider_change(self, attr1, old_val, new_val):
-        
-        '''Event handler for a change in the selected forecast data date.
-        
-        '''
-        
-        print('selected new date {0}'.format(new_val))
-        current_time = self.current_time[:-4] + '{:02d}00'.format(new_val)
-        for p1 in self.plot_list:
-            p1.set_data_time(current_time)
+    def _refresh_times(self, new_var):
+        self.available_times = forest.data.get_available_times(self.datasets,
+                                                               new_var)
+        try:
+            new_time = self.available_times[self.data_time_slider.value]
+        except IndexError:
+            new_time = self.available_times[0]
+            self.data_time_slider.value = 0
+
+        self.data_time_slider.end = self.available_times.shape[0]
+        return new_time
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
         
         '''Event handler for a change in the selected model configuration output.
         
         '''
-        
         print('selected new config {0}'.format(new_val))
         self.plot_list[plot_index].set_config(new_val)
 
@@ -249,10 +238,11 @@ class ModelGpmControl(object):
         '''Event handler for a change in the selected model configuration output.
         
         '''
-        
         # Change slider step based on new accumulation range
-        self.data_time_slider.step = int(self.accum_rbg.labels[new_val][:-2])
         print('selected new accumulation time span {0}'.format(self.accum_rbg.labels[new_val]))
         new_var = 'accum_precip_{0}'.format(self.accum_rbg.labels[new_val])
-        for plot in self.plot_list:
-            plot.set_var(new_var)
+        new_time = self._refresh_times(new_var)
+
+        for plot1 in self.plot_list:
+            plot1.current_time = new_time
+            plot1.set_var(new_var)

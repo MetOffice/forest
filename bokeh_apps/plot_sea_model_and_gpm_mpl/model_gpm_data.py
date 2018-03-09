@@ -1,7 +1,8 @@
 import os
 import math
 import numpy
-import datetime as dt
+import datetime
+import functools
 
 import iris
 import cf_units
@@ -66,6 +67,9 @@ class GpmDataset(object):
         self.times_list = times_list
         self.fcast_hour = fcast_hour
         self.data = dict([(v1,None) for v1 in forest.data.VAR_NAMES])
+        self.data.update(dict([(v1,None) for v1 in forest.data.PRECIP_ACCUM_VARS]))
+        self.times = dict([(v1,None) for v1 in forest.data.VAR_NAMES])
+        self.times.update(dict([(v1,None) for v1 in forest.data.PRECIP_ACCUM_VARS]))
 
         self.retrieve_data()
         self.load_data()
@@ -79,14 +83,37 @@ class GpmDataset(object):
         
         return 'GPM  dataset'
 
+    def get_times(self, var_name):
+        return self.times[var_name]
+
     def get_data(self, var_name, convert_units=False, selected_time=None):
         
         '''
         
         '''
         if selected_time is not None:
-            return self.data[var_name][selected_time]
+            return self._extract_time(var_name, selected_time)
         return self.data[var_name]
+
+    def _extract_time(self, var_name, selected_time):
+        if selected_time == forest.data.ForestDataset.TIME_INDEX_ALL:
+            return self.data[var_name]
+        coord_constraint_dict = {}
+        if int(iris.__version__.split('.')[0]) == 1:
+            def time_comp(time_index, eps1, cell1):
+                return abs(cell1.point - time_index) < eps1
+            coord_constraint_dict['time'] = \
+                functools.partial(time_comp, selected_time, 1e-5)
+
+        elif int(iris.__version__.split('.')[0]) == 2:
+            time_obj = datetime.datetime.fromtimestamp(selected_time * 3600)
+            def time_comp(selected_time, eps1, cell1):
+                return abs(cell1.point - selected_time).total_seconds() < eps1
+            coord_constraint_dict['time'] = \
+                functools.partial(time_comp, time_obj, 1)
+
+        ic1 = iris.Constraint(coord_values=coord_constraint_dict)
+        return self.data[var_name].extract(ic1)
 
     def retrieve_data(self):
         
@@ -141,12 +168,14 @@ class GpmDataset(object):
 
         self.data['precipitation'] = temp_cube_list.concatenate_cube()
         self.data['accum_precip_3hr'] = self.data['precipitation']
+        # set times to be the start of the accumulation period
+        precip_3hr_times = numpy.floor(self.data['accum_precip_3hr'].coord('time').points /3) * 3
+        self.data['accum_precip_3hr'].coord('time').points = precip_3hr_times
         
         # Create 6, 12 and 24 accumulations
         for accum_step in [6, 12, 24]:
-            
             var_name = 'accum_precip_{}hr'.format(accum_step)
-            temp_cube = self.data['accum_precip_3hr']
+            temp_cube = self.data['precipitation']
             
             agg_lambda = lambda coord, value: math.floor(value / float(accum_step)) * accum_step
             
@@ -167,15 +196,23 @@ class GpmDataset(object):
                                                             agg_lambda,
                                                             units=cf_units.Unit('hours since 1970-01-01',
                                                                                  calendar='gregorian'))
-            self.data[var_name] = temp_cube.aggregated_by([agg_var_name], iris.analysis.SUM)
+            precip_acc1 = temp_cube.aggregated_by([agg_var_name], iris.analysis.SUM)
+            precip_acc1.coord('time').points = precip_acc1.coord(agg_var_name).points
+            self.data[var_name] = precip_acc1
+
+
 
         # Cut out the first 12 hours of data if using a 12Z run
         if self.fcast_hour == 12:
             time_0 = self.data['precipitation'].coords('time')[0].points[0]
             midday_time_int = int(time_0 + 11)
-            midday_time_obj = dt.datetime(1970, 1, 1) \
-                              + dt.timedelta(hours=midday_time_int)
+            midday_time_obj = datetime.datetime(1970, 1, 1) \
+                              + datetime.timedelta(hours=midday_time_int)
             midday_constraint = iris.Constraint(time=lambda t: t.point >= midday_time_obj)
             
             for acc_key in [key for key in self.data.keys() if 'accum' in key]:
                 self.data[acc_key] = self.data[acc_key].extract(midday_constraint)
+
+        loaded_data_gen = [(var1, self.data[var1]) for var1 in self.data if self.data[var1] is not None]
+        for var1,data1 in loaded_data_gen:
+            self.times[var1] = data1.coord('time').points

@@ -33,9 +33,11 @@ WIND_STREAM_NAME = 'wind_streams'
 WIND_MSLP_NAME = 'wind_mslp'
 WIND_UNIT_MPH = 'miles-hour^-1'
 
+PRECIP_VAR_NAME = 'precipitation'
 PRECIP_UNIT_MM = 'mm'
-
-VAR_NAMES = ['precipitation',
+PRECIP_UNIT_ACCUM = 'kg-m-2'
+PRECIP_UNIT_RATE = 'kg-m-2-hour^-1'
+VAR_NAMES = [PRECIP_VAR_NAME,
              'air_temperature',
              WIND_SPEED_NAME,
              WIND_VECTOR_NAME,
@@ -53,12 +55,12 @@ WIND_VECTOR_VARS = ['wv_X',
                     'wv_X_grid',
                     'wv_Y_grid',
                     ]
+PRECIP_ACCUM_WINDOW_SIZES_LIST = [3,6,12,24]
 
-UNIT_DICT = {'precipitation': 'kg-m-2-hour^-1',
-             'accum_precip_3hr': PRECIP_UNIT_MM,
-             'accum_precip_6hr': PRECIP_UNIT_MM,
-             'accum_precip_12hr': PRECIP_UNIT_MM,
-             'accum_precip_24hr': PRECIP_UNIT_MM,
+PRECIP_ACCUM_WINDOW_SIZES_DICT = dict([('accum_precip_{0}hr'.format(window1), window1) for window1 in PRECIP_ACCUM_WINDOW_SIZES_LIST])
+PRECIP_ACCUM_VARS = list(PRECIP_ACCUM_WINDOW_SIZES_DICT.keys())
+
+UNIT_DICT = {PRECIP_VAR_NAME: PRECIP_UNIT_RATE,
              'cloud_fraction': None,
              'air_temperature': 'celsius',
              'x_wind': WIND_UNIT_MPH,
@@ -70,6 +72,7 @@ UNIT_DICT = {'precipitation': 'kg-m-2-hour^-1',
              }
 
 UNIT_DICT.update(dict([(var1,WIND_UNIT_MPH) for var1 in WIND_VECTOR_VARS]))
+UNIT_DICT.update(dict([(var1,PRECIP_UNIT_ACCUM) for var1 in PRECIP_ACCUM_VARS]))
 
 N1280_GA6_KEY = 'n1280_ga6'
 KM4P4_RA1T_KEY = 'km4p4_ra1t'
@@ -114,7 +117,8 @@ def get_var_lookup(config):
     return field_dict
 
 def get_available_times(datasets, var1):
-    available_times = datasets[forest.data.N1280_GA6_KEY]['data'].get_times(var1)
+    key0 = list(datasets.keys())[0]
+    available_times = datasets[key0]['data'].get_times(var1)
 
     for ds_name in datasets:
         times1 = datasets[ds_name]['data'].get_times(var1)
@@ -195,7 +199,9 @@ class ForestDataset(object):
         self.time_loaders[WIND_VECTOR_NAME] = self._wind_time_load
         for wv_var in WIND_VECTOR_VARS:
             self.time_loaders[wv_var] = self._wind_time_load
-        self.times = dict([(v1, {'all':None}) for v1 in self.time_loaders.keys()])
+        for accum_precip_var in PRECIP_ACCUM_VARS:
+            self.time_loaders[accum_precip_var] = self._accum_precip_time_load
+        self.times = dict([(v1, None) for v1 in self.time_loaders.keys()])
 
 
         # set up data loader functions
@@ -204,12 +210,10 @@ class ForestDataset(object):
         self.loaders[WIND_VECTOR_NAME] = self.wind_vector_loader
         for wv_var in WIND_VECTOR_VARS:
             self.loaders[wv_var] = self.wind_vector_loader
-        for accum_precip_var in ['accum_precip_{}hr'.format(hr) 
-                                 for hr in [3, 6, 12, 24]
-                                ]:
+        for accum_precip_var in PRECIP_ACCUM_VARS:
             self.loaders[accum_precip_var] = self.accum_precip_loader
 
-        self.data = dict([(v1, {'all':None}) for v1 in self.loaders.keys()])
+        self.data = dict([(v1, None) for v1 in self.loaders.keys()])
         if self.use_s3_local_mount:
             self.path_to_load = self.s3_local_path
         else:
@@ -258,9 +262,9 @@ class ForestDataset(object):
 
         cube1 = iris.load_cube(self.path_to_load, ic1)
         self.times[var_name] = cube1.coord('time').points
-        self.data[var_name].update( dict([(t1,None) for t1 in self.times[var_name]]))
+        self.data[var_name] =  dict([(t1,None) for t1 in self.times[var_name]] + [('all',None)])
 
-    def _wind_time_load(self):
+    def _wind_time_load(self, var_name):
         """
         """
         if self.times['x_wind'] is None:
@@ -269,7 +273,14 @@ class ForestDataset(object):
 
             for var1 in WIND_VECTOR_VARS + ['y_wind']:
                 self.times[var1] = copy.deepcopy(self.times['x_wind'])
-                self.data[var1].update(dict([(t1,None,) for t1 in self.times[var1] ]))
+                self.data[var1] = dict([(t1,None,) for t1 in self.times[var1] ]+ [('all',None)])
+    def _accum_precip_time_load(self, var_name):
+        """
+        """
+        self._basic_time_load(PRECIP_VAR_NAME)
+        window_size1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[var_name]
+        self.times[var_name] = numpy.unique(numpy.floor(self.times[PRECIP_VAR_NAME] / window_size1) * window_size1)
+        self.data[var_name] = dict([(t1, None) for t1 in self.times[var_name]] + [('all',None)])
 
     def get_data(self, var_name, selected_time, convert_units=True):
     
@@ -291,9 +302,8 @@ class ForestDataset(object):
             if self.check_data():
                 # get data from aws s3 storage
                 self.retrieve_data()
-                # load the data into memory from file (will only load meta data
-                # initially)
-                times1 = self.load_times(var_name)
+
+                self.load_times(var_name)
 
         if self.data[var_name][selected_time] is None:
             if self.check_data():
@@ -309,7 +319,8 @@ class ForestDataset(object):
             else:
                 self.data[var_name] = None
 
-        return self.data[var_name][selected_time]
+
+        return self.data[var_name][time_ix]
 
     def retrieve_data(self):
     
@@ -346,8 +357,6 @@ class ForestDataset(object):
         - time_ix -- Index of the time to load
 
         """
-        
-        time_obj = datetime.datetime.fromtimestamp(time_ix*3600)
         field_dict = self.var_lookup[var_name]
         cf1 = lambda cube1: \
             cube1.attributes['STASH'].section == \
@@ -356,32 +365,37 @@ class ForestDataset(object):
             field_dict['stash_item']
         coord_constraint_dict = {}
 
-        if int(iris.__version__.split('.')[0]) == 1:
-            def time_comp(time_index, eps1, cell1):
-                return abs(cell1.point - time_index) < eps1
+        if time_ix != ForestDataset.TIME_INDEX_ALL:
+            time_obj = datetime.datetime.fromtimestamp(time_ix * 3600)
+            time_desc = str(time_obj)
+            if int(iris.__version__.split('.')[0]) == 1:
+                def time_comp(time_index, eps1, cell1):
+                    return abs(cell1.point - time_index) < eps1
 
-            if time_ix != ForestDataset.TIME_INDEX_ALL:
-                coord_constraint_dict['time'] = \
-                    functools.partial(time_comp, time_ix, 1e-5)
+                if time_ix != ForestDataset.TIME_INDEX_ALL:
+                    coord_constraint_dict['time'] = \
+                        functools.partial(time_comp, time_ix, 1e-5)
 
-        elif int(iris.__version__.split('.')[0]) == 2:
-            def time_comp(selected_time, eps1, cell1):
-                return abs(cell1.point - selected_time).total_seconds() < eps1
+            elif int(iris.__version__.split('.')[0]) == 2:
+                def time_comp(selected_time, eps1, cell1):
+                    return abs(cell1.point - selected_time).total_seconds() < eps1
 
-            if time_ix != ForestDataset.TIME_INDEX_ALL:
-                coord_constraint_dict['time'] = \
-                    functools.partial(time_comp, time_obj, 1)
+                if time_ix != ForestDataset.TIME_INDEX_ALL:
+                    coord_constraint_dict['time'] = \
+                        functools.partial(time_comp, time_obj, 1)
 
-        ic1 = iris.Constraint(cube_func=cf1,
-                              coord_values=coord_constraint_dict)
+            ic1 = iris.Constraint(cube_func=cf1,
+                                  coord_values=coord_constraint_dict)
 
+        else:
+            time_desc = time_ix
+            ic1 = iris.Constraint(cube_func=cf1)
 
         print('path to load {0}'.format(self.path_to_load))
-        print('time to load {0}'.format(str(time_obj)))
+        print('time to load {0}'.format(time_desc))
         print('stash to load section {0} item {1}'.format(field_dict['stash_section'], field_dict['stash_item'] ) )
 
         dc1 = iris.load_cube(self.path_to_load, ic1)
-
         self.data[var_name][time_ix] = dc1
 
     def wind_speed_loader(self, var_name, time_ix):
@@ -450,8 +464,8 @@ class ForestDataset(object):
         - var_name -- Str; Precip accum variable name.
 
         """
-        
-        self.get_data('precipitation')
+
+        self.get_data('precipitation', 'all')
         self.accum_precip(var_name)
 
     def accum_precip(self, var_name):
@@ -464,12 +478,11 @@ class ForestDataset(object):
         - var_name -- Str; Hour in var_name defines accum window.
         
         """
-        
         accum_multiplier = float(var_name[13:-2])
         
         conv_lambda = lambda coord, value: math.floor(value / accum_multiplier) * accum_multiplier 
         
-        temp_cube = self.data['precipitation']
+        temp_cube = self.data['precipitation']['all']
         temp_cube.data *= 3
         temp_cube.units = 'kg-m-2'
         
@@ -482,5 +495,8 @@ class ForestDataset(object):
                                                         conv_lambda,
                                                         units=time_unit)
         accum_cube = temp_cube.aggregated_by([agg_name], iris.analysis.SUM)
-                
-        self.data.update({var_name: accum_cube})
+        accum_cube.coord('time').points = accum_cube.coord(agg_name).points
+        self.data[var_name]['all'] = accum_cube
+        self.times[var_name] = self.data[var_name]['all'].coord('time').points
+        for ix1, time1 in enumerate(self.times[var_name]):
+            self.data[var_name][time1] = self.data[var_name]['all'][ix1]

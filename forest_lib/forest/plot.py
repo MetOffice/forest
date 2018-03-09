@@ -16,8 +16,6 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
-import pdb
-
 class ForestPlot(object):
 
     '''
@@ -183,8 +181,7 @@ class ForestPlot(object):
         
         '''
         data_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var, self.current_time)
-
+            'data'].get_data(self.current_var, selected_time=self.current_time)
         self.update_coords(data_cube)
         self.current_axes.coastlines(resolution='110m')
         self.main_plot = \

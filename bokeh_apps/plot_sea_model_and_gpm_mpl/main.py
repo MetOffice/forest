@@ -24,7 +24,6 @@ import model_gpm_control
 import model_gpm_data
 
 
-
 def main(bokeh_id):
 
     '''Main app function
@@ -33,7 +32,7 @@ def main(bokeh_id):
     
     # Set datetime objects and string for controlling data download
     now_time_obj = datetime.datetime.utcnow()
-    five_days_ago_obj = now_time_obj - datetime.timedelta(days = 5)
+    five_days_ago_obj = now_time_obj - datetime.timedelta(days = 3)
     fcast_hour = 12*int(now_time_obj.hour/12)
     fcast_time_obj = five_days_ago_obj.replace(hour=fcast_hour, minute=0)
     fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
@@ -147,12 +146,19 @@ def main(bokeh_id):
     plot_opts = forest.util.create_colour_opts(['precipitation'])
 
     # Set the initial values to be plotted
-    init_time = 12
     init_var = 'accum_precip_3hr'
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY
     init_model_right = GPM_IMERG_EARLY_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
+
+
+    available_times = forest.data.get_available_times(datasets, init_var)
+    # datasets['n1280_ga6']['data'].get_data('accum_precip_6hr',422352.0)
+
+    init_time_ix = 4
+    init_time = available_times[init_time_ix]
+
 
     ## Display plots
 
@@ -191,11 +197,9 @@ def main(bokeh_id):
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
-    num_times = 3 * datasets[GPM_IMERG_LATE_KEY]['data'].get_data('precipitation').shape[0]
-
     control1 = model_gpm_control.ModelGpmControl(datasets,
-                                                 init_time,
-                                                 num_times,
+                                                 init_time_ix,
+                                                 available_times,
                                                  [plot_obj_left, plot_obj_right],
                                                  [bokeh_img_left, bokeh_img_right], )
 
