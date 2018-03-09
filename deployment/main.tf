@@ -28,7 +28,7 @@ resource "aws_instance" "forest_bokeh_server_dev21" {
 }
 
 resource "aws_security_group" "server" {
-  name = "forest_server_fdev21"
+  name = "forest_server_fdev21m"
 }
 
 
