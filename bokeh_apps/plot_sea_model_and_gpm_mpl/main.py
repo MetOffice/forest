@@ -178,6 +178,7 @@ def main(bokeh_id):
 
     plot_obj_left.current_time = init_time
     bokeh_img_left = plot_obj_left.create_plot()
+    stats_left = plot_obj_left.create_stats_widget()
 
     # Create a plot object for the right model display
     plot_obj_right = forest.plot.ForestPlot(datasets,
@@ -194,6 +195,9 @@ def main(bokeh_id):
 
     plot_obj_right.current_time = init_time
     bokeh_img_right = plot_obj_right.create_plot()
+    stats_right = plot_obj_right.create_stats_widget()
+
+    stats_list = [stats_left, stats_right]
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
@@ -201,7 +205,8 @@ def main(bokeh_id):
                                                  init_time_ix,
                                                  available_times,
                                                  [plot_obj_left, plot_obj_right],
-                                                 [bokeh_img_left, bokeh_img_right], )
+                                                 [bokeh_img_left, bokeh_img_right],
+                                                 stats_list)
 
     try:
         bokeh_mode = os.environ['BOKEH_MODE']

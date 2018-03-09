@@ -38,6 +38,7 @@ class ModelGpmControl(object):
                  available_times,
                  plot_list,
                  bokeh_img_list,
+                 stats_list
                  ):
         
         '''
@@ -51,6 +52,7 @@ class ModelGpmControl(object):
         self.num_times = self.available_times.shape[0]
         self.plot_list = plot_list
         self.bokeh_img_list = bokeh_img_list
+        self.stats_list = stats_list
         self.create_widgets()
 
     def __str__(self):
@@ -153,9 +155,10 @@ class ModelGpmControl(object):
                                                   self.accum_rbg)
         self.plots_row = bokeh.layouts.row(*self.bokeh_img_list)
         self.info_row = \
-            bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
+            bokeh.layouts.row(self.stats_list[0],
                               self.colorbar_div,
-                              bokeh.models.Spacer(width=400, height=100))
+                              self.stats_list[1],
+                              )
 
         self.main_layout = bokeh.layouts.column(self.time_row,
                                                 self.major_config_row,
