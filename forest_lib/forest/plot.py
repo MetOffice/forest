@@ -16,6 +16,8 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
+BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom']
+
 class ForestPlot(object):
 
     '''
@@ -183,7 +185,7 @@ class ForestPlot(object):
         data_cube = self.dataset[self.current_config][
             'data'].get_data(self.current_var, selected_time=self.current_time)
         self.update_coords(data_cube)
-        self.current_axes.coastlines(resolution='110m')
+        self.current_axes.coastlines(resolution=self.coast_res)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
@@ -786,7 +788,7 @@ class ForestPlot(object):
                                   plot_height=self.bokeh_fig_size[1],
                                   x_range=x_limits,
                                   y_range=y_limits,
-                                  tools='pan,wheel_zoom,reset,save')
+                                  tools=','.join(BOKEH_TOOLS_LIST))
 
         if self.current_img_array is not None:
             self.create_bokeh_img()
