@@ -6,7 +6,7 @@ data "template_file" "bootstrap" {
   template = "${file("boot.sh.tlp")}"
 }
 
-resource "aws_instance" "forest_bokeh_server_dev21" {
+resource "aws_instance" "forest_bokeh_server" {
   ami                   = "ami-e7d6c983"
   instance_type         = "t2.xlarge"	
   key_name              = "kubernetes.cluster.k8s.informaticslab.co.uk-be:87:08:3a:ea:a2:9e:7e:be:c1:97:2a:42:9b:8a:05"
@@ -16,7 +16,7 @@ resource "aws_instance" "forest_bokeh_server_dev21" {
        volume_size = 80
    }
   tags {
-    Name = "forest_server_dev21",
+    Name = "forest_server",
     EndOfLife = "2018-09-30",
     OfficeHours = false,
     Project = "SEAsia",
@@ -28,7 +28,7 @@ resource "aws_instance" "forest_bokeh_server_dev21" {
 }
 
 resource "aws_security_group" "server" {
-  name = "forest_server_fdev21m"
+  name = "forest_server"
 }
 
 
@@ -80,8 +80,8 @@ resource "aws_security_group_rule" "server_gateway_ssh" {
 
 resource "aws_route53_record" "server_nice_url" {
   zone_id = "Z3USS9SVLB2LY1"
-  name = "fdev21.informaticslab.co.uk"
+  name = "forest.informaticslab.co.uk"
   type = "A"
   ttl = "60"
-  records = ["${aws_instance.forest_bokeh_server_dev21.public_ip}"]
+  records = ["${aws_instance.forest_bokeh_server.public_ip}"]
 }

@@ -18,8 +18,7 @@ service docker start
 mkdir -p /opt/met
 git clone https://github.com/met-office-lab/model_evaluation_tool.git /opt/model_evaluation_tool
 cd /opt/model_evaluation_tool
-git checkout met_21_merge
 
 cd /opt/model_evaluation_tool/deployment
 docker build  -t forest .
-docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v /opt/model_evaluation_tool/bokeh_apps:/opt/bokeh_apps -v /opt/model_evaluation_tool/forest_lib:/opt/forest_lib  -v /opt/s3:/opt/s3 -e  PUBLIC_IP=fdev21.informaticslab.co.uk forest
+docker run  --restart always -p 8888:8888 --cap-add SYS_ADMIN --device /dev/fuse  -v /opt/model_evaluation_tool/bokeh_apps:/opt/bokeh_apps -v /opt/model_evaluation_tool/forest_lib:/opt/forest_lib  -v /opt/s3:/opt/s3 -e  PUBLIC_IP=forest.informaticslab.co.uk forest
