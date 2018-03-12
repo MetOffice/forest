@@ -1,22 +1,10 @@
-"""Module containing a class to manage the widgets for Model vs GPM. 
-
-Functions
----------
-
-- create_dropdown_opt_list_from dict() -- Used to set dropdown labels.
-
-Classes
--------
-
-- ModelGpmControl -- Main class for defining Model vs GPM widgets.
-
-"""
-
 import functools
+
 import bokeh
 import bokeh.model
 import bokeh.layouts
 
+import forest.data
 
 MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
                  'km4p4_ra1t': 'SE Asia 4.4km', 
@@ -27,18 +15,10 @@ MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km',
 
 def create_dropdown_opt_list_from_dict(dict1, iterable1):
     
-    """Create list of 2-tuples with values from dictionary.
+    '''Create list of 2-tuples from dictionary for creating dropdown 
+        menu labels.
     
-    Used for creating descriptive dropdown menu labels which do not 
-    match return values.
-    
-    Arguments
-    ---------
-    
-    - dict1 -- Dict; Used to replace iterable if iterable value == key.
-    - iterable -- Iterable; Used to set 2-tuple values.
-    
-    """
+    '''
     
     dd_tuple_list = [(dict1[k1], k1) if k1 in dict1.keys()
                      else (k1, k1) for k1 in iterable1]
@@ -48,72 +28,49 @@ def create_dropdown_opt_list_from_dict(dict1, iterable1):
 
 class ModelGpmControl(object):
     
-    """Main widget configuration class.
+    '''
     
-    Methods
-    -------
-    
-    - __init__() -- Factory method.
-    - create_widgets() -- Configure widgets and widget layout.
-    - on_time_prev() -- Event handler for changing to prev time step.
-    - on_data_tine_change() -- Event handler for a change in data time.
-    - on_time_next() -- Event handler for changing to next time step.
-    - on_var_change() -- Event handler for a change in the plot var.
-    - on_region_change() -- Event handler for a change in plot region.
-    - on_config_change() -- Event handler for a change in the config.
-    
-    Attributes
-    ----------
-    
-    - datasets -- Dict; Dict of Forest datasets.
-    - init_time -- Int; Index of initial time step.
-    - num_times -- Int; Number of data time steps available.
-    - plot_list -- List; List of ForestPlot objects.
-    - bokeh_img_list -- List; List of bokeh image objects.
-    - time_prev_button -- bokeh.models.widgets.Button; Prev button.
-    - data_time_slider -- bokeh.models.widgets.Slider; Time slider.
-    - time_next_button -- bokeh.models.widgets.Button; Next button.
-    - model_dd -- bokeh.models.widgets.Dropdown; Model dropdown.
-    - imerg_rbg -- bokeh.models.widgets.RadioButtonGroup; IMERG RBG.
-    - accum_div -- bokeh.models.widgets.Div; Accum label div.
-    - accum_rbg -- bokeh.models.widgets.RadioButtonGroup; ACCUM RBG.
-    - time_row -- bokeh.layouts.row object; Set time row.
-    - major_config_row -- bokeh.layouts.row object; Set mjr config row.
-    - minor_config_row -- bokeh.layouts.row object; Set mnr config row.
-    - plots_row -- bokeh.layouts.row object; Set plots row.
-    - info_row -- bokeh.layouts.row object; Set info row.
-    - main_layout -- bokeh.layouts.column object; Set row layout.
-    
-    """
+    '''
     
     def __init__(self,
                  datasets,
-                 init_time,
-                 num_times,
+                 init_time_ix,
+                 available_times,
                  plot_list,
                  bokeh_img_list,
+                 stats_list
                  ):
         
-        """Initialisation function for ForestController class."""
-
+        '''
+        
+        '''
         
         self.datasets = datasets
-        self.init_time = init_time
-        self.num_times = num_times
+        self.available_times = available_times
+        self.init_time_ix = init_time_ix
+        self.init_time = self.available_times[self.init_time_ix]
+        self.num_times = self.available_times.shape[0]
         self.plot_list = plot_list
         self.bokeh_img_list = bokeh_img_list
+        self.stats_list = stats_list
         self.create_widgets()
 
     def __str__(self):
         
-        """Return string"""
+        '''
+        
+        '''
         
         return 'MVC-style controller class for model rainfall vs GPM app.'
 
     def create_widgets(self):
-
-        """Configure widgets and widget layout."""
-
+        
+        '''Set up bokeh widgets
+        
+        '''
+        
+        def create_dropdown_opt_list(iterable1):
+            return [(k1, k1) for k1 in iterable1]
 
         # Create previous timestep button widget
         self.time_prev_button = \
@@ -126,8 +83,8 @@ class ModelGpmControl(object):
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
                                         end=self.num_times,
-                                        value=self.init_time,
-                                        step=3,
+                                        value=self.init_time_ix,
+                                        step=1,
                                         title="Data time",
                                         width=400)
         self.data_time_slider.on_change('value', self.on_data_time_change)
@@ -198,9 +155,10 @@ class ModelGpmControl(object):
                                                   self.accum_rbg)
         self.plots_row = bokeh.layouts.row(*self.bokeh_img_list)
         self.info_row = \
-            bokeh.layouts.row(bokeh.models.Spacer(width=400, height=100), 
+            bokeh.layouts.row(self.stats_list[0],
                               self.colorbar_div,
-                              bokeh.models.Spacer(width=400, height=100))
+                              self.stats_list[1],
+                              )
 
         self.main_layout = bokeh.layouts.column(self.time_row,
                                                 self.major_config_row,
@@ -209,82 +167,68 @@ class ModelGpmControl(object):
                                                 self.info_row,
                                                )
 
+    def on_data_time_change(self, attr1, old_val, new_val):
+        
+        '''Event handler for a change in the selected forecast data time.
+        
+        '''
+        
+        print('selected new time {0}'.format(new_val))
+        new_time = self.available_times[new_val]
+        for p1 in self.plot_list:
+            p1.set_data_time(new_time)
+
     def on_time_prev(self):
         
-        """Event handler for changing to previous time step."""
+        '''Event handler for changing to previous time step
         
-        print('selected previous time step')      
+        '''
         
-        time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
-        current_time = int(self.data_time_slider.value - time_step)
+        print('selected previous time step')       
+        current_time = self.data_time_slider.value - 1
         if current_time >= 0:
             self.data_time_slider.value = current_time
         else:
             print('Cannot select time < 0')
 
-    def on_data_time_change(self, attr1, old_val, new_val):
-        
-        """Event handler for a change in the selected forecast data time.
-
-        Arguments
-        ---------
-        
-        - attr1 -- Str; Attribute of slider which changes.
-        - old_val -- Int; Old value from slider.
-        - new_val -- Int; New value from slider.
-
-        """
-        
-        print('selected new time {0}'.format(new_val))
-        
-        time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
-        current_time = int(new_val / time_step)
-        for p1 in self.plot_list:
-            p1.set_data_time(current_time)
-
     def on_time_next(self):
         
-        """Event handler for changing to next time step."""
-
-        print('selected next time step')   
+        '''
         
-        time_step = int(self.accum_rbg.labels[self.accum_rbg.active][:-2])
-        current_time = int(self.data_time_slider.value + time_step)
+        '''
+        
+        print('selected next time step')       
+        current_time = self.data_time_slider.value + 1
         if current_time < self.num_times:
             self.data_time_slider.value = current_time
         else:
-            print('Cannot select time > num_times')        
+            print('Cannot select time > num_times')
+
+    def _refresh_times(self, new_var):
+        self.available_times = forest.data.get_available_times(self.datasets,
+                                                               new_var)
+        try:
+            new_time = self.available_times[self.data_time_slider.value]
+        except IndexError:
+            new_time = self.available_times[0]
+            self.data_time_slider.value = 0
+
+        self.data_time_slider.end = self.available_times.shape[0]
+        return new_time
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
-
-        """Event handler for a change in the selected data configuration.
-
-        Arguments
-        ---------
         
-        - plot_index -- Int; Selects which plot to change config for.
-        - attr1 -- Str; Attribute of dropdown which changes.
-        - old_val -- Int; Old value from dropdown.
-        - new_val -- Int; New value from dropdown.
-
-        """
+        '''Event handler for a change in the selected model configuration output.
         
+        '''
         print('selected new config {0}'.format(new_val))
         self.plot_list[plot_index].set_config(new_val)
 
     def on_imerg_change(self, plot_index, attr1, old_val, new_val):
         
-        """Event handler for a change in the selected IMERG type.
-
-        Arguments
-        ---------
+        '''Event handler for a change in the selected model configuration output.
         
-        - plot_index -- Int; Selects which plot to change config for.
-        - attr1 -- Str; Attribute of dropdown which changes.
-        - old_val -- Int; Old value from dropdown.
-        - new_val -- Int; New value from dropdown.
-
-        """
+        '''
         
         imerg_list = [ds_name for ds_name in self.datasets.keys()
                       if 'imerg' in ds_name]
@@ -294,21 +238,14 @@ class ModelGpmControl(object):
         
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
         
-        """Event handler for a change in the selected precip accum.
-
-        Arguments
-        ---------
+        '''Event handler for a change in the selected model configuration output.
         
-        - plot_index -- Int; Selects which plot to change config for.
-        - attr1 -- Str; Attribute of dropdown which changes.
-        - old_val -- Int; Old value from dropdown.
-        - new_val -- Int; New value from dropdown.
-
-        """
-        
+        '''
         # Change slider step based on new accumulation range
-        self.data_time_slider.step = int(self.accum_rbg.labels[new_val][:-2])
         print('selected new accumulation time span {0}'.format(self.accum_rbg.labels[new_val]))
         new_var = 'accum_precip_{0}'.format(self.accum_rbg.labels[new_val])
-        for plot in self.plot_list:
-            plot.set_var(new_var)
+        new_time = self._refresh_times(new_var)
+
+        for plot1 in self.plot_list:
+            plot1.current_time = new_time
+            plot1.set_var(new_var)

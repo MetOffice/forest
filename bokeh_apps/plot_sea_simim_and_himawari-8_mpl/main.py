@@ -1,10 +1,10 @@
-"""SE Asia Sim. Im. and Himawari-8 Matplotlib app
+'''SE Asia Sim. Im. and Himawari-8 Matplotlib app
 
-This script creates plots of simulated satellite imagery and 
-Himawari-8 imagery for SE Asia using the Matplotlib plotting 
-library to provide images to a Bokeh Server app.
+ This script creates plots of simulated satellite imagery and 
+  Himawari-8 imagery for SE Asia using the Matplotlib plotting 
+  library to provide images to a Bokeh Server app.
 
-"""
+'''
 
 import os
 import datetime
@@ -22,11 +22,13 @@ import simim_sat_data
 
 def main(bokeh_id):
     
-    """Main function of app"""
+    '''Main function of app
+    
+    '''
 
     # Set datetime objects and string for controlling data download
     now_time_obj = datetime.datetime.utcnow()
-    two_days_ago_obj = now_time_obj - datetime.timedelta(days = 3)
+    two_days_ago_obj = now_time_obj - datetime.timedelta(days = 5)
     fcast_hour = 12*int(now_time_obj.hour/12)
     fcast_time_obj = two_days_ago_obj.replace(hour=fcast_hour, minute=0)
     fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
@@ -38,8 +40,8 @@ def main(bokeh_id):
     bucket_name = 'stephen-sea-public-london'
     server_address = 'https://s3.eu-west-2.amazonaws.com'
     
-    do_download = True
-    use_s3_mount = False
+    do_download = False
+    use_s3_mount = True
     use_jh_paths = True
     base_dir = os.path.expanduser('~/SEA_data/')
 
@@ -58,12 +60,13 @@ def main(bokeh_id):
                }
 
     s3_base_str = '{server}/{bucket}/{data_type}/'
+    s3_local_mnt = os.path.expanduser(os.path.join('~', 's3', bucket_name))
 
     # Himawari-8 imagery dict population
     s3_base_sat = s3_base_str.format(server=server_address,
                                      bucket=bucket_name,
                                      data_type=HIMAWARI8_KEY)
-    s3_local_base_sat = os.path.join(os.sep, 's3', bucket_name, HIMAWARI8_KEY)
+    s3_local_base_sat = os.path.join(s3_local_mnt, HIMAWARI8_KEY)
     base_path_local_sat = os.path.join(base_dir, HIMAWARI8_KEY)
     fnames_list_sat = {}
     for im_type in simim_sat_data.HIMAWARI_KEYS.keys():
@@ -85,7 +88,7 @@ def main(bokeh_id):
     s3_base_simim = s3_base_str.format(server=server_address,
                                        bucket=bucket_name,
                                        data_type = SIMIM_KEY)
-    s3_local_base_simim = os.path.join(os.sep, 's3', bucket_name, SIMIM_KEY)
+    s3_local_base_simim = os.path.join(s3_local_mnt, SIMIM_KEY)
     base_path_local_simim= os.path.join(base_dir,SIMIM_KEY)
     simim_fmt_str = 'sea4-{it}_HIM8_{date}_s4{run}_T{time}.nc'
     bt_fnames_list_simim = [simim_fmt_str.format(it='simbt', 
@@ -99,6 +102,7 @@ def main(bokeh_id):
                                                   time=vt)
                              for vt in simim_sat_data.DATA_TIMESTEPS['V'][fcast_hour]]
     fnames_list_simim = bt_fnames_list_simim + vis_fnames_list_simim
+    time_list_simim = [None]
     
     datasets[SIMIM_KEY]['data'] = simim_sat_data.SimimDataset(SIMIM_KEY,
                                                               fnames_list_simim,
@@ -107,6 +111,7 @@ def main(bokeh_id):
                                                               use_s3_mount,
                                                               base_path_local_simim,
                                                               do_download,
+                                                              time_list_simim,
                                                               fcast_time_obj)
 
     ## Setup plots
@@ -131,7 +136,9 @@ def main(bokeh_id):
                                            init_region,
                                            region_dict,
                                            simim_sat_data.UNIT_DICT,
-                                           app_path)
+                                           app_path,
+                                           init_time,
+                                           )
 
     plot_obj_left.current_time = init_time
     colorbar = plot_obj_left.create_colorbar_widget()
@@ -147,6 +154,7 @@ def main(bokeh_id):
                                             region_dict,
                                             simim_sat_data.UNIT_DICT,
                                             app_path,
+                                            init_time,
                                             )
 
     plot_obj_right.current_time = init_time

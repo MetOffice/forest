@@ -15,8 +15,12 @@ Classes
 """
 
 import os
+import datetime
 import configparser
+import functools
+import numpy
 import math
+import copy
 
 import iris
 import cf_units
@@ -26,12 +30,19 @@ import forest.util
 WIND_SPEED_NAME = 'wind_speed'
 WIND_VECTOR_NAME = 'wind_vectors'
 WIND_STREAM_NAME = 'wind_streams'
+WIND_MSLP_NAME = 'wind_mslp'
+WIND_UNIT_MPH = 'miles-hour^-1'
 
-VAR_NAMES = ['precipitation',
+PRECIP_VAR_NAME = 'precipitation'
+PRECIP_UNIT_MM = 'mm'
+PRECIP_UNIT_ACCUM = 'kg-m-2'
+PRECIP_UNIT_RATE = 'kg-m-2-hour^-1'
+VAR_NAMES = [PRECIP_VAR_NAME,
              'air_temperature',
              WIND_SPEED_NAME,
              WIND_VECTOR_NAME,
              'cloud_fraction',
+             WIND_MSLP_NAME,
              'mslp',
              'x_wind',
              'y_wind',
@@ -42,23 +53,26 @@ WIND_VECTOR_VARS = ['wv_X',
                     'wv_U',
                     'wv_V',
                     'wv_X_grid',
-                    'wv_X_grid',
+                    'wv_Y_grid',
                     ]
+PRECIP_ACCUM_WINDOW_SIZES_LIST = [3,6,12,24]
 
-UNIT_DICT = {'precipitation': 'kg-m-2-hour^-1',
-             'accum_precip_3hr': 'mm',
-             'accum_precip_6hr': 'mm',
-             'accum_precip_12hr': 'mm',
-             'accum_precip_24hr': 'mm',
+PRECIP_ACCUM_WINDOW_SIZES_DICT = dict([('accum_precip_{0}hr'.format(window1), window1) for window1 in PRECIP_ACCUM_WINDOW_SIZES_LIST])
+PRECIP_ACCUM_VARS = list(PRECIP_ACCUM_WINDOW_SIZES_DICT.keys())
+
+UNIT_DICT = {PRECIP_VAR_NAME: PRECIP_UNIT_RATE,
              'cloud_fraction': None,
              'air_temperature': 'celsius',
-             'x_wind': 'miles-hour^-1',
-             'y_wind': 'miles-hour^-1',
-             WIND_SPEED_NAME: 'miles-hour^-1',
+             'x_wind': WIND_UNIT_MPH,
+             'y_wind': WIND_UNIT_MPH,
+             WIND_SPEED_NAME: WIND_UNIT_MPH,
              'mslp': 'hectopascals',
-             WIND_VECTOR_NAME: 'miles-hour^-1',
-             WIND_STREAM_NAME: 'miles-hour^-1',
+             WIND_VECTOR_NAME: WIND_UNIT_MPH,
+             WIND_STREAM_NAME: WIND_UNIT_MPH,
              }
+
+UNIT_DICT.update(dict([(var1,WIND_UNIT_MPH) for var1 in WIND_VECTOR_VARS]))
+UNIT_DICT.update(dict([(var1,PRECIP_UNIT_ACCUM) for var1 in PRECIP_ACCUM_VARS]))
 
 N1280_GA6_KEY = 'n1280_ga6'
 KM4P4_RA1T_KEY = 'km4p4_ra1t'
@@ -66,7 +80,6 @@ KM1P5_INDO_RA1T_KEY = 'indon2km1p5_ra1t'
 KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
 KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
 GA6_CONF_ID = 'ga6'
-RA1T_CONF_ID = 'ra1t'
 RA1T_CONF_ID = 'ra1t'
 
 VAR_LIST_DIR = os.path.dirname(__file__)
@@ -103,6 +116,14 @@ def get_var_lookup(config):
             
     return field_dict
 
+def get_available_times(datasets, var1):
+    key0 = list(datasets.keys())[0]
+    available_times = datasets[key0]['data'].get_times(var1)
+
+    for ds_name in datasets:
+        times1 = datasets[ds_name]['data'].get_times(var1)
+        available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
+    return available_times
 
 class ForestDataset(object):
 
@@ -143,7 +164,8 @@ class ForestDataset(object):
     - path_to_load -- Str; local/S3 path, based on do_download.
     
     """
-    
+    TIME_INDEX_ALL = 'all'
+
     def __init__(self,
                  config,
                  file_name,
@@ -168,16 +190,27 @@ class ForestDataset(object):
         self.do_download = do_download
         self.local_path = os.path.join(self.base_local_path,
                                        self.file_name)
-        
+
+        # set up time loaders
+
+
+        self.time_loaders = dict([(v1, self._basic_time_load) for v1 in VAR_NAMES])
+        self.time_loaders[WIND_SPEED_NAME] = self._wind_time_load
+        self.time_loaders[WIND_VECTOR_NAME] = self._wind_time_load
+        for wv_var in WIND_VECTOR_VARS:
+            self.time_loaders[wv_var] = self._wind_time_load
+        for accum_precip_var in PRECIP_ACCUM_VARS:
+            self.time_loaders[accum_precip_var] = self._accum_precip_time_load
+        self.times = dict([(v1, None) for v1 in self.time_loaders.keys()])
+
+
         # set up data loader functions
         self.loaders = dict([(v1, self.basic_cube_load) for v1 in VAR_NAMES])
         self.loaders[WIND_SPEED_NAME] = self.wind_speed_loader
         self.loaders[WIND_VECTOR_NAME] = self.wind_vector_loader
         for wv_var in WIND_VECTOR_VARS:
             self.loaders[wv_var] = self.wind_vector_loader
-        for accum_precip_var in ['accum_precip_{}hr'.format(hr) 
-                                 for hr in [3, 6, 12, 24]
-                                ]:
+        for accum_precip_var in PRECIP_ACCUM_VARS:
             self.loaders[accum_precip_var] = self.accum_precip_loader
 
         self.data = dict([(v1, None) for v1 in self.loaders.keys()])
@@ -195,10 +228,61 @@ class ForestDataset(object):
     def check_data(self):
     
         """Check that the data represented by this dataset exists."""
-        
-        return forest.util.check_remote_file_exists(self.s3_url)
 
-    def get_data(self, var_name):
+        file_exists = False
+        if self.do_download:
+            file_exists = forest.util.check_remote_file_exists(self.s3_url)
+        else:
+            file_exists = os.path.isfile(self.path_to_load)
+        return file_exists
+
+    def get_times(self, var_name):
+        """
+        """
+        # if self.times[var_name] is None:
+        self.load_times(var_name)
+        return self.times[var_name]
+
+    def load_times(self, var_name):
+        """
+        """
+        self.time_loaders[var_name](var_name)
+
+    def _basic_time_load(self, var_name):
+        """
+        """
+        field_dict = self.var_lookup[var_name]
+        cf1 = lambda cube1: \
+            cube1.attributes['STASH'].section == \
+            field_dict['stash_section'] and \
+            cube1.attributes['STASH'].item == \
+            field_dict['stash_item']
+
+        ic1 = iris.Constraint(cube_func=cf1)
+
+        cube1 = iris.load_cube(self.path_to_load, ic1)
+        self.times[var_name] = cube1.coord('time').points
+        self.data[var_name] =  dict([(t1,None) for t1 in self.times[var_name]] + [('all',None)])
+
+    def _wind_time_load(self, var_name):
+        """
+        """
+        if self.times['x_wind'] is None:
+            self._basic_time_load('x_wind')
+            self.data['x_wind'].update(dict([(t1,None,) for t1 in self.times['x_wind'] ]))
+
+            for var1 in WIND_VECTOR_VARS + ['y_wind']:
+                self.times[var1] = copy.deepcopy(self.times['x_wind'])
+                self.data[var1] = dict([(t1,None,) for t1 in self.times[var1] ]+ [('all',None)])
+    def _accum_precip_time_load(self, var_name):
+        """
+        """
+        self._basic_time_load(PRECIP_VAR_NAME)
+        window_size1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[var_name]
+        self.times[var_name] = numpy.unique(numpy.floor(self.times[PRECIP_VAR_NAME] / window_size1) * window_size1)
+        self.data[var_name] = dict([(t1, None) for t1 in self.times[var_name]] + [('all',None)])
+
+    def get_data(self, var_name, selected_time, convert_units=True):
     
         """Calls functions to retrieve and load data.
         
@@ -208,18 +292,35 @@ class ForestDataset(object):
         - var_name -- Str; Redundant: used to match other loaders.
         
         """
-        
-        if self.data[var_name] is None:
+        time_ix = selected_time
+        if time_ix is None:
+            time_ix = ForestDataset.TIME_INDEX_ALL
+        else:
+            print('loading data for time {0}'.format(time_ix))
+
+        if self.times[var_name] is None:
+            if self.check_data():
+                # get data from aws s3 storage
+                self.retrieve_data()
+
+                self.load_times(var_name)
+
+        if self.data[var_name][selected_time] is None:
             if self.check_data():
                 # Get data from aws s3 storage
                 self.retrieve_data()
                 # Load the data into memory from file (will only load 
                 # metadata initially)
-                self.load_data(var_name)
+                self.load_data(var_name, time_ix)
+                if convert_units:
+                    if UNIT_DICT[var_name]:
+                        self.data[var_name][time_ix].convert_units(UNIT_DICT[var_name])
+
             else:
                 self.data[var_name] = None
 
-        return self.data[var_name]
+
+        return self.data[var_name][time_ix]
 
     def retrieve_data(self):
     
@@ -232,7 +333,7 @@ class ForestDataset(object):
 
             forest.util.download_from_s3(self.s3_url, self.local_path)
 
-    def load_data(self, var_name):
+    def load_data(self, var_name, selected_time):
     
         """Call loader function.
         
@@ -243,9 +344,9 @@ class ForestDataset(object):
 
         """
         
-        self.loaders[var_name](var_name)
+        self.loaders[var_name](var_name, selected_time)
 
-    def basic_cube_load(self, var_name):
+    def basic_cube_load(self, var_name, time_ix):
     
         """Load simple cubes.
 
@@ -253,32 +354,51 @@ class ForestDataset(object):
         ---------
         
         - var_name -- Str; Var name used to define data to load.
+        - time_ix -- Index of the time to load
 
         """
-        
         field_dict = self.var_lookup[var_name]
-        if field_dict['accumulate']:
-            cf1 = lambda cube1: \
-                cube1.attributes['STASH'].section == \
-                field_dict['stash_section'] and \
-                cube1.attributes['STASH'].item == \
-                field_dict['stash_item'] and \
-                len(cube1.cell_methods) > 0
+        cf1 = lambda cube1: \
+            cube1.attributes['STASH'].section == \
+            field_dict['stash_section'] and \
+            cube1.attributes['STASH'].item == \
+            field_dict['stash_item']
+        coord_constraint_dict = {}
+
+        if time_ix != ForestDataset.TIME_INDEX_ALL:
+            time_obj = datetime.datetime.fromtimestamp(time_ix * 3600)
+            time_desc = str(time_obj)
+            if int(iris.__version__.split('.')[0]) == 1:
+                def time_comp(time_index, eps1, cell1):
+                    return abs(cell1.point - time_index) < eps1
+
+                if time_ix != ForestDataset.TIME_INDEX_ALL:
+                    coord_constraint_dict['time'] = \
+                        functools.partial(time_comp, time_ix, 1e-5)
+
+            elif int(iris.__version__.split('.')[0]) == 2:
+                def time_comp(selected_time, eps1, cell1):
+                    return abs(cell1.point - selected_time).total_seconds() < eps1
+
+                if time_ix != ForestDataset.TIME_INDEX_ALL:
+                    coord_constraint_dict['time'] = \
+                        functools.partial(time_comp, time_obj, 1)
+
+            ic1 = iris.Constraint(cube_func=cf1,
+                                  coord_values=coord_constraint_dict)
+
         else:
-            cf1 = lambda cube1: \
-                cube1.attributes['STASH'].section == \
-                field_dict['stash_section'] and \
-                cube1.attributes['STASH'].item == \
-                field_dict['stash_item'] and \
-                len(cube1.cell_methods) == 0
+            time_desc = time_ix
+            ic1 = iris.Constraint(cube_func=cf1)
 
-        ic1 = iris.Constraint(cube_func=cf1)
+        print('path to load {0}'.format(self.path_to_load))
+        print('time to load {0}'.format(time_desc))
+        print('stash to load section {0} item {1}'.format(field_dict['stash_section'], field_dict['stash_item'] ) )
 
-        self.data[var_name] = iris.load_cube(self.path_to_load, ic1)
-        if UNIT_DICT[var_name]:
-            self.data[var_name].convert_units(UNIT_DICT[var_name])
+        dc1 = iris.load_cube(self.path_to_load, ic1)
+        self.data[var_name][time_ix] = dc1
 
-    def wind_speed_loader(self, var_name):
+    def wind_speed_loader(self, var_name, time_ix):
     
         """Process wind cubes to calculate wind speed.
         
@@ -286,21 +406,21 @@ class ForestDataset(object):
         ---------
         
         - var_name -- Str; Redundant: used to match other loaders.
+        - time_ix -- Str; specify the time to load
         
         """
 
-        print('calculating wind speed for {0}'.format(self.config_name))
-
         cube_pow = iris.analysis.maths.exponentiate
-        cube_x_wind = self.get_data('x_wind')
-        cube_y_wind = self.get_data('y_wind')
+        print('calculating wind speed for {0}'.format(self.config_name))
+        cube_x_wind = self.get_data('x_wind', time_ix)
+        cube_y_wind = self.get_data('y_wind', time_ix)
 
-        self.data[WIND_SPEED_NAME] = cube_pow(cube_pow(cube_x_wind, 2.0) +
+        self.data[WIND_SPEED_NAME][time_ix] = cube_pow(cube_pow(cube_x_wind, 2.0) +
                                               cube_pow(cube_y_wind, 2.0),
                                               0.5)
-        self.data[WIND_SPEED_NAME].rename(WIND_SPEED_NAME)
+        self.data[WIND_SPEED_NAME][time_ix].rename(WIND_SPEED_NAME)
 
-    def wind_vector_loader(self, var_name):
+    def wind_vector_loader(self, var_name, time_ix):
     
         """Gets wind data and calculates wind vectors.
 
@@ -311,12 +431,14 @@ class ForestDataset(object):
 
         """
         
-        cube_x_wind = self.get_data('x_wind')
-        cube_y_wind = self.get_data('y_wind')
+        cube_x_wind = self.get_data('x_wind', time_ix)
+        cube_y_wind = self.get_data('y_wind', time_ix)
 
-        self.data.update(forest.util.calc_wind_vectors(cube_x_wind,
-                                                       cube_y_wind,
-                                                       10))
+        wv_dict = forest.util.calc_wind_vectors(cube_x_wind,
+                                                cube_y_wind,
+                                                10)
+        for var1 in wv_dict:
+            self.data[var1][time_ix] = wv_dict[var1]
      
     def add_accum_precip_keys(self, timespan):
     
@@ -332,7 +454,7 @@ class ForestDataset(object):
         var_name = 'precip_accum_{}hr'.format(timespan)
         self.data.update({var_name: None})
         
-    def accum_precip_loader(self, var_name):
+    def accum_precip_loader(self, var_name, time_ix):
         
         """Gets data and creates accumulated precipitation cube.
 
@@ -342,8 +464,8 @@ class ForestDataset(object):
         - var_name -- Str; Precip accum variable name.
 
         """
-        
-        self.get_data('precipitation')
+
+        self.get_data('precipitation', 'all')
         self.accum_precip(var_name)
 
     def accum_precip(self, var_name):
@@ -356,12 +478,11 @@ class ForestDataset(object):
         - var_name -- Str; Hour in var_name defines accum window.
         
         """
-        
         accum_multiplier = float(var_name[13:-2])
         
         conv_lambda = lambda coord, value: math.floor(value / accum_multiplier) * accum_multiplier 
         
-        temp_cube = self.data['precipitation']
+        temp_cube = self.data['precipitation']['all']
         temp_cube.data *= 3
         temp_cube.units = 'kg-m-2'
         
@@ -374,5 +495,8 @@ class ForestDataset(object):
                                                         conv_lambda,
                                                         units=time_unit)
         accum_cube = temp_cube.aggregated_by([agg_name], iris.analysis.SUM)
-                
-        self.data.update({var_name: accum_cube})
+        accum_cube.coord('time').points = accum_cube.coord(agg_name).points
+        self.data[var_name]['all'] = accum_cube
+        self.times[var_name] = self.data[var_name]['all'].coord('time').points
+        for ix1, time1 in enumerate(self.times[var_name]):
+            self.data[var_name][time1] = self.data[var_name]['all'][ix1]
