@@ -1,5 +1,6 @@
 import functools
 import threading
+import dateutil.parser
 
 import bokeh.models.widgets
 import bokeh.layouts
@@ -7,6 +8,7 @@ import bokeh.plotting
 
 import forest.data
 
+import pdb
 
 MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
                  'km4p4_ra1t': 'SE Asia 4.4km', 
@@ -51,6 +53,15 @@ def create_dropdown_opt_list_from_dict(dict1, iterable1):
     return dd_tuple_list
 
 
+def create_model_run_list(model_run_str_list):
+    mr_list = []
+    for d1 in model_run_str_list.keys():
+        dtobj = dateutil.parser.parse(d1)
+        dt_str = ('{dt.year}-{dt.month}-{dt.day} ' \
+                  + '{dt.hour:02d}:{dt.minute:02d}').format(dt=dtobj)
+        mr_list += [(dt_str, d1)]
+
+
 class ForestController(object):
 
     '''
@@ -61,6 +72,7 @@ class ForestController(object):
                  times1,
                  init_time_ix,
                  datasets,
+                 init_fcast_time,
                  plot_names,
                  plots,
                  bokeh_imgs,
@@ -78,6 +90,7 @@ class ForestController(object):
         self.region_dict = region_dict
         self.plot_names = plot_names
         self.datasets = datasets
+        self.current_fcast_time = init_fcast_time
         self.available_times = times1
         self.init_time_index = init_time_ix
 
@@ -127,6 +140,15 @@ class ForestController(object):
                                         button_type='warning',
                                         width=100)
         self.time_next_button.on_click(self.on_time_next)
+
+
+        # select model run
+        model_run_list = create_model_run_list(self.datasets)
+        self.model_run_dd = \
+            bokeh.models.widgets.Dropdown(label='Model run',
+                                          menu=model_run_list,
+                                          button_type='warning')
+        self.model_run_dd.on_change('value', self._on_model_run_change)
         
         # Create region selection dropdown menu region
         region_menu_list = \
@@ -139,7 +161,7 @@ class ForestController(object):
 
         # Create left figure model selection dropdown menu widget
         dataset_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
-                                                               self.datasets.keys())
+                                                               self.datasets[self.current_fcast_time].keys())
         self.left_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
                                           label='Left display',
@@ -164,7 +186,10 @@ class ForestController(object):
                               bokeh.models.Spacer(width=20, height=60),
                               self.data_time_slider,
                               bokeh.models.Spacer(width=20, height=60),
-                              self.time_next_button)
+                              self.time_next_button,
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.model_run_dd,
+                              )
         self.minor_config_row = bokeh.layouts.row(self.left_model_dd, 
                                                   self.right_model_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
@@ -217,11 +242,12 @@ class ForestController(object):
         
         for p1 in self.plots:
             new_time1 = self.available_times[new_val]
+            self.data_time_slider.label = 'Data time {0}'.format(new_time1)
             p1.set_data_time(new_time1)
 
 
     def _refresh_times(self, new_var):
-        self.available_times = forest.data.get_available_times(self.datasets,
+        self.available_times = forest.data.get_available_times(self.datasets[self.current_fcast_time],
                                                           new_var)
         try:
             new_time = self.available_times[self.data_time_slider.value]
@@ -267,3 +293,9 @@ class ForestController(object):
         print('config change handler')
         
         self.plots[plot_index].set_config(new_val)
+
+    def _on_model_run_change(self, attr1, old_val, new_val):
+        print('selected new model run')
+        self.current_fcast_time = new_val
+        for p1 in self.plots:
+            p1.set_dataset(self.datasets[self.current_fcast_time])

@@ -55,7 +55,9 @@ def get_available_datasets(s3_base,
     
     '''
     
-    fcast_dt_list, fcast_dt_str_list = forest.util.get_model_run_times(7)
+    fcast_dt_list, fcast_dt_str_list = \
+        forest.util.get_model_run_times(forest.data.NUM_DATA_DAYS,
+                                        forest.data.MODEL_RUN_PERIOD)
 
     fcast_time_list = []
     datasets = {}
@@ -158,6 +160,7 @@ def main(bokeh_id):
 
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
+                                           init_fcast_time,
                                            plot_opts,
                                            'plot_left' + bokeh_id,
                                            init_var,
@@ -165,6 +168,7 @@ def main(bokeh_id):
                                            init_region,
                                            region_dict,
                                            forest.data.UNIT_DICT,
+                                           forest.data.UNIT_DICT_DISPLAY,
                                            app_path,
                                            init_data_time,
                                            )
@@ -173,6 +177,7 @@ def main(bokeh_id):
     stats_left = plot_obj_left.create_stats_widget()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
+                                            init_fcast_time,
                                             plot_opts,
                                             'plot_right' + bokeh_id,
                                             init_var,
@@ -180,6 +185,7 @@ def main(bokeh_id):
                                             init_region,
                                             region_dict,
                                             forest.data.UNIT_DICT,
+                                            forest.data.UNIT_DICT_DISPLAY,
                                             app_path,
                                             init_data_time,
                                             )
@@ -194,7 +200,8 @@ def main(bokeh_id):
     # Set up GUI controller class
     control1 = forest.control.ForestController(available_times,
                                                init_data_time_index,
-                                               datasets[init_fcast_time],
+                                               datasets,
+                                               init_fcast_time,
                                                plot_names,
                                                [plot_obj_left, plot_obj_right],
                                                [bokeh_img_left, bokeh_img_right],

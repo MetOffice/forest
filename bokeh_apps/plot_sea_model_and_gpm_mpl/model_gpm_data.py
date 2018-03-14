@@ -11,6 +11,7 @@ import iris.coord_categorisation
 import forest.util
 import forest.data
 
+import pdb
 
 def conv_func(coord, value):
     
@@ -151,7 +152,6 @@ class GpmDataset(object):
                                          units_func=lambda units: 1)
 
         temp_cube_list = iris.cube.CubeList()
-        
         for time1 in self.raw_data.keys():
             
             print('aggregating time {0}'.format(time1))

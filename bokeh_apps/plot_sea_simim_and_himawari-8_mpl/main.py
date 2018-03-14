@@ -28,9 +28,9 @@ def main(bokeh_id):
 
     # Set datetime objects and string for controlling data download
     now_time_obj = datetime.datetime.utcnow()
-    two_days_ago_obj = now_time_obj - datetime.timedelta(days = 5)
-    fcast_hour = 12*int(now_time_obj.hour/12)
-    fcast_time_obj = two_days_ago_obj.replace(hour=fcast_hour, minute=0)
+    data_start_obj = now_time_obj - datetime.timedelta(days = forest.data.NUM_DATA_DAYS)
+    fcast_hour = forest.data.MODEL_RUN_PERIOD *int(now_time_obj.hour/forest.data.MODEL_RUN_PERIOD)
+    fcast_time_obj = data_start_obj.replace(hour=fcast_hour, minute=0)
     fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
 
     # Extract data from S3. The data can either be downloaded in full before
@@ -129,12 +129,14 @@ def main(bokeh_id):
 
     # Create a plot object for the left model display
     plot_obj_left = forest.plot.ForestPlot(datasets,
+                                           fcast_time,
                                            plot_options,
                                            'plot_left' + bokeh_id,
                                            init_var,
                                            'simim',
                                            init_region,
                                            region_dict,
+                                           simim_sat_data.UNIT_DICT,
                                            simim_sat_data.UNIT_DICT,
                                            app_path,
                                            init_time,
@@ -146,12 +148,14 @@ def main(bokeh_id):
 
     # Create a plot object for the right model display
     plot_obj_right = forest.plot.ForestPlot(datasets,
+                                            None,
                                             plot_options,
                                             'plot_right' + bokeh_id,
                                             init_var,
                                             'himawari-8',
                                             init_region,
                                             region_dict,
+                                            simim_sat_data.UNIT_DICT,
                                             simim_sat_data.UNIT_DICT,
                                             app_path,
                                             init_time,

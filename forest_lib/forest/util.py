@@ -388,7 +388,7 @@ def get_image_array_from_figure(fig):
     return buf
 
 
-def get_model_run_times(num_days, model_run_period=12):
+def get_model_run_times(num_days, model_run_period):
 
     """Create a list of model times from the last num_days days.
     

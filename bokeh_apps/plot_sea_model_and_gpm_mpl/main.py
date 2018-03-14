@@ -32,9 +32,9 @@ def main(bokeh_id):
     
     # Set datetime objects and string for controlling data download
     now_time_obj = datetime.datetime.utcnow()
-    five_days_ago_obj = now_time_obj - datetime.timedelta(days = 3)
+    data_period_start = now_time_obj - datetime.timedelta(days = forest.data.NUM_DATA_DAYS)
     fcast_hour = 12*int(now_time_obj.hour/12)
-    fcast_time_obj = five_days_ago_obj.replace(hour=fcast_hour, minute=0)
+    fcast_time_obj = data_period_start.replace(hour=fcast_hour, minute=0)
     fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
     
     # Extract data from S3. The data can either be downloaded in full before 
@@ -122,7 +122,7 @@ def main(bokeh_id):
     for ds_name in gpm_datasets.keys():
         imerg_type = gpm_datasets[ds_name][GPM_TYPE_KEY]
         fname_fmt = 'gpm_imerg_NRT{im}_V05B_{datetime}_sea_only.nc'
-        times_list = [(fcast_time_obj + datetime.timedelta(days=dd)).strftime('%Y%m%d') for dd in range(4)]
+        times_list = [(fcast_time_obj + datetime.timedelta(days=dd)).strftime('%Y%m%d') for dd in range(forest.data.NUM_DATA_DAYS)]
         fnames_list = [fname_fmt.format(im=imerg_type, datetime=dt_str) for dt_str in times_list]
 
         datasets[ds_name]['data'] = model_gpm_data.GpmDataset(ds_name,
@@ -163,6 +163,7 @@ def main(bokeh_id):
     ## Display plots
 
     plot_obj_left = forest.plot.ForestPlot(datasets,
+                                           fcast_time,
                                            plot_opts,
                                            'plot_left' + bokeh_id,
                                            init_var,
@@ -170,9 +171,10 @@ def main(bokeh_id):
                                            init_region,
                                            region_dict,
                                            forest.data.UNIT_DICT,
+                                           forest.data.UNIT_DICT_DISPLAY,
                                            app_path,
                                            init_time,
-                                            )
+                                           )
 
     # Create a plot object for the left model display
 
@@ -182,6 +184,7 @@ def main(bokeh_id):
 
     # Create a plot object for the right model display
     plot_obj_right = forest.plot.ForestPlot(datasets,
+                                            fcast_time,
                                             plot_opts,
                                             'plot_right' + bokeh_id,
                                             init_var,
@@ -189,9 +192,10 @@ def main(bokeh_id):
                                             init_region,
                                             region_dict,
                                             forest.data.UNIT_DICT,
+                                            forest.data.UNIT_DICT_DISPLAY,
                                             app_path,
-                                           init_time,
-                                           )
+                                            init_time,
+                                            )
 
     plot_obj_right.current_time = init_time
     bokeh_img_right = plot_obj_right.create_plot()

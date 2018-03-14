@@ -27,16 +27,26 @@ import cf_units
 
 import forest.util
 
+# The number of days into the past to look for data. The current
+# value specifies looking for data up to 1 week old
+NUM_DATA_DAYS = 7
+MODEL_RUN_PERIOD = 12
+
 WIND_SPEED_NAME = 'wind_speed'
 WIND_VECTOR_NAME = 'wind_vectors'
 WIND_STREAM_NAME = 'wind_streams'
 WIND_MSLP_NAME = 'wind_mslp'
 WIND_UNIT_MPH = 'miles-hour^-1'
+WIND_UNIT_MPH_DISPLAY = 'miles per hour'
 
 PRECIP_VAR_NAME = 'precipitation'
 PRECIP_UNIT_MM = 'mm'
 PRECIP_UNIT_ACCUM = 'kg-m-2'
 PRECIP_UNIT_RATE = 'kg-m-2-hour^-1'
+
+PRECIP_UNIT_ACCUM_DISPLAY = 'mm'
+PRECIP_UNIT_RATE_DISPLAY = 'mm/h'
+
 VAR_NAMES = [PRECIP_VAR_NAME,
              'air_temperature',
              WIND_SPEED_NAME,
@@ -73,6 +83,20 @@ UNIT_DICT = {PRECIP_VAR_NAME: PRECIP_UNIT_RATE,
 
 UNIT_DICT.update(dict([(var1,WIND_UNIT_MPH) for var1 in WIND_VECTOR_VARS]))
 UNIT_DICT.update(dict([(var1,PRECIP_UNIT_ACCUM) for var1 in PRECIP_ACCUM_VARS]))
+
+UNIT_DICT_DISPLAY = {PRECIP_VAR_NAME: PRECIP_UNIT_RATE_DISPLAY,
+                     'cloud_fraction': None,
+                     'air_temperature': 'celsius',
+                     'x_wind': WIND_UNIT_MPH_DISPLAY,
+                     'y_wind': WIND_UNIT_MPH_DISPLAY,
+                     WIND_SPEED_NAME: WIND_UNIT_MPH_DISPLAY,
+                     'mslp': 'hectopascals',
+                     WIND_VECTOR_NAME: WIND_UNIT_MPH_DISPLAY,
+                     WIND_STREAM_NAME: WIND_UNIT_MPH_DISPLAY,
+                     }
+
+UNIT_DICT_DISPLAY.update(dict([(var1,WIND_UNIT_MPH_DISPLAY) for var1 in WIND_VECTOR_VARS]))
+UNIT_DICT_DISPLAY.update(dict([(var1,PRECIP_UNIT_ACCUM_DISPLAY) for var1 in PRECIP_ACCUM_VARS]))
 
 N1280_GA6_KEY = 'n1280_ga6'
 KM4P4_RA1T_KEY = 'km4p4_ra1t'
