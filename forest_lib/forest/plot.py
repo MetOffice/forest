@@ -699,9 +699,9 @@ class ForestPlot(object):
         rms_val = numpy.sqrt(numpy.mean(numpy.power(data_to_process, 2.0)))
         model_run_info = 'Current model run start time: '
         mr_dtobj = dateutil.parser.parse(self.model_run_time)
-        model_run_info += '{dt.year}-{dt.month}-{dt.day} '
+        model_run_info += '{dt.year:d}-{dt.month:02d}-{dt.day:02d} '
         model_run_info += '{dt.hour:02d}{dt.minute:02d}Z'
-        model_run_info += model_run_info.format(dt=mr_dtobj)
+        model_run_info = model_run_info.format(dt=mr_dtobj)
 
         stats_str_list += [model_run_info,'']
         stats_str_list += ['Max = {0:.4f} {1}'.format(max_val, unit_str)]
@@ -1000,6 +1000,16 @@ class ForestPlot(object):
             self.update_bokeh_img_plot_from_fig()
             if self.stats_widget:
                 self.update_stats_widget()
+
+    def set_dataset(self, new_dataset, new_model_run_time):
+        self.dataset = new_dataset
+        self.model_run_time = new_model_run_time
+        self.create_matplotlib_fig()
+        if not self.async:
+            self.update_bokeh_img_plot_from_fig()
+            if self.stats_widget:
+                self.update_stats_widget()
+
 
     def link_axes_to_other_plot(self, other_plot):
 

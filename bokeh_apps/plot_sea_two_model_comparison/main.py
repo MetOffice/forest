@@ -146,7 +146,7 @@ def main(bokeh_id):
     plot_opts = forest.util.create_colour_opts(plot_names)
 
     init_data_time_index = 4
-    init_var = plot_names[0] #blank
+    init_var = plot_names[0]
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY
     init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY
@@ -198,7 +198,7 @@ def main(bokeh_id):
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
     # Set up GUI controller class
-    control1 = forest.control.ForestController(available_times,
+    control1 = forest.control.ForestController(init_var,
                                                init_data_time_index,
                                                datasets,
                                                init_fcast_time,

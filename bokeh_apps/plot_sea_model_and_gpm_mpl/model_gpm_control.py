@@ -53,6 +53,8 @@ class ModelGpmControl(object):
         self.plot_list = plot_list
         self.bokeh_img_list = bokeh_img_list
         self.stats_list = stats_list
+        self.process_events = True
+
         self.create_widgets()
 
     def __str__(self):
@@ -172,7 +174,8 @@ class ModelGpmControl(object):
         '''Event handler for a change in the selected forecast data time.
         
         '''
-        
+        if not self.process_events:
+            return
         print('selected new time {0}'.format(new_val))
         new_time = self.available_times[new_val]
         for p1 in self.plot_list:
@@ -183,7 +186,8 @@ class ModelGpmControl(object):
         '''Event handler for changing to previous time step
         
         '''
-        
+        if not self.process_events:
+            return
         print('selected previous time step')       
         current_time = self.data_time_slider.value - 1
         if current_time >= 0:
@@ -211,7 +215,9 @@ class ModelGpmControl(object):
             new_time = self.available_times[self.data_time_slider.value]
         except IndexError:
             new_time = self.available_times[0]
+            self.process_events = False
             self.data_time_slider.value = 0
+            self.process_events = True
 
         self.data_time_slider.end = self.available_times.shape[0]
         return new_time
@@ -221,6 +227,8 @@ class ModelGpmControl(object):
         '''Event handler for a change in the selected model configuration output.
         
         '''
+        if not self.process_events:
+            return
         print('selected new config {0}'.format(new_val))
         self.plot_list[plot_index].set_config(new_val)
 
@@ -229,7 +237,9 @@ class ModelGpmControl(object):
         '''Event handler for a change in the selected model configuration output.
         
         '''
-        
+        if not self.process_events:
+            return
+
         imerg_list = [ds_name for ds_name in self.datasets.keys()
                       if 'imerg' in ds_name]
         print('selected new config {0}'.format(imerg_list[new_val]))
@@ -241,6 +251,8 @@ class ModelGpmControl(object):
         '''Event handler for a change in the selected model configuration output.
         
         '''
+        if not self.process_events:
+            return
         # Change slider step based on new accumulation range
         print('selected new accumulation time span {0}'.format(self.accum_rbg.labels[new_val]))
         new_var = 'accum_precip_{0}'.format(self.accum_rbg.labels[new_val])
