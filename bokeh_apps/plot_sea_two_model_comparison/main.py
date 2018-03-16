@@ -129,24 +129,26 @@ def main(bokeh_id):
 
     print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
 
-    plot_names = ['precipitation',
-                  'air_temperature',
-                  'wind_vectors',
-                  'wind_mslp',
-                  'wind_streams',
-                  'mslp',
-                  'cloud_fraction',
-                 ]
+    plot_type_time_lookups = \
+        {'precipitation': 'precipitation',
+         'air_temperature': 'air_temperature',
+         'wind_vectors': 'x_wind',
+         'wind_mslp': 'x_wind',
+         'wind_streams': 'x_wind',
+         'mslp': 'mslp',
+         'cloud_fraction': 'cloud_fraction',
+         }
+
     bokeh_doc = bokeh.plotting.curdoc()
 
     #Create regions
     region_dict = forest.util.SEA_REGION_DICT
 
     #Setup and display plots
-    plot_opts = forest.util.create_colour_opts(plot_names)
+    plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
 
     init_data_time_index = 4
-    init_var = plot_names[0]
+    init_var = list(plot_type_time_lookups.keys())[0]
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY
     init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY
@@ -154,7 +156,7 @@ def main(bokeh_id):
 
     available_times = \
         forest.data.get_available_times(datasets[init_fcast_time],
-                                        init_var)
+                                        plot_type_time_lookups[init_var])
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
@@ -202,7 +204,7 @@ def main(bokeh_id):
                                                init_data_time_index,
                                                datasets,
                                                init_fcast_time,
-                                               plot_names,
+                                               plot_type_time_lookups,
                                                [plot_obj_left, plot_obj_right],
                                                [bokeh_img_left, bokeh_img_right],
                                                colorbar_widget,

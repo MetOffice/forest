@@ -1,4 +1,4 @@
-"""Module containing a class to manage the datasets for Forest. 
+"""Module containing a class to manage the datasets for Forest.
 
 In particular, the ForestDataset class supports just in time loading.
 
@@ -27,6 +27,7 @@ import cf_units
 
 import forest.util
 
+
 # The number of days into the past to look for data. The current
 # value specifies looking for data up to 1 week old
 NUM_DATA_DAYS = 7
@@ -46,6 +47,9 @@ PRECIP_UNIT_RATE = 'kg-m-2-hour^-1'
 
 PRECIP_UNIT_ACCUM_DISPLAY = 'mm'
 PRECIP_UNIT_RATE_DISPLAY = 'mm/h'
+
+MSLP_NAME = 'mslp'
+MSLP_UNIT_HPA = 'hectopascals'
 
 VAR_NAMES = [PRECIP_VAR_NAME,
              'air_temperature',
@@ -76,7 +80,7 @@ UNIT_DICT = {PRECIP_VAR_NAME: PRECIP_UNIT_RATE,
              'x_wind': WIND_UNIT_MPH,
              'y_wind': WIND_UNIT_MPH,
              WIND_SPEED_NAME: WIND_UNIT_MPH,
-             'mslp': 'hectopascals',
+             MSLP_NAME : MSLP_UNIT_HPA,
              WIND_VECTOR_NAME: WIND_UNIT_MPH,
              WIND_STREAM_NAME: WIND_UNIT_MPH,
              }
@@ -221,6 +225,7 @@ class ForestDataset(object):
         self.time_loaders = dict([(v1, self._basic_time_load) for v1 in VAR_NAMES])
         self.time_loaders[WIND_SPEED_NAME] = self._wind_time_load
         self.time_loaders[WIND_VECTOR_NAME] = self._wind_time_load
+
         for wv_var in WIND_VECTOR_VARS:
             self.time_loaders[wv_var] = self._wind_time_load
         for accum_precip_var in PRECIP_ACCUM_VARS:
@@ -295,7 +300,8 @@ class ForestDataset(object):
             self._basic_time_load('x_wind')
             self.data['x_wind'].update(dict([(t1,None,) for t1 in self.times['x_wind'] ]))
 
-            for var1 in WIND_VECTOR_VARS + ['y_wind']:
+        for var1 in WIND_VECTOR_VARS + ['y_wind', WIND_SPEED_NAME]:
+            if self.times[var1] is None:
                 self.times[var1] = copy.deepcopy(self.times['x_wind'])
                 self.data[var1] = dict([(t1,None,) for t1 in self.times[var1] ]+ [('all',None)])
     def _accum_precip_time_load(self, var_name):

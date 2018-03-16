@@ -74,7 +74,7 @@ class ForestController(object):
                  init_time_ix,
                  datasets,
                  init_fcast_time,
-                 plot_names,
+                 plot_type_time_lookups,
                  plots,
                  bokeh_imgs,
                  colorbar_widget,
@@ -98,7 +98,8 @@ class ForestController(object):
         self.plots = plots
         self.bokeh_imgs = bokeh_imgs
         self.region_dict = region_dict
-        self.plot_names = plot_names
+        self.plot_type_time_lookups = plot_type_time_lookups
+        self.plot_names = list(self.plot_type_time_lookups.keys())
         self.datasets = datasets
         self.current_fcast_time = init_fcast_time
         self.current_var = init_var
@@ -272,7 +273,7 @@ class ForestController(object):
         self.available_times = \
             forest.data.get_available_times(
                 self.datasets[self.current_fcast_time],
-                self.current_var)
+                self.plot_type_time_lookups[self.current_var])
         try:
             new_time = self.available_times[self.current_time_index]
         except IndexError:
@@ -297,8 +298,8 @@ class ForestController(object):
             return
 
         print('var change handler')
-        new_time = self._refresh_times()
         self.current_var = new_val
+        new_time = self._refresh_times()
         for p1 in self.plots:
             # different variables have different times available, soneed to
             # set time when selecting a variable

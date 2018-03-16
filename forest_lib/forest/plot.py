@@ -17,7 +17,17 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
+import pdb
+
+
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom']
+
+class MissingDataError(Exception):
+    def __init__(self, config, var, time):
+        self.config = config
+        self.var = var
+        self.time = time
+
 
 class ForestPlot(object):
 
@@ -26,6 +36,10 @@ class ForestPlot(object):
     '''
     TITLE_TEXT_WIDTH = 40
     PRESSURE_LEVELS_HPA = range(980, 1030, 2)
+
+    MODE_PLOT = 'plot'
+    MODE_LOADING = 'loading'
+    MODE_MISSING_DATA = 'missing_data'
 
     def __init__(self,
                  dataset,
@@ -76,6 +90,7 @@ class ForestPlot(object):
         self.current_figsize = (8.0, 6.0)
         self.bokeh_fig_size = (800,600)
         self.coast_res = '50m'
+        self.display_mode = ForestPlot.MODE_LOADING
 
 
 
@@ -168,14 +183,23 @@ class ForestPlot(object):
         self.main_plot = None
         self.current_title = 'Blank plot'
 
+    def get_data(self, var_name=None):
+        config_data = self.dataset[self.current_config]['data']
+        if var_name:
+            data_cube = config_data.get_data(var_name=var_name,
+                                 selected_time = self.current_time)
+        else:
+            data_cube = config_data.get_data(var_name=self.current_var,
+                                             selected_time=self.current_time)
+        return data_cube
+
     def update_precip(self):
 
         '''Update function for precipitation plots, called by update_plot() when
         precipitation is the selected plot type.
 
         '''
-        data_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var, self.current_time)
+        data_cube = self.get_data()
         array_for_update = data_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(data_cube)
@@ -187,8 +211,7 @@ class ForestPlot(object):
         precipitation is the selected plot type.
 
         '''
-        data_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var, selected_time=self.current_time)
+        data_cube = self.get_data()
         self.update_coords(data_cube)
         self.current_axes.coastlines(resolution=self.coast_res)
         self.main_plot = \
@@ -211,14 +234,14 @@ class ForestPlot(object):
 
         '''
 
-        wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed', self.current_time)
+        wind_speed_cube = self.get_data()
+
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
         self.update_stats(wind_speed_cube)
-        wv_u_data = self.dataset[self.current_config]['data'].get_data('wv_U')
-        wv_v_data = self.dataset[self.current_config]['data'].get_data('wv_V')
+        wv_u_data = self.get_data(var_name='wv_U')
+        wv_v_data = self.get_data(var_name='wv_V')
         self.quiver_plot.set_UVC(wv_u_data,
                                  wv_v_data)
 
@@ -229,8 +252,7 @@ class ForestPlot(object):
 
         '''
 
-        wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed', self.current_time)
+        wind_speed_cube = self.get_data(forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -252,13 +274,10 @@ class ForestPlot(object):
 
         self.quiver_plot = \
             self.current_axes.quiver(
-                self.dataset[self.current_config]['data'].get_data('wv_X', self.current_time),
-                self.dataset[self.current_config][
-                    'data'].get_data('wv_Y', self.current_time),
-                self.dataset[self.current_config][
-                    'data'].get_data('wv_U', self.current_time),
-                self.dataset[self.current_config][
-                    'data'].get_data('wv_V', self.current_time),
+                self.get_data('wv_X'),
+                self.get_data('wv_Y'),
+                self.get_data('wv_U'),
+                self.get_data('wv_V'),
                 units='height')
         qk = self.current_axes.quiverkey(self.quiver_plot,
                                          0.9,
@@ -276,15 +295,14 @@ class ForestPlot(object):
         update_plot() when wind speed with MSLP is the selected plot type.
 
         '''
-        wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed', self.current_time)
+        wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         # to update contours, remove old elements and generate new contours
         for c1 in self.mslp_contour.collections:
             self.current_axes.collections.remove(c1)
 
-        ap_cube = self.dataset[self.current_config]['data'].get_data('mslp', self.current_time)
+        ap_cube = self.get_data(var_name=forest.data.MSLP_NAME)
         self.mslp_contour = \
             self.current_axes.contour(self.long_grid_mslp,
                                       self.lat_grid_mslp,
@@ -305,8 +323,7 @@ class ForestPlot(object):
         type.
 
         '''
-        wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed', self.current_time)
+        wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -318,7 +335,7 @@ class ForestPlot(object):
                                              self.current_var]['norm']
                                          )
 
-        ap_cube = self.dataset[self.current_config]['data'].get_data('mslp', self.current_time)
+        ap_cube = self.get_data(forest.data.MSLP_NAME)
         lat_mslp = ap_cube.coords('latitude')[0].points
         long_mslp = ap_cube.coords('longitude')[0].points
         self.long_grid_mslp, self.lat_grid_mslp = numpy.meshgrid(
@@ -350,8 +367,7 @@ class ForestPlot(object):
 
         '''
 
-        wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed', self.current_time)
+        wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
@@ -365,14 +381,10 @@ class ForestPlot(object):
         pl1 = list(self.current_axes.patches)
         self.wind_stream_plot = \
             self.current_axes.streamplot(
-                self.dataset[self.current_config]['data'].get_data(
-                    'wv_X_grid', self.current_time),
-                self.dataset[self.current_config][
-                    'data'].get_data('wv_Y_grid', self.current_time),
-                self.dataset[self.current_config][
-                    'data'].get_data('wv_U', self.current_time),
-                self.dataset[self.current_config][
-                    'data'].get_data('wv_V', self.current_time),
+                self.get_data(var_name='wv_X_grid'),
+                self.get_data(var_name='wv_Y_grid'),
+                self.get_data(var_name='wv_U'),
+                self.get_data(var_name='wv_V'),
                 color='k',
                 density=[0.5, 1.0])
         # we need to manually keep track of arrows so they can be removed when
@@ -387,8 +399,7 @@ class ForestPlot(object):
 
         '''
 
-        wind_speed_cube = self.dataset[self.current_config][
-            'data'].get_data('wind_speed', self.current_time)
+        wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -404,14 +415,10 @@ class ForestPlot(object):
 
         self.wind_stream_plot = \
             self.current_axes.streamplot(
-                self.dataset[self.current_config]['data'].get_data(
-                    'wv_X_grid', self.current_time),
-                self.dataset[self.current_config][
-                    'data'].get_data('wv_Y_grid', self.current_time),
-                self.dataset[self.current_config][
-                    'data'].get_data('wv_U', self.current_time),
-                self.dataset[self.current_config][
-                    'data'].get_data('wv_V', self.current_time),
+                self.get_data(var_name='wv_X_grid'),
+                self.get_data(var_name='wv_Y_grid'),
+                self.get_data(var_name='wv_U'),
+                self.get_data(var_name='wv_V'),
                 color='k',
                 density=[0.5, 1.0])
 
@@ -436,8 +443,7 @@ class ForestPlot(object):
 
         '''
 
-        at_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var, self.current_time)
+        at_cube = self.get_data()
         array_for_update = at_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(at_cube)
@@ -450,8 +456,7 @@ class ForestPlot(object):
 
         '''
 
-        at_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var, self.current_time)
+        at_cube = self.get_data()
         self.update_coords(at_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -479,9 +484,7 @@ class ForestPlot(object):
         MSLP is the selected plot type.
 
         '''
-
-        ap_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var, self.current_time)
+        ap_cube = self.get_data()
         array_for_update = ap_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(ap_cube)
@@ -494,8 +497,7 @@ class ForestPlot(object):
 
         '''
 
-        ap_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var, self.current_time)
+        ap_cube = self.get_data()
         self.update_coords(ap_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -524,8 +526,7 @@ class ForestPlot(object):
 
         '''
 
-        cloud_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var, self.current_time)
+        cloud_cube = self.get_data()
         array_for_update = cloud_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(cloud_cube)
@@ -538,8 +539,7 @@ class ForestPlot(object):
 
         '''
 
-        cloud_cube = self.dataset[self.current_config][
-            'data'].get_data(self.current_var, self.current_time)
+        cloud_cube = self.get_data()
         self.update_coords(cloud_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
