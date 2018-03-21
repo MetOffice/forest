@@ -8,9 +8,7 @@ import bokeh.plotting
 
 import forest.data
 
-import pdb
-
-MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
+MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km',
                  'km4p4_ra1t': 'SE Asia 4.4km', 
                  'indon2km1p5_ra1t': 'Indonesia 1.5km', 
                  'mal2km1p5_ra1t': 'Malaysia 1.5km', 

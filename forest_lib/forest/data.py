@@ -6,6 +6,7 @@ Functions
 ---------
 
 - get_var_lookup() -- Read config files into dictionary.
+- get_model_run_times() -- Get dates of recent model runs.
 
 Classes
 -------
@@ -21,6 +22,7 @@ import functools
 import numpy
 import math
 import copy
+import dateutil.parser
 
 import iris
 import cf_units
@@ -31,7 +33,12 @@ import forest.util
 # The number of days into the past to look for data. The current
 # value specifies looking for data up to 1 week old
 NUM_DATA_DAYS = 7
+# The number of days in a model run. Not all models will run this long, but
+# this covers the longest running models
+MODEL_RUN_DAYS = 5
 MODEL_RUN_PERIOD = 12
+TIME_EPSILON_HRS = 0.1
+NUM_HOURS_IN_DAY = 24
 
 WIND_SPEED_NAME = 'wind_speed'
 WIND_VECTOR_NAME = 'wind_vectors'
@@ -144,6 +151,33 @@ def get_var_lookup(config):
             
     return field_dict
 
+
+def get_model_run_times(days_since_period_start, num_days, model_run_period):
+    """Create a list of model times from the last num_days days.
+
+    Arguments
+    ---------
+
+    - num_days -- Int; Set number of days to go back and get dates for.
+    - model_run_period -- Int; period of model runs in hours i.e. their is a model run every model_run_period hours.
+
+    """
+    period_start = datetime.datetime.now() + datetime.timedelta(days=-days_since_period_start)
+    ps_mn_str = '{dt.year:04}{dt.month:02}{dt.day:02}T0000Z'.format(
+        dt=period_start)
+    ps_midnight = dateutil.parser.parse(str(ps_mn_str))
+    fmt_str = '{dt.year:04}{dt.month:02}{dt.day:02}' + \
+              'T{dt.hour:02}{dt.minute:02}Z'
+
+    forecast_datetimes = [
+        ps_midnight + datetime.timedelta(hours=step1)
+        for step1 in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
+    forecast_dt_str_list = [
+        fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
+
+    return forecast_datetimes, forecast_dt_str_list
+
+
 def get_available_times(datasets, var1):
     key0 = list(datasets.keys())[0]
     available_times = datasets[key0]['data'].get_times(var1)
@@ -152,6 +186,55 @@ def get_available_times(datasets, var1):
         times1 = datasets[ds_name]['data'].get_times(var1)
         available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
     return available_times
+
+
+def get_available_datasets(s3_base,
+                           s3_local_base,
+                           use_s3_mount,
+                           base_path_local,
+                           do_download,
+                           dataset_template,
+                           days_since_period_start,
+                           num_days,
+                           model_period,
+                           ):
+    '''
+
+    '''
+    fcast_dt_list, fcast_dt_str_list = \
+        get_model_run_times(days_since_period_start,
+                                        num_days,
+                                        model_period)
+
+    fcast_time_list = []
+    datasets = {}
+    for fct, fct_str in zip(fcast_dt_list, fcast_dt_str_list):
+
+        fct_data_dict = copy.deepcopy(dict(dataset_template))
+        model_run_data_present = True
+        for ds_name in dataset_template.keys():
+            fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
+            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(ds_name,
+                                                                       fname1,
+                                                                       s3_base,
+                                                                       s3_local_base,
+                                                                       use_s3_mount,
+                                                                       base_path_local,
+                                                                       do_download,
+                                                                       dataset_template[ds_name]['var_lookup'],
+                                                                       )
+
+            model_run_data_present = model_run_data_present and fct_data_dict[ds_name]['data'].check_data()
+        # include forecast if all configs are present
+        # TODO: reconsider data structure to allow for some model configs at different times to be present
+        if model_run_data_present:
+            datasets[fct_str] = fct_data_dict
+            fcast_time_list += [fct_str]
+
+    # select most recent available forecast
+    fcast_time = fcast_time_list[-1]
+    return fcast_time, datasets
+
 
 class ForestDataset(object):
 
@@ -229,7 +312,8 @@ class ForestDataset(object):
         for wv_var in WIND_VECTOR_VARS:
             self.time_loaders[wv_var] = self._wind_time_load
         for accum_precip_var in PRECIP_ACCUM_VARS:
-            self.time_loaders[accum_precip_var] = self._accum_precip_time_load
+            ws1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[accum_precip_var]
+            self.time_loaders[accum_precip_var] = functools.partial(self._accum_precip_time_load, ws1)
         self.times = dict([(v1, None) for v1 in self.time_loaders.keys()])
 
 
@@ -240,7 +324,8 @@ class ForestDataset(object):
         for wv_var in WIND_VECTOR_VARS:
             self.loaders[wv_var] = self.wind_vector_loader
         for accum_precip_var in PRECIP_ACCUM_VARS:
-            self.loaders[accum_precip_var] = self.accum_precip_loader
+            ws1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[accum_precip_var]
+            self.loaders[accum_precip_var] = functools.partial(self.accum_precip_loader, ws1)
 
         self.data = dict([(v1, None) for v1 in self.loaders.keys()])
         if self.use_s3_local_mount:
@@ -304,12 +389,12 @@ class ForestDataset(object):
             if self.times[var1] is None:
                 self.times[var1] = copy.deepcopy(self.times['x_wind'])
                 self.data[var1] = dict([(t1,None,) for t1 in self.times[var1] ]+ [('all',None)])
-    def _accum_precip_time_load(self, var_name):
+    def _accum_precip_time_load(self, window_size1, var_name):
         """
         """
         self._basic_time_load(PRECIP_VAR_NAME)
-        window_size1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[var_name]
-        self.times[var_name] = numpy.unique(numpy.floor(self.times[PRECIP_VAR_NAME] / window_size1) * window_size1)
+        self.times[var_name] = \
+            numpy.unique(numpy.floor(self.times[PRECIP_VAR_NAME] / window_size1) * window_size1) + (window_size1/2.0)
         self.data[var_name] = dict([(t1, None) for t1 in self.times[var_name]] + [('all',None)])
 
     def get_data(self, var_name, selected_time, convert_units=True):
@@ -469,22 +554,8 @@ class ForestDataset(object):
                                                 10)
         for var1 in wv_dict:
             self.data[var1][time_ix] = wv_dict[var1]
-     
-    def add_accum_precip_keys(self, timespan):
-    
-        """Create precipitation accumulation cube dict keys.
         
-        Arguments
-        ---------
-        
-        - timespan -- Str; Define precip. accum. window.
-        
-        """
-        
-        var_name = 'precip_accum_{}hr'.format(timespan)
-        self.data.update({var_name: None})
-        
-    def accum_precip_loader(self, var_name, time_ix):
+    def accum_precip_loader(self, window_size, var_name, time_ix):
         
         """Gets data and creates accumulated precipitation cube.
 
@@ -494,39 +565,34 @@ class ForestDataset(object):
         - var_name -- Str; Precip accum variable name.
 
         """
+        field_dict = self.var_lookup['precipitation']
+        cf1 = lambda cube1: \
+            cube1.attributes['STASH'].section == \
+            field_dict['stash_section'] and \
+            cube1.attributes['STASH'].item == \
+            field_dict['stash_item']
+        coord_constraint_dict = {}
+        period_start_ix = time_ix - (window_size/2.0) - TIME_EPSILON_HRS
+        period_start = datetime.datetime.fromtimestamp(period_start_ix * 3600)
+        period_end_ix = time_ix + (window_size/2.0) + TIME_EPSILON_HRS
+        period_end = datetime.datetime.fromtimestamp(period_end_ix * 3600)
 
-        self.get_data('precipitation', 'all')
-        self.accum_precip(var_name)
+        def time_window_extract(start1, end1, cell1):
+            return cell1.bound[0] >= start1 and cell1.bound[1] <= end1
+        coord_constraint_dict['time'] = functools.partial(time_window_extract,
+                                                          period_start,
+                                                          period_end)
 
-    def accum_precip(self, var_name):
-    
-        """Create precip. accum. cube from existing precip. data.
-        
-        Arguments
-        ---------
-        
-        - var_name -- Str; Hour in var_name defines accum window.
-        
-        """
-        accum_multiplier = float(var_name[13:-2])
-        
-        conv_lambda = lambda coord, value: math.floor(value / accum_multiplier) * accum_multiplier 
-        
-        temp_cube = self.data['precipitation']['all']
-        temp_cube.data *= 3
-        temp_cube.units = 'kg-m-2'
-        
-        agg_name = 'agg_time_{}'.format(var_name[13:])
-        
-        time_unit = cf_units.Unit('hours since 1970-01-01', calendar='gregorian')
-        iris.coord_categorisation.add_categorised_coord(temp_cube, 
-                                                        agg_name, 
-                                                        'time', 
-                                                        conv_lambda,
-                                                        units=time_unit)
-        accum_cube = temp_cube.aggregated_by([agg_name], iris.analysis.SUM)
-        accum_cube.coord('time').points = accum_cube.coord(agg_name).points
-        self.data[var_name]['all'] = accum_cube
-        self.times[var_name] = self.data[var_name]['all'].coord('time').points
-        for ix1, time1 in enumerate(self.times[var_name]):
-            self.data[var_name][time1] = self.data[var_name]['all'][ix1]
+        ic1 = iris.Constraint(cube_func=cf1,
+                              coord_values=coord_constraint_dict)
+
+        precip_cube1 = iris.load_cube(self.path_to_load, ic1)
+        precip_cube1.convert_units(UNIT_DICT['precipitation']) # convert to average hourly accumulation
+        precip_cube1.data *= 3 #multiply by 3 to get 3 hour accumulation
+        if precip_cube1.coord('time').shape[0] == 1:
+            accum_cube = precip_cube1
+        else:
+            accum_cube = precip_cube1.collapsed('time', iris.analysis.SUM)
+        accum_cube.units = cf_units.Unit('kg m-2')
+
+        self.data[var_name][time_ix] = accum_cube

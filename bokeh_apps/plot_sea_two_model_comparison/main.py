@@ -18,8 +18,6 @@ import forest.plot
 import forest.control
 import forest.data
 
-import pdb
-
 def add_main_plot(main_layout, bokeh_doc):
     
     '''
@@ -44,48 +42,6 @@ bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
 
-def get_available_datasets(s3_base,
-                           s3_local_base,
-                           use_s3_mount,
-                           base_path_local,
-                           do_download,
-                           dataset_template):
-    
-    '''
-    
-    '''
-    
-    fcast_dt_list, fcast_dt_str_list = \
-        forest.util.get_model_run_times(forest.data.NUM_DATA_DAYS,
-                                        forest.data.MODEL_RUN_PERIOD)
-
-    fcast_time_list = []
-    datasets = {}
-    for fct,fct_str in zip(fcast_dt_list, fcast_dt_str_list):
-        
-        fct_data_dict = copy.deepcopy(dict(dataset_template))
-        model_run_data_present = True
-        for ds_name in dataset_template.keys():
-            fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
-            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(ds_name,
-                                                                       fname1,
-                                                                       s3_base,
-                                                                       s3_local_base,
-                                                                       use_s3_mount,
-                                                                       base_path_local,
-                                                                       do_download,
-                                                                       dataset_template[ds_name]['var_lookup'],
-                                                                       )
-            model_run_data_present = model_run_data_present and fct_data_dict[ds_name]['data'].check_data()
-        # include forecast if all configs are present
-        #TODO: reconsider data structure to allow for some model configs at different times to be present
-        if model_run_data_present:
-            datasets[fct_str] = fct_data_dict
-            fcast_time_list += [fct_str]
-            
-    # select most recent available forecast
-    fcast_time = fcast_time_list[-1]
-    return fcast_time, datasets
 
 @forest.util.timer
 def main(bokeh_id):
@@ -120,12 +76,17 @@ def main(bokeh_id):
     use_s3_mount = True
     do_download = False
 
-    init_fcast_time, datasets = get_available_datasets(s3_base,
-                                                       s3_local_base,
-                                                       use_s3_mount,
-                                                       base_path_local,
-                                                       do_download,
-                                                       dataset_template)
+    init_fcast_time, datasets = \
+        forest.data.get_available_datasets(s3_base,
+                                           s3_local_base,
+                                           use_s3_mount,
+                                           base_path_local,
+                                           do_download,
+                                           dataset_template,
+                                           forest.data.NUM_DATA_DAYS,
+                                           forest.data.NUM_DATA_DAYS,
+                                           forest.data.MODEL_RUN_PERIOD,
+                                           )
 
     print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
 
@@ -139,6 +100,9 @@ def main(bokeh_id):
          'cloud_fraction': 'cloud_fraction',
          }
 
+    for var1 in forest.data.PRECIP_ACCUM_VARS:
+        plot_type_time_lookups.update({var1:var1})
+
     bokeh_doc = bokeh.plotting.curdoc()
 
     #Create regions
@@ -147,8 +111,9 @@ def main(bokeh_id):
     #Setup and display plots
     plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
 
-    init_data_time_index = 4
-    init_var = list(plot_type_time_lookups.keys())[0]
+    init_data_time_index = 1
+    init_var = 'accum_precip_12hr'
+
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY
     init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY

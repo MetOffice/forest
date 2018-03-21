@@ -7,8 +7,6 @@ import matplotlib.pyplot
 import forest.data
 import forest.util
 
-import pdb
-
 SIMIM_SAT_VARS = ['W', 'V', 'I']
 
 HIMAWARI_KEYS = {'W': 'LWIN11',
