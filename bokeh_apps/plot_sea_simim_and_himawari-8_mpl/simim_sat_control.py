@@ -6,8 +6,6 @@ import forest.control
 
 import simim_sat_data
 
-import pdb
-
 class SimimSatControl(object):
     
     def __init__(self,
