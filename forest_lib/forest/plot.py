@@ -565,7 +565,6 @@ class ForestPlot(object):
         when cloud fraction is the selected plot type.
 
         '''
-
         him8_image = self.dataset[
             'himawari-8']['data'].get_data(self.current_var, selected_time=self.current_time)
         self.current_axes.images.remove(self.main_plot)
@@ -749,7 +748,6 @@ class ForestPlot(object):
         '''
 
         '''
-
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
                                                        figsize=self.current_figsize)
         self.current_figure.clf()

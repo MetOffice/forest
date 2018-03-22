@@ -36,6 +36,8 @@ NUM_DATA_DAYS = 7
 # The number of days in a model run. Not all models will run this long, but
 # this covers the longest running models
 MODEL_RUN_DAYS = 5
+MODEL_OBS_COMP_DAYS = 3
+
 MODEL_RUN_PERIOD = 12
 TIME_EPSILON_HRS = 0.1
 NUM_HOURS_IN_DAY = 24

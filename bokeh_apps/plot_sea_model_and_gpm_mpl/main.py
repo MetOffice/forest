@@ -26,8 +26,7 @@ import forest.data
 import model_gpm_control
 import model_gpm_data
 
-import warnings
-warnings.filterwarnings('ignore')
+
 
 def main(bokeh_id):
 

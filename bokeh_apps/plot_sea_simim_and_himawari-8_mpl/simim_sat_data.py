@@ -7,6 +7,9 @@ import matplotlib.pyplot
 import forest.data
 import forest.util
 
+SIMIM_KEY = 'simim'
+HIMAWARI8_KEY = 'himawari-8'
+
 SIMIM_SAT_VARS = ['W', 'V', 'I']
 
 HIMAWARI_KEYS = {'W': 'LWIN11',
@@ -71,11 +74,20 @@ class SimimDataset(object):
         
         return 'Simulated Imagery dataset'
 
+    def get_times(self, var_name):
+        if self.data[var_name] is None:
+            self.retrieve_data()
+            self.load_data()
+        return [k1 for k1 in self.data[var_name].keys()]
+
     def get_data(self, var_name, convert_units=False, selected_time=None):
         
         '''
         
         '''
+        if self.data[var_name] is None:
+            self.retrieve_data()
+            self.load_data()
         try:
             if selected_time is not None:
                 return self.data[var_name][selected_time]
@@ -184,11 +196,22 @@ class SatelliteDataset(object):
         
         return 'Satellite Image dataset'
 
+    def get_times(self, var_name):
+        if self.data[var_name] is None:
+            self.retrieve_data()
+            self.load_data()
+
+        return [k1 for k1 in self.data[var_name].keys()]
+
     def get_data(self, var_name, convert_units=False, selected_time=None):
         
         '''
         
         '''
+        if self.data[var_name] is None:
+            self.retrieve_data()
+            self.load_data()
+
         try:
             if selected_time is not None:
                 return self.data[var_name][selected_time]

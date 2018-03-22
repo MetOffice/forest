@@ -1,17 +1,13 @@
 import os
-import copy
 
-import numpy
+import warnings
+warnings.filterwarnings('ignore')
+
 import bokeh.io
-import bokeh.layouts 
-import bokeh.models.widgets
 import bokeh.plotting
-import bokeh.layouts
 
 import matplotlib
 matplotlib.use('agg')
-
-import iris
 
 import forest.util
 import forest.plot
