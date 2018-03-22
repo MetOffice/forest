@@ -108,7 +108,7 @@ def main(bokeh_id):
     plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
 
     init_data_time_index = 1
-    init_var = 'accum_precip_12hr'
+    init_var = 'precipitation'
 
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY
