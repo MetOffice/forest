@@ -17,7 +17,6 @@ Functions
 - create_satellite_simim_plot_opts() -- Create dict of colormaps.
 - extract_region() -- Subset a cube into a restricted region.
 - get_image_array_from_figure() -- Convert figure into RGBA array.
-- get_model_run_times() -- Get dates of recent model runs.
 - check_remote_file_exists() -- Check if remote file exists.
 - timer() -- Timer function for testing other functions.
 
@@ -27,7 +26,6 @@ import time
 import os
 import urllib.request
 import datetime
-import dateutil.parser
 
 import matplotlib.colors
 import matplotlib.cm
@@ -40,7 +38,7 @@ SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
                    'phillipines': [3.1375, 21.349, 115.8, 131.987],
                    'se_asia': [-18.0, 29.96, 90.0, 153.96],
                    }
-NUM_HOURS_IN_DAY = 24
+
 
 def download_from_s3(s3_url, local_path):
 
@@ -388,32 +386,7 @@ def get_image_array_from_figure(fig):
     return buf
 
 
-def get_model_run_times(num_days, model_run_period=12):
 
-    """Create a list of model times from the last num_days days.
-    
-    Arguments
-    ---------
-    
-    - num_days -- Int; Set number of days to go back and get dates for.
-    - model_run_period -- Int; period of model runs in hours i.e. their is a model run every model_run_period hours.
-    
-    """
-
-    lastweek = datetime.datetime.now() + datetime.timedelta(days=-num_days)
-    lw_mn_str = '{dt.year:04}{dt.month:02}{dt.day:02}T0000Z'.format(
-        dt=lastweek)
-    lw_midnight = dateutil.parser.parse(str(lw_mn_str))
-    fmt_str = '{dt.year:04}{dt.month:02}{dt.day:02}' + \
-              'T{dt.hour:02}{dt.minute:02}Z'
-
-    forecast_datetimes = [
-        lw_midnight + datetime.timedelta(hours=step1)
-        for step1 in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
-    forecast_dt_str_list = [
-        fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
-    
-    return forecast_datetimes, forecast_dt_str_list
 
 
 def check_remote_file_exists(remote_path):

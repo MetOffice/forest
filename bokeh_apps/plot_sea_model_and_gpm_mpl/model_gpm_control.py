@@ -5,8 +5,9 @@ import bokeh.model
 import bokeh.layouts
 
 import forest.data
+import forest.control
 
-MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
+MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km',
                  'km4p4_ra1t': 'SE Asia 4.4km', 
                  'indon2km1p5_ra1t': 'Indonesia 1.5km', 
                  'mal2km1p5_ra1t': 'Malaysia 1.5km', 
@@ -33,9 +34,10 @@ class ModelGpmControl(object):
     '''
     
     def __init__(self,
+                 init_var,
                  datasets,
                  init_time_ix,
-                 available_times,
+                 init_fcast_time,
                  plot_list,
                  bokeh_img_list,
                  stats_list
@@ -44,15 +46,20 @@ class ModelGpmControl(object):
         '''
         
         '''
-        
+        self.current_var = init_var
+        self.current_fcast_time = init_fcast_time
+        self.data_time_slider = None
+
         self.datasets = datasets
-        self.available_times = available_times
-        self.init_time_ix = init_time_ix
-        self.init_time = self.available_times[self.init_time_ix]
+        self.current_time_index = init_time_ix
+        times = self._refresh_times(update_gui=False)
+        self.init_time = self.available_times[self.current_time_index]
         self.num_times = self.available_times.shape[0]
         self.plot_list = plot_list
         self.bokeh_img_list = bokeh_img_list
         self.stats_list = stats_list
+        self.process_events = True
+
         self.create_widgets()
 
     def __str__(self):
@@ -83,7 +90,7 @@ class ModelGpmControl(object):
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
                                         end=self.num_times,
-                                        value=self.init_time_ix,
+                                        value=self.current_time_index,
                                         step=1,
                                         title="Data time",
                                         width=400)
@@ -95,9 +102,19 @@ class ModelGpmControl(object):
                                         button_type='warning',
                                         width=100)
         self.time_next_button.on_click(self.on_time_next)
-        
+
+        # create model run selection dropdown
+        # select model run
+        model_run_list = forest.control.create_model_run_list(self.datasets)
+        self.model_run_dd = \
+            bokeh.models.widgets.Dropdown(label='Model run',
+                                          menu=model_run_list,
+                                          button_type='warning')
+
+        self.model_run_dd.on_change('value', self._on_model_run_change)
+
         # Create model selection dropdown menu widget
-        model_list = [ds_name for ds_name in self.datasets.keys()
+        model_list = [ds_name for ds_name in self.datasets[self.current_fcast_time].keys()
                       if 'imerg' not in ds_name]
         model_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
                                                              model_list)
@@ -146,7 +163,10 @@ class ModelGpmControl(object):
                               bokeh.models.Spacer(width=20, height=60),
                               self.data_time_slider,
                               bokeh.models.Spacer(width=20, height=60),
-                              self.time_next_button)
+                              self.time_next_button,
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.model_run_dd,
+                              )
         self.major_config_row = \
             bokeh.layouts.row(self.model_dd, 
                               bokeh.models.Spacer(width=20, height=60),
@@ -172,9 +192,11 @@ class ModelGpmControl(object):
         '''Event handler for a change in the selected forecast data time.
         
         '''
-        
-        print('selected new time {0}'.format(new_val))
-        new_time = self.available_times[new_val]
+        if not self.process_events:
+            return
+        self.current_time_index = new_val
+        print('selected new time {0}'.format(self.current_time_index))
+        new_time = self.available_times[self.current_time_index]
         for p1 in self.plot_list:
             p1.set_data_time(new_time)
 
@@ -183,11 +205,13 @@ class ModelGpmControl(object):
         '''Event handler for changing to previous time step
         
         '''
-        
+        if not self.process_events:
+            return
         print('selected previous time step')       
-        current_time = self.data_time_slider.value - 1
-        if current_time >= 0:
-            self.data_time_slider.value = current_time
+        new_time_index = self.current_time_index - 1
+        if new_time_index >= 0:
+            self.current_time_index = new_time_index
+            self.data_time_slider.value = self.current_time_index
         else:
             print('Cannot select time < 0')
 
@@ -198,22 +222,28 @@ class ModelGpmControl(object):
         '''
         
         print('selected next time step')       
-        current_time = self.data_time_slider.value + 1
-        if current_time < self.num_times:
-            self.data_time_slider.value = current_time
+        new_time_index = self.current_time_index + 1
+        if new_time_index < self.num_times:
+            self.current_time_index = new_time_index
+            self.data_time_slider.value = self.current_time_index
         else:
             print('Cannot select time > num_times')
 
-    def _refresh_times(self, new_var):
-        self.available_times = forest.data.get_available_times(self.datasets,
-                                                               new_var)
+    def _refresh_times(self, update_gui):
+        self.available_times = forest.data.get_available_times(self.datasets[self.current_fcast_time],
+                                                               self.current_var)
         try:
-            new_time = self.available_times[self.data_time_slider.value]
+            new_time = self.available_times[self.current_time_index]
         except IndexError:
-            new_time = self.available_times[0]
-            self.data_time_slider.value = 0
+            self.current_time_index = 0
+            new_time = self.available_times[self.current_time_index]
+            if update_gui and self.data_time_slider:
+                self.process_events = False
+                self.data_time_slider.value = self.current_time_index
+                self.process_events = True
+        if update_gui and self.data_time_slider:
+            self.data_time_slider.end = self.available_times.shape[0]
 
-        self.data_time_slider.end = self.available_times.shape[0]
         return new_time
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
@@ -221,6 +251,8 @@ class ModelGpmControl(object):
         '''Event handler for a change in the selected model configuration output.
         
         '''
+        if not self.process_events:
+            return
         print('selected new config {0}'.format(new_val))
         self.plot_list[plot_index].set_config(new_val)
 
@@ -229,7 +261,9 @@ class ModelGpmControl(object):
         '''Event handler for a change in the selected model configuration output.
         
         '''
-        
+        if not self.process_events:
+            return
+
         imerg_list = [ds_name for ds_name in self.datasets.keys()
                       if 'imerg' in ds_name]
         print('selected new config {0}'.format(imerg_list[new_val]))
@@ -241,11 +275,28 @@ class ModelGpmControl(object):
         '''Event handler for a change in the selected model configuration output.
         
         '''
+        if not self.process_events:
+            return
         # Change slider step based on new accumulation range
         print('selected new accumulation time span {0}'.format(self.accum_rbg.labels[new_val]))
         new_var = 'accum_precip_{0}'.format(self.accum_rbg.labels[new_val])
-        new_time = self._refresh_times(new_var)
+        self.current_var = new_var
+        new_time = self._refresh_times(update_gui=True)
 
         for plot1 in self.plot_list:
             plot1.current_time = new_time
             plot1.set_var(new_var)
+
+    def _on_model_run_change(self, attr1, old_val, new_val):
+        if not self.process_events:
+            return
+
+        print('selected new model run {0}'.format(new_val))
+        self.current_fcast_time = new_val
+        new_time = self._refresh_times(update_gui=True)
+        for p1 in self.plot_list:
+            # different variables have different times available, soneed to
+            # set time when selecting a variable
+            p1.current_time = new_time
+            p1.set_dataset(self.datasets[self.current_fcast_time],
+                           self.current_fcast_time)

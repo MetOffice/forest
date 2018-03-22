@@ -1,5 +1,6 @@
 import functools
 import threading
+import dateutil.parser
 
 import bokeh.models.widgets
 import bokeh.layouts
@@ -7,8 +8,7 @@ import bokeh.plotting
 
 import forest.data
 
-
-MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km', 
+MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km',
                  'km4p4_ra1t': 'SE Asia 4.4km', 
                  'indon2km1p5_ra1t': 'Indonesia 1.5km', 
                  'mal2km1p5_ra1t': 'Malaysia 1.5km', 
@@ -51,6 +51,16 @@ def create_dropdown_opt_list_from_dict(dict1, iterable1):
     return dd_tuple_list
 
 
+def create_model_run_list(model_run_str_list):
+    mr_list = []
+    for d1 in model_run_str_list.keys():
+        dtobj = dateutil.parser.parse(d1)
+        dt_str = ('{dt.year}-{dt.month}-{dt.day} ' \
+                  + '{dt.hour:02d}:{dt.minute:02d}').format(dt=dtobj)
+        mr_list += [(dt_str, d1)]
+    return mr_list
+
+
 class ForestController(object):
 
     '''
@@ -58,10 +68,11 @@ class ForestController(object):
     '''
 
     def __init__(self,
-                 times1,
+                 init_var,
                  init_time_ix,
                  datasets,
-                 plot_names,
+                 init_fcast_time,
+                 plot_type_time_lookups,
                  plots,
                  bokeh_imgs,
                  colorbar_widget,
@@ -73,20 +84,35 @@ class ForestController(object):
         
         '''
 
+        self.data_time_slider = None
+        self.model_var_dd = None
+        self.time_prev_button = None
+        self.time_next_button = None
+        self.model_run_dd = None
+        self.region_dd = None
+        self.left_model_dd = None
+        self.right_model_dd = None
+
         self.plots = plots
         self.bokeh_imgs = bokeh_imgs
         self.region_dict = region_dict
-        self.plot_names = plot_names
+        self.plot_type_time_lookups = plot_type_time_lookups
+        self.plot_names = list(self.plot_type_time_lookups.keys())
         self.datasets = datasets
-        self.available_times = times1
-        self.init_time_index = init_time_ix
+        self.current_fcast_time = init_fcast_time
+        self.current_var = init_var
+        self.current_time_index = init_time_ix
+        self._refresh_times(update_gui=False)
 
-        self.init_time = self.available_times[self.init_time_index]
+        self.init_time = self.available_times[self.current_time_index]
         self.num_times = self.available_times.shape[0]
         self.colorbar_div = colorbar_widget
         self.stats_widgets = stats_widgets
         self.create_widgets()
         self.bokeh_doc = bokeh_doc
+
+        self.process_events = True
+
 
     def create_widgets(self):
 
@@ -115,7 +141,7 @@ class ForestController(object):
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
                                         end=self.num_times,
-                                        value=self.init_time_index,
+                                        value=self.current_time_index,
                                         step=1,
                                         title="Data time",
                                         width=400)
@@ -127,6 +153,15 @@ class ForestController(object):
                                         button_type='warning',
                                         width=100)
         self.time_next_button.on_click(self.on_time_next)
+
+
+        # select model run
+        model_run_list = create_model_run_list(self.datasets)
+        self.model_run_dd = \
+            bokeh.models.widgets.Dropdown(label='Model run',
+                                          menu=model_run_list,
+                                          button_type='warning')
+        self.model_run_dd.on_change('value', self._on_model_run_change)
         
         # Create region selection dropdown menu region
         region_menu_list = \
@@ -139,7 +174,7 @@ class ForestController(object):
 
         # Create left figure model selection dropdown menu widget
         dataset_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
-                                                               self.datasets.keys())
+                                                               self.datasets[self.current_fcast_time].keys())
         self.left_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
                                           label='Left display',
@@ -164,7 +199,10 @@ class ForestController(object):
                               bokeh.models.Spacer(width=20, height=60),
                               self.data_time_slider,
                               bokeh.models.Spacer(width=20, height=60),
-                              self.time_next_button)
+                              self.time_next_button,
+                              bokeh.models.Spacer(width=20, height=60),
+                              self.model_run_dd,
+                              )
         self.minor_config_row = bokeh.layouts.row(self.left_model_dd, 
                                                   self.right_model_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
@@ -184,12 +222,14 @@ class ForestController(object):
         '''Event handler for changing to previous time step
         
         '''
-        
+        if not self.process_events:
+            return
         print('selected previous time step')
         
-        current_time = int(self.data_time_slider.value - 1)
-        if current_time >= 0:
-            self.data_time_slider.value = current_time
+        new_time = int(self.data_time_slider.value - 1)
+        if new_time >= 0:
+            self.current_time_index = new_time
+            self.data_time_slider.value = self.current_time_index
         else:
             print('Cannot select time < 0')
 
@@ -199,11 +239,14 @@ class ForestController(object):
         
         '''
         
+        if not self.process_events:
+            return
         print('selected next time step')
-        
-        current_time = int(self.data_time_slider.value + 1)
-        if current_time < self.num_times:
-            self.data_time_slider.value = current_time
+
+        new_time = int(self.data_time_slider.value + 1)
+        if new_time < self.num_times:
+            self.current_time_index = new_time
+            self.data_time_slider.value = self.current_time_index
         else:
             print('Cannot select time > num_times')      
         
@@ -213,23 +256,34 @@ class ForestController(object):
 
         '''
 
+        if not self.process_events:
+            return
         print('data time handler')
-        
+        self.current_time_index = new_val
+
         for p1 in self.plots:
-            new_time1 = self.available_times[new_val]
+            new_time1 = self.available_times[self.current_time_index]
+            # self.data_time_slider.label = 'Data time {0}'.format(new_time1)
             p1.set_data_time(new_time1)
 
 
-    def _refresh_times(self, new_var):
-        self.available_times = forest.data.get_available_times(self.datasets,
-                                                          new_var)
+    def _refresh_times(self, update_gui=True):
+        self.available_times = \
+            forest.data.get_available_times(
+                self.datasets[self.current_fcast_time],
+                self.plot_type_time_lookups[self.current_var])
         try:
-            new_time = self.available_times[self.data_time_slider.value]
+            new_time = self.available_times[self.current_time_index]
         except IndexError:
-            new_time = self.available_times[0]
-            self.data_time_slider.value = 0
+            self.process_events = False
+            self.current_time_index = 0
+            new_time = self.available_times[self.current_time_index]
+            if update_gui and self.data_time_slider:
+                self.data_time_slider.value = self.current_time_index
+            self.process_events = True
 
-        self.data_time_slider.end = self.available_times.shape[0]
+        if update_gui and self.data_time_slider:
+            self.data_time_slider.end = self.available_times.shape[0]
         return new_time
 
 
@@ -238,9 +292,12 @@ class ForestController(object):
         '''Event handler for a change in the selected plot type.
 
         '''
+        if not self.process_events:
+            return
 
         print('var change handler')
-        new_time = self._refresh_times(new_val)
+        self.current_var = new_val
+        new_time = self._refresh_times()
         for p1 in self.plots:
             # different variables have different times available, soneed to
             # set time when selecting a variable
@@ -252,6 +309,8 @@ class ForestController(object):
         '''Event handler for a change in the selected plot region.
 
         '''
+        if not self.process_events:
+            return
 
         print('region change handler')
 
@@ -264,6 +323,21 @@ class ForestController(object):
 
         '''
 
+        if not self.process_events:
+            return
         print('config change handler')
         
         self.plots[plot_index].set_config(new_val)
+
+    def _on_model_run_change(self, attr1, old_val, new_val):
+        if not self.process_events:
+            return
+        print('selected new model run {0}'.format(new_val))
+        self.current_fcast_time = new_val
+        new_time = self._refresh_times()
+        for p1 in self.plots:
+            # different variables have different times available, soneed to
+            # set time when selecting a variable
+            p1.current_time = new_time
+            p1.set_dataset(self.datasets[self.current_fcast_time],
+                           self.current_fcast_time)

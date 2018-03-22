@@ -11,7 +11,6 @@ import iris.coord_categorisation
 import forest.util
 import forest.data
 
-
 def conv_func(coord, value):
     
     '''Create a new time coordinate in an iris cube, with values
@@ -71,8 +70,8 @@ class GpmDataset(object):
         self.times = dict([(v1,None) for v1 in forest.data.VAR_NAMES])
         self.times.update(dict([(v1,None) for v1 in forest.data.PRECIP_ACCUM_VARS]))
 
-        self.retrieve_data()
-        self.load_data()
+        # self.retrieve_data()
+        # self.load_data()
 
 
     def __str__(self):
@@ -84,6 +83,10 @@ class GpmDataset(object):
         return 'GPM  dataset'
 
     def get_times(self, var_name):
+        if self.times[var_name] is None:
+            self.retrieve_data()
+            self.load_data()
+
         return self.times[var_name]
 
     def get_data(self, var_name, convert_units=False, selected_time=None):
@@ -91,6 +94,10 @@ class GpmDataset(object):
         '''
         
         '''
+        if self.data[var_name] is None:
+            self.retrieve_data()
+            self.load_data()
+
         if selected_time is not None:
             return self._extract_time(var_name, selected_time)
         return self.data[var_name]
@@ -151,7 +158,6 @@ class GpmDataset(object):
                                          units_func=lambda units: 1)
 
         temp_cube_list = iris.cube.CubeList()
-        
         for time1 in self.raw_data.keys():
             
             print('aggregating time {0}'.format(time1))
@@ -169,9 +175,9 @@ class GpmDataset(object):
         self.data['precipitation'] = temp_cube_list.concatenate_cube()
         self.data['accum_precip_3hr'] = self.data['precipitation']
         # set times to be the start of the accumulation period
-        precip_3hr_times = numpy.floor(self.data['accum_precip_3hr'].coord('time').points /3) * 3
-        self.data['accum_precip_3hr'].coord('time').points = precip_3hr_times
-        
+        self.data['accum_precip_3hr'].coord('time').points = \
+            numpy.round(self.data['accum_precip_3hr'].coord('time').points, 2)
+
         # Create 6, 12 and 24 accumulations
         for accum_step in [6, 12, 24]:
             var_name = 'accum_precip_{}hr'.format(accum_step)
@@ -197,7 +203,8 @@ class GpmDataset(object):
                                                             units=cf_units.Unit('hours since 1970-01-01',
                                                                                  calendar='gregorian'))
             precip_acc1 = temp_cube.aggregated_by([agg_var_name], iris.analysis.SUM)
-            precip_acc1.coord('time').points = precip_acc1.coord(agg_var_name).points
+            precip_acc1.coord('time').points = \
+                numpy.round(precip_acc1.coord('time').points, 2)
             self.data[var_name] = precip_acc1
 
 

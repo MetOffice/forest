@@ -10,6 +10,9 @@ import os
 import datetime
 import math
 import numpy
+import dateutil.parser
+import copy
+
 import matplotlib
 matplotlib.use('agg')
 import iris
@@ -24,18 +27,15 @@ import model_gpm_control
 import model_gpm_data
 
 
+
 def main(bokeh_id):
 
     '''Main app function
      
     '''
-    
-    # Set datetime objects and string for controlling data download
-    now_time_obj = datetime.datetime.utcnow()
-    five_days_ago_obj = now_time_obj - datetime.timedelta(days = 3)
-    fcast_hour = 12*int(now_time_obj.hour/12)
-    fcast_time_obj = five_days_ago_obj.replace(hour=fcast_hour, minute=0)
-    fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
+
+
+
     
     # Extract data from S3. The data can either be downloaded in full before 
     #  loading, or downloaded on demand using the /s3 filemount. This is 
@@ -54,7 +54,7 @@ def main(bokeh_id):
     #  cube for each of the available variables as well as asociated metadata such
     #  as model name, file paths etc.
 
-    datasets = {
+    datasets_template = {
         forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model',
                                     'config_id': forest.data.GA6_CONF_ID},
         forest.data.KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T ',
@@ -69,23 +69,23 @@ def main(bokeh_id):
         GPM_IMERG_LATE_KEY: {'data_type_name': 'GPM IMERG Late'},
     }
 
-    model_datasets = {forest.data.N1280_GA6_KEY: datasets[forest.data.N1280_GA6_KEY],
-                      forest.data.KM4P4_RA1T_KEY: datasets[forest.data.KM4P4_RA1T_KEY],
-                      forest.data.KM1P5_INDO_RA1T_KEY: datasets[forest.data.KM1P5_INDO_RA1T_KEY],
-                      forest.data.KM1P5_MAL_RA1T_KEY: datasets[forest.data.KM1P5_MAL_RA1T_KEY],
-                      forest.data.KM1P5_PHI_RA1T_KEY: datasets[forest.data.KM1P5_PHI_RA1T_KEY],
+    model_datasets_template = {forest.data.N1280_GA6_KEY: datasets_template[forest.data.N1280_GA6_KEY],
+                      forest.data.KM4P4_RA1T_KEY: datasets_template[forest.data.KM4P4_RA1T_KEY],
+                      forest.data.KM1P5_INDO_RA1T_KEY: datasets_template[forest.data.KM1P5_INDO_RA1T_KEY],
+                      forest.data.KM1P5_MAL_RA1T_KEY: datasets_template[forest.data.KM1P5_MAL_RA1T_KEY],
+                      forest.data.KM1P5_PHI_RA1T_KEY: datasets_template[forest.data.KM1P5_PHI_RA1T_KEY],
                       }
 
-    gpm_datasets = {GPM_IMERG_EARLY_KEY: datasets[GPM_IMERG_EARLY_KEY],
-                    GPM_IMERG_LATE_KEY: datasets[GPM_IMERG_LATE_KEY],
+    gpm_datasets_template = {GPM_IMERG_EARLY_KEY: datasets_template[GPM_IMERG_EARLY_KEY],
+                    GPM_IMERG_LATE_KEY: datasets_template[GPM_IMERG_LATE_KEY],
                     }
     
     GPM_TYPE_KEY = 'gpm_type'
-    gpm_datasets[GPM_IMERG_EARLY_KEY][GPM_TYPE_KEY] = 'early'
-    gpm_datasets[GPM_IMERG_LATE_KEY][GPM_TYPE_KEY] = 'late'
+    datasets_template[GPM_IMERG_EARLY_KEY][GPM_TYPE_KEY] = 'early'
+    datasets_template[GPM_IMERG_LATE_KEY][GPM_TYPE_KEY] = 'late'
 
-    for ds_name in model_datasets.keys():
-        model_datasets[ds_name]['var_lookup'] = forest.data.get_var_lookup(model_datasets[ds_name]['config_id'])
+    for ds_name in model_datasets_template.keys():
+        model_datasets_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(model_datasets_template[ds_name]['config_id'])
 
     use_s3_mount = True
     do_download = False
@@ -100,42 +100,58 @@ def main(bokeh_id):
     s3_base_model = s3_base_str_model.format(server=server_address, bucket=bucket_name)
     s3_local_base_model = os.path.join(s3_local_mnt,  'model_data')
 
-    for ds_name in model_datasets.keys():
-        fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name,
-                                              fct=fcast_time)
-        datasets[ds_name]['data'] = forest.data.ForestDataset(ds_name,
-                                                              fname1,
-                                                              s3_base_model,
-                                                              s3_local_base_model,
-                                                              use_s3_mount,
-                                                              base_path_local_model,
-                                                              do_download,
-                                                              datasets[ds_name]['var_lookup']
-                                                              )
-        for accum_step in [3, 6, 12, 24]:
-            datasets[ds_name]['data'].add_accum_precip_keys(accum_step)
-        
+    # when comparing gpm and model data, we want to compare model runs for which
+    # gpm observations are available. Currently only model runs with all corresponding
+    # obs data are avaiable for display. Since model runs are 5 days (120 hours) long
+    # models run from 8 to 5 days ago are included.
+    days_since_gpm_model_period_start=8
+    days_in_gpm_model_dataset=3
+
+    init_fcast_time, datasets = \
+        forest.data.get_available_datasets(s3_base_model,
+                                           s3_local_base_model,
+                                           use_s3_mount,
+                                           base_path_local_model,
+                                           do_download,
+                                           model_datasets_template,
+                                           days_since_gpm_model_period_start,
+                                           days_in_gpm_model_dataset,
+                                           forest.data.MODEL_RUN_PERIOD,
+                                           )
+
+
+
+
     s3_base_str_gpm = '{server}/{bucket}/gpm_imerg/'
     s3_base_gpm = s3_base_str_gpm.format(server=server_address, bucket=bucket_name)
     s3_local_base_gpm = os.path.join(s3_local_mnt, 'gpm_imerg')
 
-    for ds_name in gpm_datasets.keys():
-        imerg_type = gpm_datasets[ds_name][GPM_TYPE_KEY]
-        fname_fmt = 'gpm_imerg_NRT{im}_V05B_{datetime}_sea_only.nc'
-        times_list = [(fcast_time_obj + datetime.timedelta(days=dd)).strftime('%Y%m%d') for dd in range(4)]
-        fnames_list = [fname_fmt.format(im=imerg_type, datetime=dt_str) for dt_str in times_list]
-
-        datasets[ds_name]['data'] = model_gpm_data.GpmDataset(ds_name,
-                                                              fnames_list,
-                                                              s3_base_gpm,
-                                                              s3_local_base_gpm,
-                                                              use_s3_mount,
-                                                              base_path_local_gpm,
-                                                              do_download,
-                                                              times_list,
-                                                              fcast_hour,
-                                                              )
-
+    # Set datetime objects and string for controlling data download
+    # now_time_obj = datetime.datetime.utcnow()
+    # data_period_start = now_time_obj - datetime.timedelta(days = forest.data.NUM_DATA_DAYS)
+    # fcast_hour = 12*int(now_time_obj.hour/12)
+    # fcast_time_obj = data_period_start.replace(hour=fcast_hour, minute=0)
+    # fcast_time =  fcast_time_obj.strftime('%Y%m%dT%H%MZ')
+    for fcast_time1 in datasets.keys():
+        datasets[fcast_time1].update(copy.deepcopy(gpm_datasets_template))
+        for ds_name in gpm_datasets_template.keys():
+            fcast_time_obj = dateutil.parser.parse(fcast_time1)
+            fcast_hour = fcast_time_obj.hour
+            imerg_type = gpm_datasets_template[ds_name][GPM_TYPE_KEY]
+            fname_fmt = 'gpm_imerg_NRT{im}_V05B_{datetime}_sea_only.nc'
+            times_list = [(fcast_time_obj + datetime.timedelta(days=dd)).strftime('%Y%m%d') for dd in range(forest.data.MODEL_RUN_DAYS)]
+            fnames_list = [fname_fmt.format(im=imerg_type, datetime=dt_str) for dt_str in times_list]
+            datasets[fcast_time1][ds_name]['data'] = \
+                model_gpm_data.GpmDataset(ds_name,
+                                          fnames_list,
+                                          s3_base_gpm,
+                                          s3_local_base_gpm,
+                                          use_s3_mount,
+                                          base_path_local_gpm,
+                                          do_download,
+                                          times_list,
+                                          fcast_hour,
+                                          )
 
     ## Setup plots
     # Set up plot colours and geoviews datasets before creating and showing plots
@@ -152,9 +168,8 @@ def main(bokeh_id):
     init_model_right = GPM_IMERG_EARLY_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
-
-    available_times = forest.data.get_available_times(datasets, init_var)
-    # datasets['n1280_ga6']['data'].get_data('accum_precip_6hr',422352.0)
+    available_times = forest.data.get_available_times(datasets[init_fcast_time],
+                                                      init_var)
 
     init_time_ix = 4
     init_time = available_times[init_time_ix]
@@ -162,7 +177,8 @@ def main(bokeh_id):
 
     ## Display plots
 
-    plot_obj_left = forest.plot.ForestPlot(datasets,
+    plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
+                                           init_fcast_time,
                                            plot_opts,
                                            'plot_left' + bokeh_id,
                                            init_var,
@@ -170,9 +186,10 @@ def main(bokeh_id):
                                            init_region,
                                            region_dict,
                                            forest.data.UNIT_DICT,
+                                           forest.data.UNIT_DICT_DISPLAY,
                                            app_path,
                                            init_time,
-                                            )
+                                           )
 
     # Create a plot object for the left model display
 
@@ -181,7 +198,8 @@ def main(bokeh_id):
     stats_left = plot_obj_left.create_stats_widget()
 
     # Create a plot object for the right model display
-    plot_obj_right = forest.plot.ForestPlot(datasets,
+    plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
+                                            init_fcast_time,
                                             plot_opts,
                                             'plot_right' + bokeh_id,
                                             init_var,
@@ -189,9 +207,10 @@ def main(bokeh_id):
                                             init_region,
                                             region_dict,
                                             forest.data.UNIT_DICT,
+                                            forest.data.UNIT_DICT_DISPLAY,
                                             app_path,
-                                           init_time,
-                                           )
+                                            init_time,
+                                            )
 
     plot_obj_right.current_time = init_time
     bokeh_img_right = plot_obj_right.create_plot()
@@ -201,9 +220,10 @@ def main(bokeh_id):
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
-    control1 = model_gpm_control.ModelGpmControl(datasets,
+    control1 = model_gpm_control.ModelGpmControl(init_var,
+                                                 datasets,
                                                  init_time_ix,
-                                                 available_times,
+                                                 init_fcast_time,
                                                  [plot_obj_left, plot_obj_right],
                                                  [bokeh_img_left, bokeh_img_right],
                                                  stats_list)
