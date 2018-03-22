@@ -114,7 +114,7 @@ class ModelGpmControl(object):
         self.model_run_dd.on_change('value', self._on_model_run_change)
 
         # Create model selection dropdown menu widget
-        model_list = [ds_name for ds_name in self.datasets.keys()
+        model_list = [ds_name for ds_name in self.datasets[self.current_fcast_time].keys()
                       if 'imerg' not in ds_name]
         model_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
                                                              model_list)
