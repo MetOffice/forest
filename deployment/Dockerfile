@@ -23,4 +23,4 @@ WORKDIR /root
 
 COPY run.sh /root
 CMD ["/root/run.sh"]
-EXPOSE 8080
+EXPOSE 80

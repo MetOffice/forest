@@ -36,8 +36,8 @@ resource "aws_security_group_rule" "server" {
   description = "Allow web traffic to server"
 
   type        = "ingress"
-  from_port   = 8080
-  to_port     = 8080
+  from_port   = 80
+  to_port     = 80
   protocol    = "tcp"
   cidr_blocks = ["0.0.0.0/0"]
   security_group_id = "${aws_security_group.server.id}"
