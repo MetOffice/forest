@@ -1,3 +1,4 @@
+import os
 import functools
 import threading
 import dateutil.parser
@@ -7,6 +8,11 @@ import bokeh.layouts
 import bokeh.plotting
 
 import forest.data
+import forest.feedback
+
+
+CONFIG_DIR = os.path.dirname(__file__)
+FEEDBACK_CONF_FILENAME = 'feedback_fields.conf'
 
 MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km',
                  'km4p4_ra1t': 'SE Asia 4.4km', 
@@ -194,6 +200,11 @@ class ForestController(object):
         # Layout widgets
         self.major_config_row = bokeh.layouts.row(self.model_var_dd, 
                                                   self.region_dd)
+
+        config_path = os.path.join(CONFIG_DIR, FEEDBACK_CONF_FILENAME)
+        self.feedback_gui = forest.feedback.UserFeedback(config_path)
+        self.feedback_layout = self.feedback_gui.get_feedback_wigets()
+
         self.time_row = \
             bokeh.layouts.row(self.time_prev_button,
                               bokeh.models.Spacer(width=20, height=60),
@@ -215,6 +226,7 @@ class ForestController(object):
                                                 self.minor_config_row,
                                                 self.plots_row,
                                                 self.info_row,
+                                                self.feedback_layout,
                                                 )
 
     def on_time_prev(self):
