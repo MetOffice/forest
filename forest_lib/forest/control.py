@@ -203,7 +203,7 @@ class ForestController(object):
 
         config_path = os.path.join(CONFIG_DIR, FEEDBACK_CONF_FILENAME)
         self.feedback_gui = forest.feedback.UserFeedback(config_path)
-        self.feedback_layout = self.feedback_gui.get_feedback_wigets()
+        self.feedback_layout = self.feedback_gui.get_feedback_widgets()
 
         self.time_row = \
             bokeh.layouts.row(self.time_prev_button,

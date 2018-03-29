@@ -20,7 +20,6 @@ import datetime
 import configparser
 import functools
 import numpy
-import math
 import copy
 import dateutil.parser
 
@@ -29,6 +28,7 @@ import cf_units
 
 import forest.util
 
+import pdb
 
 # The number of days into the past to look for data. The current
 # value specifies looking for data up to 1 week old
@@ -483,7 +483,7 @@ class ForestDataset(object):
         coord_constraint_dict = {}
 
         if time_ix != ForestDataset.TIME_INDEX_ALL:
-            time_obj = datetime.datetime.fromtimestamp(time_ix * 3600)
+            time_obj = datetime.datetime.utcfromtimestamp(time_ix * 3600)
             time_desc = str(time_obj)
             if int(iris.__version__.split('.')[0]) == 1:
                 def time_comp(time_index, eps1, cell1):
@@ -495,6 +495,7 @@ class ForestDataset(object):
 
             elif int(iris.__version__.split('.')[0]) == 2:
                 def time_comp(selected_time, eps1, cell1):
+                    # pdb.set_trace()
                     return abs(cell1.point - selected_time).total_seconds() < eps1
 
                 if time_ix != ForestDataset.TIME_INDEX_ALL:
@@ -511,7 +512,7 @@ class ForestDataset(object):
         print('path to load {0}'.format(self.path_to_load))
         print('time to load {0}'.format(time_desc))
         print('stash to load section {0} item {1}'.format(field_dict['stash_section'], field_dict['stash_item'] ) )
-
+        # pdb.set_trace()
         dc1 = iris.load_cube(self.path_to_load, ic1)
         self.data[var_name][time_ix] = dc1
 
@@ -575,9 +576,9 @@ class ForestDataset(object):
             field_dict['stash_item']
         coord_constraint_dict = {}
         period_start_ix = time_ix - (window_size/2.0) - TIME_EPSILON_HRS
-        period_start = datetime.datetime.fromtimestamp(period_start_ix * 3600)
+        period_start = datetime.datetime.utcfromtimestamp(period_start_ix * 3600)
         period_end_ix = time_ix + (window_size/2.0) + TIME_EPSILON_HRS
-        period_end = datetime.datetime.fromtimestamp(period_end_ix * 3600)
+        period_end = datetime.datetime.utcfromtimestamp(period_end_ix * 3600)
 
         def time_window_extract(start1, end1, cell1):
             return cell1.bound[0] >= start1 and cell1.bound[1] <= end1
