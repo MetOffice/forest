@@ -23,4 +23,4 @@ WORKDIR /root
 
 COPY run.sh /root
 CMD ["/root/run.sh"]
-EXPOSE 80
+EXPOSE 443

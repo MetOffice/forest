@@ -22,4 +22,4 @@ cd /opt/model_evaluation_tool
 cd /opt/model_evaluation_tool/deployment
 docker build  -t forest .
 
-docker run  --restart always -p 80:80 --cap-add SYS_ADMIN --device /dev/fuse  -v /opt/model_evaluation_tool/bokeh_apps:/opt/bokeh_apps -v /opt/model_evaluation_tool/forest_lib:/opt/forest_lib  -v /opt/s3:/opt/s3 -e  PUBLIC_IP=forest.informaticslab.co.uk forest
+docker run  --restart always -p 443:443 --cap-add SYS_ADMIN --device /dev/fuse  -v /opt/model_evaluation_tool/bokeh_apps:/opt/bokeh_apps -v /opt/model_evaluation_tool/forest_lib:/opt/forest_lib  -v /opt/s3:/opt/s3 -e  PUBLIC_IP=forest.informaticslab.co.uk forest
