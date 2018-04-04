@@ -10,8 +10,6 @@ import bokeh.plotting
 import forest.data
 import forest.feedback
 
-import pdb
-
 CONFIG_DIR = os.path.dirname(__file__)
 FEEDBACK_CONF_FILENAME = 'feedback_fields.conf'
 

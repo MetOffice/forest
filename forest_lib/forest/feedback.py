@@ -5,7 +5,6 @@ import csv
 
 import bokeh.models.widgets
 
-import pdb
 
 KEY_SECTION = 'section'
 KEY_PERFORMANCE_MATRIX = 'performance_matrix'
@@ -119,7 +118,6 @@ class UserFeedback(object):
 
     def _section_getter(self, section_dict):
         answer_list = []
-        pdb.set_trace()
         for child1 in section_dict['children']:
             child_dict1 = section_dict['children'][child1]
             answer1 = self.getters[child_dict1['type']](child_dict1)
@@ -245,27 +243,23 @@ class UserFeedback(object):
 
     def compile_feedback(self):
         self.answer_list = []
-        pdb.set_trace()
         for question_tag in self.feedback_dict:
             question_type = self.feedback_dict[question_tag]['type']
             self.answer_list += \
                 self.getters[question_type](self.feedback_dict[question_tag])
 
-        pdb.set_trace()
 
         time_str = '{dt.year:04d}{dt.month:02d}{dt.day:02d}_{dt.hour:02d}{dt.minute:02d}'.format(dt=datetime.datetime.now())
         feedback_path = os.path.join(self.feedback_dir,
                                      'survey_{id}_{dt}.csv'.format(
                                          id=self.bokeh_id,
                                          dt=time_str))
-        pdb.set_trace()
         with open(feedback_path,'w') as feedback_file1:
             writer1 = csv.DictWriter(feedback_file1, FEEDBACK_HEADER_ORDER)
             writer1.writeheader()
             for answer1 in self.answer_list:
                 writer1.writerow(answer1)
 
-        pdb.set_trace()
 
 
     def _on_submit(self):

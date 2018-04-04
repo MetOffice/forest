@@ -28,7 +28,6 @@ import cf_units
 
 import forest.util
 
-import pdb
 
 # The number of days into the past to look for data. The current
 # value specifies looking for data up to 1 week old
@@ -495,7 +494,7 @@ class ForestDataset(object):
 
             elif int(iris.__version__.split('.')[0]) == 2:
                 def time_comp(selected_time, eps1, cell1):
-                    # pdb.set_trace()
+
                     return abs(cell1.point - selected_time).total_seconds() < eps1
 
                 if time_ix != ForestDataset.TIME_INDEX_ALL:
@@ -512,7 +511,7 @@ class ForestDataset(object):
         print('path to load {0}'.format(self.path_to_load))
         print('time to load {0}'.format(time_desc))
         print('stash to load section {0} item {1}'.format(field_dict['stash_section'], field_dict['stash_item'] ) )
-        # pdb.set_trace()
+
         dc1 = iris.load_cube(self.path_to_load, ic1)
         self.data[var_name][time_ix] = dc1
 
