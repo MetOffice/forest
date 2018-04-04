@@ -1,5 +1,7 @@
 import os
 import configparser
+import datetime
+import csv
 
 import bokeh.models.widgets
 
@@ -11,6 +13,15 @@ KEY_YES_NO = 'yes_no'
 KEY_SELECTION = 'selection'
 KEY_TEXT = 'text'
 
+LABEL_QUESTION = 'question'
+LABEL_CATEGORY = 'category'
+LABEL_TAG = 'tag'
+LABEL_VALUE = 'value'
+
+FEEDBACK_HEADER_ORDER = [LABEL_TAG,
+                         LABEL_QUESTION,
+                         LABEL_CATEGORY,
+                         LABEL_VALUE]
 
 class UserFeedback(object):
     """
@@ -20,9 +31,16 @@ class UserFeedback(object):
     can easily be modified or extended.
     """
 
-    def __init__(self, config_path):
+    def __init__(self,
+                 config_path,
+                 feedback_dir,
+                 bokeh_id,
+                 ):
         self.config_path = config_path
         self.config_dir = os.path.split(self.config_path)[0]
+        self.feedback_dir = feedback_dir
+        self.bokeh_id = bokeh_id
+
         self.loaders = None
         self._setup_loaders()
 
@@ -82,7 +100,7 @@ class UserFeedback(object):
             widgets_list += [w1]
             config_dict[section1] = section_dict
         config_layout = bokeh.layouts.column(*widgets_list)
-        config_dict['widget'] = config_layout
+
         return config_layout, config_dict
 
     def _section_loader(self, section_dict, ):
@@ -101,13 +119,14 @@ class UserFeedback(object):
 
     def _section_getter(self, section_dict):
         answer_list = []
+        pdb.set_trace()
         for child1 in section_dict['children']:
             child_dict1 = section_dict['children'][child1]
-            answer1 = self.getters[child_dict1]['type'](child_dict1)
-            answer_list += [answer1]
+            answer1 = self.getters[child_dict1['type']](child_dict1)
+            answer_list += answer1
 
-        return '\n'.join(answer_list)
-    
+        return answer_list
+
     def _yes_no_loader(self, section_dict):
         min1 = int(section_dict['min'])
         max1 = int(section_dict['max'])
@@ -133,12 +152,13 @@ class UserFeedback(object):
         return yes_no_layout, section_dict
 
     def _yes_no_getter(self, section_dict):
-        answer_txt = ','.join(section_dict['tag'],
-                              section_dict['question'],
-                              '',
-                              str(section_dict['sub_widget'].active+1))
+        answer1 = {'tag': section_dict['tag'],
+                      'question': section_dict['question'],
+                      'category': '',
+                      'value': str(section_dict['sub_widget'].active + 1)
+                      }
 
-        return answer_txt
+        return [answer1,]
 
 
     def _perf_matrix_loader(self, section_dict):
@@ -182,13 +202,13 @@ class UserFeedback(object):
         answer_list = []
 
         for buttons1,cat1 in zip(section_dict['buttons'],section_dict['category_list']):
-            answer1 = ','.join(section_dict['tag'],
-                               section_dict['question'],
-                               cat1,
-                               buttons1.active + 1,
-                               )
+            answer1 = {'tag': section_dict['tag'],
+                       'question': section_dict['question'],
+                       'category': cat1,
+                       'value': str(buttons1.active + 1),
+                       }
             answer_list += [answer1]
-        return '\n'.join(answer_list)
+        return answer_list
 
     def _selection_loader(self, section_dict):
         option_list = [(s1.strip(),s1.strip()) for s1 in section_dict['values'].split(',')]
@@ -198,12 +218,12 @@ class UserFeedback(object):
         return selection_dd, section_dict
 
     def _selection_getter(self, section_dict):
-        answer_txt = ','.join(section_dict['tag'],
-                              section_dict['question'],
-                              '',
-                              section_dict['widget'].value)
-
-        return answer_txt
+        answer1 = {'tag': section_dict['tag'],
+                   'question': section_dict['question'],
+                   'category': '',
+                   'value': section_dict['widget'].value,
+                   }
+        return [answer1,]
 
     def _text_input_loader(self, section_dict):
         text_widget1 = bokeh.models.widgets.TextInput(value='',
@@ -212,26 +232,42 @@ class UserFeedback(object):
         return text_widget1, section_dict
 
     def _text_input_getter(self, section_dict):
-        answer_txt = ','.join(section_dict['tag'],
-                              section_dict['question'],
-                              '',
-                              section_dict['widget'].value)
-        return answer_txt
+        answer1 = {'tag': section_dict['tag'],
+                   'question': section_dict['question'],
+                   'category': '',
+                   'value': section_dict['widget'].value,
+                   }
+        return [answer1,]
 
     def get_feedback_widgets(self):
         return self.feedback_layout
 
 
     def compile_feedback(self):
-        answer_list = []
+        self.answer_list = []
+        pdb.set_trace()
         for question_tag in self.feedback_dict:
             question_type = self.feedback_dict[question_tag]['type']
-            answer_list += \
-                [self.getters[question_type](self.feedback_dict[question_tag])]
+            self.answer_list += \
+                self.getters[question_type](self.feedback_dict[question_tag])
 
-        self.feedback_str = '\n'.join(answer_list)
+        pdb.set_trace()
 
-        #TODO: write to file
+        time_str = '{dt.year:04d}{dt.month:02d}{dt.day:02d}_{dt.hour:02d}{dt.minute:02d}'.format(dt=datetime.datetime.now())
+        feedback_path = os.path.join(self.feedback_dir,
+                                     'survey_{id}_{dt}.csv'.format(
+                                         id=self.bokeh_id,
+                                         dt=time_str))
+        pdb.set_trace()
+        with open(feedback_path,'w') as feedback_file1:
+            writer1 = csv.DictWriter(feedback_file1, FEEDBACK_HEADER_ORDER)
+            writer1.writeheader()
+            for answer1 in self.answer_list:
+                writer1.writerow(answer1)
+
+        pdb.set_trace()
+
 
     def _on_submit(self):
         self.compile_feedback()
+
