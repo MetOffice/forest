@@ -119,6 +119,7 @@ class ForestController(object):
         self.bokeh_doc = bokeh_doc
         self.bokeh_id = bokeh_id
         self.feedback_dir = feedback_dir
+        self.feedback_visible = False
 
         self.create_widgets()
         self.process_events = True
@@ -213,6 +214,12 @@ class ForestController(object):
                                                          )
         self.feedback_layout = self.feedback_gui.get_feedback_widgets()
 
+        self.uf_vis_toggle = \
+            bokeh.models.widgets.Toggle(label='Show feedback form',
+                                        active=self.feedback_visible)
+        self.uf_vis_toggle.on_click(self._on_uf_vis_toggle)
+        self.uf_vis_layout = bokeh.layouts.column()
+
         self.time_row = \
             bokeh.layouts.row(self.time_prev_button,
                               bokeh.models.Spacer(width=20, height=60),
@@ -234,7 +241,8 @@ class ForestController(object):
                                                 self.minor_config_row,
                                                 self.plots_row,
                                                 self.info_row,
-                                                self.feedback_layout,
+                                                self.uf_vis_toggle,
+                                                self.uf_vis_layout,
                                                 )
 
     def on_time_prev(self):
@@ -361,3 +369,14 @@ class ForestController(object):
             p1.current_time = new_time
             p1.set_dataset(self.datasets[self.current_fcast_time],
                            self.current_fcast_time)
+
+    def _on_uf_vis_toggle(self, new1):
+        if not self.process_events:
+            return
+        print('toggled feedback form visibility')
+        self.feedback_visible = new1
+        if self.feedback_visible:
+            self.uf_vis_layout.children = [self.feedback_layout]
+        else:
+            self.uf_vis_layout.children = []
+

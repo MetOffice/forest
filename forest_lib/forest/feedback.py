@@ -11,11 +11,13 @@ KEY_PERFORMANCE_MATRIX = 'performance_matrix'
 KEY_YES_NO = 'yes_no'
 KEY_SELECTION = 'selection'
 KEY_TEXT = 'text'
+KEY_MULTISELECT = 'multiselect'
 
 LABEL_QUESTION = 'question'
 LABEL_CATEGORY = 'category'
 LABEL_TAG = 'tag'
 LABEL_VALUE = 'value'
+LABEL_TITLE = 'title'
 
 FEEDBACK_HEADER_ORDER = [LABEL_TAG,
                          LABEL_QUESTION,
@@ -56,6 +58,7 @@ class UserFeedback(object):
         self.loaders[KEY_PERFORMANCE_MATRIX] = self._perf_matrix_loader
         self.loaders[KEY_SELECTION] = self._selection_loader
         self.loaders[KEY_TEXT] = self._text_input_loader
+        self.loaders[KEY_MULTISELECT] = self._multiselect_loader
 
         self.getters = {}
         self.getters[KEY_SECTION] = self._section_getter
@@ -63,6 +66,7 @@ class UserFeedback(object):
         self.getters[KEY_PERFORMANCE_MATRIX] = self._perf_matrix_getter
         self.getters[KEY_SELECTION] = self._selection_getter
         self.getters[KEY_TEXT] = self._text_input_getter
+        self.getters[KEY_MULTISELECT] = self._multiselect_getter
 
 
     def _create_widgets(self):
@@ -94,7 +98,7 @@ class UserFeedback(object):
         for section1 in parser1.sections():
             print('processing section {0}'.format(section1))
             section_dict = dict(parser1.items(section1))
-            section_dict['tag'] = section1
+            section_dict[LABEL_TAG] = section1
             w1, d1 = self.loaders[section_dict['type']](section_dict)
             widgets_list += [w1]
             config_dict[section1] = section_dict
@@ -103,9 +107,9 @@ class UserFeedback(object):
         return config_layout, config_dict
 
     def _section_loader(self, section_dict, ):
-        print('processing section {0}'.format(section_dict['title']))
+        print('processing section {0}'.format(section_dict[LABEL_TITLE]))
 
-        header_text = section_dict['title'] + '\n' + section_dict['description']
+        header_text = section_dict[LABEL_TITLE] + '\n' + section_dict['description']
         section_path = os.path.join(self.config_dir,
                                     section_dict['file'])
         children_layout, children_dict = self._process_config(section_path,
@@ -130,7 +134,7 @@ class UserFeedback(object):
         max1 = int(section_dict['max'])
         display_list1 = ['{0:d}'.format(i1) for i1 in range(min1,max1+1)]
         question_txt = \
-            bokeh.models.widgets.Paragraph(text=section_dict['question'],
+            bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
                                            height=30,
                                            width=600,
                                            )
@@ -150,10 +154,10 @@ class UserFeedback(object):
         return yes_no_layout, section_dict
 
     def _yes_no_getter(self, section_dict):
-        answer1 = {'tag': section_dict['tag'],
-                      'question': section_dict['question'],
-                      'category': '',
-                      'value': str(section_dict['sub_widget'].active + 1)
+        answer1 = {LABEL_TAG: section_dict[LABEL_TAG],
+                      LABEL_QUESTION: section_dict[LABEL_QUESTION],
+                      LABEL_CATEGORY: '',
+                      LABEL_VALUE: str(section_dict['sub_widget'].active + 1)
                       }
 
         return [answer1,]
@@ -164,7 +168,7 @@ class UserFeedback(object):
         max1 = int(section_dict['max'])
         display_list1 = ['{0:d}'.format(i1) for i1 in range(min1,max1+1)]
         question_txt = \
-            bokeh.models.widgets.Paragraph(text=section_dict['question'],
+            bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
                                            height=30,
                                            width=600,
                                            )
@@ -200,42 +204,81 @@ class UserFeedback(object):
         answer_list = []
 
         for buttons1,cat1 in zip(section_dict['buttons'],section_dict['category_list']):
-            answer1 = {'tag': section_dict['tag'],
-                       'question': section_dict['question'],
-                       'category': cat1,
-                       'value': str(buttons1.active + 1),
+            answer1 = {LABEL_TAG: section_dict[LABEL_TAG],
+                       LABEL_QUESTION: section_dict[LABEL_QUESTION],
+                       LABEL_CATEGORY: cat1,
+                       LABEL_VALUE: str(buttons1.active + 1),
                        }
             answer_list += [answer1]
         return answer_list
 
-    def _selection_loader(self, section_dict):
-        option_list = [(s1.strip(),s1.strip()) for s1 in section_dict['values'].split(',')]
-        selection_dd = bokeh.models.widgets.Dropdown(label=section_dict['question'],
-                                                     menu=option_list)
-        section_dict['widget'] = selection_dd
-        return selection_dd, section_dict
-
-    def _selection_getter(self, section_dict):
-        answer1 = {'tag': section_dict['tag'],
-                   'question': section_dict['question'],
-                   'category': '',
-                   'value': section_dict['widget'].value,
-                   }
-        return [answer1,]
 
     def _text_input_loader(self, section_dict):
         text_widget1 = bokeh.models.widgets.TextInput(value='',
-                                       title=section_dict['question'])
+                                       title=section_dict[LABEL_QUESTION])
         section_dict['widget'] = text_widget1
         return text_widget1, section_dict
 
     def _text_input_getter(self, section_dict):
-        answer1 = {'tag': section_dict['tag'],
-                   'question': section_dict['question'],
-                   'category': '',
-                   'value': section_dict['widget'].value,
+        answer1 = {LABEL_TAG: section_dict[LABEL_TAG],
+                   LABEL_QUESTION: section_dict[LABEL_QUESTION],
+                   LABEL_CATEGORY: '',
+                   LABEL_VALUE: section_dict['widget'].value,
                    }
         return [answer1,]
+
+
+    def _selection_loader(self, section_dict):
+        try:
+            multiselect = section_dict['multi']
+        except KeyError:
+            multiselect = False
+
+        question_txt = bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
+                                                   height=30,
+                                                   width=400,
+                                                   )
+
+        title_txt = bokeh.models.widgets.Paragraph(text=section_dict[LABEL_TITLE],
+                                                   height=30,
+                                                   width=200,
+                                                   )
+        option_list = [(s1.strip(),s1.strip()) for s1 in section_dict['values'].split(',')]
+        if multiselect:
+            selection_widget = \
+                bokeh.models.widgets.MultiSelect(options=option_list)
+        else:
+            selection_widget = \
+                bokeh.models.widgets.Select(options=option_list)
+
+        section_dict['selection_widget'] = selection_widget
+        selection_layout = bokeh.layouts.Column(question_txt,
+                                         bokeh.layouts.Row(title_txt,
+                                                           selection_widget))
+        section_dict['widget'] = selection_layout
+        return selection_layout, section_dict
+
+    def _selection_getter(self, section_dict):
+        answer1 = {LABEL_TAG: section_dict[LABEL_TAG],
+                   LABEL_QUESTION: section_dict[LABEL_QUESTION],
+                   LABEL_CATEGORY: '',
+                   LABEL_VALUE: section_dict['selection_widget'].value,
+                   }
+        return [answer1,]
+
+    def _multiselect_loader(self, section_dict):
+        section_dict['multi']=True
+        return self._selection_loader(section_dict)
+
+    def _multiselect_getter(self, section_dict):
+        selected_items1 = ','.join(section_dict['selection_widget'].value)
+        answer1 = {LABEL_TAG: section_dict[LABEL_TAG],
+                   LABEL_QUESTION: section_dict[LABEL_QUESTION],
+                   LABEL_CATEGORY: '',
+                   LABEL_VALUE: selected_items1
+                   }
+        return [answer1,]
+
 
     def get_feedback_widgets(self):
         return self.feedback_layout
