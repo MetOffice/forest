@@ -12,8 +12,8 @@ spec:
     spec:
       containers:
         - image: informaticslab/singleuser-notebook:0.3.0
-          command: ["bokeh"]
-          args: ["serve","--port=8888","/forest_repo/bokeh_apps/*"]
+          command: ["bash"]
+          args: ["-c","bokeh serve --port=8888 /forest_repo/bokeh_apps/*"]
           name: {{ .Values.manager.name }}
           ports:
             - containerPort: 8888
