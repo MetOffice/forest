@@ -1,0 +1,7 @@
+apiVersion: v1
+name: forest-server
+version: 0.1.5
+description: A server to deploy forest visualisaton tool
+maintainers: 
+  - name: Stephen Haddad
+    email: stephen.haddad@informaticslab.co.uk
