@@ -8,6 +8,7 @@ import bokeh.models.widgets
 
 KEY_SECTION = 'section'
 KEY_PERFORMANCE_MATRIX = 'performance_matrix'
+KEY_PERFMAT_LABELLED = 'performance_matrix_labelled'
 KEY_YES_NO = 'yes_no'
 KEY_SELECTION = 'selection'
 KEY_TEXT = 'text'
@@ -59,6 +60,7 @@ class UserFeedback(object):
         self.loaders[KEY_SELECTION] = self._selection_loader
         self.loaders[KEY_TEXT] = self._text_input_loader
         self.loaders[KEY_MULTISELECT] = self._multiselect_loader
+        self.loaders[KEY_PERFMAT_LABELLED] = self._perfmatlab_loader
 
         self.getters = {}
         self.getters[KEY_SECTION] = self._section_getter
@@ -67,6 +69,7 @@ class UserFeedback(object):
         self.getters[KEY_SELECTION] = self._selection_getter
         self.getters[KEY_TEXT] = self._text_input_getter
         self.getters[KEY_MULTISELECT] = self._multiselect_getter
+        self.getters[KEY_PERFMAT_LABELLED] = self._perfmatlab_getter
 
 
     def _create_widgets(self):
@@ -212,6 +215,56 @@ class UserFeedback(object):
             answer_list += [answer1]
         return answer_list
 
+    def _perfmatlab_loader(self, section_dict):
+
+        labels1 = [s1.strip() for s1 in section_dict['labels'].strip().split(',') if s1]
+        section_dict['labels_list'] = labels1
+        question_txt = \
+            bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
+                                           height=30,
+                                           width=600,
+                                           )
+        row_list1 = [question_txt]
+        row_layout_list1 = []
+        category_list = section_dict['categories'].strip().split(',')
+        category_list = [s1.strip() for s1 in category_list]
+        section_dict['category_list'] = category_list
+        buttons_list = []
+        for cat1 in category_list:
+            row_label = bokeh.models.widgets.Paragraph(text=cat1,
+                                                       height=30,
+                                                       width=200,
+                                                       )
+            row_buttons1 = bokeh.models.widgets.RadioButtonGroup(labels=labels1,
+                                                                 active=0,
+                                                                 height=30,
+                                                                 width=500,
+                                                                 )
+            row_layout1 = bokeh.layouts.Row(row_label, row_buttons1)
+            row_list1 += [row_layout1]
+            row_layout_list1 += [row_layout1]
+            buttons_list += [row_buttons1]
+        row_list1 += [bokeh.layouts.Spacer(width=600,height=30)]
+        matrix_layout = bokeh.layouts.column(*row_list1)
+        section_dict['widget'] = matrix_layout
+        section_dict['category_widgets'] = row_list1
+        section_dict['buttons'] = buttons_list
+
+        return matrix_layout, section_dict
+
+
+    def _perfmatlab_getter(self, section_dict):
+        answer_list = []
+
+        for buttons1,cat1 in zip(section_dict['buttons'],section_dict['category_list']):
+            selected1 = section_dict['labels_list'][buttons1.active]
+            answer1 = {LABEL_TAG: section_dict[LABEL_TAG],
+                       LABEL_QUESTION: section_dict[LABEL_QUESTION],
+                       LABEL_CATEGORY: cat1,
+                       LABEL_VALUE: selected1,
+                       }
+            answer_list += [answer1]
+        return answer_list
 
     def _text_input_loader(self, section_dict):
         text_widget1 = bokeh.models.widgets.TextInput(value='',
