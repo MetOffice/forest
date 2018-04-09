@@ -1,0 +1,50 @@
+# Deployment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.manager.name }}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.manager.name }}
+    spec:
+      containers:
+        - image: informaticslab/singleuser-notebook:0.3.0
+          command: ["bokeh"]
+          args: ["serve","--port=8888","/forest_repo/bokeh_apps/*"]
+          name: {{ .Values.manager.name }}
+          ports:
+            - containerPort: 8888
+          resources:
+            requests:
+              cpu: 10m
+              memory: 250Mi
+          env:
+
+            - name: PYTHONPATH
+              value: /forest_repo/forest/
+
+          volumeMounts:
+            - mountPath: /forest_repo
+              name: git-volume
+
+
+          volumeMounts:
+            - mountPath: /s3
+              name: pysssix
+
+
+      volumes:
+        - name: git-volume
+          gitRepo:
+            repository: "https://github.com/informatics-lab/model_evaluation_tool.git"
+            revision: "HEAD"
+
+
+        - name: pysssix
+          flexVolume:
+            driver: "informaticslab/pysssix-flex-volume"
+            options:
+

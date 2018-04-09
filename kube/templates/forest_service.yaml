@@ -1,0 +1,11 @@
+# Service
+kind: Service
+metadata:
+  name: {{ .Values.manager.name }}
+spec:
+  ports:
+    - port: 8888
+      targetPort: 8888
+      protocol: TCP
+  selector:
+    app: {{ .Values.manager.name }}
