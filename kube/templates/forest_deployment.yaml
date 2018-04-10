@@ -13,7 +13,7 @@ spec:
       containers:
         - image: informaticslab/singleuser-notebook:0.3.0
           command: ["bash"]
-          args: ["-c","/forest_repo/bokeh_apps/run_forest_server.sh /s3 8888 /forest_repo/bokeh_apps/*"]
+          args: ["-c",". /github_repos/forest/bokeh_apps/run_forest_server.sh /s3 8888 /github_repos/forest/bokeh_apps/"]
 #          command: ["python"]
 #          args: ["-c","import time; time.sleep(5000)"]
 
@@ -27,10 +27,10 @@ spec:
           env:
 
             - name: PYTHONPATH
-              value: /forest_repo/forest/
+              value: /github_repos/forest/forest_lib/
 
           volumeMounts:
-            - mountPath: /forest_repo
+            - mountPath: /github_repos/
               name: git-volume
 
 #            - mountPath: /s3
@@ -42,8 +42,8 @@ spec:
       volumes:
         - name: git-volume
           gitRepo:
-            repository: "https://github.com/informatics-lab/model_evaluation_tool.git"
-            revision: "HEAD"
+            repository: "https://github.com/informatics-lab/forest.git"
+            revision: "3530e012113d921046f6ae2eeb10442a450e2c05"
 
 
 #        - name: pysssix
