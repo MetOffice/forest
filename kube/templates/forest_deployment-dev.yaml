@@ -2,24 +2,24 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ .Values.manager.name }}
+  name: {{ .Values.managerdev.name }}
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ .Values.manager.name }}
+        app: {{ .Values.managerdev.name }}
     spec:
       containers:
         - image: informaticslab/singleuser-notebook:0.3.0
           command: ["bash"]
-          args: ["-c",". /github_repos/forest/forest_lib/run_forest_server.sh /s3 {{.Values.manager.port}} /github_repos/forest/bokeh_apps/"]
+          args: ["-c",". /github_repos/forest/forest_lib/run_forest_server.sh /s3 {{.Values.managerdev.port}} /github_repos/forest/bokeh_apps/"]
 #          command: ["python"]
 #          args: ["-c","import time; time.sleep(5000)"]
 
-          name: {{ .Values.manager.name }}
+          name: {{ .Values.managerdev.name }}
           ports:
-            - containerPort: {{.Values.manager.port}}
+            - containerPort: {{.Values.managerdev.port}}
           resources:
             requests:
               cpu: 10m
@@ -29,7 +29,7 @@ spec:
             - name: PYTHONPATH
               value: /github_repos/forest/forest_lib/
             - name: FOREST_URL
-              value: {{ .Values.manager.domain }}
+              value: {{ .Values.managerdev.domain }}
 
           volumeMounts:
             - mountPath: /github_repos/

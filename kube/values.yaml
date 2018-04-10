@@ -3,3 +3,7 @@ manager:
   domain: forest.informaticslab.co.uk
   port: 8888
 
+managerdev:
+  name: forest-server-dev
+  domain: forestkube.informaticslab.co.uk
+  port: 8888
