@@ -13,10 +13,13 @@ spec:
       containers:
         - image: informaticslab/singleuser-notebook:0.3.0
           command: ["bash"]
-          args: ["-c","bokeh serve --port=8888 /forest_repo/bokeh_apps/*"]
+          args: ["-c",". /github_repos/forest/forest_lib/run_forest_server.sh /s3 {{.Values.manager.port}} /github_repos/forest/bokeh_apps/"]
+#          command: ["python"]
+#          args: ["-c","import time; time.sleep(5000)"]
+
           name: {{ .Values.manager.name }}
           ports:
-            - containerPort: 8888
+            - containerPort: {{.Values.manager.port}}
           resources:
             requests:
               cpu: 10m
@@ -24,27 +27,34 @@ spec:
           env:
 
             - name: PYTHONPATH
-              value: /forest_repo/forest/
+              value: /github_repos/forest/forest_lib/
 
           volumeMounts:
-            - mountPath: /forest_repo
+            - mountPath: /github_repos/
               name: git-volume
 
+#            - mountPath: /s3
+#              name: pysssix
 
-          volumeMounts:
-            - mountPath: /s3
-              name: pysssix
-
+            - name: goofys-forest
+              mountPath: /s3/stephen-sea-public-london/
 
       volumes:
         - name: git-volume
           gitRepo:
-            repository: "https://github.com/informatics-lab/model_evaluation_tool.git"
-            revision: "HEAD"
+            repository: "https://github.com/informatics-lab/forest.git"
+            revision: "f2f5f722c055be634973b8147917faca5518d59d"
 
 
-        - name: pysssix
+#        - name: pysssix
+#          flexVolume:
+#            driver: "informaticslab/pysssix-flex-volume"
+
+
+
+        - name: goofys-forest
           flexVolume:
-            driver: "informaticslab/pysssix-flex-volume"
+            driver: "informaticslab/goofys-flex-volume"
             options:
-
+              # Required
+              bucket: "stephen-sea-public-london"

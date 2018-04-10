@@ -64,11 +64,20 @@ def main(bokeh_id):
 
     s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
                                                     bucket=bucket_name)
-    s3_local_base = os.path.expanduser(os.path.join('~',
-                                                    's3',
-                                                    bucket_name,
-                                                    'model_data'))
-    base_path_local = os.path.expanduser('~/SEA_data/model_data/')
+
+    try:
+        s3_root = os.environ['S3_ROOT']
+    except KeyError:
+        s3_root = os.path.expanduser('~/s3')
+    s3_local_base = os.path.join(s3_root,
+                                 bucket_name,
+                                 'model_data')
+    try:
+        local_root = os.environ['LOCAL_ROOT']
+    except KeyError:
+        local_root = os.path.expanduser('~/SEA_data')
+    base_path_local = os.path.join(local_root, 'model_data')
+
     use_s3_mount = True
     do_download = False
 
