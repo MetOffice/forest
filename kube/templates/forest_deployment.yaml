@@ -13,13 +13,13 @@ spec:
       containers:
         - image: informaticslab/singleuser-notebook:0.3.0
           command: ["bash"]
-          args: ["-c",". /github_repos/forest/forest_lib/run_forest_server.sh /s3 {{ .Values.manager.port}} /github_repos/forest/bokeh_apps/"]
+          args: ["-c",". /github_repos/forest/forest_lib/run_forest_server.sh /s3 {{.Values.manager.port}} /github_repos/forest/bokeh_apps/"]
 #          command: ["python"]
 #          args: ["-c","import time; time.sleep(5000)"]
 
           name: {{ .Values.manager.name }}
           ports:
-            - containerPort: 8888
+            - containerPort: {{.Values.manager.port}}
           resources:
             requests:
               cpu: 10m

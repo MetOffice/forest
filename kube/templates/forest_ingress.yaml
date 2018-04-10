@@ -18,4 +18,4 @@ spec:
       - path: /
         backend:
           serviceName: {{ .Values.manager.name }}
-          servicePort: {{ .Values.manager.port }}
+          servicePort: {{.Values.manager.port}}
