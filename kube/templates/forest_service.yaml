@@ -4,8 +4,8 @@ metadata:
   name: {{ .Values.manager.name }}
 spec:
   ports:
-    - port: 8888
-      targetPort: 8888
+    - port: {{ .Values.manager.name }}
+      targetPort: {{ .Values.manager.name }}
       protocol: TCP
   selector:
     app: {{ .Values.manager.name }}
