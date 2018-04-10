@@ -43,7 +43,7 @@ spec:
         - name: git-volume
           gitRepo:
             repository: "https://github.com/informatics-lab/forest.git"
-            revision: "1b6c5d9c39b080f7d80b0151cafe70a23b722a8a"
+            revision: "2d42b5d282880427626db82094553ba3457e602b"
 
 
 #        - name: pysssix
