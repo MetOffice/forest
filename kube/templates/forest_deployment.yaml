@@ -13,7 +13,7 @@ spec:
       containers:
         - image: informaticslab/singleuser-notebook:0.3.0
           command: ["bash"]
-          args: ["-c",". /github_repos/forest/bokeh_apps/run_forest_server.sh /s3 8888 /github_repos/forest/bokeh_apps/"]
+          args: ["-c",". /github_repos/forest/run_forest_server.sh /s3 8888 /github_repos/forest/bokeh_apps/"]
 #          command: ["python"]
 #          args: ["-c","import time; time.sleep(5000)"]
 
@@ -43,7 +43,7 @@ spec:
         - name: git-volume
           gitRepo:
             repository: "https://github.com/informatics-lab/forest.git"
-            revision: "3530e012113d921046f6ae2eeb10442a450e2c05"
+            revision: "dc94fadf809b05587c9fe9a93e134dea4ec245bf"
 
 
 #        - name: pysssix
