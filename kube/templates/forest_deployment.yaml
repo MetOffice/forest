@@ -12,10 +12,10 @@ spec:
     spec:
       containers:
         - image: informaticslab/singleuser-notebook:0.3.0
-#          command: ["bash"]
-#          args: ["-c","bokeh serve --port=8888 /forest_repo/bokeh_apps/*"]
-          command: ["python"]
-          args: ["-c","import time; time.sleep(5000)"]
+          command: ["bash"]
+          args: ["-c","/forest_repo/bokeh_apps/run_forest_server.sh /s3 8888 /forest_repo/bokeh_apps/*"]
+#          command: ["python"]
+#          args: ["-c","import time; time.sleep(5000)"]
 
           name: {{ .Values.manager.name }}
           ports:
@@ -33,11 +33,11 @@ spec:
             - mountPath: /forest_repo
               name: git-volume
 
+#            - mountPath: /s3
+#              name: pysssix
 
-          volumeMounts:
-            - mountPath: /s3
-              name: pysssix
-
+            - name: goofys-forest
+              mountPath: /s3/stephen-sea-public-london/
 
       volumes:
         - name: git-volume
@@ -46,8 +46,15 @@ spec:
             revision: "HEAD"
 
 
-        - name: pysssix
-          flexVolume:
-            driver: "informaticslab/pysssix-flex-volume"
-            options:
+#        - name: pysssix
+#          flexVolume:
+#            driver: "informaticslab/pysssix-flex-volume"
 
+
+
+        - name: goofys-forest
+          flexVolume:
+            driver: "informaticslab/goofys-flex-volume"
+            options:
+              # Required
+              bucket: "stephen-sea-public-london"
