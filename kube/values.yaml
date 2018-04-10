@@ -1,5 +1,5 @@
 manager:
   name: forest-server
-  domain: forestkube.informaticslab.co.uk
+  domain: forest.informaticslab.co.uk
   port: 8888
 
