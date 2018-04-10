@@ -28,6 +28,8 @@ spec:
 
             - name: PYTHONPATH
               value: /github_repos/forest/forest_lib/
+            - name: FOREST_URL
+              value: {{ .Values.manager.domain }}
 
           volumeMounts:
             - mountPath: /github_repos/
