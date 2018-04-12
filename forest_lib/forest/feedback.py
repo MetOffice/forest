@@ -20,6 +20,13 @@ LABEL_TAG = 'tag'
 LABEL_VALUE = 'value'
 LABEL_TITLE = 'title'
 
+WIDGET_HEIGHT=30
+SECTION_TITLE_HEIGHT = 100
+TEXT_LABEL_WIDTH = 200
+SINGLE_COLUMN_WIDTH = 400
+MULTI_COLUMN_WIDTH = 800
+BUTTON_WIDTH = 100
+
 FEEDBACK_HEADER_ORDER = [LABEL_TAG,
                          LABEL_QUESTION,
                          LABEL_CATEGORY,
@@ -77,13 +84,15 @@ class UserFeedback(object):
 
         self.submit_button = bokeh.models.widgets.Button(label='Submit',
                                                          button_type='warning',
-                                                         width=100)
+                                                         width=BUTTON_WIDTH)
         self.submit_button.on_click(self._on_submit)
         self.feedback_layout = bokeh.layouts.column(input_fields,
                                                     self.submit_button)
 
 
-    def _process_config(self, path1, header_text=None):
+    def _process_config(self, path1,
+                        title_text=None,
+                        header_text=None):
         print('processing config file {0}'.format(path1))
 
         parser1 = configparser.RawConfigParser()
@@ -91,11 +100,15 @@ class UserFeedback(object):
 
         widgets_list = []
         if header_text:
+            title_widget = bokeh.models.widgets.Div(text=title_text,
+                                                    height=SECTION_TITLE_HEIGHT,
+                                                    width=MULTI_COLUMN_WIDTH,
+                                                    )
             header_widget = bokeh.models.widgets.Div(text=header_text,
-                                                     height=100,
-                                                     width=400,
+                                                     height=SECTION_TITLE_HEIGHT,
+                                                     width=MULTI_COLUMN_WIDTH,
                                                      )
-            widgets_list += [header_widget]
+            widgets_list += [title_widget, header_widget]
 
         config_dict = {}
         for section1 in parser1.sections():
@@ -112,11 +125,17 @@ class UserFeedback(object):
     def _section_loader(self, section_dict, ):
         print('processing section {0}'.format(section_dict[LABEL_TITLE]))
 
-        header_text = section_dict[LABEL_TITLE] + '\n' + section_dict['description']
+        title_text = '<h1>{label}</h1>'.format(label=section_dict[LABEL_TITLE])
+        header_text = \
+            '<h2>{desc}</h2>'.format(desc=section_dict['description'])
+
+
         section_path = os.path.join(self.config_dir,
                                     section_dict['file'])
-        children_layout, children_dict = self._process_config(section_path,
-                                                            header_text)
+        children_layout, children_dict = \
+            self._process_config(section_path,
+                                 title_text=title_text,
+                                 header_text=header_text)
 
         section_dict['widget'] = children_layout
         section_dict['children'] = children_dict
@@ -138,17 +157,17 @@ class UserFeedback(object):
         display_list1 = ['{0:d}'.format(i1) for i1 in range(min1,max1+1)]
         question_txt = \
             bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
-                                           height=30,
-                                           width=600,
+                                           height=WIDGET_HEIGHT,
+                                           width=MULTI_COLUMN_WIDTH,
                                            )
         row_label = bokeh.models.widgets.Paragraph(text='No=1,Yes=10',
-                                                   height=30,
-                                                   width=200,
+                                                   height=WIDGET_HEIGHT,
+                                                   width=TEXT_LABEL_WIDTH,
                                                    )
         row_buttons1 = bokeh.models.widgets.RadioButtonGroup(labels=display_list1,
                                                              active=0,
-                                                             height=30,
-                                                             width=500,
+                                                             height=WIDGET_HEIGHT,
+                                                             width=MULTI_COLUMN_WIDTH,
                                                              )
         row_layout1 = bokeh.layouts.Row(row_label, row_buttons1)
         yes_no_layout = bokeh.layouts.Column(question_txt, row_layout1)
@@ -172,8 +191,8 @@ class UserFeedback(object):
         display_list1 = ['{0:d}'.format(i1) for i1 in range(min1,max1+1)]
         question_txt = \
             bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
-                                           height=30,
-                                           width=600,
+                                           height=WIDGET_HEIGHT,
+                                           width=SINGLE_COLUMN_WIDTH,
                                            )
         row_list1 = [question_txt]
         row_layout_list1 = []
@@ -183,13 +202,13 @@ class UserFeedback(object):
         buttons_list = []
         for cat1 in category_list:
             row_label = bokeh.models.widgets.Paragraph(text=cat1,
-                                                       height=30,
-                                                       width=200,
+                                                       height=WIDGET_HEIGHT,
+                                                       width=TEXT_LABEL_WIDTH,
                                                        )
             row_buttons1 = bokeh.models.widgets.RadioButtonGroup(labels=display_list1,
                                                                  active=0,
-                                                                 height=30,
-                                                                 width=500,
+                                                                 height=WIDGET_HEIGHT,
+                                                                 width=MULTI_COLUMN_WIDTH,
                                                                  )
             row_layout1 = bokeh.layouts.Row(row_label, row_buttons1)
             row_list1 += [row_layout1]
@@ -221,8 +240,8 @@ class UserFeedback(object):
         section_dict['labels_list'] = labels1
         question_txt = \
             bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
-                                           height=30,
-                                           width=600,
+                                           height=WIDGET_HEIGHT,
+                                           width=MULTI_COLUMN_WIDTH,
                                            )
         row_list1 = [question_txt]
         row_layout_list1 = []
@@ -232,13 +251,13 @@ class UserFeedback(object):
         buttons_list = []
         for cat1 in category_list:
             row_label = bokeh.models.widgets.Paragraph(text=cat1,
-                                                       height=30,
-                                                       width=200,
+                                                       height=WIDGET_HEIGHT,
+                                                       width=TEXT_LABEL_WIDTH,
                                                        )
             row_buttons1 = bokeh.models.widgets.RadioButtonGroup(labels=labels1,
                                                                  active=0,
-                                                                 height=30,
-                                                                 width=500,
+                                                                 height=WIDGET_HEIGHT,
+                                                                 width=MULTI_COLUMN_WIDTH,
                                                                  )
             row_layout1 = bokeh.layouts.Row(row_label, row_buttons1)
             row_list1 += [row_layout1]
@@ -288,13 +307,13 @@ class UserFeedback(object):
             multiselect = False
 
         question_txt = bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
-                                                   height=30,
-                                                   width=400,
-                                                   )
+                                                      height=WIDGET_HEIGHT,
+                                                      width=MULTI_COLUMN_WIDTH,
+                                                      )
 
         title_txt = bokeh.models.widgets.Paragraph(text=section_dict[LABEL_TITLE],
-                                                   height=30,
-                                                   width=200,
+                                                   height=WIDGET_HEIGHT,
+                                                   width=TEXT_LABEL_WIDTH,
                                                    )
         option_list = [(s1.strip(),s1.strip()) for s1 in section_dict['values'].split(',')]
         if multiselect:
