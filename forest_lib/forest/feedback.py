@@ -26,6 +26,8 @@ TEXT_LABEL_WIDTH = 200
 SINGLE_COLUMN_WIDTH = 400
 MULTI_COLUMN_WIDTH = 800
 BUTTON_WIDTH = 100
+DETAILED_TEXT_HEIGHT = 400
+DETAILED_TEXT_WIDTH = 800
 
 FEEDBACK_HEADER_ORDER = [LABEL_TAG,
                          LABEL_QUESTION,
@@ -286,8 +288,20 @@ class UserFeedback(object):
         return answer_list
 
     def _text_input_loader(self, section_dict):
-        text_widget1 = bokeh.models.widgets.TextInput(value='',
-                                       title=section_dict[LABEL_QUESTION])
+        if section_dict['size'] == 'large':
+            widget_height1 = DETAILED_TEXT_HEIGHT
+            widget_width1 = DETAILED_TEXT_WIDTH
+        elif section_dict['size'] == 'small':
+            widget_height1 = WIDGET_HEIGHT
+            widget_width1 = SINGLE_COLUMN_WIDTH
+        else:
+            raise AttributeError('Invalid value for size attribute')
+
+        text_widget1 = \
+            bokeh.models.widgets.TextInput(value='',
+                                           title=section_dict[LABEL_QUESTION],
+                                           height=widget_height1,
+                                           width=widget_width1)
         section_dict['widget'] = text_widget1
         return text_widget1, section_dict
 
