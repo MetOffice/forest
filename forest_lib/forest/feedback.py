@@ -38,8 +38,8 @@ class UserFeedback(object):
     """
     Class for display widgets to gather feedback on model performance from
     research and operational meteorologists using Forest. Implementation
-    aims to conform to the Composite software design pattern, so the feedback form
-    can easily be modified or extended.
+    aims to conform to the Composite software design pattern, so the feedback
+    form can easily be modified or extended.
     """
 
     def __init__(self,
@@ -47,6 +47,16 @@ class UserFeedback(object):
                  feedback_dir,
                  bokeh_id,
                  ):
+        """
+
+        Arguments
+        ---------
+
+        - config_path -- string: the path to the main config file to load
+        - feedback_dir -- string: the directory path to write the user
+                                  feedback file to.
+        - bokeh_id -- string: The bokeh id for the current user session.
+        """
         self.config_path = config_path
         self.config_dir = os.path.split(self.config_path)[0]
         self.feedback_dir = feedback_dir
@@ -59,9 +69,17 @@ class UserFeedback(object):
         self._create_widgets()
 
     def __str__(self):
-        return 'Class to collect feedback on model assessment from Meteorologists.'
+
+        return \
+            'Class to collect feedback on model assessment ' \
+            + 'from Meteorologists.'
 
     def _setup_loaders(self):
+        """
+        Setup function to create dictionaries of loader and getter functions
+        to create GUI elements based on conf files and retrieve values
+        from those GUI elements.
+        """
         self.loaders = {}
         self.loaders[KEY_SECTION] = self._section_loader
         self.loaders[KEY_YES_NO] = self._yes_no_loader
@@ -82,7 +100,11 @@ class UserFeedback(object):
 
 
     def _create_widgets(self):
-        input_fields, self.feedback_dict = self._process_config(self.config_path)
+        """
+        Main setup function for creating GUI widgets for user feedback.
+        """
+        input_fields, self.feedback_dict = \
+            self._process_config(self.config_path)
 
         self.submit_button = bokeh.models.widgets.Button(label='Submit',
                                                          button_type='warning',
@@ -95,6 +117,15 @@ class UserFeedback(object):
     def _process_config(self, path1,
                         title_text=None,
                         header_text=None):
+        """
+        Called by _create_widgets to set up the GUI. Parses the config files
+        and creates the specified widgets.
+        - path1 -- string: path to the config file.
+        - title_text -- : Title of the config section to be created by this
+                          config file.
+        - header_text -- : Descriptive header text of the config section to be
+                           created by this config file.
+        """
         print('processing config file {0}'.format(path1))
 
         parser1 = configparser.RawConfigParser()
@@ -102,14 +133,16 @@ class UserFeedback(object):
 
         widgets_list = []
         if header_text:
-            title_widget = bokeh.models.widgets.Div(text=title_text,
-                                                    height=SECTION_TITLE_HEIGHT,
-                                                    width=MULTI_COLUMN_WIDTH,
-                                                    )
-            header_widget = bokeh.models.widgets.Div(text=header_text,
-                                                     height=SECTION_TITLE_HEIGHT,
-                                                     width=MULTI_COLUMN_WIDTH,
-                                                     )
+            title_widget = \
+                bokeh.models.widgets.Div(text=title_text,
+                                         height=SECTION_TITLE_HEIGHT,
+                                         width=MULTI_COLUMN_WIDTH,
+                                         )
+            header_widget = \
+                bokeh.models.widgets.Div(text=header_text,
+                                         height=SECTION_TITLE_HEIGHT,
+                                         width=MULTI_COLUMN_WIDTH,
+                                         )
             widgets_list += [title_widget, header_widget]
 
         config_dict = {}
@@ -125,6 +158,15 @@ class UserFeedback(object):
         return config_layout, config_dict
 
     def _section_loader(self, section_dict, ):
+        """
+        The loader function for a feedback section, which creates GUI elements
+        from a config file.
+        - section_dict -- python dictionary: the specs for the feedback
+                                             section, based on the config
+                                             file
+        return: tuple containing a bokeh gui widget representing this section
+                and an updated dictionary file.`
+        """
         print('processing section {0}'.format(section_dict[LABEL_TITLE]))
 
         title_text = '<h1>{label}</h1>'.format(label=section_dict[LABEL_TITLE])
@@ -154,6 +196,16 @@ class UserFeedback(object):
         return answer_list
 
     def _yes_no_loader(self, section_dict):
+        """
+        The loader function for a yes/no feedback element, which is based on
+        a section of the feedback file, with type 'yes_no'
+        - section_dict -- python dictionary: the specs for the yes/no GUI
+                                             element, based on the config
+                                             file
+        return: tuple containing a bokeh gui widget representing this yes_no
+                element and an updated dictionary file.`
+        """
+
         min1 = int(section_dict['min'])
         max1 = int(section_dict['max'])
         display_list1 = ['{0:d}'.format(i1) for i1 in range(min1,max1+1)]
@@ -166,11 +218,12 @@ class UserFeedback(object):
                                                    height=WIDGET_HEIGHT,
                                                    width=TEXT_LABEL_WIDTH,
                                                    )
-        row_buttons1 = bokeh.models.widgets.RadioButtonGroup(labels=display_list1,
-                                                             active=0,
-                                                             height=WIDGET_HEIGHT,
-                                                             width=MULTI_COLUMN_WIDTH,
-                                                             )
+        row_buttons1 = \
+            bokeh.models.widgets.RadioButtonGroup(labels=display_list1,
+                                                  active=0,
+                                                  height=WIDGET_HEIGHT,
+                                                  width=MULTI_COLUMN_WIDTH,
+                                                  )
         row_layout1 = bokeh.layouts.Row(row_label, row_buttons1)
         yes_no_layout = bokeh.layouts.Column(question_txt, row_layout1)
         section_dict['widget'] = yes_no_layout
@@ -188,6 +241,16 @@ class UserFeedback(object):
 
 
     def _perf_matrix_loader(self, section_dict):
+        """
+        The loader function for a performance matrix feedback element, which
+        is based on a section of the feedback file, with type
+        'performance_matrix'
+        - section_dict -- python dictionary: the specs for the performance
+                                             matrix  GUI element, based on the
+                                             config file
+        return: tuple containing a bokeh gui widget representing this performance
+                matrix  GUI element and an updated dictionary file.`
+        """
         min1 = int(section_dict['min'])
         max1 = int(section_dict['max'])
         display_list1 = ['{0:d}'.format(i1) for i1 in range(min1,max1+1)]
@@ -203,15 +266,17 @@ class UserFeedback(object):
         section_dict['category_list'] = category_list
         buttons_list = []
         for cat1 in category_list:
-            row_label = bokeh.models.widgets.Paragraph(text=cat1,
-                                                       height=WIDGET_HEIGHT,
-                                                       width=TEXT_LABEL_WIDTH,
-                                                       )
-            row_buttons1 = bokeh.models.widgets.RadioButtonGroup(labels=display_list1,
-                                                                 active=0,
-                                                                 height=WIDGET_HEIGHT,
-                                                                 width=MULTI_COLUMN_WIDTH,
-                                                                 )
+            row_label = \
+                bokeh.models.widgets.Paragraph(text=cat1,
+                                               height=WIDGET_HEIGHT,
+                                               width=TEXT_LABEL_WIDTH,
+                                               )
+            row_buttons1 = \
+                bokeh.models.widgets.RadioButtonGroup(labels=display_list1,
+                                                      active=0,
+                                                      height=WIDGET_HEIGHT,
+                                                      width=MULTI_COLUMN_WIDTH,
+                                                      )
             row_layout1 = bokeh.layouts.Row(row_label, row_buttons1)
             row_list1 += [row_layout1]
             row_layout_list1 += [row_layout1]
@@ -227,7 +292,8 @@ class UserFeedback(object):
     def _perf_matrix_getter(self, section_dict):
         answer_list = []
 
-        for buttons1,cat1 in zip(section_dict['buttons'],section_dict['category_list']):
+        for buttons1,cat1 in zip(section_dict['buttons'],
+                                 section_dict['category_list']):
             answer1 = {LABEL_TAG: section_dict[LABEL_TAG],
                        LABEL_QUESTION: section_dict[LABEL_QUESTION],
                        LABEL_CATEGORY: cat1,
@@ -237,8 +303,19 @@ class UserFeedback(object):
         return answer_list
 
     def _perfmatlab_loader(self, section_dict):
-
-        labels1 = [s1.strip() for s1 in section_dict['labels'].strip().split(',') if s1]
+        """
+        The loader function for a labelled performance matrix feedback element, which
+        is based on a section of the feedback file, with type
+        'performance_matrix'
+        - section_dict -- python dictionary: the specs for the performance
+                                             matrix  GUI element, based on the
+                                             config file
+        return: tuple containing a bokeh gui widget representing this performance
+                matrix  GUI element and an updated dictionary file.`
+        """
+        labels1 = [s1.strip()
+                   for s1 in section_dict['labels'].strip().split(',')
+                   if s1]
         section_dict['labels_list'] = labels1
         question_txt = \
             bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
@@ -252,15 +329,17 @@ class UserFeedback(object):
         section_dict['category_list'] = category_list
         buttons_list = []
         for cat1 in category_list:
-            row_label = bokeh.models.widgets.Paragraph(text=cat1,
-                                                       height=WIDGET_HEIGHT,
-                                                       width=TEXT_LABEL_WIDTH,
-                                                       )
-            row_buttons1 = bokeh.models.widgets.RadioButtonGroup(labels=labels1,
-                                                                 active=0,
-                                                                 height=WIDGET_HEIGHT,
-                                                                 width=MULTI_COLUMN_WIDTH,
-                                                                 )
+            row_label = \
+                bokeh.models.widgets.Paragraph(text=cat1,
+                                               height=WIDGET_HEIGHT,
+                                               width=TEXT_LABEL_WIDTH,
+                                               )
+            row_buttons1 = \
+                bokeh.models.widgets.RadioButtonGroup(labels=labels1,
+                                                      active=0,
+                                                      height=WIDGET_HEIGHT,
+                                                      width=MULTI_COLUMN_WIDTH,
+                                                      )
             row_layout1 = bokeh.layouts.Row(row_label, row_buttons1)
             row_list1 += [row_layout1]
             row_layout_list1 += [row_layout1]
@@ -277,7 +356,8 @@ class UserFeedback(object):
     def _perfmatlab_getter(self, section_dict):
         answer_list = []
 
-        for buttons1,cat1 in zip(section_dict['buttons'],section_dict['category_list']):
+        for buttons1,cat1 in zip(section_dict['buttons'],
+                                 section_dict['category_list']):
             selected1 = section_dict['labels_list'][buttons1.active]
             answer1 = {LABEL_TAG: section_dict[LABEL_TAG],
                        LABEL_QUESTION: section_dict[LABEL_QUESTION],
@@ -320,16 +400,19 @@ class UserFeedback(object):
         except KeyError:
             multiselect = False
 
-        question_txt = bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
-                                                      height=WIDGET_HEIGHT,
-                                                      width=MULTI_COLUMN_WIDTH,
-                                                      )
+        question_txt = \
+            bokeh.models.widgets.Paragraph(text=section_dict[LABEL_QUESTION],
+                                           height=WIDGET_HEIGHT,
+                                           width=MULTI_COLUMN_WIDTH,
+                                           )
 
-        title_txt = bokeh.models.widgets.Paragraph(text=section_dict[LABEL_TITLE],
-                                                   height=WIDGET_HEIGHT,
-                                                   width=TEXT_LABEL_WIDTH,
-                                                   )
-        option_list = [(s1.strip(),s1.strip()) for s1 in section_dict['values'].split(',')]
+        title_txt = \
+            bokeh.models.widgets.Paragraph(text=section_dict[LABEL_TITLE],
+                                           height=WIDGET_HEIGHT,
+                                           width=TEXT_LABEL_WIDTH,
+                                           )
+        option_list = [(s1.strip(),s1.strip())
+                       for s1 in section_dict['values'].split(',')]
         if multiselect:
             selection_widget = \
                 bokeh.models.widgets.MultiSelect(options=option_list)
@@ -378,7 +461,9 @@ class UserFeedback(object):
                 self.getters[question_type](self.feedback_dict[question_tag])
 
 
-        time_str = '{dt.year:04d}{dt.month:02d}{dt.day:02d}_{dt.hour:02d}{dt.minute:02d}'.format(dt=datetime.datetime.now())
+        time_str_tpl = '{dt.year:04d}{dt.month:02d}{dt.day:02d}_' + \
+                       '{dt.hour:02d}{dt.minute:02d}'
+        time_str = time_str_tpl.format(dt=datetime.datetime.now())
         feedback_path = os.path.join(self.feedback_dir,
                                      'survey_{id}_{dt}.csv'.format(
                                          id=self.bokeh_id,
