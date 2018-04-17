@@ -8,4 +8,4 @@ managerdev:
   name: forest-server-dev
   domain: forestkube.informaticslab.co.uk
   port: 8888
-  revision: "9b7bd9842d7dc5c6651b8ebe0cdf3e7f6b10c723"
+  revision: "29c9b9293d7dafd2e497d89da40e1454ec625b79"
