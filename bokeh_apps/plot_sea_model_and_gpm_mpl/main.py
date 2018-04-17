@@ -103,7 +103,6 @@ def main(bokeh_id):
     except KeyError:
         base_dir = os.path.expanduser('~/SEA_data')
 
-
     base_path_local_model = os.path.join(base_dir, 'model_data')
     base_path_local_gpm = os.path.join(base_dir, 'gpm_imerg') + '/'
 

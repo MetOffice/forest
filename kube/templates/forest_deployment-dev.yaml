@@ -1,0 +1,58 @@
+# Deployment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.managerdev.name }}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.managerdev.name }}
+    spec:
+      containers:
+        - image: informaticslab/singleuser-notebook:0.3.0
+          command: ["bash"]
+          args: ["-c",". /github_repos/forest/forest_lib/run_forest_server.sh /s3 {{.Values.managerdev.port}} /github_repos/forest/bokeh_apps/"]
+#          command: ["python"]
+#          args: ["-c","import time; time.sleep(5000)"]
+
+          name: {{ .Values.managerdev.name }}
+          ports:
+            - containerPort: {{.Values.managerdev.port}}
+          resources:
+            requests:
+              cpu: 50m
+              memory: 1000Mi
+          env:
+
+            - name: PYTHONPATH
+              value: /github_repos/forest/forest_lib/
+            - name: FOREST_URL
+              value: {{ .Values.managerdev.domain }}
+
+          volumeMounts:
+            - mountPath: /github_repos/
+              name: git-volume
+
+
+            - name: goofys-forest
+              mountPath: /s3/stephen-sea-public-london/
+
+      volumes:
+        - name: git-volume
+          gitRepo:
+            repository: "https://github.com/informatics-lab/forest.git"
+            revision: {{ .Values.managerdev.revision }}
+
+
+
+
+        - name: goofys-forest
+          flexVolume:
+            driver: "informaticslab/goofys-flex-volume"
+            options:
+              # Required
+              bucket: "stephen-sea-public-london"
+              dirMode: "0755"
+              fileMode: "0666"

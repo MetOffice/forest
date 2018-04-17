@@ -3,6 +3,7 @@
 ln -s /opt/s3 ~/s3
 
 export BOKEH_APPS_DIR=/opt/bokeh_apps
+export S3_ROOT=/opt/s3/stephen-sea-public-london/
 
 if [ -z "$PUBLIC_IP" ]
 then

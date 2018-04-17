@@ -1,0 +1,11 @@
+manager:
+  name: forest-server
+  domain: forest.informaticslab.co.uk
+  port: 8888
+  revision: "HEAD"
+
+managerdev:
+  name: forest-server-dev
+  domain: forestkube.informaticslab.co.uk
+  port: 8888
+  revision: "29c9b9293d7dafd2e497d89da40e1454ec625b79"
