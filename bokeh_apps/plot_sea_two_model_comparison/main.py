@@ -78,6 +78,7 @@ def main(bokeh_id):
         local_root = os.path.expanduser('~/SEA_data')
     base_path_local = os.path.join(local_root, 'model_data')
 
+
     use_s3_mount = True
     do_download = False
 
@@ -169,6 +170,13 @@ def main(bokeh_id):
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
+    s3_local_base_feedback = \
+        os.path.join(s3_root,
+                     bucket_name,
+                     'user_feedback')
+
+
+
     # Set up GUI controller class
     control1 = forest.control.ForestController(init_var,
                                                init_data_time_index,
@@ -181,6 +189,8 @@ def main(bokeh_id):
                                                [stats_left, stats_right],
                                                region_dict,
                                                bokeh_doc,
+                                               s3_local_base_feedback,
+                                               bokeh_id,
                                                )
 
     add_main_plot(control1.main_layout, bokeh_doc)
