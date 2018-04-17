@@ -43,7 +43,17 @@ def main(bokeh_id):
     do_download = False
     use_s3_mount = True
     use_jh_paths = True
-    base_dir = os.path.expanduser('~/SEA_data/')
+    try:
+        s3_root = os.environ['S3_ROOT']
+    except KeyError:
+        s3_root = os.path.expanduser('~/s3')
+    s3_local_mnt = os.path.join(s3_root,
+                                bucket_name,
+                                )
+    try:
+        base_dir = os.environ['LOCAL_ROOT']
+    except KeyError:
+        base_dir = os.path.expanduser('~/SEA_data')
 
     SIMIM_KEY = simim_sat_data.SIMIM_KEY
     HIMAWARI8_KEY = 'himawari-8'
@@ -60,7 +70,6 @@ def main(bokeh_id):
                }
 
     s3_base_str = '{server}/{bucket}/{data_type}/'
-    s3_local_mnt = os.path.expanduser(os.path.join('~', 's3', bucket_name))
 
     # Himawari-8 imagery dict population
     s3_base_sat = s3_base_str.format(server=server_address,
