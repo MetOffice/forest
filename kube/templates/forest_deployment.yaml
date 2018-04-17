@@ -14,16 +14,14 @@ spec:
         - image: informaticslab/singleuser-notebook:0.3.0
           command: ["bash"]
           args: ["-c",". /github_repos/forest/forest_lib/run_forest_server.sh /s3 {{.Values.manager.port}} /github_repos/forest/bokeh_apps/"]
-#          command: ["python"]
-#          args: ["-c","import time; time.sleep(5000)"]
 
           name: {{ .Values.manager.name }}
           ports:
             - containerPort: {{.Values.manager.port}}
           resources:
             requests:
-              cpu: 10m
-              memory: 250Mi
+              cpu: 50m
+              memory: 1000Mi
           env:
 
             - name: PYTHONPATH
@@ -35,8 +33,6 @@ spec:
             - mountPath: /github_repos/
               name: git-volume
 
-#            - mountPath: /s3
-#              name: pysssix
 
             - name: goofys-forest
               mountPath: /s3/stephen-sea-public-london/
@@ -47,10 +43,6 @@ spec:
             repository: "https://github.com/informatics-lab/forest.git"
             revision: "HEAD"
 
-
-#        - name: pysssix
-#          flexVolume:
-#            driver: "informaticslab/pysssix-flex-volume"
 
 
 

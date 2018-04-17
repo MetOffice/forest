@@ -22,8 +22,8 @@ spec:
             - containerPort: {{.Values.managerdev.port}}
           resources:
             requests:
-              cpu: 10m
-              memory: 250Mi
+              cpu: 50m
+              memory: 1000Mi
           env:
 
             - name: PYTHONPATH
@@ -35,8 +35,6 @@ spec:
             - mountPath: /github_repos/
               name: git-volume
 
-#            - mountPath: /s3
-#              name: pysssix
 
             - name: goofys-forest
               mountPath: /s3/stephen-sea-public-london/
@@ -45,12 +43,8 @@ spec:
         - name: git-volume
           gitRepo:
             repository: "https://github.com/informatics-lab/forest.git"
-            revision: "HEAD"
+            revision: {{ .Values.managerdev.revision }}
 
-
-#        - name: pysssix
-#          flexVolume:
-#            driver: "informaticslab/pysssix-flex-volume"
 
 
 
