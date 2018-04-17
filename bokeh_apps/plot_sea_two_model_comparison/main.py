@@ -171,10 +171,9 @@ def main(bokeh_id):
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
     s3_local_base_feedback = \
-        os.path.expanduser(os.path.join('~',
-                                        's3',
-                                        bucket_name,
-                                        'user_feedback'))
+        os.path.join(s3_root,
+                     bucket_name,
+                     'user_feedback')
 
 
 
