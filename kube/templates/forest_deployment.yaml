@@ -52,3 +52,5 @@ spec:
             options:
               # Required
               bucket: "stephen-sea-public-london"
+              dirMode: "0755"
+              fileMode: "0777"
