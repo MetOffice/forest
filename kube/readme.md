@@ -25,9 +25,9 @@ Deploying the server requires some tools to be installed locally. These include
 
 ## Deploying and testing the forest server
 Once the relevant kubernetes tools have been installed, there are only a few simple commands to run to depoy the server.
-  1 Navigate to the kube/ directory which contains this file.
-  1 run ```helm del --purge forest``` to remove existing server instances.
-  1 run ```helm install --namespace=forest --name=forest .```
+1. Navigate to the kube/ directory which contains this file.
+1. run ```helm del --purge forest``` to remove existing server instances.
+1. run ```helm install --namespace=forest --name=forest .```
 
 You can now check on the health of the server through the kubernetes cluster dashboard.
 ``` helm status forest```
