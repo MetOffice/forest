@@ -18,9 +18,9 @@ The data, which is stored in an AWS S3 bucket is mounted using a
 
 ## Installing tools
 Deploying the server requires some tools to be installed locally. These include
-  * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-  * [kubernetes-helm](https://github.com/kubernetes/helm)
-  * [kops](https://github.com/kubernetes/kops)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+* [kubernetes-helm](https://github.com/kubernetes/helm)
+* [kops](https://github.com/kubernetes/kops)
 
 
 ## Deploying and testing the forest server
