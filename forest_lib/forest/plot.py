@@ -17,8 +17,11 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
+import iris.analysis
 
-BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom']
+import pdb
+
+BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
 
 class MissingDataError(Exception):
     def __init__(self, config, var, time):
@@ -51,7 +54,8 @@ class ForestPlot(object):
                  unit_dict,
                  unit_dict_display,
                  app_path,
-                 init_time):
+                 init_time,
+                 ):
 
         '''Initialisation function for ForestPlot class
         '''
@@ -68,6 +72,7 @@ class ForestPlot(object):
         self.current_region = reg1
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
+        self.selected_point = None
         self.show_colorbar = False
         self.show_axis_ticks = False
         self.use_mpl_title = False
@@ -163,6 +168,11 @@ class ForestPlot(object):
                              'blank': self.create_blank,
                              }
 
+        self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
+        self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
+        self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
+        self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
+
     def update_coords(self, data_cube):
 
         '''Update the latitude and longitude coordinates for the data.
@@ -232,7 +242,7 @@ class ForestPlot(object):
 
         '''
 
-        wind_speed_cube = self.get_data()
+        wind_speed_cube = self.get_data(forest.data.WIND_SPEED_NAME)
 
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
@@ -700,7 +710,40 @@ class ForestPlot(object):
         model_run_info += '{dt.hour:02d}{dt.minute:02d}Z'
         model_run_info = model_run_info.format(dt=mr_dtobj)
 
+        selected_pt_info = 'No point selected'
+        if self.selected_point is not None:
+            if self.selected_point[0] > 0.0:
+                lat_str = '{0:.2f} N'.format(abs(self.selected_point[0]))
+            else:
+                lat_str = '{0:.2f} S'.format(abs(self.selected_point[0]))
+
+            if self.selected_point[1] > 0.0:
+                long_str = '{0:.2f} E'.format(abs(self.selected_point[1]))
+            else:
+                long_str = '{0:.2f} W'.format(abs(self.selected_point[1]))
+
+
+            sample_pts = [('latitude', self.selected_point[0]),
+                          ('longitude', self.selected_point[1])]
+            select_val_cube = \
+                current_cube.interpolate(sample_pts,
+                                            iris.analysis.Linear())
+
+            select_val = float(select_val_cube.data)
+
+            field_val_str = \
+                'value: {val:.2f} {unit_str}'.format(val=select_val,
+                                                     unit_str=unit_str)
+
+            selected_pt_info = 'selected point {lat},{long}<br>'
+            selected_pt_info += 'field value {fv}'
+            selected_pt_info = selected_pt_info.format(lat=lat_str,
+                                                       long=long_str,
+                                                       fv=field_val_str)
+
+
         stats_str_list += [model_run_info,'']
+        stats_str_list += [selected_pt_info, '']
         stats_str_list += ['Max = {0:.4f} {1}'.format(max_val, unit_str)]
         stats_str_list += ['Min = {0:.4f} {1}'.format(min_val, unit_str)]
         stats_str_list += ['Mean = {0:.4f} {1}'.format(mean_val, unit_str)]
@@ -772,6 +815,33 @@ class ForestPlot(object):
 
             self.current_figure.canvas.draw()
 
+    def _setup_tools(self):
+        self.bokeh_tools = dict([(k1,None) for k1 in BOKEH_TOOLS_LIST])
+        if 'pan' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['pan'] = bokeh.models.PanTool()
+        if 'wheel_zoom' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['wheel_zoom'] = bokeh.models.WheelZoomTool()
+        if 'reset' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['reset'] = bokeh.models.ResetTool()
+        if 'save' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['save'] = bokeh.models.SaveTool()
+        if 'box_zoom' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['box_zoom'] = bokeh.models.BoxZoomTool()
+        if 'hover' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['hover'] = bokeh.models.HoverTool(
+                tooltips=[
+                    ("(x,y)", "($x, $y)"),
+                ])
+
+        self.active_bokeh_tools = {}
+        self.active_bokeh_tools['drag'] = self.bokeh_tools['pan']
+        self.active_bokeh_tools['inspect'] = self.bokeh_tools['hover']
+        self.active_bokeh_tools['scroll'] = self.bokeh_tools['wheel_zoom']
+        self.active_bokeh_tools['tap'] = None
+
+
+
+
     def create_bokeh_img_plot_from_fig(self):
 
         '''
@@ -789,13 +859,23 @@ class ForestPlot(object):
         y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1],
                                         bounds=(cur_region[0], cur_region[1]))
 
+        self._setup_tools()
+        tools_list = \
+            [self.bokeh_tools[k1] for k1 in self.bokeh_tools.keys()]
+
         # Initialize figure
         self.bokeh_figure = \
             bokeh.plotting.figure(plot_width=self.bokeh_fig_size[0],
                                   plot_height=self.bokeh_fig_size[1],
                                   x_range=x_limits,
                                   y_range=y_limits,
-                                  tools=','.join(BOKEH_TOOLS_LIST))
+                                  tools=tools_list,
+                                  )
+        cur_tb = self.bokeh_figure.toolbar
+        cur_tb.active_drag = self.active_bokeh_tools['drag']
+        cur_tb.active_inspect = self.active_bokeh_tools['inspect']
+        cur_tb.active_tap = self.active_bokeh_tools['tap']
+        cur_tb.active_scroll = self.active_bokeh_tools['scroll']
 
         if self.current_img_array is not None:
             self.create_bokeh_img()
@@ -1006,6 +1086,16 @@ class ForestPlot(object):
             if self.stats_widget:
                 self.update_stats_widget()
 
+    def set_selected_point(self, latitude, longitude):
+        self.selected_point = (latitude, longitude)
+        if not self.async:
+
+            if self.stats_widget:
+                current_data = \
+                    self.get_data(self.stats_data_var[self.current_var])
+                self.update_stats(current_data)
+                self.update_stats_widget()
+
 
     def link_axes_to_other_plot(self, other_plot):
 
@@ -1018,3 +1108,78 @@ class ForestPlot(object):
             self.bokeh_figure.y_range = other_plot.bokeh_figure.y_range
         except:
             print('bokeh plot linking failed.')
+
+
+class ForestTimeSeries():
+    def __init__(self,
+                 datasets,
+                 selected_point,
+                 current_var):
+
+        self.datasets = datasets
+        self.current_point = selected_point
+        self.current_fig = None
+        self.current_var = current_var
+        self.cds_dict = {}
+
+    def __str__(self):
+        return 'Class representing a time series plot in the forest tool'
+
+    def create_plot(self):
+
+        self.current_fig = bokeh.plotting.figure(tools=BOKEH_TOOLS_LIST)
+        self.bokeh_lines = {}
+        self.cds_list = {}
+        for ds_name in self.datasets.keys():
+            current_ds = self.datasets[ds_name]['data']
+            times1 = current_ds.get_times(self.current_var)
+            times1 = times1 - times1[0]
+            var_cube = \
+                current_ds.get_timeseries(self.current_var,
+                                          self.current_point)
+            if var_cube:
+                var_values = var_cube.data
+
+                data1 = {'x_values': times1,
+                         'y_values': var_values}
+
+                ds_source = bokeh.models.ColumnDataSource(data=data1)
+
+                ds_line_plot = self.current_fig.line(x='x_values',
+                                                y='y_values',
+                                                source=ds_source,
+                                                     name=ds_name)
+            else:
+                ds_source = None
+                ds_line_plot = None
+
+            self.cds_dict[ds_name] = ds_source
+            self.bokeh_lines[ds_name] = ds_line_plot
+
+        return self.current_fig
+
+    def update_plot(self):
+        for ds_name in self.datasets.keys():
+            if self.cds_dict[ds_name] is not None:
+                current_ds = self.datasets[ds_name]['data']
+                times1 = current_ds.get_times(self.current_var)
+                times1 = times1 - times1[0]
+                var_cube = \
+                    current_ds.get_timeseries(self.current_var,
+                                              self.current_point)
+
+                var_values = var_cube.data
+
+                data1 = {'x_values': times1,
+                         'y_values': var_values}
+
+                self.cds_dict[ds_name].data = data1
+
+    def set_var(self, new_var):
+        self.current_var = new_var
+        self.update_plot()
+
+    def set_selected_point(self, latitude, longitude):
+        self.current_point = (latitude, longitude)
+        self.update_plot()
+

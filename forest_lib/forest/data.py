@@ -237,6 +237,24 @@ def get_available_datasets(s3_base,
     return fcast_time, datasets
 
 
+def check_bounds(cube1, selected_pt):
+    min_lat = cube1.coord('latitude').points.min()
+    max_lat = cube1.coord('latitude').points.max()
+    min_lon = cube1.coord('longitude').points.min()
+    max_lon = cube1.coord('longitude').points.max()
+
+    if selected_pt[0] < min_lat:
+        return False
+    if selected_pt[0] > max_lat:
+        return False
+    if selected_pt[1] < min_lon:
+        return False
+    if selected_pt[1] > max_lon:
+        return False
+
+    return True
+
+
 class ForestDataset(object):
 
     """Declare main class for holding Forest data.
@@ -598,3 +616,57 @@ class ForestDataset(object):
         accum_cube.units = cf_units.Unit('kg m-2')
 
         self.data[var_name][time_ix] = accum_cube
+
+    def get_timeseries(self, var_name, selected_point, convert_units=True):
+
+        """Calls functions to retrieve and load data.
+
+        Arguments
+        ---------
+
+        - var_name -- Str; Redundant: used to match other loaders.
+
+        """
+        print('load time series for point ({0},{1})'.format(selected_point[0],
+                                                            selected_point[1]))
+        time_ix = ForestDataset.TIME_INDEX_ALL
+
+        if self.times[var_name] is None:
+            if self.check_data():
+                # get data from aws s3 storage
+                self.retrieve_data()
+
+                self.load_times(var_name)
+
+        if self.data[var_name][time_ix] is None:
+            if self.check_data():
+                # Get data from aws s3 storage
+                self.retrieve_data()
+                # Load the data into memory from file (will only load
+                # metadata initially)
+                self.load_data(var_name, time_ix)
+
+
+            else:
+                self.data[var_name] = None
+
+        # extract the relevant timeseries
+
+        if not self.data[var_name][time_ix]:
+            return None
+
+        if not check_bounds(self.data[var_name][time_ix],
+                        selected_point):
+            return None
+
+        interp_pt = [('latitude',selected_point[0]),
+                     ('longitude',selected_point[1])]
+        scheme1 = iris.analysis.Linear()
+        time_series_cube = self.data[var_name][time_ix].interpolate(interp_pt,
+                                                                    scheme1)
+
+        if convert_units:
+            if UNIT_DICT[var_name]:
+                time_series_cube.convert_units(UNIT_DICT[var_name])
+
+        return time_series_cube
