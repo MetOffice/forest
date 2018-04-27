@@ -28,6 +28,8 @@ import cf_units
 
 import forest.util
 
+import pdb
+
 
 # The number of days into the past to look for data. The current
 # value specifies looking for data up to 1 week old
@@ -592,16 +594,17 @@ class ForestDataset(object):
             cube1.attributes['STASH'].item == \
             field_dict['stash_item']
         coord_constraint_dict = {}
-        period_start_ix = time_ix - (window_size/2.0) - TIME_EPSILON_HRS
-        period_start = datetime.datetime.utcfromtimestamp(period_start_ix * 3600)
-        period_end_ix = time_ix + (window_size/2.0) + TIME_EPSILON_HRS
-        period_end = datetime.datetime.utcfromtimestamp(period_end_ix * 3600)
+        if time_ix != ForestDataset.TIME_INDEX_ALL:
+            period_start_ix = time_ix - (window_size/2.0) - TIME_EPSILON_HRS
+            period_start = datetime.datetime.utcfromtimestamp(period_start_ix * 3600)
+            period_end_ix = time_ix + (window_size/2.0) + TIME_EPSILON_HRS
+            period_end = datetime.datetime.utcfromtimestamp(period_end_ix * 3600)
 
-        def time_window_extract(start1, end1, cell1):
-            return cell1.bound[0] >= start1 and cell1.bound[1] <= end1
-        coord_constraint_dict['time'] = functools.partial(time_window_extract,
-                                                          period_start,
-                                                          period_end)
+            def time_window_extract(start1, end1, cell1):
+                return cell1.bound[0] >= start1 and cell1.bound[1] <= end1
+            coord_constraint_dict['time'] = functools.partial(time_window_extract,
+                                                              period_start,
+                                                              period_end)
 
         ic1 = iris.Constraint(cube_func=cf1,
                               coord_values=coord_constraint_dict)
@@ -630,7 +633,6 @@ class ForestDataset(object):
         print('load time series for point ({0},{1})'.format(selected_point[0],
                                                             selected_point[1]))
         time_ix = ForestDataset.TIME_INDEX_ALL
-
         if self.times[var_name] is None:
             if self.check_data():
                 # get data from aws s3 storage

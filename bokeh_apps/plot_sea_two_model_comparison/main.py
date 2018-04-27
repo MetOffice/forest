@@ -172,6 +172,7 @@ def main(bokeh_id):
 
 
     plot_obj_ts = forest.plot.ForestTimeSeries(datasets[init_fcast_time],
+                                               init_fcast_time,
                                                selected_point,
                                                init_var)
 

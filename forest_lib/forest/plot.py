@@ -1113,14 +1113,20 @@ class ForestPlot(object):
 class ForestTimeSeries():
     def __init__(self,
                  datasets,
+                 model_run_time,
                  selected_point,
                  current_var):
 
         self.datasets = datasets
+        self.model_run_time = model_run_time
         self.current_point = selected_point
         self.current_fig = None
         self.current_var = current_var
         self.cds_dict = {}
+
+        self.placeholder_data = {'x_values': [0.0,1.0],
+                                 'y_values': [0.0,0.0]}
+
 
     def __str__(self):
         return 'Class representing a time series plot in the forest tool'
@@ -1146,15 +1152,21 @@ class ForestTimeSeries():
                 ds_source = bokeh.models.ColumnDataSource(data=data1)
 
                 ds_line_plot = self.current_fig.line(x='x_values',
-                                                y='y_values',
-                                                source=ds_source,
+                                                     y='y_values',
+                                                     source=ds_source,
                                                      name=ds_name)
             else:
-                ds_source = None
-                ds_line_plot = None
+                ds_source = \
+                    bokeh.models.ColumnDataSource(data=self.placeholder_data)
+                ds_line_plot = self.current_fig.line(x='x_values',
+                                                     y='y_values',
+                                                     source=ds_source,
+                                                     name=ds_name)
 
             self.cds_dict[ds_name] = ds_source
             self.bokeh_lines[ds_name] = ds_line_plot
+
+        self._update_fig_title()
 
         return self.current_fig
 
@@ -1168,12 +1180,22 @@ class ForestTimeSeries():
                     current_ds.get_timeseries(self.current_var,
                                               self.current_point)
 
-                var_values = var_cube.data
+                if var_cube is not None:
+                    var_values = var_cube.data
 
-                data1 = {'x_values': times1,
+                    data1 = {'x_values': times1,
                          'y_values': var_values}
 
-                self.cds_dict[ds_name].data = data1
+                    self.cds_dict[ds_name].data = data1
+                else:
+                    self.cds_dict[ds_name].data = self.placeholder_data
+        self._update_fig_title()
+
+    def _update_fig_title(self):
+        fig_title = 'Plotting variable {var} for model run {mr}'
+        fig_title = fig_title.format(var=self.current_var,
+                                     mr=str(self.model_run_time))
+        self.current_fig.title.text = fig_title
 
     def set_var(self, new_var):
         self.current_var = new_var
@@ -1183,3 +1205,13 @@ class ForestTimeSeries():
         self.current_point = (latitude, longitude)
         self.update_plot()
 
+    def set_data_time(self, new_time):
+        """
+        This function is provided for a consistent interface with other plot
+        classes, but does nothing.
+        """
+        pass
+
+    def set_dataset(self, new_dataset, new_model_run_time):
+        self.datasets = new_dataset
+        self.model_run_time = new_model_run_time
