@@ -396,14 +396,12 @@ class ForestPlot(object):
         wind streamlines is the selected plot type.
 
         '''
-
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
-                                         wind_speed_cube[
-                                             self.current_time].data,
+                                         wind_speed_cube.data,
                                          cmap=self.plot_options[
                                              self.current_var]['cmap'],
                                          norm=self.plot_options[

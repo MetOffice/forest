@@ -233,8 +233,8 @@ def calc_wind_vectors(wind_x, wind_y, sf):
     wv_dict['wv_Y_grid'] = Y
     wv_dict['wv_X'] = X[0, :]
     wv_dict['wv_Y'] = Y[:, 0]
-    wv_dict['wv_U'] = wind_x.data[:, ::sf, ::sf]
-    wv_dict['wv_V'] = wind_y.data[:, ::sf, ::sf]
+    wv_dict['wv_U'] = wind_x.data[::sf, ::sf]
+    wv_dict['wv_V'] = wind_y.data[::sf, ::sf]
     wind_mag, wind_angle = convert_vector_to_mag_angle(wv_dict['wv_U'],
                                                        wv_dict['wv_V'])
     

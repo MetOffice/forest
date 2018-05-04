@@ -29,6 +29,7 @@ import cf_units
 import forest.util
 
 
+
 # The number of days into the past to look for data. The current
 # value specifies looking for data up to 1 week old
 NUM_DATA_DAYS = 7
@@ -553,7 +554,6 @@ class ForestDataset(object):
         
         cube_x_wind = self.get_data('x_wind', time_ix)
         cube_y_wind = self.get_data('y_wind', time_ix)
-
         wv_dict = forest.util.calc_wind_vectors(cube_x_wind,
                                                 cube_y_wind,
                                                 10)
