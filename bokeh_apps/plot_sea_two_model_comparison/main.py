@@ -94,6 +94,12 @@ def main(bokeh_id):
                                            forest.data.MODEL_RUN_PERIOD,
                                            )
 
+    if init_fcast_time is None:
+        layout1 = forest.utils.load_error_page()
+        bokeh.plotting.curdoc().add_root(layout1)
+        return
+
+
     print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
 
     plot_type_time_lookups = \

@@ -233,7 +233,10 @@ def get_available_datasets(s3_base,
             fcast_time_list += [fct_str]
 
     # select most recent available forecast
-    fcast_time = fcast_time_list[-1]
+    try:
+        fcast_time = fcast_time_list[-1]
+    except IndexError:
+        fcast_time = None
     return fcast_time, datasets
 
 

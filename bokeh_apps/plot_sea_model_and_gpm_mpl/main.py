@@ -129,7 +129,10 @@ def main(bokeh_id):
                                            forest.data.MODEL_RUN_PERIOD,
                                            )
 
-
+    if init_fcast_time is None:
+        layout1 = forest.utils.load_error_page()
+        bokeh.plotting.curdoc().add_root(layout1)
+        return
 
 
     s3_base_str_gpm = '{server}/{bucket}/gpm_imerg/'

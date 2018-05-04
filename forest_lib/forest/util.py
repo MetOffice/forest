@@ -33,6 +33,9 @@ import numpy
 
 import iris
 
+import bokeh.models.widgets
+import bokeh.layouts
+
 SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
                    'malaysia': [-2.75, 10.7365, 95.25, 108.737],
                    'phillipines': [3.1375, 21.349, 115.8, 131.987],
@@ -441,3 +444,12 @@ def timer(func):
         return ret_val
 
     return timed_func
+
+def load_error_page():
+    msg1 = 'Error: data not found'
+    error_msg_widget = bokeh.models.widgets.Div(text=msg1,
+                                                 height=200,
+                                                 width=400,
+                                                 )
+    layout1 = bokeh.layouts.column(error_msg_widget)
+    return layout1
