@@ -24,4 +24,19 @@ class TestMain(unittest.TestCase):
         get_available_times.return_value = [None, None, None, None, None]
         with unittest.mock.patch("main.bokeh") as bokeh:
             main.main(bokeh_id="")
-            model_gpm_control.ModelGpmControl.assert_called_once_with()
+            args, kwargs = model_gpm_control.ModelGpmControl.call_args
+            expect = {
+               self.init_fcast_time: {
+                   "gpm_imerg_early": {
+                       "data": None,
+                       "data_type_name": "GPM IMERG Early",
+                       "gpm_type": "early"
+                   },
+                   "gpm_imerg_late": {
+                       "data": None,
+                       "data_type_name": "GPM IMERG Late",
+                       "gpm_type": "late"
+                   },
+               }
+            }
+            self.assertEqual(args[1], expect)
