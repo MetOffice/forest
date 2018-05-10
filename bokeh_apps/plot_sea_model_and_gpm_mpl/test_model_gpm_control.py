@@ -28,14 +28,15 @@ class TestModelGpmControl(unittest.TestCase):
     def test_radio_button_group_constructed_with_imerg_early_late(self, bokeh):
         self.make_radio_button_group(self.datasets)
         bokeh.models.widgets.RadioButtonGroup.assert_any_call(
-            labels=[],
+            labels=["GPM IMERG Early", "GPM IMERG Late"],
             button_type='warning',
             width=800
         )
 
-    def test_imerg_labels_given_realistic_dictionary(self, bokeh):
+    def test_imerg_labels_given_realistic_dictionary_returns_labels(self, bokeh):
         fixture = self.make_radio_button_group(self.datasets)
-        self.assertEqual(fixture.imerg_labels(), [])
+        expect = ["GPM IMERG Early", "GPM IMERG Late"]
+        self.assertEqual(fixture.imerg_labels(), expect)
 
     def test_imerg_labels_given_minimal_dictionary_returns_empty_list(self, bokeh):
         class FakeDataset(object):

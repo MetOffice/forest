@@ -272,9 +272,33 @@ class ModelGpmControl(object):
     def imerg_labels(self):
         '''Parse datasets dictionary for IMERG radio button group labels
 
+        At present, datasets are a series of nested dictionaries of the form
+
+        {
+            '20180101': {
+                'gpm_imerg_early': {
+                    'data': ...
+                    'data_type_name': 'GPM IMERG Early',
+                    'gpm_type': 'early'
+                },
+                ...
+            },
+            ...
+        }
+
+        .. note: The above specification is likely to change as the app evolves
+
         :returns: list of strings representing available IMERG datasets
         '''
-        return [ds_name for ds_name in self.datasets.keys() if 'imerg' in ds_name]
+        labels = []
+        for dataset in self.datasets.values():
+            for key, dictionary in dataset.items():
+                if "imerg" not in key:
+                    continue
+                if "data_type_name" not in dictionary:
+                    continue
+                labels.append(dictionary["data_type_name"])
+        return labels
 
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
         
