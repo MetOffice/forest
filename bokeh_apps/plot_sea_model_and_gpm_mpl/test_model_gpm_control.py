@@ -12,11 +12,20 @@ class TestModelGpmControl(unittest.TestCase):
         mock_gpm_dataset.get_times.return_value = [
             self.init_fcast_time
         ]
-        datasets = {self.init_fcast_time: {
-            "gpm_imerg_early": {
-                "data": mock_gpm_dataset
+        datasets = {
+            self.init_fcast_time: {
+                "gpm_imerg_early": {
+                    "data": mock_gpm_dataset,
+                    "data_type_name": "GPM IMERG Early",
+                    "gpm_type": "early"
+                },
+                "gpm_imerg_late": {
+                    "data": mock_gpm_dataset,
+                    "data_type_name": "GPM IMERG Late",
+                    "gpm_type": "late"
+                }
             }
-        }}
+        }
         init_time_ix = 0
         init_fcast_time = self.init_fcast_time
         plot_list = []
