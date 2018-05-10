@@ -270,7 +270,10 @@ class ModelGpmControl(object):
         self.plot_list[plot_index].set_config(new_config)
 
     def imerg_labels(self):
-        '''Parse datasets dictionary for IMERG radio button group labels'''
+        '''Parse datasets dictionary for IMERG radio button group labels
+
+        :returns: list of strings representing available IMERG datasets
+        '''
         return [ds_name for ds_name in self.datasets.keys() if 'imerg' in ds_name]
 
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
