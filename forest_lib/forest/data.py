@@ -28,8 +28,6 @@ import cf_units
 
 import forest.util
 
-
-
 # The number of days into the past to look for data. The current
 # value specifies looking for data up to 1 week old
 NUM_DATA_DAYS = 7
@@ -77,8 +75,12 @@ WIND_VECTOR_VARS = ['wv_X',
                     'wv_V',
                     'wv_X_grid',
                     'wv_Y_grid',
+                    'wv_mag',
+                    'wv_angle',
                     ]
 PRECIP_ACCUM_WINDOW_SIZES_LIST = [3,6,12,24]
+
+WIND_GRID_SIZE = (40,30)
 
 PRECIP_ACCUM_WINDOW_SIZES_DICT = dict([('accum_precip_{0}hr'.format(window1), window1) for window1 in PRECIP_ACCUM_WINDOW_SIZES_LIST])
 PRECIP_ACCUM_VARS = list(PRECIP_ACCUM_WINDOW_SIZES_DICT.keys())
@@ -432,10 +434,13 @@ class ForestDataset(object):
                 # Load the data into memory from file (will only load 
                 # metadata initially)
                 self.load_data(var_name, time_ix)
-                if convert_units:
+                has_units = \
+                    self.data[var_name][time_ix].units is not None and \
+                    self.data[var_name][time_ix].units.name != 'unknown'
+                if convert_units and has_units:
                     if UNIT_DICT[var_name]:
-                        self.data[var_name][time_ix].convert_units(UNIT_DICT[var_name])
-
+                        self.data[var_name][time_ix].convert_units(
+                            UNIT_DICT[var_name])
             else:
                 self.data[var_name] = None
 
@@ -556,7 +561,7 @@ class ForestDataset(object):
         cube_y_wind = self.get_data('y_wind', time_ix)
         wv_dict = forest.util.calc_wind_vectors(cube_x_wind,
                                                 cube_y_wind,
-                                                10)
+                                                WIND_GRID_SIZE)
         for var1 in wv_dict:
             self.data[var1][time_ix] = wv_dict[var1]
         

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+
+module load scitools/experimental-current
+
+export S3_ROOT=$1
+export PYTHONPATH=$PYTHONPATH:$PWD/forest_lib
+
+bokeh serve --port=$2 bokeh_apps/*

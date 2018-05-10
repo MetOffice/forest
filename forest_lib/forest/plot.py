@@ -238,8 +238,8 @@ class ForestPlot(object):
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
         self.update_stats(wind_speed_cube)
-        wv_u_data = self.get_data(var_name='wv_U')
-        wv_v_data = self.get_data(var_name='wv_V')
+        wv_u_data = self.get_data(var_name='wv_U').data
+        wv_v_data = self.get_data(var_name='wv_V').data
         self.quiver_plot.set_UVC(wv_u_data,
                                  wv_v_data)
 
@@ -272,10 +272,10 @@ class ForestPlot(object):
 
         self.quiver_plot = \
             self.current_axes.quiver(
-                self.get_data('wv_X'),
-                self.get_data('wv_Y'),
-                self.get_data('wv_U'),
-                self.get_data('wv_V'),
+                self.get_data('wv_X').data,
+                self.get_data('wv_Y').data,
+                self.get_data('wv_U').data,
+                self.get_data('wv_V').data,
                 units='height')
         qk = self.current_axes.quiverkey(self.quiver_plot,
                                          0.9,
@@ -379,16 +379,18 @@ class ForestPlot(object):
         pl1 = list(self.current_axes.patches)
         self.wind_stream_plot = \
             self.current_axes.streamplot(
-                self.get_data(var_name='wv_X_grid'),
-                self.get_data(var_name='wv_Y_grid'),
-                self.get_data(var_name='wv_U'),
-                self.get_data(var_name='wv_V'),
+                self.get_data(var_name='wv_X_grid').data,
+                self.get_data(var_name='wv_Y_grid').data,
+                self.get_data(var_name='wv_U').data,
+                self.get_data(var_name='wv_V').data,
                 color='k',
                 density=[0.5, 1.0])
         # we need to manually keep track of arrows so they can be removed when
         # the plot is updated
         pl2 = list(self.current_axes.patches)
         self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
+
+        self.update_stats(wind_speed_cube)
 
     def plot_wind_streams(self):
 
@@ -411,10 +413,10 @@ class ForestPlot(object):
 
         self.wind_stream_plot = \
             self.current_axes.streamplot(
-                self.get_data(var_name='wv_X_grid'),
-                self.get_data(var_name='wv_Y_grid'),
-                self.get_data(var_name='wv_U'),
-                self.get_data(var_name='wv_V'),
+                self.get_data(var_name='wv_X_grid').data,
+                self.get_data(var_name='wv_Y_grid').data,
+                self.get_data(var_name='wv_U').data,
+                self.get_data(var_name='wv_V').data,
                 color='k',
                 density=[0.5, 1.0])
 
@@ -431,6 +433,8 @@ class ForestPlot(object):
                                                             facecolor='none')
         self.current_axes.add_feature(coastline_50m)
         self.update_title(wind_speed_cube)
+        self.update_stats(wind_speed_cube)
+
 
     def update_air_temp(self):
 

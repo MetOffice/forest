@@ -199,14 +199,18 @@ def convert_vector_to_mag_angle(U, V):
     - V -- Meridional wind component array.
 
     """
+    grid_size = (U.shape[0],U.shape[1])
 
-    mag = numpy.sqrt(U ** 2 + V ** 2)
-    angle = (numpy.pi / 2.) - numpy.arctan2(U / mag, V / mag)
+    mag=create_zeros_cube(grid_size, U)
+    angle=create_zeros_cube(grid_size, U)
+
+    mag.data = numpy.sqrt(U.data ** 2 + V.data ** 2)
+    angle.data = (numpy.pi / 2.) - numpy.arctan2(U.data / mag.data, V.data / mag.data)
     
     return mag, angle
 
 
-def calc_wind_vectors(wind_x, wind_y, sf):
+def calc_wind_vectors(wind_x, wind_y, wind_grid_size):
 
     """Return wind vector dict calculated from wind components.
     
@@ -224,27 +228,77 @@ def calc_wind_vectors(wind_x, wind_y, sf):
 
     wv_dict = {}
 
-    longitude_pts = wind_x.coord('longitude').points
-    latitude_pts = wind_x.coord('latitude').points
+    wv_dict['wv_U'] = do_regrid(wind_grid_size, wind_x)
+    wv_dict['wv_V'] = do_regrid(wind_grid_size, wind_y)
+
+    longitude_pts = wv_dict['wv_U'].coord('longitude').points
+    latitude_pts = wv_dict['wv_U'].coord('latitude').points
     X, Y = numpy.meshgrid(longitude_pts, latitude_pts)
-    X = X[::sf, ::sf]
-    Y = Y[::sf, ::sf]
-    wv_dict['wv_X_grid'] = X
-    wv_dict['wv_Y_grid'] = Y
-    wv_dict['wv_X'] = X[0, :]
-    wv_dict['wv_Y'] = Y[:, 0]
-    wv_dict['wv_U'] = wind_x.data[::sf, ::sf]
-    wv_dict['wv_V'] = wind_y.data[::sf, ::sf]
+    wv_dict['wv_X_grid'] = iris.cube.Cube(X)
+    wv_dict['wv_Y_grid'] = iris.cube.Cube(Y)
+    wv_dict['wv_X'] = wv_dict['wv_X_grid'][0, :]
+    wv_dict['wv_Y'] = wv_dict['wv_Y_grid'][:, 0]
+
     wind_mag, wind_angle = convert_vector_to_mag_angle(wv_dict['wv_U'],
                                                        wv_dict['wv_V'])
-    
+
     # Where wind speed is zero, there is an error calculating angle,
     # so set angle to 0.0 as it has physical meaning where speed is zero.
-    wind_angle[numpy.isnan(wind_angle)] = 0.0
+    wind_angle.data[numpy.isnan(wind_angle.data)] = 0.0
     wv_dict['wv_mag'] = wind_mag
     wv_dict['wv_angle'] = wind_angle
 
     return wv_dict
+
+
+def create_zeros_cube(grid_size, cube1):
+    num_lat = grid_size[0]
+    num_long = grid_size[1]
+
+
+    min_lat = cube1.coord('latitude').points[0]
+    max_lat = cube1.coord('latitude').points[-1]
+    min_long = cube1.coord('longitude').points[0]
+    max_long = cube1.coord('longitude').points[-1]
+
+    # create the arrays of latitude and longitude coordinates for the regridded cube
+    step_lat = (max_lat - min_lat) / num_lat
+    step_long = (max_long - min_long) / num_long
+    lat_arr1 = numpy.array([min_lat + i1*step_lat for i1 in range(0,num_lat)])
+    long_arr1 = numpy.array([min_long + i1*step_long for i1 in range(0,num_long)])
+
+
+    current_lat_coord = cube1.coords('latitude')[0]
+    current_long_coord = cube1.coords('longitude')[0]
+
+    # create the iris coordinates
+    lat_coord = \
+        iris.coords.DimCoord(lat_arr1,
+                             standard_name=current_lat_coord.standard_name,
+                             coord_system=current_lat_coord.coord_system,
+                             units=current_lat_coord.units)
+    long_coord = \
+        iris.coords.DimCoord(long_arr1,
+                             standard_name=current_long_coord.standard_name,
+                             coord_system=current_long_coord.coord_system,
+                             units=current_long_coord.units)
+
+    # create a dummy cube of the correct size and add the coordinates
+    c1 = iris.cube.Cube(numpy.zeros((num_lat, num_long)))
+    c1.add_dim_coord(lat_coord, 0)
+    c1.add_dim_coord(long_coord, 1)
+    c1.units=None
+    return c1
+
+def do_regrid(grid_size, cube1):
+    # specify the dimensions of the regridded cube
+    c1 = create_zeros_cube(grid_size, cube1)
+
+    # specify operation parameters
+    regrid_method = iris.analysis.Linear()
+
+    # perform the regridding operation
+    return cube1.regrid(c1, regrid_method)
 
 
 def create_colour_opts(var_list):
@@ -384,7 +438,7 @@ def get_image_array_from_figure(fig):
     # canvas.tostring_argb gives pixmap in ARGB format. 
     # Roll the ALPHA channel to convert to RGBA format.
     buf = numpy.roll(buf, 3, axis=2)
-    buf = numpy.flip(buf, axis=0)
+    buf = numpy.flipud(buf)
     
     return buf
 

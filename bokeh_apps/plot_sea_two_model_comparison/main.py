@@ -95,7 +95,7 @@ def main(bokeh_id):
                                            )
 
     if init_fcast_time is None:
-        layout1 = forest.utils.load_error_page()
+        layout1 = forest.util.load_error_page()
         bokeh.plotting.curdoc().add_root(layout1)
         return
 
