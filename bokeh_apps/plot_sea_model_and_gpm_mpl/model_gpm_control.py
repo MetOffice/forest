@@ -270,7 +270,11 @@ class ModelGpmControl(object):
         print('selected new config {0}'.format(imerg_list[new_val]))
         new_config = imerg_list[new_val]
         self.plot_list[plot_index].set_config(new_config)
-        
+
+    def imerg_labels(self):
+        '''Parse datasets dictionary for IMERG radio button group labels'''
+        return []
+
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
         
         '''Event handler for a change in the selected model configuration output.
