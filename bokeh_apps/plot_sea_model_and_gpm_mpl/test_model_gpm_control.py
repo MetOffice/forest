@@ -6,7 +6,7 @@ class TestModelGpmControl(unittest.TestCase):
     def setUp(self):
         self.init_fcast_time = "20180101"
 
-    def test_can_be_constructed(self):
+    def test_radio_button_group_constructed_with_imerg_early_late(self):
         init_var = ""
         mock_gpm_dataset = unittest.mock.Mock()
         mock_gpm_dataset.get_times.return_value = [
@@ -30,3 +30,8 @@ class TestModelGpmControl(unittest.TestCase):
                                               plot_list,
                                               bokeh_img_list,
                                               stats_list)
+            bokeh.models.widgets.RadioButtonGroup.assert_any_call(
+                labels=[],
+                button_type='warning',
+                width=800
+            )
