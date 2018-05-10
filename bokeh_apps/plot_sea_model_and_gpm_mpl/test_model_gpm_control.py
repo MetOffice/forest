@@ -1,4 +1,5 @@
 import unittest
+import forest
 import model_gpm_control
 
 
@@ -36,6 +37,29 @@ class TestModelGpmControl(unittest.TestCase):
     def test_imerg_labels_given_realistic_dictionary_returns_labels(self, bokeh):
         fixture = self.make_radio_button_group(self.datasets)
         expect = ["GPM IMERG Early", "GPM IMERG Late"]
+        self.assertEqual(fixture.imerg_labels(), expect)
+
+    def test_imerg_labels_given_duplicate_labels_returns_unique_labels(self, bokeh):
+        class FakeDataset(object):
+            def __init__(self, times):
+                self.times = times
+            def get_times(self, variable):
+                return self.times
+        fixture = self.make_radio_button_group({
+            "20180101": {
+                "gpm_imerg_early": {
+                    "data": FakeDataset(["20180101"]),
+                    "data_type_name": "GPM IMERG Early"
+                }
+            },
+            "20180102": {
+                "gpm_imerg_early": {
+                    "data": FakeDataset(["20180102"]),
+                    "data_type_name": "GPM IMERG Early"
+                }
+            }
+        })
+        expect = ["GPM IMERG Early"]
         self.assertEqual(fixture.imerg_labels(), expect)
 
     def test_imerg_labels_given_minimal_dictionary_returns_empty_list(self, bokeh):

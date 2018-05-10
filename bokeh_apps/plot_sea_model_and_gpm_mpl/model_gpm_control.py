@@ -290,15 +290,15 @@ class ModelGpmControl(object):
 
         :returns: list of strings representing available IMERG datasets
         '''
-        labels = []
+        labels = set()
         for dataset in self.datasets.values():
             for key, dictionary in dataset.items():
                 if "imerg" not in key:
                     continue
                 if "data_type_name" not in dictionary:
                     continue
-                labels.append(dictionary["data_type_name"])
-        return labels
+                labels.add(dictionary["data_type_name"])
+        return sorted(labels)
 
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
         
