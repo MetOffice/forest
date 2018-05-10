@@ -126,7 +126,6 @@ class ModelGpmControl(object):
                                 functools.partial(self.on_config_change, 0))
 
         # Create GPM IMERG selection radio button group widget
-        # BUG: list comprehension returns empty list due to dataset dictionary change
         self.imerg_rbg = \
             bokeh.models.widgets.RadioButtonGroup(labels=self.imerg_labels(),
                                                   button_type='warning',
