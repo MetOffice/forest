@@ -27,7 +27,7 @@ class TestModelGpmControl(unittest.TestCase):
         }
 
     def test_radio_button_group_constructed_with_imerg_early_late(self, bokeh):
-        self.make_radio_button_group(self.datasets)
+        self.make_model_gpm_controller(self.datasets)
         bokeh.models.widgets.RadioButtonGroup.assert_any_call(
             labels=["GPM IMERG Early", "GPM IMERG Late"],
             button_type='warning',
@@ -35,7 +35,7 @@ class TestModelGpmControl(unittest.TestCase):
         )
 
     def test_imerg_labels_given_realistic_dictionary_returns_labels(self, bokeh):
-        fixture = self.make_radio_button_group(self.datasets)
+        fixture = self.make_model_gpm_controller(self.datasets)
         expect = ["GPM IMERG Early", "GPM IMERG Late"]
         self.assertEqual(fixture.imerg_labels(), expect)
 
@@ -45,7 +45,7 @@ class TestModelGpmControl(unittest.TestCase):
                 self.times = times
             def get_times(self, variable):
                 return self.times
-        fixture = self.make_radio_button_group({
+        fixture = self.make_model_gpm_controller({
             "20180101": {
                 "gpm_imerg_early": {
                     "data": FakeDataset(["20180101"]),
@@ -67,7 +67,7 @@ class TestModelGpmControl(unittest.TestCase):
             def get_times(self, variable):
                 return [None]
         fake_dataset = FakeDataset()
-        fixture = self.make_radio_button_group({
+        fixture = self.make_model_gpm_controller({
             self.init_fcast_time: {
                 "key": {
                     "data": fake_dataset
@@ -79,7 +79,7 @@ class TestModelGpmControl(unittest.TestCase):
     def test_on_imerg_change(self, bokeh):
         """simulate what happens when an IMERG button is clicked"""
 
-    def make_radio_button_group(self, datasets):
+    def make_model_gpm_controller(self, datasets):
         init_var = ""
         init_time_ix = 0
         init_fcast_time = self.init_fcast_time
