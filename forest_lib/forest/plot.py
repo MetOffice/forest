@@ -163,6 +163,15 @@ class ForestPlot(object):
                              'blank': self.create_blank,
                              }
 
+        #timer decorations
+        for key1 in self.update_funcs:
+            self.update_funcs[key1] = \
+                forest.util.timer(self.update_funcs[key1])
+
+        for key1 in self.plot_funcs:
+            self.plot_funcs[key1] = \
+                forest.util.timer(self.plot_funcs[key1])
+
     def update_coords(self, data_cube):
 
         '''Update the latitude and longitude coordinates for the data.

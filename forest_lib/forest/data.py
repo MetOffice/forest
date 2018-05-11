@@ -340,6 +340,10 @@ class ForestDataset(object):
         else:
             self.path_to_load = self.local_path
 
+        # set up caching and timer decoration
+        self.get_data = \
+            forest.util.timer(self._get_data)
+
     def __str__(self):
     
         """Return string"""
@@ -404,7 +408,7 @@ class ForestDataset(object):
             numpy.unique(numpy.floor(self.times[PRECIP_VAR_NAME] / window_size1) * window_size1) + (window_size1/2.0)
         self.data[var_name] = dict([(t1, None) for t1 in self.times[var_name]] + [('all',None)])
 
-    def get_data(self, var_name, selected_time, convert_units=True):
+    def _get_data(self, var_name, selected_time, convert_units=True):
     
         """Calls functions to retrieve and load data.
         

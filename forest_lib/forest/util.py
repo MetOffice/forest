@@ -427,12 +427,10 @@ def get_image_array_from_figure(fig):
     """
 
     h, w = fig.canvas.get_width_height()
-    print(' width={0}\n height={1}'.format(w, h))
 
     fig.canvas.draw()
 
     buf = numpy.fromstring(fig.canvas.tostring_argb(), dtype=numpy.uint8)
-    print('buf shape', buf.shape)
     buf.shape = (w, h, 4)
 
     # canvas.tostring_argb gives pixmap in ARGB format. 
