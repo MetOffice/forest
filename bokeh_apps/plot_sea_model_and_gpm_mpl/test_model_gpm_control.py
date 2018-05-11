@@ -76,6 +76,9 @@ class TestModelGpmControl(unittest.TestCase):
         })
         self.assertEqual(fixture.imerg_labels(), [])
 
+    def test_on_imerg_change(self, bokeh):
+        """simulate what happens when an IMERG button is clicked"""
+
     def make_radio_button_group(self, datasets):
         init_var = ""
         init_time_ix = 0
