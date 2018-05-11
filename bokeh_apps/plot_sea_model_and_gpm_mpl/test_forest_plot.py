@@ -81,4 +81,5 @@ class TestForestPlot(unittest.TestCase):
             # Assertions
             forest_plot.update_bokeh_img_plot_from_fig.assert_called_once_with()
             mock_plot.assert_called_once_with()
+            self.assertEqual(forest_plot.current_config, "new_config")
             self.assertEqual(forest_plot.plot_description, "Label")
