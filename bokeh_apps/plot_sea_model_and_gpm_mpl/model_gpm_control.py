@@ -300,15 +300,15 @@ class ModelGpmControl(object):
     @property
     def imerg_tuples(self):
         '''Helper method to keep IMERG keys and labels consistent'''
-        pairs = set()
+        pairs = {}
         for dataset in self.datasets.values():
             for key, dictionary in dataset.items():
                 if "imerg" not in key:
                     continue
                 if "data_type_name" not in dictionary:
                     continue
-                pairs.add((key, dictionary["data_type_name"]))
-        return sorted(pairs)
+                pairs[key] = dictionary["data_type_name"]
+        return sorted(pairs.items())
 
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
         
