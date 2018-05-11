@@ -86,17 +86,21 @@ class TestModelGpmControl(unittest.TestCase):
         attr1 = None
         old_val = 0
         new_val = 1
-        controller = self.make_model_gpm_controller(self.datasets)
+        mock_plot = unittest.mock.Mock()
+        plot_list = [None, mock_plot]
+        controller = self.make_model_gpm_controller(self.datasets,
+                                                    plot_list=plot_list)
         controller.on_imerg_change(plot_index,
                                    attr1,
                                    old_val,
                                    new_val)
+        mock_plot.set_config.assert_called_once_with("GPM IMERG Late")
 
-    def make_model_gpm_controller(self, datasets):
+    def make_model_gpm_controller(self, datasets,
+                                  plot_list=()):
         init_var = ""
         init_time_ix = 0
         init_fcast_time = self.init_fcast_time
-        plot_list = []
         bokeh_img_list = []
         stats_list = [None, None]
         return model_gpm_control.ModelGpmControl(init_var,
