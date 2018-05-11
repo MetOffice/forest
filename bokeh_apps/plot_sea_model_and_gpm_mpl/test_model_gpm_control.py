@@ -77,7 +77,20 @@ class TestModelGpmControl(unittest.TestCase):
         self.assertEqual(fixture.imerg_labels(), [])
 
     def test_on_imerg_change(self, bokeh):
-        """simulate what happens when an IMERG button is clicked"""
+        """simulate what happens when an IMERG button is clicked
+
+        .. note: the callback used is a curried version of the
+                 method with the first argument set to 1
+        """
+        plot_index = 1
+        attr1 = None
+        old_val = 0
+        new_val = 1
+        controller = self.make_model_gpm_controller(self.datasets)
+        controller.on_imerg_change(plot_index,
+                                   attr1,
+                                   old_val,
+                                   new_val)
 
     def make_model_gpm_controller(self, datasets):
         init_var = ""
