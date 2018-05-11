@@ -127,7 +127,7 @@ class ModelGpmControl(object):
 
         # Create GPM IMERG selection radio button group widget
         self.imerg_rbg = \
-            bokeh.models.widgets.RadioButtonGroup(labels=self.imerg_labels(),
+            bokeh.models.widgets.RadioButtonGroup(labels=self.imerg_labels,
                                                   button_type='warning',
                                                   width=800)
         self.imerg_rbg.on_change('active', 
@@ -256,18 +256,24 @@ class ModelGpmControl(object):
         self.plot_list[plot_index].set_config(new_val)
 
     def on_imerg_change(self, plot_index, attr1, old_val, new_val):
-        
         '''Event handler for a change in the selected model configuration output.
-        
         '''
         if not self.process_events:
             return
+        config = self.imerg_configs[new_val]
+        print('selected new config {0}'.format(config))
+        self.plot_list[plot_index].set_config(config)
 
-        imerg_list = self.imerg_labels()
-        print('selected new config {0}'.format(imerg_list[new_val]))
-        new_config = imerg_list[new_val]
-        self.plot_list[plot_index].set_config(new_config)
+    @property
+    def imerg_configs(self):
+        '''IMERG keywords related to radio button group labels
 
+        For example, 'IMERG GPM Late' is identified by 'imerg_gpm_late'
+        in the dataset data structure
+        '''
+        return [config for (config, label) in self.imerg_tuples]
+
+    @property
     def imerg_labels(self):
         '''Parse datasets dictionary for IMERG radio button group labels
 
@@ -289,15 +295,20 @@ class ModelGpmControl(object):
 
         :returns: list of strings representing available IMERG datasets
         '''
-        labels = set()
+        return [label for (config, label) in self.imerg_tuples]
+
+    @property
+    def imerg_tuples(self):
+        '''Helper method to keep IMERG keys and labels consistent'''
+        pairs = set()
         for dataset in self.datasets.values():
             for key, dictionary in dataset.items():
                 if "imerg" not in key:
                     continue
                 if "data_type_name" not in dictionary:
                     continue
-                labels.add(dictionary["data_type_name"])
-        return sorted(labels)
+                pairs.add((key, dictionary["data_type_name"]))
+        return sorted(pairs)
 
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
         

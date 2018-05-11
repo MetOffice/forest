@@ -37,7 +37,7 @@ class TestModelGpmControl(unittest.TestCase):
     def test_imerg_labels_given_realistic_dictionary_returns_labels(self, bokeh):
         fixture = self.make_model_gpm_controller(self.datasets)
         expect = ["GPM IMERG Early", "GPM IMERG Late"]
-        self.assertEqual(fixture.imerg_labels(), expect)
+        self.assertEqual(fixture.imerg_labels, expect)
 
     def test_imerg_labels_given_duplicate_labels_returns_unique_labels(self, bokeh):
         class FakeDataset(object):
@@ -60,7 +60,7 @@ class TestModelGpmControl(unittest.TestCase):
             }
         })
         expect = ["GPM IMERG Early"]
-        self.assertEqual(fixture.imerg_labels(), expect)
+        self.assertEqual(fixture.imerg_labels, expect)
 
     def test_imerg_labels_given_minimal_dictionary_returns_empty_list(self, bokeh):
         class FakeDataset(object):
@@ -74,7 +74,7 @@ class TestModelGpmControl(unittest.TestCase):
                 }
             }
         })
-        self.assertEqual(fixture.imerg_labels(), [])
+        self.assertEqual(fixture.imerg_labels, [])
 
     def test_on_imerg_change(self, bokeh):
         """simulate what happens when an IMERG button is clicked
@@ -94,7 +94,7 @@ class TestModelGpmControl(unittest.TestCase):
                                    attr1,
                                    old_val,
                                    new_val)
-        mock_plot.set_config.assert_called_once_with("GPM IMERG Late")
+        mock_plot.set_config.assert_called_once_with("gpm_imerg_late")
 
     def make_model_gpm_controller(self, datasets,
                                   plot_list=()):
