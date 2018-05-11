@@ -13,10 +13,12 @@ class TestForestPlot(unittest.TestCase):
         model_run_time = None
         po1 = None
         figname = None
-        plot_var = None
+        plot_var = "plot_variable"
         conf1 = "current_config"
-        reg1 = None
-        rd1 = None
+        reg1 = "current_region"
+        rd1 = {
+            "current_region": None
+        }
         unit_dict = None
         unit_dict_display = None
         app_path = None
