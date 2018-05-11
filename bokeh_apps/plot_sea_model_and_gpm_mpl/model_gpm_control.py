@@ -300,6 +300,8 @@ class ModelGpmControl(object):
     @property
     def imerg_tuples(self):
         '''Helper method to keep IMERG keys and labels consistent'''
+        if hasattr(self, "_imerg_tuples"):
+            return self._imerg_tuples
         pairs = {}
         for dataset in self.datasets.values():
             for key, dictionary in dataset.items():
@@ -308,7 +310,8 @@ class ModelGpmControl(object):
                 if "data_type_name" not in dictionary:
                     continue
                 pairs[key] = dictionary["data_type_name"]
-        return sorted(pairs.items())
+        self._imerg_tuples = sorted(pairs.items())
+        return self._imerg_tuples
 
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
         
