@@ -43,7 +43,7 @@ class TestForestPlot(unittest.TestCase):
                 "data_type_name": None
             },
             "new_config": {
-                "data_type_name": None
+                "data_type_name": "Label"
             }
         }
         model_run_time = None
@@ -75,4 +75,10 @@ class TestForestPlot(unittest.TestCase):
                                                  init_time)
             forest_plot.plot_funcs[plot_var] = mock_plot
             forest_plot.update_bokeh_img_plot_from_fig = unittest.mock.Mock()
+            # System under test
             forest_plot.set_config("new_config")
+
+            # Assertions
+            forest_plot.update_bokeh_img_plot_from_fig.assert_called_once_with()
+            mock_plot.assert_called_once_with()
+            self.assertEqual(forest_plot.plot_description, "Label")
