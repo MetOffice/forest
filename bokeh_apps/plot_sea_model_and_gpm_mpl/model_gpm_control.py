@@ -126,11 +126,11 @@ class ModelGpmControl(object):
                                 functools.partial(self.on_config_change, 0))
 
         # Create GPM IMERG selection radio button group widget
-        imerg_labels = [ds_name for ds_name in self.datasets.keys() if 'imerg' in ds_name]
         self.imerg_rbg = \
-            bokeh.models.widgets.RadioButtonGroup(labels=imerg_labels,
+            bokeh.models.widgets.RadioButtonGroup(labels=self.imerg_labels,
                                                   button_type='warning',
-                                                  width=800)
+                                                  width=800,
+                                                  active=0)
         self.imerg_rbg.on_change('active', 
                                  functools.partial(self.on_imerg_change, 1))
 
@@ -257,19 +257,63 @@ class ModelGpmControl(object):
         self.plot_list[plot_index].set_config(new_val)
 
     def on_imerg_change(self, plot_index, attr1, old_val, new_val):
-        
         '''Event handler for a change in the selected model configuration output.
-        
         '''
         if not self.process_events:
             return
+        config = self.imerg_configs[new_val]
+        print('selected new config {0}'.format(config))
+        self.plot_list[plot_index].set_config(config)
 
-        imerg_list = [ds_name for ds_name in self.datasets.keys()
-                      if 'imerg' in ds_name]
-        print('selected new config {0}'.format(imerg_list[new_val]))
-        new_config = imerg_list[new_val]
-        self.plot_list[plot_index].set_config(new_config)
-        
+    @property
+    def imerg_configs(self):
+        '''IMERG keywords related to radio button group labels
+
+        For example, 'IMERG GPM Late' is identified by 'imerg_gpm_late'
+        in the dataset data structure
+        '''
+        return [config for (config, label) in self.imerg_tuples]
+
+    @property
+    def imerg_labels(self):
+        '''Parse datasets dictionary for IMERG radio button group labels
+
+        At present, datasets are a series of nested dictionaries of the form
+
+        {
+            '20180101': {
+                'gpm_imerg_early': {
+                    'data': ...
+                    'data_type_name': 'GPM IMERG Early',
+                    'gpm_type': 'early'
+                },
+                ...
+            },
+            ...
+        }
+
+        .. note: The above specification is likely to change as the app evolves
+
+        :returns: list of strings representing available IMERG datasets
+        '''
+        return [label for (config, label) in self.imerg_tuples]
+
+    @property
+    def imerg_tuples(self):
+        '''Helper method to keep IMERG keys and labels consistent'''
+        if hasattr(self, "_imerg_tuples"):
+            return self._imerg_tuples
+        pairs = {}
+        for dataset in self.datasets.values():
+            for key, dictionary in dataset.items():
+                if "imerg" not in key:
+                    continue
+                if "data_type_name" not in dictionary:
+                    continue
+                pairs[key] = dictionary["data_type_name"]
+        self._imerg_tuples = sorted(pairs.items())
+        return self._imerg_tuples
+
     def on_accum_change(self, plot_index, attr1, old_val, new_val):
         
         '''Event handler for a change in the selected model configuration output.
