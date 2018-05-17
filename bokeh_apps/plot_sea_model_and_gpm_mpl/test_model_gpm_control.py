@@ -26,13 +26,32 @@ class TestModelGpmControl(unittest.TestCase):
             }
         }
 
-    def test_radio_button_group_constructed_with_imerg_early_late(self, bokeh):
+    def test_gpm_imerg_radio_button_group_constructed_with_arguments(self, bokeh):
         self.make_model_gpm_controller(self.datasets)
-        bokeh.models.widgets.RadioButtonGroup.assert_any_call(
-            labels=["GPM IMERG Early", "GPM IMERG Late"],
-            button_type='warning',
-            width=800
-        )
+        self.assert_any_call(bokeh.models.widgets.RadioButtonGroup,
+                             unittest.mock.call(labels=["GPM IMERG Early", "GPM IMERG Late"],
+                                                button_type='warning',
+                                                width=800,
+                                                active=0),
+                             "GPM IMERG RadioButtonGroup not created/created incorrectly")
+
+    def assert_any_call(self, mocked_object, expected_call, message):
+        """custom assertion to extend default unittest.mock.assert_any_call message"""
+        try:
+            if len(expected_call) == 2:
+                args, kwargs = expected_call
+            elif len(expected_call) == 3:
+                _, args, kwargs = expected_call
+            mocked_object.assert_any_call(*args, **kwargs)
+        except AssertionError as error:
+            lines = [message]
+            lines.append("actual calls:")
+            for call in mocked_object.call_args_list:
+                lines.append("\t {}".format(str(call)))
+            lines.append("expected call:")
+            lines.append("\t{}".format(expected_call))
+            error.args = ("\n".join(lines),)
+            raise error
 
     def test_imerg_labels_given_realistic_dictionary_returns_labels(self, bokeh):
         fixture = self.make_model_gpm_controller(self.datasets)

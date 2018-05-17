@@ -129,7 +129,8 @@ class ModelGpmControl(object):
         self.imerg_rbg = \
             bokeh.models.widgets.RadioButtonGroup(labels=self.imerg_labels,
                                                   button_type='warning',
-                                                  width=800)
+                                                  width=800,
+                                                  active=0)
         self.imerg_rbg.on_change('active', 
                                  functools.partial(self.on_imerg_change, 1))
 
