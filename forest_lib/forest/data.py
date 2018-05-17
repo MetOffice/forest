@@ -243,7 +243,7 @@ class ForestDataset(object):
         return self.loaders[var_name](var_name, time_ix)
 
     def _basic_cube_load(self, var_name, time_ix):
-        time_obj = datetime.datetime.fromtimestamp(time_ix*3600)
+        time_obj = datetime.datetime.utcfromtimestamp(time_ix*3600)
         field_dict = self.var_lookup[var_name]
         cf1 = lambda cube1: \
             cube1.attributes['STASH'].section == \

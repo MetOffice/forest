@@ -1,3 +1,4 @@
+import time
 import textwrap
 
 import numpy
@@ -18,6 +19,7 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
+import tornado.gen
 import pdb
 
 def do_plotting_async(dataset,
@@ -135,7 +137,7 @@ class ForestPlot(object):
             self.current_img_array, self.current_title, self.stats_string = do_plotting_async(*args1)
             self.display_mode = ForestPlot.DISPLAY_MODE_PLOT
 
-
+    @tornado.gen.coroutine
     def plot_finished_callback(self, result):
         print('executing plot_finished callback')
         self.current_img_array = result[0]
@@ -144,11 +146,13 @@ class ForestPlot(object):
 
         print('finished plot_finished callback')
         # self.bokeh_doc.update_semaphore.acquire()
-        self.bokeh_doc.add_next_tick_callback(self.update_doc_callback)
+        self.bokeh_doc.add_timeout_callback(self.update_doc_callback,
+                                            100)
 
     def on_plot_error(self, plot_error1):
         print('ERROR: creating plot - {0}'.format(str(plot_error1)))
 
+    @tornado.gen.coroutine
     def update_doc_callback(self):
         print('update bokeh document for {0}'.format(str(self)))
         self.display_mode = ForestPlot.DISPLAY_MODE_PLOT
@@ -160,6 +164,11 @@ class ForestPlot(object):
             self.update_colorbar_widget()
 
         print('finished updating bokeh document')
+        try:
+            time_taken = time.time() - self.plot_func_start_time
+            print('time taken: {0:.1f} seconds'.format(time_taken))
+        except:
+            pass
         # self.bokeh_doc.update_semaphore.release()
 
     @forest.util.timer

@@ -2,6 +2,7 @@ import os
 import copy
 import numpy
 import multiprocessing
+import time
 
 import bokeh.io
 import bokeh.layouts
@@ -14,6 +15,9 @@ import forest.util
 import forest.plot
 import forest.control
 import forest.data
+
+import dask
+dask.set_options(get=dask.get)
 
 NUM_PROCESSES = 4
 
@@ -92,6 +96,7 @@ def main(bokeh_id):
     '''
     
     '''
+    plot_func_start_time = time.time()
     
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
@@ -173,6 +178,7 @@ def main(bokeh_id):
                                            plot_pool,
                                            )
 
+    plot_obj_left.plot_func_start_time = plot_func_start_time
     plot_obj_left.current_time = init_data_time
     bokeh_img_left = plot_obj_left.create_plot()
     colorbar_left = plot_obj_left.create_colorbar_widget()
@@ -190,7 +196,7 @@ def main(bokeh_id):
                                             plot_pool,
                                             )
 
-
+    plot_obj_right.plot_func_start_time = plot_func_start_time
     plot_obj_right.current_time = init_data_time
     bokeh_img_right = plot_obj_right.create_plot()
     colorbar_right = plot_obj_right.create_colorbar_widget()
