@@ -47,7 +47,7 @@ class TestModelGpmControl(unittest.TestCase):
             lines = [message]
             lines.append("actual calls:")
             for call in mocked_object.call_args_list:
-                lines.append("\t {}".format(str(call)))
+                lines.append("\t{}".format(call))
             lines.append("expected call:")
             lines.append("\t{}".format(expected_call))
             error.args = ("\n".join(lines),)
