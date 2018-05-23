@@ -27,7 +27,7 @@ import model_gpm_control
 import model_gpm_data
 
 
-
+@forest.util.timer
 def main(bokeh_id):
 
     '''Main app function

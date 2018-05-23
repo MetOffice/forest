@@ -152,7 +152,6 @@ class UserFeedback(object):
 
         config_dict = {}
         for section1 in parser1.sections():
-            print('processing section {0}'.format(section1))
             section_dict = dict(parser1.items(section1))
             section_dict[LABEL_TAG] = section1
             w1, d1 = self.loaders[section_dict['type']](section_dict)
@@ -172,7 +171,6 @@ class UserFeedback(object):
         return: tuple containing a bokeh gui widget representing this section
                 and an updated dictionary file.`
         """
-        print('processing section {0}'.format(section_dict[LABEL_TITLE]))
 
         title_text = '<h1>{label}</h1>'.format(label=section_dict[LABEL_TITLE])
         header_text = \

@@ -1,7 +1,9 @@
 import os
-
+import datetime
 import warnings
 warnings.filterwarnings('ignore')
+import functools
+
 
 import bokeh.io
 import bokeh.plotting
@@ -17,6 +19,8 @@ import forest.util
 import forest.plot
 import forest.control
 import forest.data
+
+import pdb
 
 def add_main_plot(main_layout, bokeh_doc):
     
@@ -41,6 +45,34 @@ def add_main_plot(main_layout, bokeh_doc):
 bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
+@tornado.gen.coroutine
+def update_document_callback(plot_list):
+    print('doing document update')
+    for p1 in plot_list:
+        p1.do_doc_update()
+
+@tornado.gen.coroutine
+@bokeh.document.without_document_lock
+def initial_update_func(plot_executor,
+                        control1,
+                        init_var,
+                        plot_list,
+                        bokeh_doc,):
+    print('doing initial plotting')
+
+    yield plot_executor.submit(do_init_plotting,
+                               control1,
+                               init_var)
+
+    bokeh_doc.add_timeout_callback(functools.partial(update_document_callback,
+                                                     plot_list),
+                                   100)
+
+def do_init_plotting(control1, init_var):
+    control1.on_var_change('value',
+                           None,
+                           init_var,
+                           async_mode=True)
 
 
 @forest.util.timer
@@ -135,18 +167,22 @@ def main(bokeh_id):
     init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
-    available_times = \
-        forest.data.get_available_times(datasets[init_fcast_time],
-                                        plot_type_time_lookups[init_var])
-    init_data_time = available_times[init_data_time_index]
-    num_times = available_times.shape[0]
+    # available_times = \
+    #     forest.data.get_available_times(datasets[init_fcast_time],
+    #                                     plot_type_time_lookups[init_var])
+    # init_data_time = available_times[init_data_time_index]
+    # num_times = available_times.shape[0]
+
+    available_times = []
+    init_data_time = datetime.datetime.now()
+    num_times = 0
 
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
                                            init_fcast_time,
                                            plot_opts,
                                            'plot_left' + bokeh_id,
-                                           init_var,
+                                           forest.plot.ForestPlot.BLANK,
                                            init_model_left,
                                            init_region,
                                            region_dict,
@@ -163,7 +199,7 @@ def main(bokeh_id):
                                             init_fcast_time,
                                             plot_opts,
                                             'plot_right' + bokeh_id,
-                                            init_var,
+                                            forest.plot.ForestPlot.BLANK,
                                             init_model_right,
                                             init_region,
                                             region_dict,
@@ -205,6 +241,21 @@ def main(bokeh_id):
 
     add_main_plot(control1.main_layout, bokeh_doc)
 
-    bokeh_doc.title = 'Two model comparison'    
+    bokeh_doc.title = 'Two model comparison'
+
+    plot_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
+    do_initial_plotting_callback = functools.partial(initial_update_func,
+                                                     plot_executor,
+                                                     control1,
+                                                     init_var,
+                                                     [plot_obj_left,
+                                                      plot_obj_right],
+                                                     bokeh_doc,
+                                                     )
+
+    bokeh_doc.add_timeout_callback(do_initial_plotting_callback,
+                                   100)
+
 
 main(__name__)

@@ -17,6 +17,7 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
+import pdb
 
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom']
 
@@ -38,6 +39,8 @@ class ForestPlot(object):
     MODE_PLOT = 'plot'
     MODE_LOADING = 'loading'
     MODE_MISSING_DATA = 'missing_data'
+
+    BLANK = 'blank'
 
     def __init__(self,
                  dataset,
@@ -141,7 +144,7 @@ class ForestPlot(object):
                            'W': self.plot_sat_simim_imagery,
                            'I': self.plot_sat_simim_imagery,
                            'V': self.plot_sat_simim_imagery,
-                           'blank': self.create_blank,
+                           ForestPlot.BLANK: self.create_blank,
                            }
 
         self.update_funcs = {'precipitation': self.update_precip,
@@ -160,7 +163,7 @@ class ForestPlot(object):
                              'W': self.update_sat_simim_imagery,
                              'I': self.update_sat_simim_imagery,
                              'V': self.update_sat_simim_imagery,
-                             'blank': self.create_blank,
+                             ForestPlot.BLANK: self.create_blank,
                              }
 
         #timer decorations
@@ -692,6 +695,7 @@ class ForestPlot(object):
         elif self.current_config == 'simim':
             self.plot_simim()
 
+    @forest.util.timer
     def update_stats(self, current_cube):
 
         '''
@@ -720,6 +724,7 @@ class ForestPlot(object):
 
         self.stats_string = '</br>'.join(stats_str_list)
 
+    @forest.util.timer
     def update_title(self, current_cube):
 
         '''Update plot title.
@@ -754,11 +759,13 @@ class ForestPlot(object):
 
         return self.bokeh_figure
 
+    @forest.util.timer
     def create_matplotlib_fig(self):
 
         '''
 
         '''
+
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
                                                        figsize=self.current_figsize)
         self.current_figure.clf()
@@ -783,14 +790,18 @@ class ForestPlot(object):
 
             self.current_figure.canvas.draw()
 
+    @forest.util.timer
     def create_bokeh_img_plot_from_fig(self):
 
         '''
 
         '''
 
-        self.current_img_array = forest.util.get_image_array_from_figure(
-            self.current_figure)
+        if self.main_plot is not None:
+            self.current_img_array = forest.util.get_image_array_from_figure(
+                self.current_figure)
+        else:
+            self.current_img_array = None
 
         cur_region = self.region_dict[self.current_region]
 
@@ -848,7 +859,6 @@ class ForestPlot(object):
         '''
 
         '''
-
         cur_region = self.region_dict[self.current_region]
         self.current_figure.set_figwidth(self.current_figsize[0])
         self.current_figure.set_figheight(
@@ -977,6 +987,13 @@ class ForestPlot(object):
                 self.update_stats_widget()
             if self.colorbar_widget:
                 self.update_colorbar_widget()
+
+    def do_doc_update(self):
+        self.update_bokeh_img_plot_from_fig()
+        if self.stats_widget:
+            self.update_stats_widget()
+        if self.colorbar_widget:
+            self.update_colorbar_widget()
 
     def set_region(self, new_region):
 

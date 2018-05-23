@@ -191,7 +191,7 @@ def get_available_times(datasets, var1):
         available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
     return available_times
 
-
+@forest.util.timer
 def get_available_datasets(s3_base,
                            s3_local_base,
                            use_s3_mount,
