@@ -1,6 +1,6 @@
 import textwrap
 import dateutil
-
+import functools
 import numpy
 
 import matplotlib
@@ -760,12 +760,13 @@ class ForestPlot(object):
 
         return self.bokeh_figure
 
-    @forest.util.timer
-    def create_matplotlib_fig(self):
-
-        '''
-
-        '''
+    @functools.lru_cache(maxsize=32)
+    def _do_mpl_plotting(self,
+                         current_var,
+                         current_time,
+                         current_config,
+                         current_region,
+                         ):
 
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
                                                        figsize=self.current_figsize)
@@ -776,6 +777,7 @@ class ForestPlot(object):
                 projection=cartopy.crs.PlateCarree())
         self.current_axes.set_position([0, 0, 1, 1])
         self.plot_funcs[self.current_var]()
+        img_array = None
         if self.main_plot:
             if self.use_mpl_title:
                 self.current_axes.set_title(self.current_title)
@@ -791,6 +793,27 @@ class ForestPlot(object):
 
             self.current_figure.canvas.draw()
 
+            img_array = forest.util.get_image_array_from_figure(
+                self.current_figure)
+
+        stats = self.stats_string
+        title = self.current_title
+        return (img_array, stats, title)
+
+    @forest.util.timer
+    def create_matplotlib_fig(self):
+
+        '''
+
+        '''
+        (self.current_img_array,
+        self.stats_string,
+        self.current_title) = self._do_mpl_plotting(self.current_var,
+                                                    self.current_time,
+                                                    self.current_config,
+                                                    self.current_region,
+                                                    )
+
     @forest.util.timer
     def create_bokeh_img_plot_from_fig(self):
 
@@ -798,12 +821,6 @@ class ForestPlot(object):
 
         '''
         print('executing create_bokeh_img_plot_from_fig')
-        if self.main_plot is not None:
-            self.current_img_array = forest.util.get_image_array_from_figure(
-                self.current_figure)
-        else:
-            self.current_img_array = None
-
         cur_region = self.region_dict[self.current_region]
 
         # Set figure navigation limits
@@ -869,8 +886,6 @@ class ForestPlot(object):
                   (cur_region[3] - cur_region[2]), 2))
 
         if self.bokeh_img_ds:
-            self.current_img_array = forest.util.get_image_array_from_figure(
-                self.current_figure)
             self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
             self.bokeh_img_ds.data[u'x'] = [cur_region[2]]
             self.bokeh_img_ds.data[u'y'] = [cur_region[0]]
@@ -879,24 +894,18 @@ class ForestPlot(object):
             self.bokeh_figure.title.text = self.current_title
 
         else:
-            self.current_img_array = \
-                forest.util.get_image_array_from_figure(
-                    self.current_figure)
-            self.create_bokeh_img()
-            if self.overlay_text:
-                self.overlay_text.glyph.text = ''
-                self.overlay_text.visible = False
-                self.overlay_text.update()
+            try:
+                self.create_bokeh_img()
+                if self.overlay_text:
+                    self.overlay_text.glyph.text = ''
+                    self.overlay_text.visible = False
+                    self.overlay_text.update()
 
-            self.bokeh_figure.title.text = self.current_title
-            # try:
-            #     self.current_img_array = \
-            #         forest.util.get_image_array_from_figure(
-            #             self.current_figure)
-            #     self.create_bokeh_img()
-            #     self.bokeh_figure.title.text = self.current_title
-            # except:
-            #     self.current_img_array = None
+                self.bokeh_figure.title.text = self.current_title
+            # should any error occur, we want to catch it, so don't
+            # specify exception
+            except:
+                self.current_img_array = None
 
     def update_plot(self):
 
@@ -981,7 +990,13 @@ class ForestPlot(object):
         print('selected new time {0}'.format(new_time))
 
         self.current_time = new_time
-        self.update_plot()
+        self.create_matplotlib_fig()
+        if not self.async:
+            self.update_bokeh_img_plot_from_fig()
+            if self.stats_widget:
+                self.update_stats_widget()
+            if self.colorbar_widget:
+                self.update_colorbar_widget()
 
     def set_var(self, new_var):
 

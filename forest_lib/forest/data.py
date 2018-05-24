@@ -342,7 +342,7 @@ class ForestDataset(object):
 
         # set up caching and timer decoration
         self.get_data = \
-            forest.util.timer(self._get_data)
+            functools.lru_cache(maxsize=32)(forest.util.timer(self._get_data))
 
     def __str__(self):
     
