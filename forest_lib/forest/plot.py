@@ -93,6 +93,7 @@ class ForestPlot(object):
         self.coast_res = '50m'
         self.display_mode = ForestPlot.MODE_LOADING
 
+        self.overlay_text = None
 
 
     def _set_config_value(self, new_config):
@@ -796,7 +797,7 @@ class ForestPlot(object):
         '''
 
         '''
-
+        print('executing create_bokeh_img_plot_from_fig')
         if self.main_plot is not None:
             self.current_img_array = forest.util.get_image_array_from_figure(
                 self.current_figure)
@@ -825,14 +826,14 @@ class ForestPlot(object):
 
             mid_x = (cur_region[2] + cur_region[3]) * 0.5
             mid_y = (cur_region[0] + cur_region[1]) * 0.5
-            self.bokeh_figure.text(x=[mid_x],
-                                   y=[mid_y],
-                                   text=['Plot loading'],
-                                   text_color=['#FF0000'],
-                                   text_font_size="20pt",
-                                   text_baseline="middle",
-                                   text_align="center",
-                                   )
+            self.overlay_text = self.bokeh_figure.text(x=[mid_x],
+                                                       y=[mid_y],
+                                                       text=['Plot loading'],
+                                                       text_color=['#FF0000'],
+                                                       text_font_size="20pt",
+                                                       text_baseline="middle",
+                                                       text_align="center",
+                                                       )
 
         self.bokeh_figure.title.text = self.current_title
 
@@ -841,6 +842,7 @@ class ForestPlot(object):
         '''
 
         '''
+        # pdb.set_trace()
 
         cur_region = self.region_dict[self.current_region]
         # Add mpl image
@@ -877,14 +879,24 @@ class ForestPlot(object):
             self.bokeh_figure.title.text = self.current_title
 
         else:
-            try:
-                self.current_img_array = \
-                    forest.util.get_image_array_from_figure(
-                        self.current_figure)
-                self.create_bokeh_img()
-                self.bokeh_figure.title.text = self.current_title
-            except:
-                self.current_img_array = None
+            self.current_img_array = \
+                forest.util.get_image_array_from_figure(
+                    self.current_figure)
+            self.create_bokeh_img()
+            if self.overlay_text:
+                self.overlay_text.glyph.text = ''
+                self.overlay_text.visible = False
+                self.overlay_text.update()
+
+            self.bokeh_figure.title.text = self.current_title
+            # try:
+            #     self.current_img_array = \
+            #         forest.util.get_image_array_from_figure(
+            #             self.current_figure)
+            #     self.create_bokeh_img()
+            #     self.bokeh_figure.title.text = self.current_title
+            # except:
+            #     self.current_img_array = None
 
     def update_plot(self):
 

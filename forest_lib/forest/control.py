@@ -343,13 +343,13 @@ class ForestController(object):
         new_time = self._refresh_times()
 
         for p1 in self.plots:
-            # old_mode = p1.async
-            # p1.async = async_mode
+            old_mode = p1.async
+            p1.async = async_mode
             # different variables have different times available, soneed to
             # set time when selecting a variable
             p1.current_time = new_time
             p1.set_var(new_val)
-            # p1.async = old_mode
+            p1.async = old_mode
 
 
     def on_region_change(self, attr1, old_val, new_val):

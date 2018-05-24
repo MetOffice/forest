@@ -51,6 +51,7 @@ def update_document_callback(plot_list):
     for p1 in plot_list:
         p1.do_doc_update()
 
+
 @tornado.gen.coroutine
 @bokeh.document.without_document_lock
 def initial_update_func(plot_executor,
@@ -66,7 +67,9 @@ def initial_update_func(plot_executor,
 
     bokeh_doc.add_timeout_callback(functools.partial(update_document_callback,
                                                      plot_list),
-                                   100)
+                                   1000)
+    # bokeh_doc.add_next_tick_callback(functools.partial(update_document_callback,
+    #                                                  plot_list))
 
 def do_init_plotting(control1, init_var):
     control1.on_var_change('value',
@@ -255,7 +258,7 @@ def main(bokeh_id):
                                                      )
 
     bokeh_doc.add_timeout_callback(do_initial_plotting_callback,
-                                   100)
+                                   1000)
 
 
 main(__name__)
