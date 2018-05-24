@@ -140,7 +140,7 @@ class GpmDataset(object):
         """
         
         """
-        
+
         self.raw_data = {}
 
         for file_name, cube_tim_str in zip(self.local_path_list,

@@ -12,6 +12,7 @@ import math
 import numpy
 import dateutil.parser
 import copy
+import functools
 
 import matplotlib
 matplotlib.use('agg')
@@ -19,12 +20,46 @@ import iris
 iris.FUTURE.netcdf_promote = True
 import bokeh.plotting
 
+import concurrent.futures
+import tornado
+
 import forest.util
 import forest.plot
 import forest.data
 
 import model_gpm_control
 import model_gpm_data
+
+@tornado.gen.coroutine
+def update_document_callback(plot_list):
+    print('doing document update')
+    for p1 in plot_list:
+        p1.do_doc_update()
+
+
+@tornado.gen.coroutine
+@bokeh.document.without_document_lock
+def initial_update_func(plot_executor,
+                        control1,
+                        init_var,
+                        plot_list,
+                        bokeh_doc,):
+    print('doing initial plotting')
+
+    yield plot_executor.submit(do_init_plotting,
+                               control1,
+                               init_var)
+
+    bokeh_doc.add_timeout_callback(functools.partial(update_document_callback,
+                                                     plot_list),
+                                   1000)
+
+def do_init_plotting(control1, init_var):
+    control1.on_accum_change(0,
+                             'value',
+                             None,
+                             0,
+                             async_mode=True)
 
 
 @forest.util.timer
@@ -129,9 +164,10 @@ def main(bokeh_id):
                                            forest.data.MODEL_RUN_PERIOD,
                                            )
 
+    bokeh_doc = bokeh.plotting.curdoc()
     if init_fcast_time is None:
         layout1 = forest.util.load_error_page()
-        bokeh.plotting.curdoc().add_root(layout1)
+        bokeh_doc.add_root(layout1)
         return
 
 
@@ -181,12 +217,15 @@ def main(bokeh_id):
     init_model_right = GPM_IMERG_EARLY_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
-    available_times = forest.data.get_available_times(datasets[init_fcast_time],
-                                                      init_var)
+    # available_times = forest.data.get_available_times(datasets[init_fcast_time],
+    #                                                   init_var)
+    #
+    # init_time_ix = 4
+    # init_time = available_times[init_time_ix]
 
-    init_time_ix = 4
-    init_time = available_times[init_time_ix]
-
+    available_times = []
+    init_time_ix = 0
+    init_time = datetime.datetime.now()
 
     ## Display plots
 
@@ -194,7 +233,7 @@ def main(bokeh_id):
                                            init_fcast_time,
                                            plot_opts,
                                            'plot_left' + bokeh_id,
-                                           init_var,
+                                           forest.plot.ForestPlot.BLANK,
                                            init_model_left,
                                            init_region,
                                            region_dict,
@@ -215,7 +254,7 @@ def main(bokeh_id):
                                             init_fcast_time,
                                             plot_opts,
                                             'plot_right' + bokeh_id,
-                                            init_var,
+                                            forest.plot.ForestPlot.BLANK,
                                             init_model_right,
                                             init_region,
                                             region_dict,
@@ -233,13 +272,15 @@ def main(bokeh_id):
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
-    control1 = model_gpm_control.ModelGpmControl(init_var,
+    control1 = model_gpm_control.ModelGpmControl(forest.plot.ForestPlot.BLANK,
                                                  datasets,
                                                  init_time_ix,
                                                  init_fcast_time,
                                                  [plot_obj_left, plot_obj_right],
                                                  [bokeh_img_left, bokeh_img_right],
-                                                 stats_list)
+                                                 stats_list,
+                                                 bokeh_doc,
+                                                 )
 
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
@@ -247,10 +288,25 @@ def main(bokeh_id):
         bokeh_mode = 'server'
 
     if bokeh_mode == 'server':
-        bokeh.plotting.curdoc().add_root(control1.main_layout)
-        bokeh.plotting.curdoc().title = 'Model rainfall vs GPM app'
-
+        bokeh_doc.add_root(control1.main_layout)
     elif bokeh_mode == 'cli':
         bokeh.io.show(control1.main_layout)
+
+    bokeh_doc.title = 'Model rainfall vs GPM app'
+
+    plot_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
+    do_initial_plotting_callback = functools.partial(initial_update_func,
+                                                     plot_executor,
+                                                     control1,
+                                                     init_var,
+                                                     [plot_obj_left,
+                                                      plot_obj_right],
+                                                     bokeh_doc,
+                                                     )
+
+    bokeh_doc.add_timeout_callback(do_initial_plotting_callback,
+                                   1000)
+
 
 main(__name__)

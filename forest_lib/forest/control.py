@@ -3,14 +3,14 @@ import functools
 import threading
 import dateutil.parser
 
+import tornado
+
 import bokeh.models.widgets
 import bokeh.layouts
 import bokeh.plotting
 
 import forest.data
 import forest.feedback
-
-import pdb
 
 CONFIG_DIR = os.path.dirname(__file__)
 FEEDBACK_CONF_FILENAME = 'feedback_fields.conf'
@@ -305,7 +305,7 @@ class ForestController(object):
             p1.set_data_time(new_time1)
 
 
-    def _refresh_times(self, update_gui=True):
+    def _refresh_times(self, update_gui=True, async_mode=False):
 
         if self.current_var == forest.plot.ForestPlot.BLANK:
             self.available_times = None
@@ -315,6 +315,8 @@ class ForestController(object):
             forest.data.get_available_times(
                 self.datasets[self.current_fcast_time],
                 self.plot_type_time_lookups[self.current_var])
+        self.num_times = self.available_times.shape[0]
+
         try:
             new_time = self.available_times[self.current_time_index]
         except IndexError:
@@ -326,9 +328,15 @@ class ForestController(object):
             self.process_events = True
 
         if update_gui and self.data_time_slider:
-            self.data_time_slider.end = self.available_times.shape[0]
+            if async_mode:
+                self.bokeh_doc.add_next_tick_callback(self._update_gui)
+            else:
+                self.data_time_slider.end = self.available_times.shape[0]
         return new_time
 
+    @tornado.gen.coroutine
+    def _update_gui(self):
+        self.data_time_slider.end = self.available_times.shape[0]
 
     def on_var_change(self, attr1, old_val, new_val, async_mode=False):
 
@@ -340,7 +348,7 @@ class ForestController(object):
 
         print('var change handler')
         self.current_var = new_val
-        new_time = self._refresh_times()
+        new_time = self._refresh_times(async_mode=async_mode)
 
         for p1 in self.plots:
             old_mode = p1.async

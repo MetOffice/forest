@@ -1,5 +1,7 @@
 import functools
 
+import tornado
+
 import bokeh
 import bokeh.model
 import bokeh.layouts
@@ -40,12 +42,14 @@ class ModelGpmControl(object):
                  init_fcast_time,
                  plot_list,
                  bokeh_img_list,
-                 stats_list
+                 stats_list,
+                 bokeh_doc,
                  ):
         
         '''
         
         '''
+        self.bokeh_doc = bokeh_doc
         self.current_var = init_var
         self.current_fcast_time = init_fcast_time
         self.data_time_slider = None
@@ -53,8 +57,13 @@ class ModelGpmControl(object):
         self.datasets = datasets
         self.current_time_index = init_time_ix
         times = self._refresh_times(update_gui=False)
-        self.init_time = self.available_times[self.current_time_index]
-        self.num_times = self.available_times.shape[0]
+
+        if self.available_times is not None:
+            self.init_time = self.available_times[self.current_time_index]
+            self.num_times = self.available_times.shape[0]
+        else:
+            self.init_time = None
+            self.num_times = 0
         self.plot_list = plot_list
         self.bokeh_img_list = bokeh_img_list
         self.stats_list = stats_list
@@ -87,9 +96,12 @@ class ModelGpmControl(object):
         self.time_prev_button.on_click(self.on_time_prev)
         
         # Create time selection slider widget
+        slider_max = self.num_times
+        if slider_max == 0:
+            slider_max = 1
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
-                                        end=self.num_times,
+                                        end=slider_max,
                                         value=self.current_time_index,
                                         step=1,
                                         title="Data time",
@@ -229,9 +241,15 @@ class ModelGpmControl(object):
         else:
             print('Cannot select time > num_times')
 
-    def _refresh_times(self, update_gui):
+    def _refresh_times(self, update_gui, async_mode=False):
+
+        if self.current_var == forest.plot.ForestPlot.BLANK:
+            self.available_times = None
+            return None
+
         self.available_times = forest.data.get_available_times(self.datasets[self.current_fcast_time],
                                                                self.current_var)
+        self.num_times = self.available_times.shape[0]
         try:
             new_time = self.available_times[self.current_time_index]
         except IndexError:
@@ -242,9 +260,16 @@ class ModelGpmControl(object):
                 self.data_time_slider.value = self.current_time_index
                 self.process_events = True
         if update_gui and self.data_time_slider:
-            self.data_time_slider.end = self.available_times.shape[0]
+            if async_mode:
+                self.bokeh_doc.add_next_tick_callback(self._update_gui)
+            else:
+                self.data_time_slider.end = self.available_times.shape[0]
 
         return new_time
+
+    @tornado.gen.coroutine
+    def _update_gui(self):
+        self.data_time_slider.end = self.num_times
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
         
@@ -314,7 +339,12 @@ class ModelGpmControl(object):
         self._imerg_tuples = sorted(pairs.items())
         return self._imerg_tuples
 
-    def on_accum_change(self, plot_index, attr1, old_val, new_val):
+    def on_accum_change(self,
+                        plot_index,
+                        attr1,
+                        old_val,
+                        new_val,
+                        async_mode=False):
         
         '''Event handler for a change in the selected model configuration output.
         
@@ -325,11 +355,15 @@ class ModelGpmControl(object):
         print('selected new accumulation time span {0}'.format(self.accum_rbg.labels[new_val]))
         new_var = 'accum_precip_{0}'.format(self.accum_rbg.labels[new_val])
         self.current_var = new_var
-        new_time = self._refresh_times(update_gui=True)
+        new_time = self._refresh_times(update_gui=True,
+                                       async_mode=async_mode)
 
         for plot1 in self.plot_list:
+            old_mode = plot1.async
+            plot1.async = async_mode
             plot1.current_time = new_time
             plot1.set_var(new_var)
+            plot1.async = old_mode
 
     def _on_model_run_change(self, attr1, old_val, new_val):
         if not self.process_events:

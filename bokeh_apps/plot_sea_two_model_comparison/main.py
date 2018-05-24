@@ -14,13 +14,10 @@ matplotlib.use('agg')
 import concurrent.futures
 import tornado
 
-
 import forest.util
 import forest.plot
 import forest.control
 import forest.data
-
-import pdb
 
 def add_main_plot(main_layout, bokeh_doc):
     
