@@ -765,7 +765,7 @@ class ForestPlot(object):
                          current_config,
                          current_region,
                          ):
-
+        #execute plotting using process pool executor for true multiprocessing
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
                                                        figsize=self.current_figsize)
         self.current_figure.clf()
