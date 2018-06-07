@@ -120,7 +120,8 @@ def main(bokeh_id):
     plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
 
     init_data_time_index = 1
-    init_var = 'precipitation'
+    # init_var = 'precipitation'
+    init_var = forest.data.WIND_STREAM_NAME
 
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY
@@ -133,6 +134,8 @@ def main(bokeh_id):
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
+    plot_list = []
+    img_list = []
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
                                            init_fcast_time,
@@ -151,6 +154,8 @@ def main(bokeh_id):
     plot_obj_left.selected_point = selected_point
     bokeh_img_left = plot_obj_left.create_plot()
     stats_left = plot_obj_left.create_stats_widget()
+    plot_list += [plot_obj_left]
+    img_list += [bokeh_img_left]
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
                                             init_fcast_time,
@@ -169,6 +174,14 @@ def main(bokeh_id):
     plot_obj_right.selected_point = selected_point
     bokeh_img_right = plot_obj_right.create_plot()
     stats_right = plot_obj_right.create_stats_widget()
+    plot_list += [plot_obj_right]
+    img_list += [bokeh_img_right]
+
+
+
+    colorbar_widget = plot_obj_left.create_colorbar_widget()
+
+    plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
 
     plot_obj_ts = forest.plot.ForestTimeSeries(datasets[init_fcast_time],
@@ -177,23 +190,15 @@ def main(bokeh_id):
                                                init_var)
 
     bokeh_image_ts = plot_obj_ts.create_plot()
+    plot_list += [plot_obj_ts]
+    img_list += [bokeh_image_ts]
 
-    colorbar_widget = plot_obj_left.create_colorbar_widget()
-
-    plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
     s3_local_base_feedback = \
         os.path.join(s3_root,
                      bucket_name,
                      'user_feedback')
 
-    plot_list = [plot_obj_left,
-                 plot_obj_right,
-                 plot_obj_ts]
-
-    img_list = [bokeh_img_left,
-                 bokeh_img_right,
-                 bokeh_image_ts]
 
     # Set up GUI controller class
     control1 = forest.control.ForestController(init_var,
