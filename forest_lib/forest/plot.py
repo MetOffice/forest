@@ -1121,12 +1121,23 @@ class ForestPlot(object):
 
 
 class ForestTimeSeries():
+    """
+    Class representing a time series plot. Unlike a map based plot, where
+    each plot represents a single dataset, the timeseries plot plot several
+    datasets together in the same plot for comparison purposes.
+    """
     def __init__(self,
                  datasets,
                  model_run_time,
                  selected_point,
                  current_var):
+        """
 
+        :param datasets: A dictionary object of datasets
+        :param model_run_time: A
+        :param selected_point:
+        :param current_var:
+        """
         self.datasets = datasets
         self.model_run_time = model_run_time
         self.current_point = selected_point
