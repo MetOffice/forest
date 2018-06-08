@@ -19,8 +19,6 @@ import forest.data
 
 import iris.analysis
 
-import pdb
-
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
 
 class MissingDataError(Exception):

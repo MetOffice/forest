@@ -114,14 +114,14 @@ def main(bokeh_id):
     #Create regions
     region_dict = forest.util.SEA_REGION_DICT
 
+    # initial selected point is approximately Jakarta, Indonesia
     selected_point = (-6,103)
 
     #Setup and display plots
     plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
 
     init_data_time_index = 1
-    # init_var = 'precipitation'
-    init_var = forest.data.WIND_STREAM_NAME
+    init_var = 'precipitation'
 
     init_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY

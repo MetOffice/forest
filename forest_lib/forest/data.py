@@ -29,9 +29,6 @@ import cf_units
 
 import forest.util
 
-import pdb
-
-
 # The number of days into the past to look for data. The current
 # value specifies looking for data up to 1 week old
 NUM_DATA_DAYS = 7
@@ -88,7 +85,9 @@ WIND_VECTOR_VARS = ['wv_X',
 
 WIND_VARS = WIND_VECTOR_VARS + [WIND_SPEED_NAME,
                                 WIND_STREAM_NAME,
-                                WIND_MSLP_NAME]
+                                WIND_MSLP_NAME,
+                                WIND_VECTOR_NAME,
+                                ]
 
 PRECIP_ACCUM_WINDOW_SIZES_LIST = [3,6,12,24]
 
@@ -106,6 +105,7 @@ UNIT_DICT = {PRECIP_VAR_NAME: PRECIP_UNIT_RATE,
              MSLP_NAME : MSLP_UNIT_HPA,
              WIND_VECTOR_NAME: WIND_UNIT_MPH,
              WIND_STREAM_NAME: WIND_UNIT_MPH,
+             WIND_MSLP_NAME: WIND_UNIT_MPH,
              }
 
 UNIT_DICT.update(dict([(var1,WIND_UNIT_MPH) for var1 in WIND_VECTOR_VARS]))
@@ -505,7 +505,7 @@ class ForestDataset(object):
             self._basic_time_load('x_wind')
             self.data['x_wind'].update(dict([(t1,None,) for t1 in self.times['x_wind'] ]))
 
-        for var1 in WIND_VECTOR_VARS + ['y_wind', WIND_SPEED_NAME, WIND_STREAM_NAME]:
+        for var1 in WIND_VARS:
             if self.times[var1] is None:
                 self.times[var1] = copy.deepcopy(self.times['x_wind'])
                 self.data[var1] = dict([(t1,None,) for t1 in self.times[var1] ]+ [('all',None)])
