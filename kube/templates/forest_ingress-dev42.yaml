@@ -1,0 +1,21 @@
+# Ingress
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Values.managerdev42.domain }}
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.managerdev42.domain }}
+    secretName: {{ .Values.managerdev42.domain }}-tls
+  rules:
+  - host: {{ .Values.managerdev42.domain }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ .Values.managerdev42.name }}
+          servicePort: {{.Values.managerdev42.port}}
