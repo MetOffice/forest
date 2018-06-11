@@ -1134,9 +1134,13 @@ class ForestTimeSeries():
         """
 
         :param datasets: A dictionary object of datasets
-        :param model_run_time: A
-        :param selected_point:
-        :param current_var:
+        :param model_run_time: A string representing the model run to be
+                               displayed. All configs for the given model run
+                               will be displayed on the timeseries graph.
+        :param selected_point: The lat/long coordinates of the point to
+                               display the timeseries for.
+        :param current_var: The current variable to be displyed
+                            e.g. precipitation
         """
         self.datasets = datasets
         self.model_run_time = model_run_time
@@ -1150,10 +1154,18 @@ class ForestTimeSeries():
 
 
     def __str__(self):
+        """
+
+        :return: A string describing the class.
+        """
         return 'Class representing a time series plot in the forest tool'
 
     def create_plot(self):
-
+        """
+        Create the timeseries plot in a bokeh figure. This is where the actual
+        work is done.
+        :return: A bokeh figure object containing the timeseries plot.
+        """
         self.current_fig = bokeh.plotting.figure(tools=BOKEH_TOOLS_LIST)
         self.bokeh_lines = {}
         self.cds_list = {}
@@ -1191,7 +1203,13 @@ class ForestTimeSeries():
 
         return self.current_fig
 
-    def update_plot(self):
+    def _update_plot(self):
+        """
+        Update the bokeh figure with a new timeseries plot. This is called by
+        functions that are called to change an input, and should not be called
+        by a user directly.
+        :return:
+        """
         for ds_name in self.datasets.keys():
             if self.cds_dict[ds_name] is not None:
                 current_ds = self.datasets[ds_name]['data']
@@ -1213,18 +1231,33 @@ class ForestTimeSeries():
         self._update_fig_title()
 
     def _update_fig_title(self):
+        """
+        Update the title of the bokeh figure.
+        :return: No return.
+        """
         fig_title = 'Plotting variable {var} for model run {mr}'
         fig_title = fig_title.format(var=self.current_var,
                                      mr=str(self.model_run_time))
         self.current_fig.title.text = fig_title
 
     def set_var(self, new_var):
+        """
+        Set the timeseries to display the
+        :param new_var: The new variable to be displayed.
+        :return: No return value
+        """
         self.current_var = new_var
-        self.update_plot()
+        self._update_plot()
 
     def set_selected_point(self, latitude, longitude):
+        """
+        Set a new location for the timeseries display.
+        :param latitude: Latitude of the location to display.
+        :param longitude: longitude of the location to display.
+        :return: No return value.
+        """
         self.current_point = (latitude, longitude)
-        self.update_plot()
+        self._update_plot()
 
     def set_data_time(self, new_time):
         """
@@ -1234,5 +1267,12 @@ class ForestTimeSeries():
         pass
 
     def set_dataset(self, new_dataset, new_model_run_time):
+        """
+        Set a new model run as the input to the timeseries.
+        :param new_dataset: The dictionary representing the new model run
+                            dataset.
+        :param new_model_run_time: A string representing the model run time.
+        :return: No return value.
+        """
         self.datasets = new_dataset
         self.model_run_time = new_model_run_time

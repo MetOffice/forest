@@ -214,9 +214,29 @@ def get_available_datasets(s3_base,
                            num_days,
                            model_period,
                            ):
-    '''
+    """
+    Get a list of model runs times for which there is model output data
+    available, and list of dictionaries with a dataset for each model run time.
 
-    '''
+    :param s3_base: The S3 url to check for datasets
+    :param s3_local_base: The local mount location of that S3 URL
+                          (using fuse mount)
+    :param use_s3_mount: If true, use the local s3 mount rather than download
+                         files
+    :param base_path_local: The local path to files. Only used if use_s3_mount
+                            is false
+    :param do_download: if true and use_s3_mount is false, the files will be
+                        downloaded from the S3 bucket to a local folder
+    :param dataset_template: A dictionary of dataset configs, which will be
+                             used a template for each model run that is
+                             available.
+    :param days_since_period_start: Number of days in the past to start
+                                    looking for model runs
+    :param num_days: number of days of model runs to look for
+    :param model_period: The period between model runs.
+    :return: A tuple containing a list of available model runs and a list of
+             datasets for each available model run
+    """
     fcast_dt_list, fcast_dt_str_list = \
         get_model_run_times(days_since_period_start,
                                         num_days,
@@ -256,6 +276,14 @@ def get_available_datasets(s3_base,
 
 
 def check_bounds(cube1, selected_pt):
+    """
+    check whether the selected point falls within the bounds of the specified
+    cube.
+    :param cube1: The data cube with latitude and longitude metadata
+    :param selected_pt: A tuple representing (latitude, longitude) coordinates.
+    :return: True if the point is in the latitude and longtude range of the
+             cube's metadata.
+    """
     min_lat = cube1.coord('latitude').points.min()
     max_lat = cube1.coord('latitude').points.max()
     min_lon = cube1.coord('longitude').points.min()
@@ -276,6 +304,22 @@ def do_cube_load(path_to_load,
                  field_dict,
                  time_ix,
                  lat_long_coord):
+    """
+    Load a cube from the given path using the specified constraints. The field
+    dict argument is required, but the time_ix and lat_long_coord arguments are
+    optional. The cube loaded will be constrained by one or both of time and
+    lat/lon if specified.
+    :param path_to_load: The file path to load
+    :param field_dict: A dictionary containing keys stash_section and
+                      stash_item for selecting a variable from the data in the
+                      file.
+    :param time_ix: A float representing the time in hours since 1970. Only
+                    this time coordinate will be loaded if specified, otherwise
+                    all times for the specified variable will be loaded.
+    :param lat_long_coord: a lat long coordinate around which to load a half
+                           degree window of points.
+    :return: The iris cube of the data at the path with given constraints.
+    """
     cf1 = lambda cube1: \
         cube1.attributes['STASH'].section == \
         field_dict['stash_section'] and \
