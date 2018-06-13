@@ -51,18 +51,6 @@ def main(bokeh_id):
     dw = rgb.shape[1]
     dh = rgb.shape[0]
 
-    # Sub-sample imagery since 2000*2000 is too large to work with
-    fraction = 0.25
-    sub_r = scipy.ndimage.zoom(rgb[:, :, 0], fraction)
-    sub_g = scipy.ndimage.zoom(rgb[:, :, 1], fraction)
-    sub_b = scipy.ndimage.zoom(rgb[:, :, 2], fraction)
-    sub_rgb = np.empty((sub_r.shape[0], sub_r.shape[1], 3),
-                       dtype=np.uint8)
-    sub_rgb[:, :, 0] = sub_r
-    sub_rgb[:, :, 1] = sub_g
-    sub_rgb[:, :, 2] = sub_b
-    print("sub-RGBA shape", sub_rgb.shape)
-
     print("converting RGB to RGBA")
     def to_rgba(rgb):
         """Convert RGB to RGBA with alpha set to 1"""
@@ -74,18 +62,34 @@ def main(bokeh_id):
         view[:, :, 2] = rgb[:, :, 2]
         view[:, :, 3] = 255
         return view
-    rgba = to_rgba(sub_rgb)
+    rgba = to_rgba(rgb)
     print("RGBA shape", rgba.shape)
+
+    def sub_sample(rgba, fraction):
+        # Sub-sample imagery since 2000*2000 is too large to work with
+        sub_r = scipy.ndimage.zoom(rgba[:, :, 0], fraction)
+        sub_g = scipy.ndimage.zoom(rgba[:, :, 1], fraction)
+        sub_b = scipy.ndimage.zoom(rgba[:, :, 2], fraction)
+        sub_a = scipy.ndimage.zoom(rgba[:, :, 3], fraction)
+        result = np.empty((sub_r.shape[0], sub_r.shape[1], 4),
+                           dtype=np.uint8)
+        result[:, :, 0] = sub_r
+        result[:, :, 1] = sub_g
+        result[:, :, 2] = sub_b
+        result[:, :, 3] = sub_a
+        return result
+
+    sub_rgba = sub_sample(rgba, fraction=0.25)
+    print("sub-RGBA shape", sub_rgba.shape)
 
     # Zoomable image column data source
     source = bokeh.models.ColumnDataSource({
-        "image": [rgba],
+        "image": [sub_rgba],
         "x": [0],
         "y": [0],
         "dw": [dw],
         "dh": [dh]
     })
-
     print("plotting RGBA array")
     figure.image_rgba(image="image",
                       x="x",
@@ -109,26 +113,45 @@ def main(bokeh_id):
 
     def zoom(dimension, attr, old, new):
         """General purpose image zoom"""
+        if attr == "start":
+            i = 0
+        else:
+            i = 1
         pixel = int(new)
+        if dimension == "x":
+            n = dw
+        elif dimension == "y":
+            n = dh
+        if pixel > n:
+            pixel = n
         if pixel < 0:
             pixel = 0
-        if dimension == "x":
-            if pixel > dw:
-                pixel = dw
-            if attr == "start":
-                pixels.data["x"][0] = pixel
-            elif attr == "end":
-                pixels.data["x"][1] = pixel
-        elif dimension == "y":
-            if pixel > dh:
-                pixel = dh
-            if attr == "start":
-                pixels.data["y"][0] = pixel
-            elif attr == "end":
-                pixels.data["y"][1] = pixel
+        pixels.data[dimension][i] = pixel
+
+        # Report on selected image size
         x = pixels.data["x"]
         y = pixels.data["y"]
-        print(x[1] - x[0], "x", y[1] - y[0])
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
+        if (dx * dy) == 0:
+            print("nothing to display")
+            return
+        if (dx * dy) < 1000:
+            fraction = 1
+        else:
+            fraction = 0.25
+        image = sub_sample(rgba[y[0]:y[1], x[0]:x[1]],
+                           fraction=fraction)
+        source.data = {
+            "image": [image],
+            "x": [x[0]],
+            "y": [y[0]],
+            "dw": [dx],
+            "dh": [dy]
+        }
+        print("shape:", dx, "x", dy, "pixels:", dx * dy)
+        print("dx fraction:", dx / dw)
+        print("dy fraction:", dy / dh)
 
     figure.x_range.on_change("start", zoom_x)
     figure.x_range.on_change("end", zoom_x)
