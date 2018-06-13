@@ -63,8 +63,6 @@ class SimimDataset(object):
         self.forecast_time_obj = forecast_time_obj
         self.data = dict([(v1, None) for v1 in SIMIM_SAT_VARS])
 
-        self.retrieve_data()
-        self.load_data()
 
     def __str__(self):
         
@@ -185,8 +183,6 @@ class SatelliteDataset(object):
                 self.local_path_list[im_type] = [os.path.join(self.base_local_path, fn1) for fn1 in
                                                  self.file_name_list[im_type]]
         self.data = dict([(v1, None) for v1 in SIMIM_SAT_VARS])
-        self.retrieve_data()
-        self.load_data()
 
     def __str__(self):
         

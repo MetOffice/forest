@@ -9,9 +9,13 @@
 import os
 import datetime
 import copy
+import functools
 
 import warnings
 warnings.filterwarnings('ignore')
+
+import concurrent.futures
+import tornado
 
 import matplotlib
 matplotlib.use('agg')
@@ -25,13 +29,44 @@ import forest.plot
 import simim_sat_control
 import simim_sat_data
 
+@tornado.gen.coroutine
+def update_document_callback(plot_list):
+    print('doing document update')
+    for p1 in plot_list:
+        p1.do_doc_update()
+
+
+@tornado.gen.coroutine
+@bokeh.document.without_document_lock
+def initial_update_func(plot_executor,
+                        control1,
+                        init_var,
+                        plot_list,
+                        bokeh_doc,):
+    print('doing initial plotting')
+
+    yield plot_executor.submit(do_init_plotting,
+                               control1,
+                               init_var)
+
+    bokeh_doc.add_timeout_callback(functools.partial(update_document_callback,
+                                                     plot_list),
+                                   1000)
+
+def do_init_plotting(control1, init_var):
+    control1.on_type_change('value',
+                           None,
+                           init_var,
+                           async_mode=True)
+
+@forest.util.timer
 def main(bokeh_id):
     
     '''Main function of app
     
     '''
 
-
+    print('running satellite vs simim app')
 
     # Extract data from S3. The data can either be downloaded in full before
     #  loading, or downloaded on demand using the /s3 filemount. This is 
@@ -163,7 +198,7 @@ def main(bokeh_id):
                                            init_fcast_time,
                                            plot_options,
                                            'plot_left' + bokeh_id,
-                                           init_var,
+                                           forest.plot.ForestPlot.BLANK,
                                            'simim',
                                            init_region,
                                            region_dict,
@@ -182,7 +217,7 @@ def main(bokeh_id):
                                             None,
                                             plot_options,
                                             'plot_right' + bokeh_id,
-                                            init_var,
+                                            forest.plot.ForestPlot.BLANK,
                                             simim_sat_data.HIMAWARI8_KEY,
                                             init_region,
                                             region_dict,
@@ -199,13 +234,16 @@ def main(bokeh_id):
 
     plot_list1 = [plot_obj_left, plot_obj_right]
     bokeh_imgs1 = [bokeh_img_left, bokeh_img_right]
-    control1 = simim_sat_control.SimimSatControl(datasets, 
+
+    bokeh_doc = bokeh.plotting.curdoc()
+    control1 = simim_sat_control.SimimSatControl(datasets,
                                                  init_time, 
                                                  init_fcast_time,
                                                  init_var,
                                                  plot_list1, 
                                                  bokeh_imgs1,
                                                  colorbar,
+                                                 bokeh_doc,
                                                 )
 
     try:
@@ -214,10 +252,25 @@ def main(bokeh_id):
         bokeh_mode = 'server'    
 
     if bokeh_mode == 'server':
-        bokeh.plotting.curdoc().add_root(control1.main_layout)
+        bokeh_doc.add_root(control1.main_layout)
     elif bokeh_mode == 'cli':
         bokeh.io.show(control1.main_layout)
 
-    bokeh.plotting.curdoc().title = 'Model simulated imagery vs Himawari-8'    
+    bokeh_doc.title = 'Model simulated imagery vs Himawari-8'
+
+    plot_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
+    do_initial_plotting_callback = functools.partial(initial_update_func,
+                                                     plot_executor,
+                                                     control1,
+                                                     init_var,
+                                                     [plot_obj_left,
+                                                      plot_obj_right],
+                                                     bokeh_doc,
+                                                     )
+
+    bokeh_doc.add_timeout_callback(do_initial_plotting_callback,
+                                   1000)
+
 
 main(__name__)

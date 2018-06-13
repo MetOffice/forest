@@ -70,10 +70,6 @@ class GpmDataset(object):
         self.times = dict([(v1,None) for v1 in forest.data.VAR_NAMES])
         self.times.update(dict([(v1,None) for v1 in forest.data.PRECIP_ACCUM_VARS]))
 
-        # self.retrieve_data()
-        # self.load_data()
-
-
     def __str__(self):
         
         '''
@@ -140,7 +136,7 @@ class GpmDataset(object):
         """
         
         """
-        
+
         self.raw_data = {}
 
         for file_name, cube_tim_str in zip(self.local_path_list,

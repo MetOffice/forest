@@ -1,6 +1,6 @@
 import textwrap
 import dateutil
-
+import functools
 import numpy
 
 import matplotlib
@@ -39,6 +39,8 @@ class ForestPlot(object):
     MODE_PLOT = 'plot'
     MODE_LOADING = 'loading'
     MODE_MISSING_DATA = 'missing_data'
+
+    BLANK = 'blank'
 
     def __init__(self,
                  dataset,
@@ -93,6 +95,7 @@ class ForestPlot(object):
         self.coast_res = '50m'
         self.display_mode = ForestPlot.MODE_LOADING
 
+        self.overlay_text = None
 
 
     def _set_config_value(self, new_config):
@@ -144,7 +147,7 @@ class ForestPlot(object):
                            'W': self.plot_sat_simim_imagery,
                            'I': self.plot_sat_simim_imagery,
                            'V': self.plot_sat_simim_imagery,
-                           'blank': self.create_blank,
+                           ForestPlot.BLANK: self.create_blank,
                            }
 
         self.update_funcs = {'precipitation': self.update_precip,
@@ -163,7 +166,7 @@ class ForestPlot(object):
                              'W': self.update_sat_simim_imagery,
                              'I': self.update_sat_simim_imagery,
                              'V': self.update_sat_simim_imagery,
-                             'blank': self.create_blank,
+                             ForestPlot.BLANK: self.create_blank,
                              }
 
         #timer decorations
@@ -696,6 +699,7 @@ class ForestPlot(object):
         elif self.current_config == 'simim':
             self.plot_simim()
 
+    @forest.util.timer
     def update_stats(self, current_cube):
 
         '''
@@ -757,6 +761,7 @@ class ForestPlot(object):
 
         self.stats_string = '</br>'.join(stats_str_list)
 
+    @forest.util.timer
     def update_title(self, current_cube):
 
         '''Update plot title.
@@ -791,12 +796,14 @@ class ForestPlot(object):
 
         return self.bokeh_figure
 
-    @forest.util.timer
-    def create_matplotlib_fig(self):
-
-        '''
-
-        '''
+    @functools.lru_cache(maxsize=32)
+    def _do_mpl_plotting(self,
+                         current_var,
+                         current_time,
+                         current_config,
+                         current_region,
+                         ):
+        #TODO: execute plotting using process pool executor for true multiprocessing
         self.current_figure = matplotlib.pyplot.figure(self.figure_name,
                                                        figsize=self.current_figsize)
         self.current_figure.clf()
@@ -806,6 +813,7 @@ class ForestPlot(object):
                 projection=cartopy.crs.PlateCarree())
         self.current_axes.set_position([0, 0, 1, 1])
         self.plot_funcs[self.current_var]()
+        img_array = None
         if self.main_plot:
             if self.use_mpl_title:
                 self.current_axes.set_title(self.current_title)
@@ -820,6 +828,25 @@ class ForestPlot(object):
                                              orientation='horizontal')
 
             self.current_figure.canvas.draw()
+            img_array = forest.util.get_image_array_from_figure(
+                self.current_figure)
+
+        stats = self.stats_string
+        title = self.current_title
+        return (img_array, stats, title)
+
+    @forest.util.timer
+    def create_matplotlib_fig(self):
+        '''
+
+        '''
+        (self.current_img_array,
+        self.stats_string,
+        self.current_title) = self._do_mpl_plotting(self.current_var,
+                                                    self.current_time,
+                                                    self.current_config,
+                                                    self.current_region,
+                                                    )
 
     def _setup_tools(self):
         self.bokeh_tools = dict([(k1,None) for k1 in BOKEH_TOOLS_LIST])
@@ -844,19 +871,14 @@ class ForestPlot(object):
         self.active_bokeh_tools['inspect'] = self.bokeh_tools['hover']
         self.active_bokeh_tools['scroll'] = self.bokeh_tools['wheel_zoom']
         self.active_bokeh_tools['tap'] = None
-
-
-
-
+        
+    @forest.util.timer
     def create_bokeh_img_plot_from_fig(self):
 
         '''
 
         '''
-
-        self.current_img_array = forest.util.get_image_array_from_figure(
-            self.current_figure)
-
+        print('executing create_bokeh_img_plot_from_fig')
         cur_region = self.region_dict[self.current_region]
 
         # Set figure navigation limits
@@ -889,14 +911,14 @@ class ForestPlot(object):
 
             mid_x = (cur_region[2] + cur_region[3]) * 0.5
             mid_y = (cur_region[0] + cur_region[1]) * 0.5
-            self.bokeh_figure.text(x=[mid_x],
-                                   y=[mid_y],
-                                   text=['Plot loading'],
-                                   text_color=['#FF0000'],
-                                   text_font_size="20pt",
-                                   text_baseline="middle",
-                                   text_align="center",
-                                   )
+            self.overlay_text = self.bokeh_figure.text(x=[mid_x],
+                                                       y=[mid_y],
+                                                       text=['Plot loading'],
+                                                       text_color=['#FF0000'],
+                                                       text_font_size="20pt",
+                                                       text_baseline="middle",
+                                                       text_align="center",
+                                                       )
 
         self.bokeh_figure.title.text = self.current_title
 
@@ -923,7 +945,6 @@ class ForestPlot(object):
         '''
 
         '''
-
         cur_region = self.region_dict[self.current_region]
         self.current_figure.set_figwidth(self.current_figsize[0])
         self.current_figure.set_figheight(
@@ -932,8 +953,6 @@ class ForestPlot(object):
                   (cur_region[3] - cur_region[2]), 2))
 
         if self.bokeh_img_ds:
-            self.current_img_array = forest.util.get_image_array_from_figure(
-                self.current_figure)
             self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
             self.bokeh_img_ds.data[u'x'] = [cur_region[2]]
             self.bokeh_img_ds.data[u'y'] = [cur_region[0]]
@@ -943,11 +962,15 @@ class ForestPlot(object):
 
         else:
             try:
-                self.current_img_array = \
-                    forest.util.get_image_array_from_figure(
-                        self.current_figure)
                 self.create_bokeh_img()
+                if self.overlay_text:
+                    self.overlay_text.glyph.text = ''
+                    self.overlay_text.visible = False
+                    self.overlay_text.update()
+
                 self.bokeh_figure.title.text = self.current_title
+            # should any error occur, we want to catch it, so don't
+            # specify exception
             except:
                 self.current_img_array = None
 
@@ -1035,7 +1058,6 @@ class ForestPlot(object):
         print('selected new time {0}'.format(new_time))
 
         self.current_time = new_time
-        # self.update_plot()
         self.create_matplotlib_fig()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
@@ -1060,6 +1082,13 @@ class ForestPlot(object):
                 self.update_stats_widget()
             if self.colorbar_widget:
                 self.update_colorbar_widget()
+
+    def do_doc_update(self):
+        self.update_bokeh_img_plot_from_fig()
+        if self.stats_widget:
+            self.update_stats_widget()
+        if self.colorbar_widget:
+            self.update_colorbar_widget()
 
     def set_region(self, new_region):
 

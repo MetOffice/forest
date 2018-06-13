@@ -203,7 +203,7 @@ def get_available_times(datasets, var1):
         available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
     return available_times
 
-
+@forest.util.timer
 def get_available_datasets(s3_base,
                            s3_local_base,
                            use_s3_mount,
@@ -490,8 +490,6 @@ class ForestDataset(object):
 
         # set up caching and timer decoration
         self.get_data = \
-            forest.util.timer(self._get_data)
-        
         self.ts_var_names = dict([(v1, v1) for v1 in VAR_NAMES])
         self.ts_loaders = dict([(v1, self._basic_ts_load) for v1 in VAR_NAMES])
         for wv_var in WIND_VARS:
@@ -500,6 +498,8 @@ class ForestDataset(object):
             ws1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[accum_precip_var]
             self.ts_loaders[accum_precip_var] = \
                 functools.partial(self._precip_accum_ts_load, ws1)
+
+            functools.lru_cache(maxsize=32)(forest.util.timer(self._get_data))
 
     def __str__(self):
     

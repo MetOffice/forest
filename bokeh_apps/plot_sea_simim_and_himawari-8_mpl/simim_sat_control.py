@@ -1,4 +1,7 @@
 import datetime
+
+import tornado
+
 import bokeh.models
 import bokeh.layouts
 
@@ -15,11 +18,13 @@ class SimimSatControl(object):
                  init_wavelength,
                  plot_list,
                  bokeh_imgs,
-                 colorbar_widget):
+                 colorbar_widget,
+                 bokeh_doc):
         
         '''
         
         '''
+        self.bokeh_doc = bokeh_doc
         self.data_time_dd = None
 
         self.datasets = datasets
@@ -160,7 +165,7 @@ class SimimSatControl(object):
         else:
             print('No next time step')
 
-    def _refresh_times(self, update_gui=True):
+    def _refresh_times(self, update_gui=True, async_mode=True):
         """
         Update list of times available from current data type
         :return:
@@ -176,15 +181,28 @@ class SimimSatControl(object):
         self.time_list.sort()
 
         if update_gui and self.data_time_dd:
-            self.data_time_dd.menu = [(k1+'UTC', k1) for k1 in self.time_list]
+            if not async_mode:
+                self.data_time_dd.menu = [(k1+'UTC', k1) for k1 in self.time_list]
         if self.current_time not in self.time_list:
             self.current_time = self.time_list[0]
             if update_gui and self.data_time_dd:
-                self.process_events = False
-                self.data_time_dd.value = self.current_time
-                self.process_events = True
+                if not async_mode:
+                    self.process_events = False
+                    self.data_time_dd.value = self.current_time
+                    self.process_events = True
 
-    def on_type_change(self, attr1, old_val, new_val):
+        if async_mode:
+            self.bokeh_doc.add_next_tick_callback(self._update_gui)
+
+
+    @tornado.gen.coroutine
+    def _update_gui(self):
+        self.process_events = False
+        self.data_time_dd.menu = [(k1 + 'UTC', k1) for k1 in self.time_list]
+        self.data_time_dd.value = self.current_time
+        self.process_events = True
+
+    def on_type_change(self, attr1, old_val, new_val, async_mode=False):
 
         '''Event handler for a change in the selected plot type.
         
@@ -195,10 +213,14 @@ class SimimSatControl(object):
         print('selected new wavelength {0}'.format(new_val))
         self.current_wavelength = new_val
         
-        self._refresh_times(update_gui=True)
+        self._refresh_times(update_gui=True,
+                            async_mode=async_mode)
 
         for p1 in self.plot_list:
+            old_mode = p1.async
+            p1.async = async_mode
             p1.set_var(self.current_wavelength)
+            p1.async = old_mode
 
     def _on_model_run_change(self, attr1, old_val, new_val):
         if not self.process_events:

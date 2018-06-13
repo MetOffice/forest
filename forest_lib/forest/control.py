@@ -3,6 +3,8 @@ import functools
 import threading
 import dateutil.parser
 
+import tornado
+
 import bokeh.models.widgets
 import bokeh.layouts
 import bokeh.plotting
@@ -112,8 +114,13 @@ class ForestController(object):
         self.current_time_index = init_time_ix
         self._refresh_times(update_gui=False)
 
-        self.init_time = self.available_times[self.current_time_index]
-        self.num_times = self.available_times.shape[0]
+        if self.available_times is not None:
+            self.init_time = self.available_times[self.current_time_index]
+            self.num_times = self.available_times.shape[0]
+        else:
+            self.init_time = None
+            self.num_times = 0
+
         self.colorbar_div = colorbar_widget
         self.stats_widgets = stats_widgets
         self.bokeh_doc = bokeh_doc
@@ -149,9 +156,12 @@ class ForestController(object):
         self.time_prev_button.on_click(self.on_time_prev)
         
         # Create time selection slider widget
+        slider_max = self.num_times
+        if slider_max == 0:
+            slider_max = 1
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
-                                        end=self.num_times,
+                                        end=slider_max,
                                         value=self.current_time_index,
                                         step=1,
                                         title="Data time",
@@ -299,11 +309,18 @@ class ForestController(object):
             p1.set_data_time(new_time1)
 
 
-    def _refresh_times(self, update_gui=True):
+    def _refresh_times(self, update_gui=True, async_mode=False):
+
+        if self.current_var == forest.plot.ForestPlot.BLANK:
+            self.available_times = None
+            return None
+
         self.available_times = \
             forest.data.get_available_times(
                 self.datasets[self.current_fcast_time],
                 self.plot_type_time_lookups[self.current_var])
+        self.num_times = self.available_times.shape[0]
+
         try:
             new_time = self.available_times[self.current_time_index]
         except IndexError:
@@ -315,11 +332,17 @@ class ForestController(object):
             self.process_events = True
 
         if update_gui and self.data_time_slider:
-            self.data_time_slider.end = self.available_times.shape[0]
+            if async_mode:
+                self.bokeh_doc.add_next_tick_callback(self._update_gui)
+            else:
+                self.data_time_slider.end = self.available_times.shape[0]
         return new_time
 
+    @tornado.gen.coroutine
+    def _update_gui(self):
+        self.data_time_slider.end = self.available_times.shape[0]
 
-    def on_var_change(self, attr1, old_val, new_val):
+    def on_var_change(self, attr1, old_val, new_val, async_mode=False):
 
         '''Event handler for a change in the selected plot type.
 
@@ -329,12 +352,17 @@ class ForestController(object):
 
         print('var change handler')
         self.current_var = new_val
-        new_time = self._refresh_times()
+        new_time = self._refresh_times(async_mode=async_mode)
+
         for p1 in self.plots:
+            old_mode = p1.async
+            p1.async = async_mode
             # different variables have different times available, soneed to
             # set time when selecting a variable
             p1.current_time = new_time
             p1.set_var(new_val)
+            p1.async = old_mode
+
 
     def on_region_change(self, attr1, old_val, new_val):
 
