@@ -1,11 +1,10 @@
 '''SE Asia Sim. Im. and Himawari-8 Matplotlib app
 
- This script creates plots of simulated satellite imagery and 
-  Himawari-8 imagery for SE Asia using the Matplotlib plotting 
+ This script creates plots of simulated satellite imagery and
+  Himawari-8 imagery for SE Asia using the Matplotlib plotting
   library to provide images to a Bokeh Server app.
 
 '''
-
 import os
 import datetime
 import copy
@@ -24,8 +23,79 @@ import forest.plot
 
 import simim_sat_control
 import simim_sat_data
+import imageio
+import numpy as np
+import scipy.ndimage
 
 def main(bokeh_id):
+    """Main program
+
+    A stripped down version of Forest to see the woods from the trees
+    """
+    print("making figure")
+    figure = bokeh.plotting.figure(sizing_mode="stretch_both",
+                                   match_aspect=True)
+
+    # Plot a RGBA field from a single Himawari JPEG file
+    jpeg = "~/s3/stephen-sea-public-london/himawari-8/LWIN11_201806122330.jpg"
+    print("reading", jpeg)
+    rgb = imageio.imread(jpeg)
+
+    # Flip image to be right way up
+    rgb = rgb[::-1]
+
+    # Global NxM pixels (independent of downscaling)
+    dw = rgb.shape[1]
+    dh = rgb.shape[0]
+
+    # Sub-sample imagery since 2000*2000 is too large to work with
+    fraction = 0.25
+    sub_r = scipy.ndimage.zoom(rgb[:, :, 0], fraction)
+    sub_g = scipy.ndimage.zoom(rgb[:, :, 1], fraction)
+    sub_b = scipy.ndimage.zoom(rgb[:, :, 2], fraction)
+    sub_rgb = np.empty((sub_r.shape[0], sub_r.shape[1], 3),
+                       dtype=np.uint8)
+    sub_rgb[:, :, 0] = sub_r
+    sub_rgb[:, :, 1] = sub_g
+    sub_rgb[:, :, 2] = sub_b
+    print("sub-RGBA shape", sub_rgb.shape)
+
+    print("converting RGB to RGBA")
+    def to_rgba(rgb):
+        """Convert RGB to RGBA with alpha set to 1"""
+        ni, nj = rgb.shape[0], rgb.shape[1]
+        image = np.empty((ni, nj), dtype=np.uint32)
+        view = image.view(dtype=np.uint8).reshape((ni, nj, 4))
+        view[:, :, 0] = rgb[:, :, 0]
+        view[:, :, 1] = rgb[:, :, 1]
+        view[:, :, 2] = rgb[:, :, 2]
+        view[:, :, 3] = 255
+        return view
+    rgba = to_rgba(sub_rgb)
+    print("RGBA shape", rgba.shape)
+
+    print("plotting RGBA array")
+    print(rgba[:, :, 0])
+    figure.image_rgba(image=[rgba],
+                      x=0,
+                      y=0,
+                      dw=dw,
+                      dh=dh)
+    print("finished plotting RGBA array")
+
+    try:
+        bokeh_mode = os.environ['BOKEH_MODE']
+    except:
+        bokeh_mode = 'server'
+    print("bokeh_mode", bokeh_mode)
+    if bokeh_mode == 'server':
+        bokeh.plotting.curdoc().add_root(figure)
+    elif bokeh_mode == 'cli':
+        bokeh.io.show(figure)
+    bokeh.plotting.curdoc().title = 'Model simulated imagery vs Himawari-8'
+
+
+def _main(bokeh_id):
     
     '''Main function of app
     
