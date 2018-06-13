@@ -31,6 +31,9 @@ def main(bokeh_id):
     """Main program
 
     A stripped down version of Forest to see the woods from the trees
+
+    The intention here is to write a prototype in an imperative style
+    before extracting classes and methods with distinct responsibilities
     """
     print("making figure")
     figure = bokeh.plotting.figure(sizing_mode="stretch_both",
@@ -74,14 +77,63 @@ def main(bokeh_id):
     rgba = to_rgba(sub_rgb)
     print("RGBA shape", rgba.shape)
 
+    # Zoomable image column data source
+    source = bokeh.models.ColumnDataSource({
+        "image": [rgba],
+        "x": [0],
+        "y": [0],
+        "dw": [dw],
+        "dh": [dh]
+    })
+
     print("plotting RGBA array")
-    print(rgba[:, :, 0])
-    figure.image_rgba(image=[rgba],
-                      x=0,
-                      y=0,
-                      dw=dw,
-                      dh=dh)
+    figure.image_rgba(image="image",
+                      x="x",
+                      y="y",
+                      dw="dw",
+                      dh="dh",
+                      source=source)
     print("finished plotting RGBA array")
+
+    # Attach call backs to x/y range changes
+    pixels = bokeh.models.ColumnDataSource({
+        "x": [0, 0],
+        "y": [0, 0]
+    })
+
+    def zoom_x(attr, old, new):
+        return zoom("x", attr, old, new)
+
+    def zoom_y(attr, old, new):
+        return zoom("y", attr, old, new)
+
+    def zoom(dimension, attr, old, new):
+        """General purpose image zoom"""
+        pixel = int(new)
+        if pixel < 0:
+            pixel = 0
+        if dimension == "x":
+            if pixel > dw:
+                pixel = dw
+            if attr == "start":
+                pixels.data["x"][0] = pixel
+            elif attr == "end":
+                pixels.data["x"][1] = pixel
+        elif dimension == "y":
+            if pixel > dh:
+                pixel = dh
+            if attr == "start":
+                pixels.data["y"][0] = pixel
+            elif attr == "end":
+                pixels.data["y"][1] = pixel
+        x = pixels.data["x"]
+        y = pixels.data["y"]
+        print(x[1] - x[0], "x", y[1] - y[0])
+
+    figure.x_range.on_change("start", zoom_x)
+    figure.x_range.on_change("end", zoom_x)
+    figure.y_range.on_change("start", zoom_y)
+    figure.y_range.on_change("end", zoom_y)
 
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
