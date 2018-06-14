@@ -17,8 +17,87 @@ If a zoom view is completely inside an existing patch, then that
 patch is good enough for the current view and no extra work
 or memory is needed
 """
+import bokeh.models
 import scipy.ndimage
 import numpy as np
+
+
+class RGBAZoom(object):
+    """Coarse/High resolution zoom tool for RGBA images
+
+    .. note:: This is where all the clever FIFO and
+              zooming happens
+    """
+    def __init__(self, rgba):
+        self.rgba = rgba
+        self.pixels = bokeh.models.ColumnDataSource({
+            "x": [0, 0],
+            "y": [0, 0]
+        })
+
+        # Global NxM pixels (independent of downscaling)
+        self.dw = rgba.shape[1]
+        self.dh = rgba.shape[0]
+
+        # Can be constructed without a figure instance
+        self.figure = None
+
+    def add_figure(self, figure):
+        """Helper method to make RGBAZoom easier to use"""
+        figure.x_range.on_change("start", self.zoom_x)
+        figure.x_range.on_change("end", self.zoom_x)
+        figure.y_range.on_change("start", self.zoom_y)
+        figure.y_range.on_change("end", self.zoom_y)
+        self.figure = figure
+
+    def zoom_x(self, attr, old, new):
+        return self._zoom("x", attr, old, new)
+
+    def zoom_y(self, attr, old, new):
+        return self._zoom("y", attr, old, new)
+
+    def _zoom(self, dimension, attr, old, new):
+        """General purpose image zoom"""
+        if attr == "start":
+            i = 0
+        else:
+            i = 1
+        pixel = int(new)
+        if dimension == "x":
+            n = self.dw
+        elif dimension == "y":
+            n = self.dh
+        if pixel > n:
+            pixel = n
+        if pixel < 0:
+            pixel = 0
+        self.pixels.data[dimension][i] = pixel
+
+        # Report on selected image size
+        x = self.pixels.data["x"]
+        y = self.pixels.data["y"]
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
+        if (dx * dy) == 0:
+            print("nothing to display")
+            return
+        if (dx * dy) < 10**6:
+            print("plotting high resolution image")
+            high_res_image = self.rgba[y[0]:y[1], x[0]:x[1]]
+            high_res_source = bokeh.models.ColumnDataSource({
+                "image": [high_res_image],
+                "x": [x[0]],
+                "y": [y[0]],
+                "dw": [dx],
+                "dh": [dy]
+            })
+            self.figure.image_rgba(image="image",
+                                   x="x",
+                                   y="y",
+                                   dw="dw",
+                                   dh="dh",
+                                   source=high_res_source)
+        print("shape:", dx, "x", dy, "pixels:", dx * dy)
 
 
 def sub_sample(rgba, fraction):

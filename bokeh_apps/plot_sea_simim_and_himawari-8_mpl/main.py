@@ -47,15 +47,13 @@ def main(bokeh_id):
     # Flip image to be right way up
     rgb = rgb[::-1]
 
-    # Global NxM pixels (independent of downscaling)
-    dw = rgb.shape[1]
-    dh = rgb.shape[0]
-
     print("converting RGB to RGBA")
     rgba = zoom.to_rgba(rgb)
     print("RGBA shape", rgba.shape)
 
     # Global extent coarse image
+    dw = rgb.shape[1]
+    dh = rgb.shape[0]
     coarse_image = zoom.sub_sample(rgba, fraction=0.25)
     coarse_source = bokeh.models.ColumnDataSource({
         "image": [coarse_image],
@@ -71,65 +69,8 @@ def main(bokeh_id):
                       dh="dh",
                       source=coarse_source)
 
-    # Attach call backs to x/y range changes
-    pixels = bokeh.models.ColumnDataSource({
-        "x": [0, 0],
-        "y": [0, 0]
-    })
-
-    def zoom_x(attr, old, new):
-        return _zoom("x", attr, old, new)
-
-    def zoom_y(attr, old, new):
-        return _zoom("y", attr, old, new)
-
-    def _zoom(dimension, attr, old, new):
-        """General purpose image zoom"""
-        if attr == "start":
-            i = 0
-        else:
-            i = 1
-        pixel = int(new)
-        if dimension == "x":
-            n = dw
-        elif dimension == "y":
-            n = dh
-        if pixel > n:
-            pixel = n
-        if pixel < 0:
-            pixel = 0
-        pixels.data[dimension][i] = pixel
-
-        # Report on selected image size
-        x = pixels.data["x"]
-        y = pixels.data["y"]
-        dx = x[1] - x[0]
-        dy = y[1] - y[0]
-        if (dx * dy) == 0:
-            print("nothing to display")
-            return
-        if (dx * dy) < 10**6:
-            print("plotting high resolution image")
-            high_res_image = rgba[y[0]:y[1], x[0]:x[1]]
-            high_res_source = bokeh.models.ColumnDataSource({
-                "image": [high_res_image],
-                "x": [x[0]],
-                "y": [y[0]],
-                "dw": [dx],
-                "dh": [dy]
-            })
-            figure.image_rgba(image="image",
-                              x="x",
-                              y="y",
-                              dw="dw",
-                              dh="dh",
-                              source=high_res_source)
-        print("shape:", dx, "x", dy, "pixels:", dx * dy)
-
-    figure.x_range.on_change("start", zoom_x)
-    figure.x_range.on_change("end", zoom_x)
-    figure.y_range.on_change("start", zoom_y)
-    figure.y_range.on_change("end", zoom_y)
+    rgba_zoom = zoom.RGBAZoom(rgba)
+    rgba_zoom.add_figure(figure)
 
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
