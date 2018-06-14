@@ -17,7 +17,23 @@ If a zoom view is completely inside an existing patch, then that
 patch is good enough for the current view and no extra work
 or memory is needed
 """
+import scipy.ndimage
 import numpy as np
+
+
+def sub_sample(rgba, fraction):
+    # Sub-sample imagery since 2000*2000 is too large to work with
+    sub_r = scipy.ndimage.zoom(rgba[:, :, 0], fraction)
+    sub_g = scipy.ndimage.zoom(rgba[:, :, 1], fraction)
+    sub_b = scipy.ndimage.zoom(rgba[:, :, 2], fraction)
+    sub_a = scipy.ndimage.zoom(rgba[:, :, 3], fraction)
+    result = np.empty((sub_r.shape[0], sub_r.shape[1], 4),
+                       dtype=np.uint8)
+    result[:, :, 0] = sub_r
+    result[:, :, 1] = sub_g
+    result[:, :, 2] = sub_b
+    result[:, :, 3] = sub_a
+    return result
 
 
 def to_rgba(rgb):

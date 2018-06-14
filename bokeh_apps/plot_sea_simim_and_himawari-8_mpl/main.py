@@ -25,7 +25,6 @@ import simim_sat_control
 import simim_sat_data
 import imageio
 import numpy as np
-import scipy.ndimage
 import zoom
 
 def main(bokeh_id):
@@ -56,22 +55,8 @@ def main(bokeh_id):
     rgba = zoom.to_rgba(rgb)
     print("RGBA shape", rgba.shape)
 
-    def sub_sample(rgba, fraction):
-        # Sub-sample imagery since 2000*2000 is too large to work with
-        sub_r = scipy.ndimage.zoom(rgba[:, :, 0], fraction)
-        sub_g = scipy.ndimage.zoom(rgba[:, :, 1], fraction)
-        sub_b = scipy.ndimage.zoom(rgba[:, :, 2], fraction)
-        sub_a = scipy.ndimage.zoom(rgba[:, :, 3], fraction)
-        result = np.empty((sub_r.shape[0], sub_r.shape[1], 4),
-                           dtype=np.uint8)
-        result[:, :, 0] = sub_r
-        result[:, :, 1] = sub_g
-        result[:, :, 2] = sub_b
-        result[:, :, 3] = sub_a
-        return result
-
     # Global extent coarse image
-    coarse_image = sub_sample(rgba, fraction=0.25)
+    coarse_image = zoom.sub_sample(rgba, fraction=0.25)
     coarse_source = bokeh.models.ColumnDataSource({
         "image": [coarse_image],
         "x": [0],
