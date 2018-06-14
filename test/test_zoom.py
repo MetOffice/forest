@@ -1,5 +1,5 @@
 import unittest
-import zoom
+import forest.zoom
 
 class TestZoom(unittest.TestCase):
     """Zoom feature"""
@@ -22,10 +22,10 @@ class TestZoom(unittest.TestCase):
             self.check_is_inside(box_2, box_1, False)
 
     def check_is_inside(self, box_1, box_2, expect):
-        result = zoom.is_inside(box_1, box_2)
+        result = forest.zoom.is_inside(box_1, box_2)
         try:
             self.assertEqual(result, expect)
         except AssertionError as e:
-            message = "zoom.is_inside({}, {}) returned {}"
+            message = "forest.zoom.is_inside({}, {}) returned {}"
             e.args += (message.format(box_1, box_2, result),)
             raise(e)
