@@ -26,6 +26,7 @@ import simim_sat_data
 import imageio
 import numpy as np
 import scipy.ndimage
+import zoom
 
 def main(bokeh_id):
     """Main program
@@ -52,17 +53,7 @@ def main(bokeh_id):
     dh = rgb.shape[0]
 
     print("converting RGB to RGBA")
-    def to_rgba(rgb):
-        """Convert RGB to RGBA with alpha set to 1"""
-        ni, nj = rgb.shape[0], rgb.shape[1]
-        image = np.empty((ni, nj), dtype=np.uint32)
-        view = image.view(dtype=np.uint8).reshape((ni, nj, 4))
-        view[:, :, 0] = rgb[:, :, 0]
-        view[:, :, 1] = rgb[:, :, 1]
-        view[:, :, 2] = rgb[:, :, 2]
-        view[:, :, 3] = 255
-        return view
-    rgba = to_rgba(rgb)
+    rgba = zoom.to_rgba(rgb)
     print("RGBA shape", rgba.shape)
 
     def sub_sample(rgba, fraction):
@@ -102,12 +93,12 @@ def main(bokeh_id):
     })
 
     def zoom_x(attr, old, new):
-        return zoom("x", attr, old, new)
+        return _zoom("x", attr, old, new)
 
     def zoom_y(attr, old, new):
-        return zoom("y", attr, old, new)
+        return _zoom("y", attr, old, new)
 
-    def zoom(dimension, attr, old, new):
+    def _zoom(dimension, attr, old, new):
         """General purpose image zoom"""
         if attr == "start":
             i = 0

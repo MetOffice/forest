@@ -13,10 +13,23 @@ the high resolution patches. The most stale patch can
 be replaced by the most current patch, thus keeping the
 number of patches constant.
 
-If a zoom view is completely inside a previous patch, then that
+If a zoom view is completely inside an existing patch, then that
 patch is good enough for the current view and no extra work
 or memory is needed
 """
+import numpy as np
+
+
+def to_rgba(rgb):
+    """Convert RGB to RGBA with alpha set to 1"""
+    ni, nj = rgb.shape[0], rgb.shape[1]
+    image = np.empty((ni, nj), dtype=np.uint32)
+    view = image.view(dtype=np.uint8).reshape((ni, nj, 4))
+    view[:, :, 0] = rgb[:, :, 0]
+    view[:, :, 1] = rgb[:, :, 1]
+    view[:, :, 2] = rgb[:, :, 2]
+    view[:, :, 3] = 255
+    return view
 
 
 def is_inside(box_1, box_2):
@@ -27,8 +40,8 @@ def is_inside(box_1, box_2):
     """
     x1, y1, dw1, dh1 = box_1
     x2, y2, dw2, dh2 = box_2
-    def between(x, x1, dx):
-        return (x1 <= x) & (x <= (x1 + dx))
+    def between(x, x0, dx):
+        return (x0 <= x) & (x <= (x0 + dx))
     return (between(x1, x2, dw2) &
             between(x1 + dw1, x2, dw2) &
             between(y1, y2, dh2) &
