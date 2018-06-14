@@ -79,25 +79,21 @@ def main(bokeh_id):
         result[:, :, 3] = sub_a
         return result
 
-    sub_rgba = sub_sample(rgba, fraction=0.25)
-    print("sub-RGBA shape", sub_rgba.shape)
-
-    # Zoomable image column data source
-    source = bokeh.models.ColumnDataSource({
-        "image": [sub_rgba],
+    # Global extent coarse image
+    coarse_image = sub_sample(rgba, fraction=0.25)
+    coarse_source = bokeh.models.ColumnDataSource({
+        "image": [coarse_image],
         "x": [0],
         "y": [0],
         "dw": [dw],
         "dh": [dh]
     })
-    print("plotting RGBA array")
     figure.image_rgba(image="image",
                       x="x",
                       y="y",
                       dw="dw",
                       dh="dh",
-                      source=source)
-    print("finished plotting RGBA array")
+                      source=coarse_source)
 
     # Attach call backs to x/y range changes
     pixels = bokeh.models.ColumnDataSource({
@@ -136,22 +132,23 @@ def main(bokeh_id):
         if (dx * dy) == 0:
             print("nothing to display")
             return
-        if (dx * dy) < 1000:
-            fraction = 1
-        else:
-            fraction = 0.25
-        image = sub_sample(rgba[y[0]:y[1], x[0]:x[1]],
-                           fraction=fraction)
-        source.data = {
-            "image": [image],
-            "x": [x[0]],
-            "y": [y[0]],
-            "dw": [dx],
-            "dh": [dy]
-        }
+        if (dx * dy) < 10**6:
+            print("plotting high resolution image")
+            high_res_image = rgba[y[0]:y[1], x[0]:x[1]]
+            high_res_source = bokeh.models.ColumnDataSource({
+                "image": [high_res_image],
+                "x": [x[0]],
+                "y": [y[0]],
+                "dw": [dx],
+                "dh": [dy]
+            })
+            figure.image_rgba(image="image",
+                              x="x",
+                              y="y",
+                              dw="dw",
+                              dh="dh",
+                              source=high_res_source)
         print("shape:", dx, "x", dy, "pixels:", dx * dy)
-        print("dx fraction:", dx / dw)
-        print("dy fraction:", dy / dh)
 
     figure.x_range.on_change("start", zoom_x)
     figure.x_range.on_change("end", zoom_x)
