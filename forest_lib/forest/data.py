@@ -490,6 +490,7 @@ class ForestDataset(object):
 
         # set up caching and timer decoration
         self.get_data = \
+            functools.lru_cache(maxsize=32)(forest.util.timer(self._get_data))
         self.ts_var_names = dict([(v1, v1) for v1 in VAR_NAMES])
         self.ts_loaders = dict([(v1, self._basic_ts_load) for v1 in VAR_NAMES])
         for wv_var in WIND_VARS:
@@ -499,7 +500,7 @@ class ForestDataset(object):
             self.ts_loaders[accum_precip_var] = \
                 functools.partial(self._precip_accum_ts_load, ws1)
 
-            functools.lru_cache(maxsize=32)(forest.util.timer(self._get_data))
+
 
     def __str__(self):
     

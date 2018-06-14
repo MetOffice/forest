@@ -19,6 +19,8 @@ import forest.data
 
 import iris.analysis
 
+import pdb
+
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
 
 class MissingDataError(Exception):
@@ -1181,6 +1183,8 @@ class ForestTimeSeries():
         self.current_fig = None
         self.current_var = current_var
         self.cds_dict = {}
+        self.current_data = dict([(k1,None) for k1 in self.datasets])
+        self.async=False
 
         self.placeholder_data = {'x_values': [0.0,1.0],
                                  'y_values': [0.0,0.0]}
@@ -1193,6 +1197,7 @@ class ForestTimeSeries():
         """
         return 'Class representing a time series plot in the forest tool'
 
+    @forest.util.timer
     def create_plot(self):
         """
         Create the timeseries plot in a bokeh figure. This is where the actual
@@ -1202,32 +1207,46 @@ class ForestTimeSeries():
         self.current_fig = bokeh.plotting.figure(tools=BOKEH_TOOLS_LIST)
         self.bokeh_lines = {}
         self.cds_list = {}
+
+        do_blank_var = self.current_var == forest.plot.ForestPlot.BLANK
         for ds_name in self.datasets.keys():
-            current_ds = self.datasets[ds_name]['data']
-            times1 = current_ds.get_times(self.current_var)
-            times1 = times1 - times1[0]
-            var_cube = \
-                current_ds.get_timeseries(self.current_var,
-                                          self.current_point)
-            if var_cube:
-                var_values = var_cube.data
 
-                data1 = {'x_values': times1,
-                         'y_values': var_values}
-
-                ds_source = bokeh.models.ColumnDataSource(data=data1)
-
+            if do_blank_var:
+                ds_source = \
+                    bokeh.models.ColumnDataSource(data=self.placeholder_data)
+                self.current_data[ds_name] = self.placeholder_data
                 ds_line_plot = self.current_fig.line(x='x_values',
                                                      y='y_values',
                                                      source=ds_source,
                                                      name=ds_name)
             else:
-                ds_source = \
-                    bokeh.models.ColumnDataSource(data=self.placeholder_data)
-                ds_line_plot = self.current_fig.line(x='x_values',
-                                                     y='y_values',
-                                                     source=ds_source,
-                                                     name=ds_name)
+                current_ds = self.datasets[ds_name]['data']
+                times1 = current_ds.get_times(self.current_var)
+                times1 = times1 - times1[0]
+                var_cube = \
+                    current_ds.get_timeseries(self.current_var,
+                                              self.current_point)
+                if var_cube:
+                    var_values = var_cube.data
+
+                    data1 = {'x_values': times1,
+                             'y_values': var_values}
+
+                    ds_source = bokeh.models.ColumnDataSource(data=data1)
+                    self.current_data[ds_name] = data1
+
+                    ds_line_plot = self.current_fig.line(x='x_values',
+                                                         y='y_values',
+                                                         source=ds_source,
+                                                         name=ds_name)
+                else:
+                    ds_source = \
+                        bokeh.models.ColumnDataSource(data=self.placeholder_data)
+                    self.current_data[ds_name] = self.placeholder_data
+                    ds_line_plot = self.current_fig.line(x='x_values',
+                                                         y='y_values',
+                                                         source=ds_source,
+                                                         name=ds_name)
 
             self.cds_dict[ds_name] = ds_source
             self.bokeh_lines[ds_name] = ds_line_plot
@@ -1243,6 +1262,7 @@ class ForestTimeSeries():
         by a user directly.
         :return:
         """
+
         for ds_name in self.datasets.keys():
             if self.cds_dict[ds_name] is not None:
                 current_ds = self.datasets[ds_name]['data']
@@ -1255,13 +1275,17 @@ class ForestTimeSeries():
                 if var_cube is not None:
                     var_values = var_cube.data
 
-                    data1 = {'x_values': times1,
+                    self.current_data[ds_name] = \
+                        {'x_values': times1,
                          'y_values': var_values}
-
-                    self.cds_dict[ds_name].data = data1
                 else:
-                    self.cds_dict[ds_name].data = self.placeholder_data
-        self._update_fig_title()
+                    self.current_data[ds_name] = self.placeholder_data
+
+                if not self.async:
+                    self.cds_dict[ds_name].data = self.current_data[ds_name]
+
+        if not self.async:
+            self._update_fig_title()
 
     def _update_fig_title(self):
         """
@@ -1272,6 +1296,13 @@ class ForestTimeSeries():
         fig_title = fig_title.format(var=self.current_var,
                                      mr=str(self.model_run_time))
         self.current_fig.title.text = fig_title
+
+    def do_doc_update(self):
+        print('updating timeseries plot')
+        for ds_name in self.datasets.keys():
+            self.cds_dict[ds_name].data = self.current_data[ds_name]
+        self._update_fig_title()
+
 
     def set_var(self, new_var):
         """

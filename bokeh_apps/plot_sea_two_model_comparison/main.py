@@ -233,7 +233,7 @@ def main(bokeh_id):
     plot_obj_ts = forest.plot.ForestTimeSeries(datasets[init_fcast_time],
                                                init_fcast_time,
                                                selected_point,
-                                               init_var)
+                                               forest.plot.ForestPlot.BLANK)
 
     bokeh_image_ts = plot_obj_ts.create_plot()
     plot_list += [plot_obj_ts]
@@ -272,8 +272,7 @@ def main(bokeh_id):
                                                      plot_executor,
                                                      control1,
                                                      init_var,
-                                                     [plot_obj_left,
-                                                      plot_obj_right],
+                                                     plot_list,
                                                      bokeh_doc,
                                                      )
 
