@@ -31,7 +31,8 @@ class RGBAZoom(object):
     :param global_rgba: full sized RGBA array to be sub-sampled
                         and sub-viewed
     """
-    def __init__(self, global_rgba):
+    def __init__(self, global_rgba, pixel_limit=10**6):
+        self.pixel_limit = pixel_limit
         self.global_rgba = global_rgba
         self.pixels = bokeh.models.ColumnDataSource({
             "x": [0, 0],
@@ -100,7 +101,7 @@ class RGBAZoom(object):
         if (dx * dy) == 0:
             print("nothing to display")
             return
-        if (dx * dy) < 10**6:
+        if (dx * dy) < self.pixel_limit:
             if len(self.high_res_source.data["x"]) > 0:
                 current_box = (self.high_res_source.data["x"][0],
                                self.high_res_source.data["y"][0],
