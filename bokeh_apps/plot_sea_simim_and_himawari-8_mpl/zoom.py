@@ -19,6 +19,22 @@ or memory is needed
 """
 
 
+def is_inside(box_1, box_2):
+    """See if box_1 is inside box_2
+
+    This is useful for finding out whether a zoom is looking
+    at an internal part of a high resolution patch
+    """
+    x1, y1, dw1, dh1 = box_1
+    x2, y2, dw2, dh2 = box_2
+    def between(x, x1, dx):
+        return (x1 <= x) & (x <= (x1 + dx))
+    return (between(x1, x2, dw2) &
+            between(x1 + dw1, x2, dw2) &
+            between(y1, y2, dh2) &
+            between(y1 + dh1, y2, dh2))
+
+
 def boxes_overlap(box_1, box_2):
     """Decide if two boxes overlap
 
