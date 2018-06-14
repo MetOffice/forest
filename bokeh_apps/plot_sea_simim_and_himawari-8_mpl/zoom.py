@@ -27,17 +27,29 @@ class RGBAZoom(object):
 
     .. note:: This is where all the clever FIFO and
               zooming happens
+
+    :param global_rgba: full sized RGBA array to be sub-sampled
+                        and sub-viewed
     """
-    def __init__(self, rgba):
-        self.rgba = rgba
+    def __init__(self, global_rgba):
+        self.global_rgba = global_rgba
         self.pixels = bokeh.models.ColumnDataSource({
             "x": [0, 0],
             "y": [0, 0]
         })
 
         # Global NxM pixels (independent of downscaling)
-        self.dw = rgba.shape[1]
-        self.dh = rgba.shape[0]
+        self.dw = self.global_rgba.shape[1]
+        self.dh = self.global_rgba.shape[0]
+
+        # ColumnDataSource to hold high-resolution patches
+        self.high_res_source = bokeh.models.ColumnDataSource({
+                "image": [],
+                "x": [],
+                "y": [],
+                "dw": [],
+                "dh": []
+        })
 
         # Can be constructed without a figure instance
         self.figure = None
@@ -48,6 +60,12 @@ class RGBAZoom(object):
         figure.x_range.on_change("end", self.zoom_x)
         figure.y_range.on_change("start", self.zoom_y)
         figure.y_range.on_change("end", self.zoom_y)
+        figure.image_rgba(image="image",
+                          x="x",
+                          y="y",
+                          dw="dw",
+                          dh="dh",
+                          source=self.high_res_source)
         self.figure = figure
 
     def zoom_x(self, attr, old, new):
@@ -58,6 +76,7 @@ class RGBAZoom(object):
 
     def _zoom(self, dimension, attr, old, new):
         """General purpose image zoom"""
+        # Pixel bounding box for current view
         if attr == "start":
             i = 0
         else:
@@ -73,7 +92,7 @@ class RGBAZoom(object):
             pixel = 0
         self.pixels.data[dimension][i] = pixel
 
-        # Report on selected image size
+        # Add high resolution imagery
         x = self.pixels.data["x"]
         y = self.pixels.data["y"]
         dx = x[1] - x[0]
@@ -83,20 +102,14 @@ class RGBAZoom(object):
             return
         if (dx * dy) < 10**6:
             print("plotting high resolution image")
-            high_res_image = self.rgba[y[0]:y[1], x[0]:x[1]]
-            high_res_source = bokeh.models.ColumnDataSource({
+            high_res_image = self.global_rgba[y[0]:y[1], x[0]:x[1]]
+            self.high_res_source.data = {
                 "image": [high_res_image],
                 "x": [x[0]],
                 "y": [y[0]],
                 "dw": [dx],
                 "dh": [dy]
-            })
-            self.figure.image_rgba(image="image",
-                                   x="x",
-                                   y="y",
-                                   dw="dw",
-                                   dh="dh",
-                                   source=high_res_source)
+            }
         print("shape:", dx, "x", dy, "pixels:", dx * dy)
 
 
