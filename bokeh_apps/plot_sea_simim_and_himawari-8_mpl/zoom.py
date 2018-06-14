@@ -101,6 +101,17 @@ class RGBAZoom(object):
             print("nothing to display")
             return
         if (dx * dy) < 10**6:
+            if len(self.high_res_source.data["x"]) > 0:
+                current_box = (self.high_res_source.data["x"][0],
+                               self.high_res_source.data["y"][0],
+                               self.high_res_source.data["dw"][0],
+                               self.high_res_source.data["dh"][0])
+                print("current box:", current_box)
+                next_box = (x[0], y[0], dx, dy)
+                print("next box:", next_box)
+                if is_inside(next_box, current_box):
+                    print("already inside box")
+                    return
             print("plotting high resolution image")
             high_res_image = self.global_rgba[y[0]:y[1], x[0]:x[1]]
             self.high_res_source.data = {
