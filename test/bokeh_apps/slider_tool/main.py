@@ -11,9 +11,23 @@ def main(bokeh_id):
     figure = bokeh.plotting.figure(sizing_mode="stretch_both", match_aspect=True)
 
     # High-level user interface
-    wind_rgba = imageio.imread("windmill.png")[::-1, :, :]
-    forest_rgba = imageio.imread("forest.png")[::-1, :, :]
-    tools = slider_tool(figure, wind_rgba, forest_rgba)
+    left_rgba = imageio.imread("windmill.png")[::-1, :, :]
+    left_source = bokeh.models.ColumnDataSource(dict(image=[left_rgba]))
+    figure.image_rgba(image="image",
+                      x=0,
+                      y=0,
+                      dw=10,
+                      dh=10,
+                      source=left_source)
+    right_rgba = imageio.imread("forest.png")[::-1, :, :]
+    right_source = bokeh.models.ColumnDataSource(dict(image=[right_rgba]))
+    figure.image_rgba(image="image",
+                      x=0,
+                      y=0,
+                      dw=10,
+                      dh=10,
+                      source=right_source)
+    tools = slider_tool(figure, left_source, right_source)
     figure.add_tools(*tools)
 
     if bokeh_id == '__main__':
@@ -21,34 +35,25 @@ def main(bokeh_id):
     else:
         bokeh.io.curdoc().add_root(figure)
 
-def slider_tool(figure, left_rgba, right_rgba):
-    """SliderTool prototype"""
+def slider_tool(figure, left_source, right_source):
+    """SliderTool prototype
+
+    At present it uses 3 instances of HoverTool but could be
+    improved to be a single tool responding to single mouse
+    move events
+    """
     # Left image
-    source = bokeh.models.ColumnDataSource(dict(image=[left_rgba]))
-    left = figure.image_rgba(image="image",
-                             x=0,
-                             y=0,
-                             dw=10,
-                             dh=10,
-                             source=source)
-    left_image_tool = hover_image_tool(source, mode="show_left")
+    left_tool = hover_image_tool(left_source, mode="show_left")
 
     # Right image
-    source = bokeh.models.ColumnDataSource(dict(image=[right_rgba]))
-    right = figure.image_rgba(image="image",
-                              x=0,
-                              y=0,
-                              dw=10,
-                              dh=10,
-                              source=source)
-    right_image_tool = hover_image_tool(source, mode="show_right")
+    right_tool = hover_image_tool(right_source, mode="show_right")
 
     # Hide right image initially
-    source.data["image"][0][:, :, -1] = 0.
+    right_source.data["image"][0][:, :, -1] = 0.
 
     # VLine
     vertical_line_tool = vertical_line(figure, location=10)
-    return left_image_tool, right_image_tool, vertical_line_tool
+    return left_tool, right_tool, vertical_line_tool
 
 def hover_image_tool(source, mode):
     """Hide anything to the left/right of pointer
