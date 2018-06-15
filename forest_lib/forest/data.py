@@ -196,11 +196,12 @@ def get_model_run_times(days_since_period_start, num_days, model_run_period):
 
 def get_available_times(datasets, var1):
     key0 = list(datasets.keys())[0]
-    available_times = datasets[key0]['data'].get_times(var1)
+    available_times_set = set()
 
     for ds_name in datasets:
         times1 = datasets[ds_name]['data'].get_times(var1)
-        available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
+        available_times_set.update(times1)
+    available_times = numpy.array(sorted(list(available_times_set)))
     return available_times
 
 @forest.util.timer
@@ -590,24 +591,26 @@ class ForestDataset(object):
 
                 self.load_times(var_name)
 
-        if self.data[var_name][selected_time] is None:
-            if self.check_data():
-                # Get data from aws s3 storage
-                self.retrieve_data()
-                # Load the data into memory from file (will only load 
-                # metadata initially)
-                self.load_data(var_name, time_ix)
+        try:
+            if self.data[var_name][selected_time] is None:
+                if self.check_data():
+                    # Get data from aws s3 storage
+                    self.retrieve_data()
+                    # Load the data into memory from file (will only load
+                    # metadata initially)
+                    self.load_data(var_name, time_ix)
 
-                has_units = \
-                    self.data[var_name][time_ix].units is not None and \
-                    self.data[var_name][time_ix].units.name != 'unknown'
-                if convert_units and has_units:
-                    if UNIT_DICT[var_name]:
-                        self.data[var_name][time_ix].convert_units(
-                            UNIT_DICT[var_name])
-            else:
-                self.data[var_name] = None
-
+                    has_units = \
+                        self.data[var_name][time_ix].units is not None and \
+                        self.data[var_name][time_ix].units.name != 'unknown'
+                    if convert_units and has_units:
+                        if UNIT_DICT[var_name]:
+                            self.data[var_name][time_ix].convert_units(
+                                UNIT_DICT[var_name])
+                else:
+                    self.data[var_name] = None
+        except KeyError:
+            return None
 
         return self.data[var_name][time_ix]
 

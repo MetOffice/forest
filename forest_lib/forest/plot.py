@@ -19,8 +19,6 @@ import forest.data
 
 import iris.analysis
 
-import pdb
-
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
 
 class MissingDataError(Exception):
@@ -187,8 +185,12 @@ class ForestPlot(object):
 
         '''
 
-        self.coords_lat = data_cube.coords('latitude')[0].points
-        self.coords_long = data_cube.coords('longitude')[0].points
+        try:
+            self.coords_lat = data_cube.coords('latitude')[0].points
+            self.coords_long = data_cube.coords('longitude')[0].points
+        except AttributeError:
+            self.coords_lat = None
+            self.coords_long = None
 
     def create_blank(self):
 
@@ -201,12 +203,19 @@ class ForestPlot(object):
 
     def get_data(self, var_name=None):
         config_data = self.dataset[self.current_config]['data']
+
         if var_name:
             data_cube = config_data.get_data(var_name=var_name,
                                  selected_time = self.current_time)
+            selected_var = var_name
         else:
             data_cube = config_data.get_data(var_name=self.current_var,
                                              selected_time=self.current_time)
+            selected_var = self.current_var
+        if data_cube is None:
+            raise MissingDataError(self.current_config,
+                                   selected_var,
+                                   self.current_time)
         return data_cube
 
     def update_precip(self):
@@ -814,7 +823,16 @@ class ForestPlot(object):
                 111,
                 projection=cartopy.crs.PlateCarree())
         self.current_axes.set_position([0, 0, 1, 1])
-        self.plot_funcs[self.current_var]()
+        try:
+            self.plot_funcs[self.current_var]()
+            if self.current_var == ForestPlot.BLANK:
+                self.display_mode = ForestPlot.MODE_LOADING
+            else:
+                self.display_mode = ForestPlot.MODE_PLOT
+        except MissingDataError:
+            self.main_plot = None
+            self.display_mode = ForestPlot.MODE_MISSING_DATA
+
         img_array = None
         if self.main_plot:
             if self.use_mpl_title:
@@ -907,15 +925,32 @@ class ForestPlot(object):
         cur_tb.active_tap = self.active_bokeh_tools['tap']
         cur_tb.active_scroll = self.active_bokeh_tools['scroll']
 
-        if self.current_img_array is not None:
-            self.create_bokeh_img()
-        else:
 
+        if self.display_mode == ForestPlot.MODE_PLOT:
+            self.plot_msg_txt = ''
+
+            if self.current_img_array is not None:
+                self.create_bokeh_img()
+
+        elif self.display_mode == ForestPlot.MODE_LOADING:
+            self.plot_msg_txt = 'Plot loading'
             mid_x = (cur_region[2] + cur_region[3]) * 0.5
             mid_y = (cur_region[0] + cur_region[1]) * 0.5
             self.overlay_text = self.bokeh_figure.text(x=[mid_x],
                                                        y=[mid_y],
-                                                       text=['Plot loading'],
+                                                       text=[self.plot_msg_txt],
+                                                       text_color=['#FF0000'],
+                                                       text_font_size="20pt",
+                                                       text_baseline="middle",
+                                                       text_align="center",
+                                                       )
+        elif self.display_mode == ForestPlot.MODE_MISSING_DATA:
+            self.plot_msg_txt = 'Data missing'
+            mid_x = (cur_region[2] + cur_region[3]) * 0.5
+            mid_y = (cur_region[0] + cur_region[1]) * 0.5
+            self.overlay_text = self.bokeh_figure.text(x=[mid_x],
+                                                       y=[mid_y],
+                                                       text=[self.plot_msg_txt],
                                                        text_color=['#FF0000'],
                                                        text_font_size="20pt",
                                                        text_baseline="middle",

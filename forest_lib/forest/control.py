@@ -41,8 +41,7 @@ def create_dropdown_opt_list(iterable1):
         creating dropdown menu labels.
     
     '''
-    
-    return [(k1, k1) for k1 in iterable1]
+
 
 
 def create_dropdown_opt_list_from_dict(dict1, iterable1):
@@ -386,7 +385,7 @@ class ForestController(object):
         if not self.process_events:
             return
         print('config change handler')
-        
+
         self.plots[plot_index].set_config(new_val)
 
     def _on_model_run_change(self, attr1, old_val, new_val):
