@@ -29,8 +29,8 @@ def main(bokeh_id):
                       dw=10,
                       dh=10,
                       source=right_source)
-    tools = slider_tool(figure, left_source, right_source)
-    figure.add_tools(*tools)
+    # tools = slider_tool(figure, left_source, right_source)
+    # figure.add_tools(*tools)
 
     # Object oriented API (work in progress)
     slider = slide.Slider(left_source, right_source)

@@ -68,4 +68,6 @@ class Slider(object):
 
     def add_figure(self, figure):
         """Attach various callbacks to a particular figure"""
-        figure.js_on_event("mousemove", self.mousemove)
+        # figure.js_on_event("mousemove", self.mousemove)
+        hover_tool = bokeh.models.HoverTool(callback=self.mousemove)
+        figure.add_tools(hover_tool)
