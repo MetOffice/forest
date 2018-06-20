@@ -10,23 +10,24 @@
 // cb_data:
 //      geometry.x - mouse x position relative to figure
 //
-let show_side = function() {
+let slide_image = function(source,
+                           original_alpha,
+                           mouse_x,
+                           previous_mouse_x,
+                           first_time,
+                           shape,
+                           side) {
     // Hard-coded values for now
     let x = 0;
     let dw = 10;
 
     // Shared data
-    let original_alpha = shared.data.original_alpha[0];
-    let previous_mouse_x = shared.data.mouse_x[0];
-    let first_time = shared.data.first_time[0]
-    let shape = shared.data.shape[0];
     let ni = shape[0];
     let nj = shape[1];
 
     // Mouse position(s)
     let left_x;
     let right_x;
-    let mouse_x = cb_data.geometry.x;
     if (!isFinite(mouse_x)) {
         return;
     }
@@ -66,7 +67,7 @@ let show_side = function() {
                 continue;
             }
             image_alpha_index = (4 * alpha_index) + 3;
-            if (visible_pixel(pixel_x, mouse_x, show_side)) {
+            if (visible_pixel(pixel_x, mouse_x, side)) {
                alpha = original_alpha_value;
             } else {
                alpha = 0;
@@ -90,12 +91,39 @@ let visible_pixel = function(pixel_x, mouse_x, show_side) {
 
 // CustomJS callback main program
 let main = function() {
-    // Gather data from callback
+    // Gather data from cb_data and args
+    let first_time = shared.data.first_time[0];
     let previous_mouse_x = shared.data.previous_mouse_x[0];
     let mouse_x = cb_data.geometry.x;
 
-    // Span location change
+    // Move vertical line to mouse position
     span.location = mouse_x;
+
+    // Left image extra data
+    let left_alpha = left_extra.data["alpha"][0];
+    let left_shape = left_extra.data["shape"][0];
+
+    // Update image alpha values
+    slide_image(left_images,
+                left_alpha,
+                mouse_x,
+                previous_mouse_x,
+                first_time,
+                left_shape,
+                "left");
+
+    // Right image extra data
+    let right_alpha = right_extra.data["alpha"][0];
+    let right_shape = right_extra.data["shape"][0];
+
+    // Update image alpha values
+    slide_image(right_images,
+                right_alpha,
+                mouse_x,
+                previous_mouse_x,
+                first_time,
+                right_shape,
+                "right");
 
     // Update shared data
     shared.data.previous_mouse_x[0] = mouse_x;

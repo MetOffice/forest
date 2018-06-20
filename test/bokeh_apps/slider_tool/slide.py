@@ -28,12 +28,14 @@ class Slider(object):
     """
     def __init__(self, left_images, right_images):
         self.left_images = left_images
-        self.left_alpha = bokeh.models.ColumnDataSource({
-            "alpha": self.get_alpha(self.left_images)
+        self.left_extra = bokeh.models.ColumnDataSource({
+            "alpha": self.get_alpha(self.left_images),
+            "shape": self.get_shapes(self.left_images)
         })
         self.right_images = right_images
-        self.right_alpha = bokeh.models.ColumnDataSource({
-            "alpha": self.get_alpha(self.right_images)
+        self.right_extra = bokeh.models.ColumnDataSource({
+            "alpha": self.get_alpha(self.right_images),
+            "shape": self.get_shapes(self.right_images)
         })
         self.span = bokeh.models.Span(location=0,
                                       dimension='height',
@@ -46,25 +48,32 @@ class Slider(object):
         self.mousemove = bokeh.models.CustomJS(args=dict(
             span=self.span,
             left_images=self.left_images,
-            left_alpha=self.left_alpha,
+            left_extra=self.left_extra,
             right_images=self.right_images,
-            right_alpha=self.right_alpha,
+            right_extra=self.right_extra,
             shared=shared
         ), code=JS_CODE)
 
+    def get_alpha(self, bokeh_obj):
+        """Helper to copy alpha values from GlyphRenderer or ColumnDataSource"""
+        images = self.get_images(bokeh_obj)
+        return [np.copy(rgba[:, :, -1]) for rgba in images]
+
+    def get_shapes(self, bokeh_obj):
+        """Helper to shapes from GlyphRenderer or ColumnDataSource"""
+        images = self.get_images(bokeh_obj)
+        return [rgba.shape for rgba in images]
+
     @staticmethod
-    def get_alpha(bokeh_obj):
-        """Helper to copy alpha values from RGBA bokeh GlyphRenderer or ColumnDataSource"""
+    def get_images(bokeh_obj):
         if hasattr(bokeh_obj, "data_source"):
             renderer = bokeh_obj
             if isinstance(renderer.glyph.image, basestring):
-                images = renderer.data_source[renderer.glyph.image]
+                return renderer.data_source[renderer.glyph.image]
             else:
-                images = renderer.glyph.image
-        else:
-            column_data_source = bokeh_obj
-            images = column_data_source.data["image"]
-        return [np.copy(rgba[:, :, -1]) for rgba in images]
+                return renderer.glyph.image
+        column_data_source = bokeh_obj
+        return column_data_source.data["image"]
 
     def add_figure(self, figure):
         """Attach various callbacks to a particular figure"""
