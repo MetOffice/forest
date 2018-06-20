@@ -2,15 +2,8 @@
 import numpy as np
 import bokeh.models
 
-JS_CODE = """
-    /**
-     *  Full JS slider implementation
-     *     - Hide/show left images
-     *     - Hide/show right images
-     *     - Move vertical line
-     */
-    console.log('mouse move');
-"""
+with open("slide.js", "r") as stream:
+    JS_CODE = stream.read()
 
 
 class Slider(object):
