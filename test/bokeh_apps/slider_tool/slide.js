@@ -78,10 +78,6 @@ let show_side = function() {
         // Some columns need to be painted
         source.change.emit();
     }
-
-    // Update shared data
-    shared.data.mouse_x[0] = mouse_x;
-    shared.data.first_time[0] = false;
 };
 
 let visible_pixel = function(pixel_x, mouse_x, show_side) {
@@ -94,14 +90,16 @@ let visible_pixel = function(pixel_x, mouse_x, show_side) {
 
 // CustomJS callback main program
 let main = function() {
+    // Gather data from callback
     let previous_mouse_x = shared.data.previous_mouse_x[0];
     let mouse_x = cb_data.geometry.x;
-    console.log("previous mouse:", previous_mouse_x,
-                "current mouse:", mouse_x);
-    shared.data.previous_mouse_x[0] = mouse_x;
 
     // Span location change
-    span.location = cb_data.geometry.x;
+    span.location = mouse_x;
+
+    // Update shared data
+    shared.data.previous_mouse_x[0] = mouse_x;
+    shared.data.first_time[0] = false;
 };
 
 main();
