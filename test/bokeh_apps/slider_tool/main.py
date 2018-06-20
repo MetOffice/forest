@@ -5,6 +5,8 @@ import bokeh.plotting
 import bokeh.models.callbacks
 import imageio
 
+import slide
+
 
 def main(bokeh_id):
     """Main program"""
@@ -29,6 +31,10 @@ def main(bokeh_id):
                       source=right_source)
     tools = slider_tool(figure, left_source, right_source)
     figure.add_tools(*tools)
+
+    # Object oriented API (work in progress)
+    slider = slide.Slider(left_source, right_source)
+    slider.add_figure(figure)
 
     if bokeh_id == '__main__':
         bokeh.plotting.show(figure)

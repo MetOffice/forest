@@ -1,5 +1,14 @@
 """Slider tool"""
+import numpy as np
+import bokeh.models
+
 JS_CODE = """
+    /**
+     *  Full JS slider implementation
+     *     - Hide/show left images
+     *     - Hide/show right images
+     *     - Move vertical line
+     */
     console.log('mouse move');
 """
 
@@ -9,7 +18,7 @@ class Slider(object):
 
     Understands bokeh architecture, either a GlyphRenderer
     or a ColumnDataSource may be passed in for either
-    left_images or right_images properties
+    left_images or right_images arguments
 
     The various properties needed to set alpha values relative
     to the mouse position can be found by inspecting
@@ -41,18 +50,19 @@ class Slider(object):
             "first_time": [False],
             "previous_mouse_x": [0]
         })
-        self.mousemove = bokeh.callbacks.CustomJS(args=dict(span=self.span,
-                                                            left_images=self.left_images,
-                                                            left_alpha=self.left_alpha,
-                                                            right_images=self.right_images,
-                                                            right_alpha=self.right_alpha,
-                                                            shared=shared),
-                                                  code=JS_CODE)
+        self.mousemove = bokeh.models.CustomJS(args=dict(
+            span=self.span,
+            left_images=self.left_images,
+            left_alpha=self.left_alpha,
+            right_images=self.right_images,
+            right_alpha=self.right_alpha,
+            shared=shared
+        ), code=JS_CODE)
 
     @staticmethod
     def get_alpha(bokeh_obj):
         """Helper to copy alpha values from RGBA bokeh GlyphRenderer or ColumnDataSource"""
-        if hasattr("data_source"):
+        if hasattr(bokeh_obj, "data_source"):
             renderer = bokeh_obj
             if isinstance(renderer.glyph.image, basestring):
                 images = renderer.data_source[renderer.glyph.image]
@@ -65,4 +75,4 @@ class Slider(object):
 
     def add_figure(self, figure):
         """Attach various callbacks to a particular figure"""
-        figure.on_event("mousemove", self.mousemove)
+        figure.js_on_event("mousemove", self.mousemove)
