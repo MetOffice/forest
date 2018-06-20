@@ -20,8 +20,8 @@ spec:
             - containerPort: {{.Values.manager.port}}
           resources:
             requests:
-              cpu: 50m
-              memory: 1000Mi
+              cpu: 200m
+              memory: 2000Mi
           env:
 
             - name: PYTHONPATH
