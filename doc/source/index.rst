@@ -3,12 +3,20 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Forest's documentation!
+Forest - forecast evaluation tools
 ==================================
+
+Forest is an application and a framework for evaluating
+numerical weather prediction (NWP) and ocean models. Forecast
+and nowcast fields can be compared to equivalent observations
+using a simple user interface
+
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   slide
 
 
 
