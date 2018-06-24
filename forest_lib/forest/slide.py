@@ -1,8 +1,14 @@
 """Slider tool"""
+import os
+import sys
 import numpy as np
 import bokeh.models
 
-with open("slide.js", "r") as stream:
+
+# CustomJS callback code
+JS_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                       "slide.js")
+with open(JS_FILE, "r") as stream:
     JS_CODE = stream.read()
 
 
