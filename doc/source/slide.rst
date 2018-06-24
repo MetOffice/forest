@@ -1,5 +1,5 @@
 
-Slider comparison tool
+Image comparison tools
 ======================
 
 .. automodule:: forest.slide

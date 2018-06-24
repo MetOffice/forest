@@ -1,4 +1,26 @@
-"""Slider tool"""
+"""Tool to compare two RGBA images on a pixel by pixel basis
+
+A :class:`.Slider` is available that makes it easy to compare two
+images relative to a mouse pointer. Images can be split
+such that the left portion of one image is visible and
+the right portion of the other image is visible
+
+>>> slider = forest.slide.Slider(left_images, right_images)
+>>> slider.add_figure(figure)
+
+A :class:`.Toggle` is also available to switch between images wholesale
+
+>>> toggle = forest.slide.Toggle(left_images, right_images)
+>>> toggle.add_figure(figure)
+>>> bokeh.layout.column(toggle.widget)
+
+Application programming interface (API)
+=======================================
+
+The following classes have been made available to users
+of Forest for custom visualisations
+
+"""
 import os
 import sys
 import numpy as np
@@ -10,6 +32,21 @@ JS_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                        "slide.js")
 with open(JS_FILE, "r") as stream:
     JS_CODE = stream.read()
+
+
+class Toggle(object):
+    """Controls alpha values of bokeh RGBA ColumnDataSources
+
+    Similar design to :class:`.Slider` but with wholesale replacement
+    of image alpha values
+
+    :param left_images: ColumnDataSource or GlyphRenderer used to
+                        define RGBA images when toggle is set to left
+    :param right_images: ColumnDataSource or GlyphRenderer used to
+                         define RGBA images when toggle is set to right
+    """
+    def __init__(self, left_images, right_images):
+        pass
 
 
 class Slider(object):
