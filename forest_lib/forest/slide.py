@@ -1,18 +1,30 @@
-"""Tool to compare two RGBA images on a pixel by pixel basis
+"""Tools to compare RGBA images on a pixel by pixel basis
+
+The tools in this module are designed to work with
+:meth:`bokeh.plotting.figure.Figure.image_rgba` GlyphRenderers and
+ColumnDataSources that drive those images
 
 A :class:`.Slider` is available that makes it easy to compare two
-images relative to a mouse pointer. Images can be split
-such that the left portion of one image is visible and
-the right portion of the other image is visible
+images relative to a mouse pointer. The slider splits images
+such that the left portion of one image and
+the right portion of the other image are visible either side of the mouse
+position.
 
 >>> slider = forest.slide.Slider(left_images, right_images)
 >>> slider.add_figure(figure)
 
-A :class:`.Toggle` is also available to switch between images wholesale
+A :class:`.Toggle` is also available to switch between images.  Instead of
+displaying portions of two images side by side, like the slider, the toggle
+swaps images to gain a quick overview of the differences between each image
 
 >>> toggle = forest.slide.Toggle(left_images, right_images)
 >>> toggle.add_figure(figure)
 >>> bokeh.layout.column(toggle.widget)
+
+The :class:`Zoom` class represents a mechanism to generate high-resolution
+imagery as the x/y ranges change. The particular implementation available
+here merely displays portions of a higher resolution array overlayed on a
+coarsified full extent image
 
 Application programming interface (API)
 =======================================
@@ -32,6 +44,10 @@ JS_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                        "slide.js")
 with open(JS_FILE, "r") as stream:
     JS_CODE = stream.read()
+
+
+class Zoom(object):
+    """Tool to generate high-resolution overlays as x/y ranges change"""
 
 
 class Toggle(object):
