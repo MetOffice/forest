@@ -15,7 +15,7 @@ position.
 
 A :class:`.Toggle` is also available to switch between images.  Instead of
 displaying portions of two images side by side, like the slider, the toggle
-swaps images to gain a quick overview of the differences between each image
+swaps out images to quickly see the differences between each image
 
 >>> toggle = forest.slide.Toggle(left_images, right_images)
 >>> toggle.add_figure(figure)
