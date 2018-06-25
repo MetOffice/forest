@@ -10,14 +10,14 @@ such that the left portion of one image and
 the right portion of the other image are visible either side of the mouse
 position.
 
->>> slider = forest.slide.Slider(left_images, right_images)
+>>> slider = forest.image.Slider(left_images, right_images)
 >>> slider.add_figure(figure)
 
 A :class:`.Toggle` is also available to switch between images.  Instead of
 displaying portions of two images side by side, like the slider, the toggle
 swaps out images to quickly see the differences between each image
 
->>> toggle = forest.slide.Toggle(left_images, right_images)
+>>> toggle = forest.image.Toggle(left_images, right_images)
 >>> toggle.add_figure(figure)
 >>> bokeh.layout.column(toggle.widget)
 
@@ -41,7 +41,7 @@ import bokeh.models
 
 # CustomJS callback code
 JS_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                       "slide.js")
+                       "image.js")
 with open(JS_FILE, "r") as stream:
     JS_CODE = stream.read()
 
