@@ -497,6 +497,18 @@ def timer(func):
 
     return timed_func
 
+
+def count_calls(func):
+    """Decorator to report of function invocation"""
+    counter = 0
+    def wrapper(*args, **kwargs):
+        nonlocal counter
+        counter += 1
+        print(func.__name__, "called", counter, "times")
+        return func(*args, **kwargs)
+    return wrapper
+
+
 def load_error_page():
     msg1 = 'Error: data not found'
     error_msg_widget = bokeh.models.widgets.Div(text=msg1,

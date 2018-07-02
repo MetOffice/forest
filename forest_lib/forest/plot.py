@@ -783,6 +783,7 @@ class ForestPlot(object):
 
             self.current_figure.canvas.draw()
 
+    @forest.util.count_calls
     def create_bokeh_img_plot_from_fig(self):
 
         '''
