@@ -2,5 +2,6 @@
 Image comparison tools
 ======================
 
-.. automodule:: forest.slide
+.. automodule:: forest.image
     :members:
+

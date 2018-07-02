@@ -16,7 +16,7 @@ using a simple user interface
    :maxdepth: 2
    :caption: Contents:
 
-   slide
+   image
 
 
 
