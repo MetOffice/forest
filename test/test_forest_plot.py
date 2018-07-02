@@ -85,7 +85,6 @@ class TestForestPlot(unittest.TestCase):
             self.assertEqual(forest_plot.current_config, "new_config")
             self.assertEqual(forest_plot.plot_description, "Label")
 
-    @unittest.skip("exploring forest architecture")
     @unittest.mock.patch("forest.plot.matplotlib")
     @unittest.mock.patch("forest.plot.bokeh")
     def test_forest_plot_calls_bokeh_plotting_figure(self,
@@ -104,14 +103,24 @@ class TestForestPlot(unittest.TestCase):
         .. note:: ForestPlot.create_matplotlib_fig() expects
                   self.current_var to be a key in self.plot_funcs
 
-        .. note:: ForestPlot.get_image_array_from_figure() takes
+        .. note:: forest.util.get_image_array_from_figure() takes
                   a matplotlib.Figure instance
         """
-        fixture = forest.plot.ForestPlot(*self.generic_args())
-        fixture.plot_funcs["plot_variable"] = unittest.mock.Mock()
-        fixture.create_matplotlib_fig()
-        fixture.create_bokeh_img_plot_from_fig()
-        bokeh.plotting.figure.assert_called_once_with()
+        figure = matplotlib.pyplot.figure.return_value
+        with unittest.mock.patch("forest.util") as forest_util:
+            fixture = forest.plot.ForestPlot(*self.generic_args())
+            fixture.plot_funcs["plot_variable"] = unittest.mock.Mock()
+            fixture.create_matplotlib_fig()
+            fixture.create_bokeh_img_plot_from_fig()
+            forest_util.get_image_array_from_figure.assert_called_once_with(figure)
+        tools = "pan,wheel_zoom,reset,save,box_zoom"
+        x_range = bokeh.models.Range1d.return_value
+        y_range = bokeh.models.Range1d.return_value
+        bokeh.plotting.figure.assert_called_once_with(plot_height=600,
+                                                      plot_width=800,
+                                                      tools=tools,
+                                                      x_range=x_range,
+                                                      y_range=y_range)
 
     def test_forest_plot_should_accept_figure(self):
         """To open forest to allow generic layouts"""
@@ -131,7 +140,7 @@ class TestForestPlot(unittest.TestCase):
         conf1 = "current_config"
         reg1 = "current_region"
         rd1 = {
-            "current_region": None
+            "current_region": [0, 1, 0, 1]
         }
         unit_dict = None
         unit_dict_display = None
