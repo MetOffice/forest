@@ -253,4 +253,5 @@ def main(bokeh_id):
     elif bokeh_mode == 'cli':
         bokeh.io.show(control1.main_layout)
 
-main(__name__)
+if __name__ == '__main__':
+    main(__name__)

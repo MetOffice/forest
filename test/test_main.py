@@ -1,5 +1,7 @@
 import unittest
 import unittest.mock
+import sys
+sys.path.insert(0, "../bokeh_apps/plot_sea_model_and_gpm_mpl/")
 import main
 
 
@@ -7,10 +9,6 @@ class TestMain(unittest.TestCase):
     def setUp(self):
         self.init_fcast_time = "20180101"
         self.gpm_dataset = "GpmDataset"
-
-    def test_main_can_be_called(self):
-        with unittest.mock.patch("main.bokeh") as bokeh:
-            main.main(bokeh_id="")
 
     @unittest.mock.patch("main.forest.plot.ForestPlot")
     @unittest.mock.patch("main.forest.data.get_available_times")
