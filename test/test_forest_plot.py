@@ -122,11 +122,35 @@ class TestForestPlot(unittest.TestCase):
                                                       x_range=x_range,
                                                       y_range=y_range)
 
-    def test_forest_plot_should_accept_figure(self):
-        """To open forest to allow generic layouts"""
-        forest.plot.ForestPlot(*self.generic_args())
+    def test_forest_plot_should_accept_bokeh_figure(self):
+        """To open forest to allow generic layouts
 
-    def generic_args(self):
+        Decoupling the design to allow app specific bokeh figures
+        will make managing layouts easier
+        """
+        fake_figure = "bokeh figure"
+        forest_plot = forest.plot.ForestPlot(*self.generic_args(),
+                                             bokeh_figure=fake_figure)
+        self.assertEqual(forest_plot.bokeh_figure, fake_figure)
+
+    @unittest.mock.patch("forest.util")
+    @unittest.mock.patch("forest.plot.matplotlib")
+    @unittest.mock.patch("forest.plot.bokeh")
+    def test_forest_plot_should_keep_bokeh_figure(self,
+                                                  bokeh,
+                                                  matplotlib,
+                                                  util):
+        """A user supplied figure should be retained throughout object
+        life cycle"""
+        fake_figure = "bokeh figure"
+        fake_plot_func = unittest.mock.Mock()
+        forest_plot = forest.plot.ForestPlot(*self.generic_args(),
+                                             bokeh_figure=fake_figure)
+        forest_plot.plot_funcs[forest_plot.current_var] = fake_plot_func
+        forest_plot.create_plot()
+        self.assertEqual(forest_plot.bokeh_figure, fake_figure)
+
+    def generic_args(self, plot_var="plot_variable"):
         """Helper to construct ForestPlot"""
         dataset = {
             "current_config": {
@@ -136,7 +160,6 @@ class TestForestPlot(unittest.TestCase):
         model_run_time = None
         po1 = None
         figname = None
-        plot_var = "plot_variable"
         conf1 = "current_config"
         reg1 = "current_region"
         rd1 = {

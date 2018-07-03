@@ -51,7 +51,8 @@ class ForestPlot(object):
                  unit_dict,
                  unit_dict_display,
                  app_path,
-                 init_time):
+                 init_time,
+                 bokeh_figure=None):
 
         '''Initialisation function for ForestPlot class
         '''
@@ -76,7 +77,7 @@ class ForestPlot(object):
         self.current_title = ''
         self.stats_string = ''
         self.colorbar_link = plot_var + '_colorbar.png'
-        self.bokeh_figure = None
+        self.bokeh_figure = bokeh_figure
         self.bokeh_image = None
         self.bokeh_img_ds = None
         self.async = False
@@ -783,7 +784,6 @@ class ForestPlot(object):
 
             self.current_figure.canvas.draw()
 
-    @forest.util.count_calls
     def create_bokeh_img_plot_from_fig(self):
 
         '''
@@ -795,19 +795,20 @@ class ForestPlot(object):
 
         cur_region = self.region_dict[self.current_region]
 
-        # Set figure navigation limits
-        x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3],
-                                        bounds=(cur_region[2], cur_region[3]))
-        y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1],
-                                        bounds=(cur_region[0], cur_region[1]))
+        if self.bokeh_figure is None:
+            # Set figure navigation limits
+            x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3],
+                                            bounds=(cur_region[2], cur_region[3]))
+            y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1],
+                                            bounds=(cur_region[0], cur_region[1]))
 
-        # Initialize figure
-        self.bokeh_figure = \
-            bokeh.plotting.figure(plot_width=self.bokeh_fig_size[0],
-                                  plot_height=self.bokeh_fig_size[1],
-                                  x_range=x_limits,
-                                  y_range=y_limits,
-                                  tools=','.join(BOKEH_TOOLS_LIST))
+            # Initialize figure
+            self.bokeh_figure = \
+                bokeh.plotting.figure(plot_width=self.bokeh_fig_size[0],
+                                      plot_height=self.bokeh_fig_size[1],
+                                      x_range=x_limits,
+                                      y_range=y_limits,
+                                      tools=','.join(BOKEH_TOOLS_LIST))
 
         if self.current_img_array is not None:
             self.create_bokeh_img()
