@@ -18,8 +18,15 @@ displaying portions of two images side by side, like the slider, the toggle
 swaps out images to quickly see the differences between each image
 
 >>> toggle = forest.image.Toggle(left_images, right_images)
->>> toggle.add_figure(figure)
->>> bokeh.layout.column(toggle.widget)
+>>> buttons = bokeh.models.widgets.RadioButtonGroup(
+...     labels=["left", "right"],
+...     active=0
+... )
+>>> buttons.on_change("active", toggle.on_change)
+
+Importantly, a :class:`Toggle` has no knowledge of bokeh widgets
+or layouts, it simply responds to ``on_change`` events by editing
+the appropriate alpha values of the associated images
 
 The :class:`Zoom` class represents a mechanism to generate high-resolution
 imagery as the x/y ranges change. The particular implementation available
@@ -62,6 +69,34 @@ class Toggle(object):
                          define RGBA images when toggle is set to right
     """
     def __init__(self, left_images, right_images):
+        self.left_images = left_images
+        self.right_images = right_images
+
+    def on_change(self, attr, old, new):
+        """Interface to bokeh.widgets on_change callback
+
+        Hides/shows appropriate images related to button group
+
+        .. note:: ``attr`` and ``old`` parameters are ignored by
+                  this callback
+
+        :param new: integer 0 indicating display left image, 1 indicates
+                    right image to be displayed
+        """
+        if new == 0:
+            self.show(self.left_images)
+            self.hide(self.right_images)
+        else:
+            self.show(self.right_images)
+            self.hide(self.left_images)
+
+    def show(self, images):
+        """Show an image"""
+        if "_alpha" not in images.data:
+            images.data["_alpha"] = []
+
+    def hide(self, images):
+        """Hide an image"""
         pass
 
 

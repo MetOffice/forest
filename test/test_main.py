@@ -1,7 +1,11 @@
 import unittest
 import unittest.mock
+import os
 import sys
-sys.path.insert(0, "../bokeh_apps/plot_sea_model_and_gpm_mpl/")
+TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+APP_DIR = os.path.join(TEST_DIR, "../bokeh_apps/plot_sea_model_and_gpm_mpl/")
+print(APP_DIR)
+sys.path.insert(0, APP_DIR)
 import main
 
 

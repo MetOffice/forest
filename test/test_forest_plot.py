@@ -133,6 +133,7 @@ class TestForestPlot(unittest.TestCase):
                                              bokeh_figure=fake_figure)
         self.assertEqual(forest_plot.bokeh_figure, fake_figure)
 
+    @unittest.skip("developing toggle controller")
     @unittest.mock.patch("forest.util")
     @unittest.mock.patch("forest.plot.matplotlib")
     @unittest.mock.patch("forest.plot.bokeh")
