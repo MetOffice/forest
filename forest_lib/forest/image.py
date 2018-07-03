@@ -160,17 +160,37 @@ class Slider(object):
 
     @staticmethod
     def get_images(bokeh_obj):
-        if hasattr(bokeh_obj, "data_source"):
-            renderer = bokeh_obj
-            if isinstance(renderer.glyph.image, basestring):
-                return renderer.data_source[renderer.glyph.image]
-            else:
-                return renderer.glyph.image
-        column_data_source = bokeh_obj
-        return column_data_source.data["image"]
+        return get_images(bokeh_obj)
 
     def add_figure(self, figure):
         """Attach various callbacks to a particular figure"""
         hover_tool = bokeh.models.HoverTool(callback=self.mousemove)
         figure.add_tools(hover_tool)
         figure.renderers.append(self.span)
+
+
+def get_images(bokeh_obj):
+    """Helper to get image data from ColumnDataSource or GlyphRenderer"""
+    if hasattr(bokeh_obj, "data_source"):
+        renderer = bokeh_obj
+        if isinstance(renderer.glyph.image, str):
+            return renderer.data_source.data[renderer.glyph.image]
+        else:
+            return renderer.glyph.image
+    column_data_source = bokeh_obj
+    return column_data_source.data["image"]
+
+
+def alpha_from_rgba(rgba):
+    """Helper method to view alpha values from an RGBA array
+
+    The alpha values are assumed to be the last entry of the
+    last dimension
+
+    .. note:: This method does not handle RGBA data stored as
+              1D arrays
+
+    :param rgba: Array of RGBA values
+    :returns: View on alpha values
+    """
+    return rgba[..., -1]

@@ -1,6 +1,29 @@
 import unittest
+import numpy as np
 import bokeh
 import forest.image
+
+
+class TestRGBA(unittest.TestCase):
+    """Utility methods for handling RGBA data"""
+    def test_get_images_given_column_data_source(self):
+        column_data_source = bokeh.models.ColumnDataSource({
+            "image": []
+        })
+        forest.image.get_images(column_data_source)
+
+    def test_get_images_given_glyph_renderer(self):
+        figure = bokeh.plotting.figure()
+        glyph_renderer = figure.image_rgba(
+            image=[], x=0, y=0, dw=1, dh=1
+        )
+        forest.image.get_images(glyph_renderer)
+
+    def test_get_alpha_from_rgba(self):
+        rgba = np.asarray([[0, 0, 0, 1], [0, 0, 0, 2]])
+        result = forest.image.alpha_from_rgba(rgba)
+        expect = [1, 2]
+        np.testing.assert_array_almost_equal(expect, result)
 
 
 class TestToggle(unittest.TestCase):
@@ -20,6 +43,7 @@ class TestToggle(unittest.TestCase):
         })
         self.toggle.show(image)
         self.assertIn("_alpha", image.data)
+        self.assertEqual(image.data["_alpha"], [])
 
     def test_on_change_given_left_image_shows_left_images(self):
         self.toggle.show = unittest.mock.Mock()
