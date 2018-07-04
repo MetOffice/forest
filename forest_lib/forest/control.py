@@ -143,9 +143,8 @@ class ForestController(object):
 
         # Create previous timestep button widget
         self.time_prev_button = \
-            bokeh.models.widgets.Button(label='Prev',
-                                        button_type='warning',
-                                        width=100)
+            bokeh.models.widgets.Button(label='Previous validity time',
+                                        button_type='warning')
         self.time_prev_button.on_click(self.on_time_prev)
         
         # Create time selection slider widget
@@ -160,9 +159,8 @@ class ForestController(object):
 
         # Create next timestep button widget
         self.time_next_button = \
-            bokeh.models.widgets.Button(label='Next',
-                                        button_type='warning',
-                                        width=100)
+            bokeh.models.widgets.Button(label='Next validity time',
+                                        button_type='warning')
         self.time_next_button.on_click(self.on_time_next)
 
 
@@ -255,13 +253,9 @@ class ForestController(object):
         to enhance user experience of Forest
         """
         rows = [
-            bokeh.layouts.row(time_previous_button,
-                              bokeh.models.Spacer(width=20, height=60),
-                              time_slider,
-                              bokeh.models.Spacer(width=20, height=60),
+            bokeh.layouts.row(model_run_drop_down,
+                              time_previous_button,
                               time_next_button,
-                              bokeh.models.Spacer(width=20, height=60),
-                              model_run_drop_down,
                               sizing_mode=sizing_mode),
             bokeh.layouts.row(model_variable_drop_down,
                               region_drop_down,
@@ -271,8 +265,9 @@ class ForestController(object):
                               sizing_mode=sizing_mode),
             bokeh.layouts.row(*bokeh_figures,
                               sizing_mode=sizing_mode),
+            bokeh.layouts.row(colorbar_div,
+                              sizing_mode=sizing_mode),
             bokeh.layouts.row(stats_widgets[0],
-                              colorbar_div,
                               stats_widgets[1],
                               sizing_mode=sizing_mode)
         ]
