@@ -1,0 +1,11 @@
+.bk-root .bk-bs-btn {
+    background-color: LightGrey;
+    border-color: Black;
+    color: Black;
+}
+
+.bk-root .bk-bs-btn:hover {
+    background-color: White;
+    border-color: Black;
+    color: Black;
+}

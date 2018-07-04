@@ -24,6 +24,7 @@ that accepts these same parameters.
         <title>{{ title|e if title else "Bokeh Plot" }}</title>
         {{ bokeh_css }}
         {{ bokeh_js }}
+        <link rel="stylesheet" href="plot_sea_two_model_comparison/static/css/custom.css" type="text/css">
     </head>
     <body>
         {{ plot_div|indent(8) }}
