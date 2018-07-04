@@ -84,22 +84,60 @@ class Toggle(object):
                     right image to be displayed
         """
         if new == 0:
-            self.show(self.left_images)
-            self.hide(self.right_images)
+            self.show_left()
         else:
-            self.show(self.right_images)
-            self.hide(self.left_images)
+            self.show_right()
 
-    def show(self, images):
-        """Show an image"""
-        if "_alpha" not in images.data:
-            images.data["_alpha"] = []
+    def show_left(self):
+        """Show left image and hide right image"""
+        self.show(self.left_images)
+        self.hide(self.right_images)
 
-    def hide(self, column_data_source):
-        """Hide an image"""
-        images = column_data_source.data["image"]
+    def show_right(self):
+        """Show right image and hide left image"""
+        self.show(self.right_images)
+        self.hide(self.left_images)
+
+    def show(self, source):
+        """Show an image
+
+        .. note:: Caches existing alpha values if not already cached
+                  and exits since there is no alpha information to
+                  change
+        .. note:: Updates image alpha values in-place
+        """
+        if "_alpha" not in source.data:
+            self.cache_alpha(source)
+            return
+        # Restore alpha from cache
+        images = source.data["image"]
+        alphas = source.data["_alpha"]
+        for image, alpha in zip(images, alphas):
+            image[..., -1] = alpha
+        source.data["image"] = images
+
+    def hide(self, source):
+        """Hide an image
+
+        Set alpha values in RGBA arrays to zero, while keeping a
+        copy of the original values for restoration purposes
+
+        .. note:: Caches existing alpha values if not already cached
+        .. note:: Updates image alpha values in-place
+        """
+        if "_alpha" not in source.data:
+            self.cache_alpha(source)
+        # Set alpha to zero
+        images = source.data["image"]
         for image in images:
             image[..., -1] = 0
+        source.data["image"] = images
+
+    @staticmethod
+    def cache_alpha(source):
+        images = source.data["image"]
+        alpha = [np.copy(image[..., -1]) for image in images]
+        source.data["_alpha"] = alpha
 
 
 class Slider(object):
@@ -169,6 +207,14 @@ class Slider(object):
         hover_tool = bokeh.models.HoverTool(callback=self.mousemove)
         figure.add_tools(hover_tool)
         figure.renderers.append(self.span)
+
+    def on(self):
+        """Activate slider feature"""
+        pass
+
+    def off(self):
+        """Deactivate slider feature"""
+        pass
 
 
 def get_alpha(bokeh_obj):

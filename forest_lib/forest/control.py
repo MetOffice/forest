@@ -9,6 +9,7 @@ import bokeh.plotting
 
 import forest.data
 import forest.feedback
+import forest.image
 
 CONFIG_DIR = os.path.dirname(__file__)
 FEEDBACK_CONF_FILENAME = 'feedback_fields.conf'
@@ -228,10 +229,26 @@ class ForestController(object):
                                       functools.partial(self.on_config_change,
                                                         1))
         # Left/Right toggle UI
+        bokeh_figure = self.bokeh_imgs[0]
+        left_image = self.plots[0].bokeh_img_ds
+        right_image = self.plots[1].bokeh_img_ds
+        slider = forest.image.Slider(left_image, right_image)
+        slider.add_figure(bokeh_figure)
+        toggle = forest.image.Toggle(left_image, right_image)
+        def left_right_callback(attr, old, new):
+            if new == 2:
+                slider.on()
+            else:
+                slider.off()
+            if new == 0:
+                toggle.show_left()
+            elif new == 1:
+                toggle.show_right()
         self.left_right_toggle = bokeh.models.RadioButtonGroup(
                                      labels=["Left image", "Right image", "Slider tool"],
-                                     active=1
+                                     active=0
                                  )
+        self.left_right_toggle.on_change("active", left_right_callback)
 
         # Layout widgets
         sizing_mode = "fixed"
