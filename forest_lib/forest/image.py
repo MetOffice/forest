@@ -95,9 +95,11 @@ class Toggle(object):
         if "_alpha" not in images.data:
             images.data["_alpha"] = []
 
-    def hide(self, images):
+    def hide(self, column_data_source):
         """Hide an image"""
-        pass
+        images = column_data_source.data["image"]
+        for image in images:
+            image[..., -1] = 0
 
 
 class Slider(object):
@@ -169,14 +171,17 @@ class Slider(object):
         figure.renderers.append(self.span)
 
 
+def get_alpha(bokeh_obj):
+    """Helper to copy alpha values from GlyphRenderer or ColumnDataSource"""
+    images = get_images(bokeh_obj)
+    return [np.copy(rgba[:, :, -1]) for rgba in images]
+
+
 def get_images(bokeh_obj):
     """Helper to get image data from ColumnDataSource or GlyphRenderer"""
     if hasattr(bokeh_obj, "data_source"):
         renderer = bokeh_obj
-        if isinstance(renderer.glyph.image, str):
-            return renderer.data_source.data[renderer.glyph.image]
-        else:
-            return renderer.glyph.image
+        return renderer.data_source.data[renderer.glyph.image]
     column_data_source = bokeh_obj
     return column_data_source.data["image"]
 
