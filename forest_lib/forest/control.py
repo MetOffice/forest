@@ -126,9 +126,7 @@ class ForestController(object):
 
 
     def create_widgets(self):
-
         '''
-        
         '''
         class Label(object):
             def __init__(self, template):
@@ -168,7 +166,7 @@ class ForestController(object):
             bokeh.models.widgets.Button(label='Previous validity time',
                                         button_type='warning')
         self.time_prev_button.on_click(self.on_time_prev)
-        
+
         # Create time selection slider widget
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
@@ -210,7 +208,7 @@ class ForestController(object):
         # Create left figure model selection dropdown menu widget
         dataset_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
                                                                self.datasets[self.current_fcast_time].keys())
-        label = Label("Left: {}")
+        label = Label("Left image: {}")
         self.left_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
                                           label=label.first(dataset_menu_list),
@@ -220,7 +218,7 @@ class ForestController(object):
                                      functools.partial(self.on_config_change,
                                                        0))
         # Create right figure model selection dropdown menu widget
-        label = Label("Right: {}")
+        label = Label("Right image: {}")
         self.right_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
                                           label=label.first(dataset_menu_list),
@@ -299,7 +297,9 @@ class ForestController(object):
                               sizing_mode=sizing_mode),
             bokeh.layouts.row(stats_widgets[0],
                               stats_widgets[1],
-                              sizing_mode=sizing_mode)
+                              sizing_mode=sizing_mode),
+            user_feedback_toggle,
+            user_feedback_layout
         ]
         return bokeh.layouts.column(*rows, sizing_mode=sizing_mode)
 
