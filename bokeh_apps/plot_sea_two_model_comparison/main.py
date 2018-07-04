@@ -137,7 +137,9 @@ def main(bokeh_id):
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
-    bokeh_figure = bokeh.plotting.figure()
+    user_interface = "single-plot"
+    if user_interface == "single-plot":
+        bokeh_figure = bokeh.plotting.figure()
 
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
@@ -186,7 +188,6 @@ def main(bokeh_id):
 
 
     # Set up GUI controller class
-    user_interface = "single-plot"
     if user_interface == "double-plot":
         bokeh_figures = [bokeh_figure_left, bokeh_figure_right]
     else:

@@ -203,8 +203,11 @@ class ForestController(object):
                                                         1))
 
         # Layout widgets
+        sizing_mode = "fixed"
+        sizing_mode = "scale_width"
         self.major_config_row = bokeh.layouts.row(self.model_var_dd, 
-                                                  self.region_dd)
+                                                  self.region_dd,
+                                                  sizing_mode=sizing_mode)
 
         config_path = os.path.join(CONFIG_DIR, FEEDBACK_CONF_FILENAME)
 
@@ -218,7 +221,7 @@ class ForestController(object):
             bokeh.models.widgets.Toggle(label='Show feedback form',
                                         active=self.feedback_visible)
         self.uf_vis_toggle.on_click(self._on_uf_vis_toggle)
-        self.uf_vis_layout = bokeh.layouts.column()
+        self.uf_vis_layout = bokeh.layouts.column(sizing_mode=sizing_mode)
 
         self.time_row = \
             bokeh.layouts.row(self.time_prev_button,
@@ -228,13 +231,16 @@ class ForestController(object):
                               self.time_next_button,
                               bokeh.models.Spacer(width=20, height=60),
                               self.model_run_dd,
-                              )
+                              sizing_mode=sizing_mode)
         self.minor_config_row = bokeh.layouts.row(self.left_model_dd, 
-                                                  self.right_model_dd)
-        self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
+                                                  self.right_model_dd,
+                                                  sizing_mode=sizing_mode)
+        self.plots_row = bokeh.layouts.row(*self.bokeh_imgs,
+                                           sizing_mode=sizing_mode)
         self.info_row = bokeh.layouts.row(self.stats_widgets[0], 
                                           self.colorbar_div,
-                                          self.stats_widgets[1])
+                                          self.stats_widgets[1],
+                                          sizing_mode=sizing_mode)
 
         self.main_layout = bokeh.layouts.column(self.time_row,
                                                 self.major_config_row,
@@ -243,7 +249,7 @@ class ForestController(object):
                                                 self.info_row,
                                                 self.uf_vis_toggle,
                                                 self.uf_vis_layout,
-                                                )
+                                                sizing_mode=sizing_mode)
 
     def on_time_prev(self):
         
