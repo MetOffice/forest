@@ -137,6 +137,8 @@ def main(bokeh_id):
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
+    bokeh_figure = bokeh.plotting.figure()
+
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
                                            init_fcast_time,
@@ -150,9 +152,9 @@ def main(bokeh_id):
                                            forest.data.UNIT_DICT_DISPLAY,
                                            app_path,
                                            init_data_time,
-                                           )
+                                           bokeh_figure=bokeh_figure)
 
-    bokeh_img_left = plot_obj_left.create_plot()
+    bokeh_figure_left = plot_obj_left.create_plot()
     stats_left = plot_obj_left.create_stats_widget()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
@@ -167,9 +169,9 @@ def main(bokeh_id):
                                             forest.data.UNIT_DICT_DISPLAY,
                                             app_path,
                                             init_data_time,
-                                            )
+                                            bokeh_figure=bokeh_figure)
 
-    bokeh_img_right = plot_obj_right.create_plot()
+    bokeh_figure_right = plot_obj_right.create_plot()
     stats_right = plot_obj_right.create_stats_widget()
 
     colorbar_widget = plot_obj_left.create_colorbar_widget()
@@ -184,13 +186,18 @@ def main(bokeh_id):
 
 
     # Set up GUI controller class
+    user_interface = "single-plot"
+    if user_interface == "double-plot":
+        bokeh_figures = [bokeh_figure_left, bokeh_figure_right]
+    else:
+        bokeh_figures = [bokeh_figure]
     control1 = forest.control.ForestController(init_var,
                                                init_data_time_index,
                                                datasets,
                                                init_fcast_time,
                                                plot_type_time_lookups,
                                                [plot_obj_left, plot_obj_right],
-                                               [bokeh_img_left, bokeh_img_right],
+                                               bokeh_figures,
                                                colorbar_widget,
                                                [stats_left, stats_right],
                                                region_dict,
