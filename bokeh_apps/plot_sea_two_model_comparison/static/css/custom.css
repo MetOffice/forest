@@ -4,6 +4,10 @@
     color: Black;
 }
 
+.bk-root .bk-bs-btn.bk-bs-active {
+    border-color: Black;
+}
+
 .bk-root .bk-bs-btn:hover {
     background-color: White;
     border-color: Black;

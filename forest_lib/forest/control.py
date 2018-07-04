@@ -227,6 +227,11 @@ class ForestController(object):
         self.right_model_dd.on_change('value',
                                       functools.partial(self.on_config_change,
                                                         1))
+        # Left/Right toggle UI
+        self.left_right_toggle = bokeh.models.RadioButtonGroup(
+                                     labels=["Left image", "Right image", "Slider tool"],
+                                     active=1
+                                 )
 
         # Layout widgets
         sizing_mode = "fixed"
@@ -246,6 +251,7 @@ class ForestController(object):
         self.uf_vis_toggle.on_click(self._on_uf_vis_toggle)
         self.uf_vis_layout = bokeh.layouts.column(sizing_mode=sizing_mode)
         self.main_layout = self.layout_widgets(self.bokeh_imgs,
+                                               self.left_right_toggle,
                                                self.left_model_dd,
                                                self.right_model_dd,
                                                self.model_var_dd,
@@ -262,6 +268,7 @@ class ForestController(object):
 
     @staticmethod
     def layout_widgets(bokeh_figures,
+                       left_right_toggle,
                        left_model_drop_down,
                        right_model_drop_down,
                        model_variable_drop_down,
@@ -290,6 +297,8 @@ class ForestController(object):
                               sizing_mode=sizing_mode),
             bokeh.layouts.row(left_model_drop_down,
                               right_model_drop_down,
+                              sizing_mode=sizing_mode),
+            bokeh.layouts.row(left_right_toggle,
                               sizing_mode=sizing_mode),
             bokeh.layouts.row(*bokeh_figures,
                               sizing_mode=sizing_mode),
