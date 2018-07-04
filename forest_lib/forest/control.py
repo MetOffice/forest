@@ -205,9 +205,6 @@ class ForestController(object):
         # Layout widgets
         sizing_mode = "fixed"
         sizing_mode = "scale_width"
-        self.major_config_row = bokeh.layouts.row(self.model_var_dd, 
-                                                  self.region_dd,
-                                                  sizing_mode=sizing_mode)
 
         config_path = os.path.join(CONFIG_DIR, FEEDBACK_CONF_FILENAME)
 
@@ -222,34 +219,70 @@ class ForestController(object):
                                         active=self.feedback_visible)
         self.uf_vis_toggle.on_click(self._on_uf_vis_toggle)
         self.uf_vis_layout = bokeh.layouts.column(sizing_mode=sizing_mode)
+        self.main_layout = self.layout_widgets(self.bokeh_imgs,
+                                               self.left_model_dd,
+                                               self.right_model_dd,
+                                               self.model_var_dd,
+                                               self.region_dd,
+                                               self.time_prev_button,
+                                               self.time_next_button,
+                                               self.data_time_slider,
+                                               self.model_run_dd,
+                                               self.stats_widgets,
+                                               self.colorbar_div,
+                                               self.uf_vis_toggle,
+                                               self.uf_vis_layout,
+                                               sizing_mode=sizing_mode)
 
-        self.time_row = \
-            bokeh.layouts.row(self.time_prev_button,
+    @staticmethod
+    def layout_widgets(bokeh_figures,
+                       left_model_drop_down,
+                       right_model_drop_down,
+                       model_variable_drop_down,
+                       region_drop_down,
+                       time_previous_button,
+                       time_next_button,
+                       time_slider,
+                       model_run_drop_down,
+                       stats_widgets,
+                       colorbar_div,
+                       user_feedback_toggle,
+                       user_feedback_layout,
+                       sizing_mode="fixed"):
+        """Arrange bokeh widgets into a pleasing layout
+
+        Place widgets into rows/columns with appropriate sizing_modes
+        to enhance user experience of Forest
+        """
+        time_row = \
+            bokeh.layouts.row(time_previous_button,
                               bokeh.models.Spacer(width=20, height=60),
-                              self.data_time_slider,
+                              time_slider,
                               bokeh.models.Spacer(width=20, height=60),
-                              self.time_next_button,
+                              time_next_button,
                               bokeh.models.Spacer(width=20, height=60),
-                              self.model_run_dd,
+                              model_run_drop_down,
                               sizing_mode=sizing_mode)
-        self.minor_config_row = bokeh.layouts.row(self.left_model_dd, 
-                                                  self.right_model_dd,
-                                                  sizing_mode=sizing_mode)
-        self.plots_row = bokeh.layouts.row(*self.bokeh_imgs,
-                                           sizing_mode=sizing_mode)
-        self.info_row = bokeh.layouts.row(self.stats_widgets[0], 
-                                          self.colorbar_div,
-                                          self.stats_widgets[1],
-                                          sizing_mode=sizing_mode)
-
-        self.main_layout = bokeh.layouts.column(self.time_row,
-                                                self.major_config_row,
-                                                self.minor_config_row,
-                                                self.plots_row,
-                                                self.info_row,
-                                                self.uf_vis_toggle,
-                                                self.uf_vis_layout,
-                                                sizing_mode=sizing_mode)
+        major_config_row = bokeh.layouts.row(model_variable_drop_down,
+                                             region_drop_down,
+                                             sizing_mode=sizing_mode)
+        minor_config_row = bokeh.layouts.row(left_model_drop_down,
+                                             right_model_drop_down,
+                                             sizing_mode=sizing_mode)
+        plots_row = bokeh.layouts.row(*bokeh_figures,
+                                      sizing_mode=sizing_mode)
+        info_row = bokeh.layouts.row(stats_widgets[0],
+                                     colorbar_div,
+                                     stats_widgets[1],
+                                     sizing_mode=sizing_mode)
+        return bokeh.layouts.column(time_row,
+                                    major_config_row,
+                                    minor_config_row,
+                                    plots_row,
+                                    info_row,
+                                    user_feedback_toggle,
+                                    user_feedback_layout,
+                                    sizing_mode=sizing_mode)
 
     def on_time_prev(self):
         
