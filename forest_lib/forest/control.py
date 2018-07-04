@@ -130,15 +130,37 @@ class ForestController(object):
         '''
         
         '''
+        class Label(object):
+            def __init__(self, template):
+                self.template = template
+                self.drop_down = None
+
+            def first(self, items):
+                """convenient method"""
+                return self.render(items[0][0])
+
+            def listen_to(self, drop_down):
+                self.drop_down = drop_down
+                self.drop_down.on_change("value", self.on_change)
+
+            def on_change(self, attr, old, new):
+                for label, value in self.drop_down.menu:
+                    if value == new:
+                        self.drop_down.label = self.render(label)
+
+            def render(self, label):
+                return self.template.format(label)
 
         # Create variable selection dropdown widget
         variable_menu_list = \
             create_dropdown_opt_list_from_dict(VARIABLE_DD_DICT,
                                                self.plot_names)
+        label = Label("Variable: {}")
         self.model_var_dd = \
-            bokeh.models.widgets.Dropdown(label='Variable to visualise',
+            bokeh.models.widgets.Dropdown(label=label.first(variable_menu_list),
                                           menu=variable_menu_list,
                                           button_type='warning')
+        label.listen_to(self.model_var_dd)
         self.model_var_dd.on_change('value', self.on_var_change)
 
         # Create previous timestep button widget
@@ -165,37 +187,45 @@ class ForestController(object):
 
 
         # select model run
+        label = Label("Model run: {}")
         model_run_list = create_model_run_list(self.datasets)
         self.model_run_dd = \
-            bokeh.models.widgets.Dropdown(label='Model run',
+            bokeh.models.widgets.Dropdown(label=label.first(model_run_list),
                                           menu=model_run_list,
                                           button_type='warning')
+        label.listen_to(self.model_run_dd)
         self.model_run_dd.on_change('value', self._on_model_run_change)
-        
+
         # Create region selection dropdown menu region
+        label = Label("Region: {}")
         region_menu_list = \
             create_dropdown_opt_list_from_dict(REGION_DD_DICT,
                                                self.region_dict.keys())
         self.region_dd = bokeh.models.widgets.Dropdown(menu=region_menu_list,
-                                                       label='Region',
+                                                       label=label.first(region_menu_list),
                                                        button_type='warning')
+        label.listen_to(self.region_dd)
         self.region_dd.on_change('value', self.on_region_change)
 
         # Create left figure model selection dropdown menu widget
         dataset_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
                                                                self.datasets[self.current_fcast_time].keys())
+        label = Label("Left: {}")
         self.left_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label='Left display',
+                                          label=label.first(dataset_menu_list),
                                           button_type='warning')
+        label.listen_to(self.left_model_dd)
         self.left_model_dd.on_change('value',
                                      functools.partial(self.on_config_change,
                                                        0))
         # Create right figure model selection dropdown menu widget
+        label = Label("Right: {}")
         self.right_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label='Right display',
+                                          label=label.first(dataset_menu_list),
                                           button_type='warning')
+        label.listen_to(self.right_model_dd)
         self.right_model_dd.on_change('value',
                                       functools.partial(self.on_config_change,
                                                         1))

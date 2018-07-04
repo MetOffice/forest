@@ -139,7 +139,7 @@ def main(bokeh_id):
 
     user_interface = "single-plot"
     if user_interface == "single-plot":
-        bokeh_figure = bokeh.plotting.figure()
+        bokeh_figure = bokeh.plotting.figure(toolbar_location="above")
 
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
