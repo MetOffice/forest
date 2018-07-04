@@ -20,17 +20,16 @@ let slide_image = function(source,
     let y = source.data["y"][0];
     let dw = source.data["dw"][0];
     let dh = source.data["dh"][0];
+    let original_alpha = source.data["_alpha"][0];
+    let ni = source.data["_shape"][0][0];
+    let nj = source.data["_shape"][0][1];
     console.log(side, "x", x);
     console.log(side, "y", y);
     console.log(side, "dw", dw);
     console.log(side, "dh", dh);
-
-    // Exit early while testing
-    return;
-
-    // Shared data
-    let ni = shape[0];
-    let nj = shape[1];
+    console.log(side, "alpha", original_alpha[0]);
+    console.log(side, "ni", ni);
+    console.log(side, "nj", nj);
 
     // Mouse position(s)
     let left_x;
