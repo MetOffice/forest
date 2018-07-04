@@ -11,15 +11,22 @@
 //      geometry.x - mouse x position relative to figure
 //
 let slide_image = function(source,
-                           original_alpha,
                            mouse_x,
                            previous_mouse_x,
                            first_time,
-                           shape,
                            side) {
-    // Hard-coded values for now
-    let x = 0;
-    let dw = 10;
+    // RGBA image extents in mouse position space
+    let x = source.data["x"][0];
+    let y = source.data["y"][0];
+    let dw = source.data["dw"][0];
+    let dh = source.data["dh"][0];
+    console.log(side, "x", x);
+    console.log(side, "y", y);
+    console.log(side, "dw", dw);
+    console.log(side, "dh", dh);
+
+    // Exit early while testing
+    return;
 
     // Shared data
     let ni = shape[0];
@@ -99,30 +106,18 @@ let main = function() {
     // Move vertical line to mouse position
     span.location = mouse_x;
 
-    // Left image extra data
-    let left_alpha = left_extra.data["alpha"][0];
-    let left_shape = left_extra.data["shape"][0];
-
     // Update image alpha values
     slide_image(left_images,
-                left_alpha,
                 mouse_x,
                 previous_mouse_x,
                 first_time,
-                left_shape,
                 "left");
-
-    // Right image extra data
-    let right_alpha = right_extra.data["alpha"][0];
-    let right_shape = right_extra.data["shape"][0];
 
     // Update image alpha values
     slide_image(right_images,
-                right_alpha,
                 mouse_x,
                 previous_mouse_x,
                 first_time,
-                right_shape,
                 "right");
 
     // Update shared data

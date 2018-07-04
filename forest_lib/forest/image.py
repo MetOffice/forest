@@ -107,7 +107,7 @@ class Toggle(object):
         .. note:: Updates image alpha values in-place
         """
         if "_alpha" not in source.data:
-            self.cache_alpha(source)
+            cache_alpha(source)
             return
         # Restore alpha from cache
         images = source.data["image"]
@@ -126,18 +126,12 @@ class Toggle(object):
         .. note:: Updates image alpha values in-place
         """
         if "_alpha" not in source.data:
-            self.cache_alpha(source)
+            cache_alpha(source)
         # Set alpha to zero
         images = source.data["image"]
         for image in images:
             image[..., -1] = 0
         source.data["image"] = images
-
-    @staticmethod
-    def cache_alpha(source):
-        images = source.data["image"]
-        alpha = [np.copy(image[..., -1]) for image in images]
-        source.data["_alpha"] = alpha
 
 
 class Slider(object):
@@ -162,15 +156,15 @@ class Slider(object):
     """
     def __init__(self, left_images, right_images):
         self.left_images = left_images
-        self.left_extra = bokeh.models.ColumnDataSource({
-            "alpha": self.get_alpha(self.left_images),
-            "shape": self.get_shapes(self.left_images)
-        })
+        if "_alpha" not in self.left_images.data:
+            cache_alpha(self.left_images)
+        if "_shape" not in self.left_images.data:
+            cache_shape(self.left_images)
         self.right_images = right_images
-        self.right_extra = bokeh.models.ColumnDataSource({
-            "alpha": self.get_alpha(self.right_images),
-            "shape": self.get_shapes(self.right_images)
-        })
+        if "_alpha" not in self.right_images.data:
+            cache_alpha(self.right_images)
+        if "_shape" not in self.right_images.data:
+            cache_shape(self.right_images)
         self.span = bokeh.models.Span(location=0,
                                       dimension='height',
                                       line_color='black',
@@ -182,25 +176,9 @@ class Slider(object):
         self.mousemove = bokeh.models.CustomJS(args=dict(
             span=self.span,
             left_images=self.left_images,
-            left_extra=self.left_extra,
             right_images=self.right_images,
-            right_extra=self.right_extra,
             shared=shared
         ), code=JS_CODE)
-
-    def get_alpha(self, bokeh_obj):
-        """Helper to copy alpha values from GlyphRenderer or ColumnDataSource"""
-        images = self.get_images(bokeh_obj)
-        return [np.copy(rgba[:, :, -1]) for rgba in images]
-
-    def get_shapes(self, bokeh_obj):
-        """Helper to shapes from GlyphRenderer or ColumnDataSource"""
-        images = self.get_images(bokeh_obj)
-        return [rgba.shape for rgba in images]
-
-    @staticmethod
-    def get_images(bokeh_obj):
-        return get_images(bokeh_obj)
 
     def add_figure(self, figure):
         """Attach various callbacks to a particular figure"""
@@ -215,6 +193,18 @@ class Slider(object):
     def off(self):
         """Deactivate slider feature"""
         pass
+
+
+def cache_alpha(source):
+    """Pre-process image to cache alpha values"""
+    images = source.data["image"]
+    source.data["_alpha"] = [np.copy(image[..., -1]) for image in images]
+
+
+def cache_shape(source):
+    """Pre-process image to cache RGBA array shapes"""
+    images = source.data["image"]
+    source.data["_shape"] = [image.shape for image in images]
 
 
 def get_alpha(bokeh_obj):
