@@ -138,6 +138,10 @@ class ForestController(object):
                 """convenient method"""
                 return self.render(items[0][0])
 
+            def second(self, items):
+                """convenient method"""
+                return self.render(items[1][0])
+
             def listen_to(self, drop_down):
                 self.drop_down = drop_down
                 self.drop_down.on_change("value", self.on_change)
@@ -222,7 +226,7 @@ class ForestController(object):
         label = Label("Right image: {}")
         self.right_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label=label.first(dataset_menu_list),
+                                          label=label.second(dataset_menu_list),
                                           button_type='warning')
         label.listen_to(self.right_model_dd)
         self.right_model_dd.on_change('value',
