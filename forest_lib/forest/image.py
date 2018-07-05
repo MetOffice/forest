@@ -72,22 +72,6 @@ class Toggle(object):
         self.left_images = left_images
         self.right_images = right_images
 
-    def on_change(self, attr, old, new):
-        """Interface to bokeh.widgets on_change callback
-
-        Hides/shows appropriate images related to button group
-
-        .. note:: ``attr`` and ``old`` parameters are ignored by
-                  this callback
-
-        :param new: integer 0 indicating display left image, 1 indicates
-                    right image to be displayed
-        """
-        if new == 0:
-            self.show_left()
-        else:
-            self.show_right()
-
     def show_left(self):
         """Show left image and hide right image"""
         self.show(self.left_images)

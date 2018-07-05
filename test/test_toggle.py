@@ -51,27 +51,3 @@ class TestToggle(unittest.TestCase):
         self.toggle.show(image)
         self.assertIn("_alpha", image.data)
         self.assertEqual(image.data["_alpha"], [])
-
-    def test_on_change_given_left_image_shows_left_images(self):
-        self.toggle.hide = unittest.mock.Mock()
-        self.toggle.show = unittest.mock.Mock()
-        self.toggle.on_change("active", 1, 0)
-        self.toggle.show.assert_called_once_with(self.toggle.left_images)
-
-    def test_on_change_given_left_image_hides_right_images(self):
-        self.toggle.hide = unittest.mock.Mock()
-        self.toggle.show = unittest.mock.Mock()
-        self.toggle.on_change("active", 1, 0)
-        self.toggle.hide.assert_called_once_with(self.toggle.right_images)
-
-    def test_on_change_given_right_image_shows_right_images(self):
-        self.toggle.hide = unittest.mock.Mock()
-        self.toggle.show = unittest.mock.Mock()
-        self.toggle.on_change("active", 0, 1)
-        self.toggle.show.assert_called_once_with(self.toggle.right_images)
-
-    def test_on_change_given_right_image_hides_left_images(self):
-        self.toggle.hide = unittest.mock.Mock()
-        self.toggle.show = unittest.mock.Mock()
-        self.toggle.on_change("active", 0, 1)
-        self.toggle.hide.assert_called_once_with(self.toggle.left_images)
