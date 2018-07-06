@@ -166,17 +166,9 @@ class Slider(object):
 
     def add_figure(self, figure):
         """Attach various callbacks to a particular figure"""
-        hover_tool = bokeh.models.HoverTool(callback=self.mousemove)
-        figure.add_tools(hover_tool)
+        self.hover_tool = bokeh.models.HoverTool(callback=self.mousemove)
+        figure.add_tools(self.hover_tool)
         figure.renderers.append(self.span)
-
-    def on(self):
-        """Activate slider feature"""
-        pass
-
-    def off(self):
-        """Deactivate slider feature"""
-        pass
 
 
 def cache_alpha(source):

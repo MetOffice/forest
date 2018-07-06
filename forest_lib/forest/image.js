@@ -23,13 +23,18 @@ let slide_image = function(source,
     let original_alpha = source.data["_alpha"][0];
     let ni = source.data["_shape"][0][0];
     let nj = source.data["_shape"][0][1];
-    console.log(side, "x", x);
-    console.log(side, "y", y);
-    console.log(side, "dw", dw);
-    console.log(side, "dh", dh);
-    console.log(side, "alpha", original_alpha[0]);
-    console.log(side, "ni", ni);
-    console.log(side, "nj", nj);
+
+    // Useful debug information
+    let mode = "silent";
+    if (mode === "debug") {
+        console.log(side, "x", x);
+        console.log(side, "y", y);
+        console.log(side, "dw", dw);
+        console.log(side, "dh", dh);
+        console.log(side, "alpha", original_alpha[0]);
+        console.log(side, "ni", ni);
+        console.log(side, "nj", nj);
+    }
 
     // Mouse position(s)
     let left_x;

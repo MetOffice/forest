@@ -240,10 +240,6 @@ class ForestController(object):
         slider.add_figure(bokeh_figure)
         toggle = forest.image.Toggle(left_image, right_image)
         def left_right_callback(attr, old, new):
-            if new == 2:
-                slider.on()
-            else:
-                slider.off()
             if new == 0:
                 toggle.show_left()
             elif new == 1:
@@ -253,6 +249,18 @@ class ForestController(object):
                                      active=0
                                  )
         self.left_right_toggle.on_change("active", left_right_callback)
+        custom_js = bokeh.models.CustomJS(args=dict(hover_tool=slider.hover_tool),
+        code="""
+            // Enable/disable HoverTool using RadioButtonGroup active index
+            // Note: This is only available through BokehJS, there is no
+            //       Python attribute to control HoverTool active state
+            if (cb_obj.active === 2) {
+                hover_tool.active = true;
+            } else {
+                hover_tool.active = false;
+            }
+        """)
+        self.left_right_toggle.js_on_change("active", custom_js)
 
         # Layout widgets
         sizing_mode = "fixed"
