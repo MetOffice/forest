@@ -1,3 +1,4 @@
+"use strict";
 // bokeh.models.CustomJS callback code
 //
 // args:
@@ -129,4 +130,12 @@ let main = function() {
     shared.data.first_time[0] = false;
 };
 
-main();
+if (typeof module === undefined) {
+    // Bokeh call back usage
+    main();
+} else {
+    // NPM test usage
+    module.exports = {
+        visible_pixel: visible_pixel
+    };
+}
