@@ -56,6 +56,7 @@ let slide_image = function(source,
     let alpha;
     let alpha_index;
     let image_alpha_index;
+    let original_alpha_value;
     let dy = dw / nj;
     let skip = 0;
     for (let j=0; j<nj; j++) {
@@ -102,7 +103,11 @@ let visible_pixel = function(pixel_x, mouse_x, show_side) {
 };
 
 // CustomJS callback main program
-let main = function() {
+let main = function(cb_data,
+                    left_images,
+                    right_images,
+                    shared,
+                    span) {
     // Gather data from cb_data and args
     let first_time = shared.data.first_time[0];
     let previous_mouse_x = shared.data.previous_mouse_x[0];
@@ -132,10 +137,15 @@ let main = function() {
 
 if (typeof module === 'undefined') {
     // Bokeh call back usage
-    main();
+    main(cb_data,
+         left_images,
+         right_images,
+         shared,
+         span);
 } else {
     // NPM test usage
     module.exports = {
+        main: main,
         visible_pixel: visible_pixel
     };
 }
