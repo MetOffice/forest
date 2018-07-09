@@ -130,7 +130,7 @@ let main = function() {
     shared.data.first_time[0] = false;
 };
 
-if (typeof module === undefined) {
+if (typeof module === 'undefined') {
     // Bokeh call back usage
     main();
 } else {
