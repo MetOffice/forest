@@ -4,7 +4,7 @@
   "description": "JS callbacks for Forest",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --reporter progress test*.js"
   },
   "repository": {
     "type": "git",

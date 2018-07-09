@@ -1,13 +1,6 @@
 "use strict";
 var expect = require('chai').expect;
 var forest = require('./forest');
-describe("hide_left", function() {
-    xit("should set pixels left of x to zero", function() {
-        let actual = forest.hide_left(rgba_pixels, x);
-        let expected = 3;
-        expect(expected).to.equal(actual);
-    });
-});
 describe("visible_pixel", function() {
     let check_visible_pixel;
     beforeEach(function() {
