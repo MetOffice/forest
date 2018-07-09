@@ -59,6 +59,7 @@ let slide_image = function(source,
     let original_alpha_value;
     let dy = dw / nj;
     let skip = 0;
+
     for (let j=0; j<nj; j++) {
         pixel_x = x + (j * dy);
 
@@ -85,6 +86,7 @@ let slide_image = function(source,
             } else {
                alpha = 0;
             }
+            console.log(i, j, alpha, side);
            source.data["image"][0][image_alpha_index] = alpha;
         }
     }

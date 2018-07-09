@@ -3,25 +3,50 @@ var expect = require('chai').expect;
 var image = require('../forest/image');
 describe("image.js", function() {
     describe("main", function() {
+        let shared = null;
+        let span = null;
         let cb_data = null;
+        let two_by_two = null; // helper method
         beforeEach(function() {
-            cb_data = {
-                geometry: {
-                    x: null
-                }
-            };
-        });
-        it("should work with empty images", function() {
-            let shared = {
+            shared = {
                 data: {
                     first_time: [false],
                     previous_mouse_x: [0]
                 }
             };
-            cb_data.geometry.x = 0;
-            let span = {
+            cb_data = {
+                geometry: {
+                    x: null
+                }
+            };
+            span = {
                 location: null
             };
+
+            // Creates 2x2 pixel image ColumnDataSource
+            two_by_two = function() {
+                // function returns new Object
+                return {
+                    data: {
+                        x: [0],
+                        y: [0],
+                        dw: [1],
+                        dh: [1],
+                        image: [[1, 1, 1, 255,
+                                 1, 1, 1, 255,
+                                 1, 1, 1, 255,
+                                 1, 1, 1, 255]],
+                        _alpha: [[255, 255, 255, 255]],
+                        _shape: [[2, 2]]
+                    },
+                    change: {
+                        emit: function() {}
+                    }
+                };
+            };
+        });
+        it("should work with empty images", function() {
+            cb_data.geometry.x = 0;
             let empty_image = {
                 data: {
                     x: [0],
@@ -42,44 +67,18 @@ describe("image.js", function() {
         });
         it("should work with 2x2 pixel images", function() {
             // Mouse-x should highlight left/right alpha values
-            let shared = {
-                data: {
-                    first_time: [false],
-                    previous_mouse_x: [0]
-                }
-            };
-            let span = {
-                location: null
-            };
-            let two_by_two = function() {
-                return {
-                    data: {
-                        x: [0],
-                        y: [0],
-                        dw: [1],
-                        dh: [1],
-                        image: [[1, 1, 1, 255,
-                                 1, 1, 1, 255,
-                                 1, 1, 1, 255,
-                                 1, 1, 1, 255]],
-                        _alpha: [[255, 255, 255, 255]],
-                        _shape: [[2, 2]]
-                    },
-                    change: {
-                        emit: function() {}
-                    }
-                };
-            };
             let left_images = two_by_two();
             let right_images = two_by_two();
 
+            // System under test
             cb_data.geometry.x = 1;
             image.main(cb_data,
                        left_images,
                        right_images,
                        shared,
                        span);
-            // Assertions missing
+
+            // Assertions
             let actual, expected;
             actual = left_images.data["image"][0];
             expected = [1, 1, 1, 255,
@@ -93,6 +92,28 @@ describe("image.js", function() {
                         1, 1, 1, 0,
                         1, 1, 1, 0];
             expect(expected).to.be.deep.equal(actual);
+        });
+        it("should turn off right side of left_images", function() {
+            console.log("unit test");
+            let left_images = two_by_two();
+            let right_images = two_by_two();
+
+            // System under test
+            cb_data.geometry.x = 0.1;
+            image.main(cb_data,
+                       left_images,
+                       right_images,
+                       shared,
+                       span);
+
+            // Assertions
+            let actual, expected;
+            actual = left_images.data["image"][0];
+            expected = [1, 1, 1, 0,
+                        1, 1, 1, 0,
+                        1, 1, 1, 0,
+                        1, 1, 1, 0];
+            expect(actual).to.be.deep.equal(expected);
         });
     });
     describe("visible_pixel", function() {
