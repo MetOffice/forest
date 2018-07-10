@@ -154,7 +154,7 @@ class Slider(object):
                                       line_color='black',
                                       line_width=1)
         shared = bokeh.models.ColumnDataSource({
-            "first_time": [False],
+            "use_previous_mouse_x": [True],
             "previous_mouse_x": [0]
         })
         self.mousemove = bokeh.models.CustomJS(args=dict(

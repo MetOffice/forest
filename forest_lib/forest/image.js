@@ -112,7 +112,7 @@ let main = function(cb_data,
     // Gather data from cb_data and args
     let mouse_x = cb_data.geometry.x;
     let previous_mouse_x = shared.data.previous_mouse_x[0];
-    let use_previous_mouse_x = !shared.data.first_time[0];
+    let use_previous_mouse_x = shared.data.use_previous_mouse_x[0];
 
     // Move vertical line to mouse position
     span.location = mouse_x;
@@ -131,7 +131,7 @@ let main = function(cb_data,
 
     // Update shared data
     shared.data.previous_mouse_x[0] = mouse_x;
-    shared.data.first_time[0] = false;
+    shared.data.use_previous_mouse_x[0] = true;
 };
 
 if (typeof module === 'undefined') {

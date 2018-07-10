@@ -40,7 +40,7 @@ describe("image.js", function() {
         beforeEach(function() {
             shared = {
                 data: {
-                    first_time: [true],
+                    use_previous_mouse_x: [false],
                     previous_mouse_x: [0]
                 }
             };
