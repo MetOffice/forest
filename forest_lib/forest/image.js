@@ -11,11 +11,11 @@
 // cb_data:
 //      geometry.x - mouse x position relative to figure
 //
-let slide_image = function(source,
+let slide_image = function(side,
+                           source,
                            mouse_x,
                            previous_mouse_x,
-                           first_time,
-                           side) {
+                           use_previous_mouse_x) {
     // RGBA image extents in mouse position space
     let x = source.data["x"][0];
     let y = source.data["y"][0];
@@ -65,7 +65,7 @@ let slide_image = function(source,
 
         // Optimised selection of columns between mouse events
         // note: feature turned off during first paint
-        if (!first_time) {
+        if (use_previous_mouse_x) {
             if ((pixel_x > right_x) || (pixel_x < left_x)) {
                 // pixel outside current and previous mouse positions
                 skip += 1;
@@ -118,18 +118,17 @@ let main = function(cb_data,
     span.location = mouse_x;
 
     // Update image alpha values
-    slide_image(left_images,
+    let use_previous_mouse_x = !first_time;
+    slide_image("left",
+                left_images,
                 mouse_x,
                 previous_mouse_x,
-                first_time,
-                "left");
-
-    // Update image alpha values
-    slide_image(right_images,
+                use_previous_mouse_x);
+    slide_image("right",
+                right_images,
                 mouse_x,
                 previous_mouse_x,
-                first_time,
-                "right");
+                use_previous_mouse_x);
 
     // Update shared data
     shared.data.previous_mouse_x[0] = mouse_x;

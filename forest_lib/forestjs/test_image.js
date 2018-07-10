@@ -129,14 +129,14 @@ describe("image.js", function() {
             let images = four_pixels([1, 4]);
             let mouse_x = 0.5;
             let previous_mouse_x = 0;
-            let first_time = true;
+            let use_previous_mouse_x = false;
 
             // System under test
-            image.slide_image(images,
+            image.slide_image("left",
+                              images,
                               mouse_x,
                               previous_mouse_x,
-                              first_time,
-                              "left");
+                              use_previous_mouse_x)
 
             // Assertions
             let actual, expected;
