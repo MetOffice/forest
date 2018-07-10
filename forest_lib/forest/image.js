@@ -11,11 +11,11 @@
 // cb_data:
 //      geometry.x - mouse x position relative to figure
 //
-let slide_image = function(side,
-                           source,
-                           mouse_x,
-                           previous_mouse_x,
-                           use_previous_mouse_x) {
+let reveal_image = function(side,
+                            source,
+                            mouse_x,
+                            previous_mouse_x,
+                            use_previous_mouse_x) {
     // RGBA image extents in mouse position space
     let x = source.data["x"][0];
     let y = source.data["y"][0];
@@ -118,16 +118,16 @@ let main = function(cb_data,
     span.location = mouse_x;
 
     // Update image alpha values
-    slide_image("left",
-                left_images,
-                mouse_x,
-                previous_mouse_x,
-                use_previous_mouse_x);
-    slide_image("right",
-                right_images,
-                mouse_x,
-                previous_mouse_x,
-                use_previous_mouse_x);
+    reveal_image("left",
+                 left_images,
+                 mouse_x,
+                 previous_mouse_x,
+                 use_previous_mouse_x);
+    reveal_image("right",
+                 right_images,
+                 mouse_x,
+                 previous_mouse_x,
+                 use_previous_mouse_x);
 
     // Update shared data
     shared.data.previous_mouse_x[0] = mouse_x;
@@ -145,7 +145,7 @@ if (typeof module === 'undefined') {
     // NPM test usage
     module.exports = {
         main: main,
-        slide_image: slide_image,
+        reveal_image: reveal_image,
         visible_pixel: visible_pixel
     };
 }

@@ -123,7 +123,7 @@ describe("image.js", function() {
             expect(actual).to.be.deep.equal(expected);
         });
     });
-    describe("slide_image", function() {
+    describe("reveal_image", function() {
         it("should turn off pixels given 1x4 image", function() {
             // Fixture
             let images = four_pixels([1, 4]);
@@ -132,11 +132,11 @@ describe("image.js", function() {
             let use_previous_mouse_x = false;
 
             // System under test
-            image.slide_image("left",
-                              images,
-                              mouse_x,
-                              previous_mouse_x,
-                              use_previous_mouse_x)
+            image.reveal_image("left",
+                               images,
+                               mouse_x,
+                               previous_mouse_x,
+                               use_previous_mouse_x)
 
             // Assertions
             let actual, expected;
