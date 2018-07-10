@@ -110,15 +110,14 @@ let main = function(cb_data,
                     shared,
                     span) {
     // Gather data from cb_data and args
-    let first_time = shared.data.first_time[0];
-    let previous_mouse_x = shared.data.previous_mouse_x[0];
     let mouse_x = cb_data.geometry.x;
+    let previous_mouse_x = shared.data.previous_mouse_x[0];
+    let use_previous_mouse_x = !shared.data.first_time[0];
 
     // Move vertical line to mouse position
     span.location = mouse_x;
 
     // Update image alpha values
-    let use_previous_mouse_x = !first_time;
     slide_image("left",
                 left_images,
                 mouse_x,
