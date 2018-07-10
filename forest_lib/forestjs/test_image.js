@@ -40,7 +40,7 @@ describe("image.js", function() {
         beforeEach(function() {
             shared = {
                 data: {
-                    first_time: [false],
+                    first_time: [true],
                     previous_mouse_x: [0]
                 }
             };
@@ -101,7 +101,7 @@ describe("image.js", function() {
                         1, 1, 1, 0];
             expect(expected).to.be.deep.equal(actual);
         });
-        xit("should turn off right side of left_images", function() {
+        it("should turn off right side of left_images", function() {
             let left_images = two_by_two();
             let right_images = two_by_two();
 
@@ -116,9 +116,9 @@ describe("image.js", function() {
             // Assertions
             let actual, expected;
             actual = left_images.data["image"][0];
-            expected = [1, 1, 1, 0,
+            expected = [1, 1, 1, 255,
                         1, 1, 1, 0,
-                        1, 1, 1, 0,
+                        1, 1, 1, 255,
                         1, 1, 1, 0];
             expect(actual).to.be.deep.equal(expected);
         });
@@ -129,7 +129,7 @@ describe("image.js", function() {
             let images = four_pixels([1, 4]);
             let mouse_x = 0.5;
             let previous_mouse_x = 0;
-            let first_time = false;
+            let first_time = true;
 
             // System under test
             image.slide_image(images,
@@ -144,7 +144,7 @@ describe("image.js", function() {
             expected = [1, 1, 1, 255,
                         1, 1, 1, 255,
                         1, 1, 1, 0,
-                        1, 1, 1, 255];
+                        1, 1, 1, 0];
             expect(actual).to.be.deep.equal(expected);
         });
     });
