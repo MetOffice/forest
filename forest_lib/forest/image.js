@@ -86,7 +86,6 @@ let slide_image = function(source,
             } else {
                alpha = 0;
             }
-            console.log(i, j, alpha, side);
            source.data["image"][0][image_alpha_index] = alpha;
         }
     }
@@ -148,6 +147,7 @@ if (typeof module === 'undefined') {
     // NPM test usage
     module.exports = {
         main: main,
+        slide_image: slide_image,
         visible_pixel: visible_pixel
     };
 }

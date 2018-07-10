@@ -2,11 +2,41 @@
 var expect = require('chai').expect;
 var image = require('../forest/image');
 describe("image.js", function() {
+    // Helper methods
+    let two_by_two = null;
+    let four_pixels = null;
+    beforeEach(function() {
+        // Creates 2x2 pixel image ColumnDataSource
+        two_by_two = function() {
+            return four_pixels([2, 2]);
+        };
+
+        // Create 4 pixels of customisable shape
+        four_pixels = function(shape) {
+            // function returns new Object
+            return {
+                data: {
+                    x: [0],
+                    y: [0],
+                    dw: [1],
+                    dh: [1],
+                    image: [[1, 1, 1, 255,
+                             1, 1, 1, 255,
+                             1, 1, 1, 255,
+                             1, 1, 1, 255]],
+                    _alpha: [[255, 255, 255, 255]],
+                    _shape: [shape]
+                },
+                change: {
+                    emit: function() {}
+                }
+            };
+        };
+    });
     describe("main", function() {
         let shared = null;
         let span = null;
         let cb_data = null;
-        let two_by_two = null; // helper method
         beforeEach(function() {
             shared = {
                 data: {
@@ -21,28 +51,6 @@ describe("image.js", function() {
             };
             span = {
                 location: null
-            };
-
-            // Creates 2x2 pixel image ColumnDataSource
-            two_by_two = function() {
-                // function returns new Object
-                return {
-                    data: {
-                        x: [0],
-                        y: [0],
-                        dw: [1],
-                        dh: [1],
-                        image: [[1, 1, 1, 255,
-                                 1, 1, 1, 255,
-                                 1, 1, 1, 255,
-                                 1, 1, 1, 255]],
-                        _alpha: [[255, 255, 255, 255]],
-                        _shape: [[2, 2]]
-                    },
-                    change: {
-                        emit: function() {}
-                    }
-                };
             };
         });
         it("should work with empty images", function() {
@@ -93,8 +101,7 @@ describe("image.js", function() {
                         1, 1, 1, 0];
             expect(expected).to.be.deep.equal(actual);
         });
-        it("should turn off right side of left_images", function() {
-            console.log("unit test");
+        xit("should turn off right side of left_images", function() {
             let left_images = two_by_two();
             let right_images = two_by_two();
 
@@ -113,6 +120,31 @@ describe("image.js", function() {
                         1, 1, 1, 0,
                         1, 1, 1, 0,
                         1, 1, 1, 0];
+            expect(actual).to.be.deep.equal(expected);
+        });
+    });
+    describe("slide_image", function() {
+        it("should turn off pixels given 1x4 image", function() {
+            // Fixture
+            let images = four_pixels([1, 4]);
+            let mouse_x = 0.5;
+            let previous_mouse_x = 0;
+            let first_time = false;
+
+            // System under test
+            image.slide_image(images,
+                              mouse_x,
+                              previous_mouse_x,
+                              first_time,
+                              "left");
+
+            // Assertions
+            let actual, expected;
+            actual = images.data["image"][0];
+            expected = [1, 1, 1, 255,
+                        1, 1, 1, 255,
+                        1, 1, 1, 0,
+                        1, 1, 1, 255];
             expect(actual).to.be.deep.equal(expected);
         });
     });
