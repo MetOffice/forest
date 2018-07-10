@@ -1,21 +1,22 @@
 """
-Zooming and enhancing images in bokeh can be done by rendering
-a coarse image for the zoomed out extent and a collection
-of high resolution patches as the axis extents get shorter
+The simplest zoom feature can be implemented by rendering
+a high resolution image overlay on top of a coarse resolution
+image. The effect for the user is an initally coarse image
+is clarified as a high resolution image after a slight delay. For
+the developer the high resolution patch can be maintained
+independently from the coarse resolution image, thus reducing
+the burden of managing images
 
-Careful management of both the number and reuse of the high
-resolution patches is important for memory/performance reasons.
-If memory were not an issue one could just render the highest
-resolution image across the full domain
+Careful management of the the high resolution patch is important
+for memory/performance reasons. If memory/performance were not an
+issue one could render a high resolution full domain image and
+be done
 
-A first in first out (FIFO) cache can be used to manage
-the high resolution patches. The most stale patch can
-be replaced by the most current patch, thus keeping the
-number of patches constant.
+.. note:: ``forest.ForestPlot`` routinely replaces
+          ``bokeh_image.data_source`` with a length 1 ColumnDataSource,
+          the zoom tool should detect when this is the case and add
+          an overlay regardless
 
-If a zoom view is completely inside an existing patch, then that
-patch is good enough for the current view and no extra work
-or memory is needed
 """
 import bokeh.models
 import scipy.ndimage

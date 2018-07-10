@@ -1,8 +1,16 @@
-"""Tools to compare RGBA images on a pixel by pixel basis
+"""
+
+Image comparison tools
+======================
+
+Tools to compare RGBA images on a pixel by pixel basis
 
 The tools in this module are designed to work with
 :meth:`bokeh.plotting.figure.Figure.image_rgba` GlyphRenderers and
 ColumnDataSources that drive those images
+
+Slider
+------
 
 A :class:`.Slider` is available that makes it easy to compare two
 images relative to a mouse pointer. The slider splits images
@@ -12,6 +20,9 @@ position.
 
 >>> slider = forest.image.Slider(left_images, right_images)
 >>> slider.add_figure(figure)
+
+Toggle
+------
 
 A :class:`.Toggle` is also available to switch between images.  Instead of
 displaying portions of two images side by side, like the slider, the toggle
@@ -28,10 +39,15 @@ Importantly, a :class:`Toggle` has no knowledge of bokeh widgets
 or layouts, it simply responds to ``on_change`` events by editing
 the appropriate alpha values of the associated images
 
+Zoom
+----
+
 The :class:`Zoom` class represents a mechanism to generate high-resolution
 imagery as the x/y ranges change. The particular implementation available
 here merely displays portions of a higher resolution array overlayed on a
 coarsified full extent image
+
+.. automodule:: forest.zoom
 
 Application programming interface (API)
 =======================================
@@ -39,11 +55,15 @@ Application programming interface (API)
 The following classes have been made available to users
 of Forest for custom visualisations
 
+.. autoclass:: forest.image.RGBAZoom
+    :members:
+
 """
 import os
 import sys
 import numpy as np
 import bokeh.models
+from .zoom import RGBAZoom
 
 
 # CustomJS callback code
@@ -51,10 +71,6 @@ JS_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                        "image.js")
 with open(JS_FILE, "r") as stream:
     JS_CODE = stream.read()
-
-
-class Zoom(object):
-    """Tool to generate high-resolution overlays as x/y ranges change"""
 
 
 class Toggle(object):
