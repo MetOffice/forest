@@ -22,6 +22,18 @@ import bokeh.models
 import scipy.ndimage
 import numpy as np
 
+__all__ = ["Zoom", "RGBAZoom"]
+
+
+class Zoom(object):
+    """General mechanism to link bokeh figure axes to plots
+
+    Zoom mechanism takes a column data source to act as a
+    container to hold high resolution overlays
+    """
+    def __init__(self, source):
+        self.source = source
+
 
 class RGBAZoom(object):
     """Coarse/High resolution zoom tool for RGBA images

@@ -55,7 +55,7 @@ Application programming interface (API)
 The following classes have been made available to users
 of Forest for custom visualisations
 
-.. autoclass:: forest.image.RGBAZoom
+.. autoclass:: forest.image.Zoom
     :members:
 
 """
@@ -63,7 +63,7 @@ import os
 import sys
 import numpy as np
 import bokeh.models
-from .zoom import RGBAZoom
+from .zoom import *
 
 
 # CustomJS callback code
