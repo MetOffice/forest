@@ -46,13 +46,20 @@ class throttle(object):
 
 
 class Zoom(object):
-    """General mechanism to overlay high-res images
+    """General mechanism to connect bokeh figure to render_method
 
-    Zoom mechanism takes a column data source to act as a
-    container to hold high resolution overlays
+    Zoom mechanism connects x_range and y_range on_change
+    callbacks to a render_method with the optional ability
+    to throttle the frequency of callbacks
+
+    .. note:: render_method must have call signature
+              ``method(x_start, x_end, y_start, y_end)``
     """
-    def __init__(self, source):
-        self.source = source
+    def __init__(self, render_method, throttle_milliseconds=None):
+        self.render_method = render_method
+        if throttle_milliseconds is not None:
+            milliseconds = throttle_milliseconds
+            self.render = throttle(milliseconds=milliseconds)(self.render)
 
     def add_figure(self, figure):
         self.figure = figure
@@ -68,7 +75,7 @@ class Zoom(object):
 
     def render(self, x_start, x_end, y_start, y_end):
         """Method to add high-resolution imagery to figure"""
-        pass
+        self.render_method(x_start, x_end, y_start, y_end)
 
 
 class RGBAZoom(object):

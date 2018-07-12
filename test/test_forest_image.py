@@ -34,14 +34,8 @@ class FakeCallback(object):
 class TestForestImageZoom(unittest.TestCase):
     def setUp(self):
         self.figure = bokeh.plotting.figure()
-        self.images = bokeh.models.ColumnDataSource({
-            "x": [],
-            "y": [],
-            "dw": [],
-            "dh": [],
-            "image": []
-        })
-        self.zoom = forest.image.Zoom(self.images)
+        self.render_method = None
+        self.zoom = forest.image.Zoom(self.render_method)
 
     def test_add_figure_connects_x_range_start_to_on_change(self):
         self.check_add_figure_connects("x_range", "start", None, 100)
