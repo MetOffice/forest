@@ -6,7 +6,8 @@ import subprocess
 
 class TestForestJS(unittest.TestCase):
     def test_forestjs(self):
-        os.chdir("../forest_lib/forestjs")
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        os.chdir(os.path.join(script_dir, "../forest_lib/forestjs"))
         process = subprocess.Popen(["npm", "test"],
                                    stdout=subprocess.PIPE)
         stdout, stderr = process.communicate()

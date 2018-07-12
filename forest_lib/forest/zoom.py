@@ -18,21 +18,57 @@ be done
           an overlay regardless
 
 """
+import datetime as dt
 import bokeh.models
 import scipy.ndimage
 import numpy as np
+from functools import wraps
+
 
 __all__ = ["Zoom", "RGBAZoom"]
 
 
+class throttle(object):
+    """Decorator to limit frequency of method calls"""
+    def __init__(self, milliseconds=0):
+        self.period = dt.timedelta(milliseconds=milliseconds)
+        self.last_call = dt.datetime.min
+
+    def __call__(self, fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            now = dt.datetime.now()
+            duration = now - self.last_call
+            if duration > self.period:
+                self.last_call = now
+                return fn(*args, **kwargs)
+        return wrapper
+
+
 class Zoom(object):
-    """General mechanism to link bokeh figure axes to plots
+    """General mechanism to overlay high-res images
 
     Zoom mechanism takes a column data source to act as a
     container to hold high resolution overlays
     """
     def __init__(self, source):
         self.source = source
+
+    def add_figure(self, figure):
+        self.figure = figure
+        self.figure.x_range.on_change("start", self.on_change)
+        self.figure.x_range.on_change("end", self.on_change)
+        self.figure.y_range.on_change("start", self.on_change)
+        self.figure.y_range.on_change("end", self.on_change)
+
+    def on_change(self, attr, old, new):
+        """Bokeh callback interface"""
+        self.render(self.figure.x_range.start, self.figure.x_range.end,
+                    self.figure.y_range.start, self.figure.y_range.end)
+
+    def render(self, x_start, x_end, y_start, y_end):
+        """Method to add high-resolution imagery to figure"""
+        pass
 
 
 class RGBAZoom(object):
