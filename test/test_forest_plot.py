@@ -151,6 +151,22 @@ class TestForestPlot(unittest.TestCase):
         forest_plot.create_plot()
         self.assertEqual(forest_plot.bokeh_figure, fake_figure)
 
+    def test_get_data_returns_cube(self):
+        """Separation of concerns needed to separate Forest infrastructure from plotting"""
+        class FakeData(object):
+            def get_data(self, var_name, selected_time):
+                pass
+        fake_data = FakeData()
+        dataset, *remaining_args = self.generic_args()
+        dataset = {
+            "current_config": {
+                "data_type_name": None,
+                "data": fake_data
+            }
+        }
+        forest_plot = forest.plot.ForestPlot(dataset, *remaining_args)
+        forest_plot.get_data()
+
     def generic_args(self, plot_var="plot_variable"):
         """Helper to construct ForestPlot"""
         dataset = {
