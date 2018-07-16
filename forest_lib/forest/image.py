@@ -143,13 +143,19 @@ class Slider(object):
         self.left_images = left_images
         if "_alpha" not in self.left_images.data:
             cache_alpha(self.left_images)
+
+        self.left_shapes = image_shapes(self.left_images)
         if "_shape" not in self.left_images.data:
-            cache_shape(self.left_images)
+            self.left_images.data["_shape"] = self.left_shapes
+
         self.right_images = right_images
         if "_alpha" not in self.right_images.data:
             cache_alpha(self.right_images)
+
+        self.right_shapes = image_shapes(self.right_images)
         if "_shape" not in self.right_images.data:
-            cache_shape(self.right_images)
+            self.right_images.data["_shape"] = self.right_shapes
+
         self.span = bokeh.models.Span(location=0,
                                       dimension='height',
                                       line_color='black',
@@ -165,6 +171,30 @@ class Slider(object):
             shared=shared
         ), code=JS_CODE)
 
+        # Listen to server-side image changes
+        self.left_images.on_change("data", self.on_change)
+        self.right_images.on_change("data", self.on_change)
+
+    def on_change(self, attr, old, new):
+        """Listen for bokeh server-side image array changes"""
+        # Listen for left_images shape changes
+        left_shapes = image_shapes(self.left_images)
+        if tuple(self.left_shapes) != tuple(left_shapes):
+            # Note: order important to prevent infinite recursion
+            self.left_shapes = left_shapes
+            self.left_images.data["_shape"] = left_shapes
+
+        # Listen for right_images shape changes
+        right_shapes = image_shapes(self.right_images)
+        if tuple(self.right_shapes) != tuple(right_shapes):
+            # Note: order important to prevent infinite recursion
+            self.right_shapes = right_shapes
+            self.right_images.data["_shape"] = right_shapes
+
+        # Pass latest image shapes to client-side
+        self.mousemove.args["left_images"] = self.left_images
+        self.mousemove.args["right_images"] = self.right_images
+
     def add_figure(self, figure):
         """Attach various callbacks to a particular figure"""
         self.hover_tool = bokeh.models.HoverTool(callback=self.mousemove)
@@ -178,10 +208,10 @@ def cache_alpha(source):
     source.data["_alpha"] = [np.copy(image[..., -1]) for image in images]
 
 
-def cache_shape(source):
-    """Pre-process image to cache RGBA array shapes"""
+def image_shapes(source):
+    """Read image shapes from ColumnDataSource"""
     images = source.data["image"]
-    source.data["_shape"] = [image.shape for image in images]
+    return [image.shape for image in images]
 
 
 def get_alpha(bokeh_obj):
