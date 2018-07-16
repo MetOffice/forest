@@ -8,14 +8,14 @@ class TestForestDataset(unittest.TestCase):
 
     def generic_args(self):
         config = None
-        file_name = None
-        s3_base = None
-        s3_base_local = None
+        file_name = "file_name"
+        s3_base = "s3_base"
+        s3_local_base = "s3_local_base"
         use_s3_mount = None
-        base_local_path = None
+        base_local_path = "base_local_path"
         do_download = None
         var_lookup = None
-        return (config, file_name, s3_base, s3_base_local, use_s3_mount, base_local_path, do_download, var_lookup)
+        return (config, file_name, s3_base, s3_local_base, use_s3_mount, base_local_path, do_download, var_lookup)
 
 class TestGetAvailableTimes(unittest.TestCase):
     def test_get_available_times(self):
