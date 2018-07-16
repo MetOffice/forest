@@ -6,6 +6,13 @@ class TestForestDataset(unittest.TestCase):
     def test_can_be_constructed(self):
         forest.data.ForestDataset(*self.generic_args())
 
+    @unittest.skip("testing dependency")
+    def test_get_data(self):
+        var_name = 'air_temperature'
+        selected_time = None
+        dataset = forest.data.ForestDataset(*self.generic_args())
+        dataset.get_data(var_name, selected_time)
+
     def generic_args(self):
         config = None
         file_name = "file_name"
