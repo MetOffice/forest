@@ -1,32 +1,23 @@
 import os
-
 import warnings
 warnings.filterwarnings('ignore')
-
 import bokeh.io
 import bokeh.plotting
-
 import matplotlib
 matplotlib.use('agg')
-
 import forest.util
 import forest.plot
 import forest.control
 import forest.data
 
-def add_main_plot(main_layout, bokeh_doc):
-    
-    '''
-    
-    '''
-    
-    print('finished creating, executing document add callback')
 
+def add_main_plot(main_layout, bokeh_doc):
+    '''logic to detect cli or server invocation of bokeh '''
+    print('finished creating, executing document add callback')
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
     except:
-        bokeh_mode = 'server'    
-        
+        bokeh_mode = 'server'
     if bokeh_mode == 'server':
         bokeh_doc.add_root(main_layout)
     elif bokeh_mode == 'cli':
@@ -38,14 +29,9 @@ bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
 
 
-
 @forest.util.timer
 def main(bokeh_id):
-
-    '''
-    
-    '''
-
+    '''Two-model bokeh application main program'''
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
         forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model',
@@ -78,7 +64,6 @@ def main(bokeh_id):
         local_root = os.path.expanduser('~/SEA_data')
     base_path_local = os.path.join(local_root, 'model_data')
 
-
     use_s3_mount = True
     do_download = False
 
@@ -98,7 +83,6 @@ def main(bokeh_id):
         layout1 = forest.util.load_error_page()
         bokeh.plotting.curdoc().add_root(layout1)
         return
-
 
     print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
 
@@ -185,8 +169,6 @@ def main(bokeh_id):
                      bucket_name,
                      'user_feedback')
 
-
-
     # Set up GUI controller class
     if user_interface == "double-plot":
         bokeh_figures = [bokeh_figure_left, bokeh_figure_right]
@@ -208,7 +190,7 @@ def main(bokeh_id):
                                                )
 
     add_main_plot(control1.main_layout, bokeh_doc)
+    bokeh_doc.title = 'Two model comparison'
 
-    bokeh_doc.title = 'Two model comparison'    
 
 main(__name__)
