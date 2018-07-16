@@ -39,31 +39,16 @@ Importantly, a :class:`Toggle` has no knowledge of bokeh widgets
 or layouts, it simply responds to ``on_change`` events by editing
 the appropriate alpha values of the associated images
 
-Zoom
-----
-
-The :class:`Zoom` class represents a mechanism to generate high-resolution
-imagery as the x/y ranges change. The particular implementation available
-here merely displays portions of a higher resolution array overlayed on a
-coarsified full extent image
-
-.. automodule:: forest.zoom
-
 Application programming interface (API)
 =======================================
 
 The following classes have been made available to users
 of Forest for custom visualisations
-
-.. autoclass:: forest.image.Zoom
-    :members:
-
 """
 import os
 import sys
 import numpy as np
 import bokeh.models
-from .zoom import *
 
 
 # CustomJS callback code
