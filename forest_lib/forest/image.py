@@ -92,7 +92,7 @@ class Toggle(object):
         .. note:: Updates image alpha values in-place
         """
         if "_alpha" not in source.data:
-            cache_alpha(source)
+            source.data["_alpha"] = get_alpha(source)
             return
         # Restore alpha from cache
         images = source.data["image"]
@@ -111,7 +111,7 @@ class Toggle(object):
         .. note:: Updates image alpha values in-place
         """
         if "_alpha" not in source.data:
-            cache_alpha(source)
+            source.data["_alpha"] = get_alpha(source)
         # Set alpha to zero
         images = source.data["image"]
         for image in images:
@@ -145,16 +145,15 @@ class Slider(object):
             "right": right_images
         }
         self.shapes = {
-            "left": image_shapes(self.left_images),
-            "right": image_shapes(self.right_images)
+            "left": get_shapes(self.images["left"]),
+            "right": get_shapes(self.images["right"])
         }
         for side in ["left", "right"]:
-            if "_alpha" not in self.images[side].data:
-                cache_alpha(self.images[side])
-
-            self.shapes[side] = image_shapes(self.images[side])
-            if "_shape" not in self.images[side].data:
-                self.images[side].data["_shape"] = self.shapes[side]
+            images = self.images[side]
+            if "_alpha" not in images.data:
+                images.data["_alpha"] = get_alpha(images)
+            if "_shape" not in images.data:
+                images.data["_shape"] = get_shapes(images)
 
         self.span = bokeh.models.Span(location=0,
                                       dimension='height',
@@ -184,10 +183,13 @@ class Slider(object):
         return self.images["right"]
 
     def on_change(self, attr, old, new):
-        """Listen for bokeh server-side image array changes"""
+        """Listen for bokeh server-side image array changes
+
+        If a shape change is detected pass that information
+        to client-side
+        """
         for side in ["left", "right"]:
-            # Listen for shape changes
-            shapes = image_shapes(self.images[side])
+            shapes = get_shapes(self.images[side])
             if tuple(self.shapes[side]) != tuple(shapes):
                 # Note: order important to prevent infinite recursion
                 self.shapes[side] = shapes
@@ -204,13 +206,7 @@ class Slider(object):
         figure.renderers.append(self.span)
 
 
-def cache_alpha(source):
-    """Pre-process image to cache alpha values"""
-    images = source.data["image"]
-    source.data["_alpha"] = [np.copy(image[..., -1]) for image in images]
-
-
-def image_shapes(source):
+def get_shapes(source):
     """Read image shapes from ColumnDataSource"""
     images = source.data["image"]
     return [image.shape for image in images]
@@ -219,7 +215,7 @@ def image_shapes(source):
 def get_alpha(bokeh_obj):
     """Helper to copy alpha values from GlyphRenderer or ColumnDataSource"""
     images = get_images(bokeh_obj)
-    return [np.copy(rgba[:, :, -1]) for rgba in images]
+    return [np.copy(rgba[..., -1]) for rgba in images]
 
 
 def get_images(bokeh_obj):
