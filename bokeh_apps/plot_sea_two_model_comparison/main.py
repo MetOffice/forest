@@ -120,6 +120,9 @@ def main(bokeh_id):
     #Create regions
     region_dict = forest.util.SEA_REGION_DICT
 
+    # initial selected point is approximately Jakarta, Indonesia
+    selected_point = (-6,103)
+
     #Setup and display plots
     plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
 
@@ -137,6 +140,8 @@ def main(bokeh_id):
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
+    plot_list = []
+    img_list = []
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
                                            init_fcast_time,
@@ -152,8 +157,11 @@ def main(bokeh_id):
                                            init_data_time,
                                            )
 
+    plot_obj_left.selected_point = selected_point
     bokeh_img_left = plot_obj_left.create_plot()
     stats_left = plot_obj_left.create_stats_widget()
+    plot_list += [plot_obj_left]
+    img_list += [bokeh_img_left]
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
                                             init_fcast_time,
@@ -169,18 +177,33 @@ def main(bokeh_id):
                                             init_data_time,
                                             )
 
+    plot_obj_right.selected_point = selected_point
     bokeh_img_right = plot_obj_right.create_plot()
     stats_right = plot_obj_right.create_stats_widget()
+    plot_list += [plot_obj_right]
+    img_list += [bokeh_img_right]
+
+
 
     colorbar_widget = plot_obj_left.create_colorbar_widget()
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
+
+    plot_obj_ts = forest.plot.ForestTimeSeries(datasets[init_fcast_time],
+                                               init_fcast_time,
+                                               selected_point,
+                                               init_var)
+
+    bokeh_image_ts = plot_obj_ts.create_plot()
+    plot_list += [plot_obj_ts]
+    img_list += [bokeh_image_ts]
+
+
     s3_local_base_feedback = \
         os.path.join(s3_root,
                      bucket_name,
                      'user_feedback')
-
 
 
     # Set up GUI controller class
@@ -189,8 +212,8 @@ def main(bokeh_id):
                                                datasets,
                                                init_fcast_time,
                                                plot_type_time_lookups,
-                                               [plot_obj_left, plot_obj_right],
-                                               [bokeh_img_left, bokeh_img_right],
+                                               plot_list,
+                                               img_list,
                                                colorbar_widget,
                                                [stats_left, stats_right],
                                                region_dict,
