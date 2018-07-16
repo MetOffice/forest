@@ -165,7 +165,6 @@ class ForestPlot(object):
                              'V': self.update_sat_simim_imagery,
                              'blank': self.create_blank,
                              }
-
         self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
         self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
         self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
@@ -406,7 +405,6 @@ class ForestPlot(object):
         wind streamlines is the selected plot type.
 
         '''
-
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \

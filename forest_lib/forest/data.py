@@ -592,7 +592,6 @@ class ForestDataset(object):
                 # Load the data into memory from file (will only load 
                 # metadata initially)
                 self.load_data(var_name, time_ix)
-
                 has_units = \
                     self.data[var_name][time_ix].units is not None and \
                     self.data[var_name][time_ix].units.name != 'unknown'
@@ -684,7 +683,6 @@ class ForestDataset(object):
         
         cube_x_wind = self.get_data('x_wind', time_ix)
         cube_y_wind = self.get_data('y_wind', time_ix)
-
         wv_dict = forest.util.calc_wind_vectors(cube_x_wind,
                                                 cube_y_wind,
                                                 WIND_GRID_SIZE)

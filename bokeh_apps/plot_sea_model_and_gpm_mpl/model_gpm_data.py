@@ -113,7 +113,7 @@ class GpmDataset(object):
                 functools.partial(time_comp, selected_time, 1e-5)
 
         elif int(iris.__version__.split('.')[0]) == 2:
-            time_obj = datetime.datetime.fromtimestamp(selected_time * 3600)
+            time_obj = datetime.datetime.utcfromtimestamp(selected_time * 3600)
             def time_comp(selected_time, eps1, cell1):
                 return abs(cell1.point - selected_time).total_seconds() < eps1
             coord_constraint_dict['time'] = \
