@@ -242,6 +242,10 @@ class ForestController(object):
         self.minor_config_row = bokeh.layouts.row(self.left_model_dd, 
                                                   self.right_model_dd)
         self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
+
+        for fig1 in self.bokeh_imgs:
+            fig1.on_event(bokeh.events.Tap, self._on_tap)
+
         self.info_row = bokeh.layouts.row(self.stats_widgets[0], 
                                           self.colorbar_div,
                                           self.stats_widgets[1])
@@ -392,7 +396,7 @@ class ForestController(object):
         self.current_fcast_time = new_val
         new_time = self._refresh_times()
         for p1 in self.plots:
-            # different variables have different times available, soneed to
+            # different variables have different times available, so need to
             # set time when selecting a variable
             p1.current_time = new_time
             p1.set_dataset(self.datasets[self.current_fcast_time],
@@ -407,4 +411,11 @@ class ForestController(object):
             self.uf_vis_layout.children = [self.feedback_layout]
         else:
             self.uf_vis_layout.children = []
+
+    def _on_tap(self, tap_event):
+        print('tap event occured at ({0:.2f},{1:.2f})'.format(tap_event.x,
+                                                              tap_event.y))
+
+        for p1 in self.plots:
+            p1.set_selected_point(tap_event.y, tap_event.x)
 
