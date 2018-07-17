@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
-# A helper script to run forest on the Met Office network, using the
-# scitools infrastructure
+# A helper script to run forest on a local machine.
 # usage: run_forest_dev /path/to/data/ 6001
 # inputs:
 # * /path/to/data - location of data to be used by forest, usually a local
 #                   mount of the s3 bucket
 # * 6001 -a port number on the dev machine
+# notes: if you have run the forest_setup script, you will need to ensure
+# you have updated your $PATH to point at the correct version of conda
+# and python, and activated the relevant conda env.
 
 
 # this script expects to be run from the root directory of a local clone of
 # the forest repository.
-
-
-module load scitools/experimental-current
 
 export S3_ROOT=$1
 export PYTHONPATH=$PYTHONPATH:$PWD/forest_lib
