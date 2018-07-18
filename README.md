@@ -34,11 +34,37 @@ be installed using conda install.
 ### Source code
 The source code should be made available to run Forest by cloning the
 repository. When you run the server using the bokeh serve command, the
-forest_lib directory will need to be available on the PYTHONPATH so that
+`forest_lib` directory will need to be available on the PYTHONPATH so that
 the relevant modules can be imported.
 
 ## Running locally
 
 ## Deploying
 TODO
+
+## Documentation
+
+The documentation for the forest library uses the Python package Sphinx
+and can be built from inside the doc directory
+
+```sh
+> cd doc/
+> make html
+```
+
+Please see [Sphinx official documentation](http://www.sphinx-doc.org/en/master/) for
+further details
+
+## Testing
+
+The test suite uses Python's builtin unittest module to test the Python
+source code and node package manager (npm) to unit test the JavaScript
+callback code
+
+```sh
+> python -m unittest discover
+```
+
+**Note:** The Python unit test suite has a test that calls `npm test`
+          to run the JavaScript unit tests
 
