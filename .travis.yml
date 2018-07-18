@@ -5,20 +5,17 @@ env:
   global:
   - HELM_URL=https://storage.googleapis.com/kubernetes-helm
   - HELM_TGZ=helm-v2.9.1-linux-amd64.tar.gz
-
+  - secure: HIO7UIFRxbBYqmeYX12CT1mMNtJeAbYHiUPrAB64K/S3u2FL1wf6e1dmuYfscwlJDX5O1XN6S2YSGbmMA44GigpoMlUnSpXMw+iPHl2iQN54rCHecKkJ0zuyzncXaVKEfRu1J9ioNZDEXErohP/mWwJLPqnzTU9j4HdlOgg2RHRh//iEN1O01aYSVm64yMfOSmdqqkOB6xeJ4fRaQtJDMtayvHE5PG8FZ8IVbLnwBXrTgGgyqNDh+RN0T152Lp14KM+rMB4EiDxHGlJ/aGEqGhzZCPJMXpIAKkAow64KkGNPn6ygcHaK0CjhP1oiVa0fy0/0FWNyjxhtgoNfWNNdBRoBevN75PjvfAma9lc1jtKRqMnjz8Zc9VdYhYue/LFHilKgJfKm85LWkU6bYbfsoeFnP/63lbted5qoBErOaCmbYVKEIiC2Qees+lqN1KQm6u7OxU9KvJ4DMUaVc2DoIKdnz9+5IZWeVBzDvgsc9OcD9DKyJMF5c2zq84CwGFVLwVf4gGbguIis42s4tIMjJdp/w7IK0P4KzcKesUNGGQM1btbm2qI2DcmfWuOwDqi+jZolyiqpQmNlkcG1a+bEuh11iVRg0smSw/7taJiMgBnPQpB8NCbkTVKF8Ke1OKvaJhLeFaXdv4Q/chAXzvofu57g9/PompPVxXw8C/j4H3E=
 install: echo "Install deps here"
-
 script: echo "Run tests here"
-
 before_deploy:
 - mkdir ~/.kube
-- openssl aes-256-cbc -K $encrypted_d3956c9caf44_key -iv $encrypted_d3956c9caf44_iv
-  -in kube/kubeconfig.enc -out ~/.kube/config -d
+- echo $CONFIG_PASS | gpg --passphrase-fd 0 kube/kubeconfig.gpg
+- cp kube/kubeconfig ~/.kube/config
 - wget -q ${HELM_URL}/${HELM_TGZ}
 - tar xzfv ${HELM_TGZ}
 - PATH=`pwd`/linux-amd64/:$PATH
 - helm init --client-only
-
 deploy:
   provider: script
   script: helm upgrade forest kube
