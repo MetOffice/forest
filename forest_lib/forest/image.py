@@ -24,20 +24,33 @@ position.
 Toggle
 ------
 
-A :class:`.Toggle` is also available to switch between images.  Instead of
-displaying portions of two images side by side, like the slider, the toggle
-swaps out images to quickly see the differences between each image
+A :class:`.Toggle` switches between left/right images to give
+a quick overview of differences in two images. The effect is achieved
+by caching and modifying each images alpha values
 
 >>> toggle = forest.image.Toggle(left_images, right_images)
+>>> toggle.show_left()  # Set left image to visible
+>>> def callback(attr, old, new):
+...     if new == 0:
+...         toggle.show_left()
+...     else:
+...         toggle.show_right()
 >>> buttons = bokeh.models.widgets.RadioButtonGroup(
-...     labels=["left", "right"],
+...     labels=["Left", "Right"],
 ...     active=0
 ... )
->>> buttons.on_change("active", toggle.on_change)
+>>> buttons.on_change("active", callback)
 
-Importantly, a :class:`Toggle` has no knowledge of bokeh widgets
-or layouts, it simply responds to ``on_change`` events by editing
-the appropriate alpha values of the associated images
+A :class:`Toggle` has no knowledge of bokeh widgets
+or layouts, it simply exposes methods :func:`Toggle.show_left` and
+:func:`Toggle.show_right` so that the user to craft their own user interface
+
+In the example shown above, a toggle is constructed using
+the data sources of two bokeh RGBA images. A callback and
+radio button group are then created to allow the user to
+hide/show the appropriate images. Since the active button
+is Left the toggle `show_left()` method has been called
+to get the app into a consistent state
 
 Application programming interface (API)
 =======================================

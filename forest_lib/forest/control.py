@@ -239,6 +239,7 @@ class ForestController(object):
         slider = forest.image.Slider(left_image, right_image)
         slider.add_figure(bokeh_figure)
         toggle = forest.image.Toggle(left_image, right_image)
+        toggle.show_left()
         def left_right_callback(attr, old, new):
             if new == 0:
                 toggle.show_left()
