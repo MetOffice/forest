@@ -16,6 +16,7 @@ before_deploy:
 - PATH=`pwd`/linux-amd64/:$PATH
 - helm init --client-only
 deploy:
+  skip_cleanup: true
   provider: script
   script: helm upgrade forest kube
   on:
