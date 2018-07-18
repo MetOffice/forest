@@ -5,14 +5,22 @@ env:
   global:
   - HELM_URL=https://storage.googleapis.com/kubernetes-helm
   - HELM_TGZ=helm-v2.9.1-linux-amd64.tar.gz
-before_install:
+
+install: echo "Install deps here"
+
+script: echo "Run tests here"
+
+before_deploy:
 - mkdir ~/.kube
-- test $TRAVIS_BRANCH = "master" && openssl aes-256-cbc -K $encrypted_d3956c9caf44_key -iv $encrypted_d3956c9caf44_iv
+- openssl aes-256-cbc -K $encrypted_d3956c9caf44_key -iv $encrypted_d3956c9caf44_iv
   -in kube/kubeconfig.enc -out ~/.kube/config -d
-install:
 - wget -q ${HELM_URL}/${HELM_TGZ}
 - tar xzfv ${HELM_TGZ}
 - PATH=`pwd`/linux-amd64/:$PATH
 - helm init --client-only
-script: echo "Run tests here"
-after_success: test $TRAVIS_BRANCH = "master" && cd kube && helm upgrade forest .
+
+deploy:
+  provider: script
+  script: helm upgrade forest kube
+  on:
+    branch: master
