@@ -71,6 +71,32 @@ with open(JS_FILE, "r") as stream:
     JS_CODE = stream.read()
 
 
+class CachedRGBA(object):
+    """Cache alpha/shapes to maintain consistency"""
+    def __init__(self, source):
+        self._callbacks = []
+        self.source = source
+        if "_alpha" not in source.data:
+            source.data["_alpha"] = get_alpha(source)
+        self.shapes = get_shapes(self.source)
+        if "_shape" not in source.data:
+            source.data["_shape"] = self.shapes
+        self.source.on_change("data", self.on_source_change)
+
+    def on_shape_change(self, callback):
+        self._callbacks.append(callback)
+
+    def on_source_change(self, attr, old, new):
+        shapes = get_shapes(self.source)
+        if tuple(self.shapes) != tuple(shapes):
+            # Note: order important to prevent infinite recursion
+            self.shapes = shapes
+            self.source.data["_shape"] = get_shapes(self.source)
+            self.source.data["_alpha"] = get_alpha(self.source)
+            for callback in self._callbacks:
+                callback()
+
+
 class Toggle(object):
     """Controls alpha values of bokeh RGBA ColumnDataSources
 
@@ -84,7 +110,9 @@ class Toggle(object):
     """
     def __init__(self, left_images, right_images):
         self.left_images = left_images
+        self._left_cache = CachedRGBA(left_images)
         self.right_images = right_images
+        self._right_cache = CachedRGBA(left_images)
 
     def show_left(self):
         """Show left image and hide right image"""
@@ -157,17 +185,10 @@ class Slider(object):
             "left": left_images,
             "right": right_images
         }
-        self.shapes = {
-            "left": get_shapes(self.images["left"]),
-            "right": get_shapes(self.images["right"])
-        }
-        for side in ["left", "right"]:
-            images = self.images[side]
-            if "_alpha" not in images.data:
-                images.data["_alpha"] = get_alpha(images)
-            if "_shape" not in images.data:
-                images.data["_shape"] = get_shapes(images)
-
+        self._left_cache = CachedRGBA(left_images)
+        self._left_cache.on_shape_change(self.notify_client_side)
+        self._right_cache = CachedRGBA(right_images)
+        self._right_cache.on_shape_change(self.notify_client_side)
         self.span = bokeh.models.Span(location=0,
                                       dimension='height',
                                       line_color='black',
@@ -183,10 +204,6 @@ class Slider(object):
             shared=shared
         ), code=JS_CODE)
 
-        # Listen to server-side image changes
-        self.left_images.on_change("data", self.on_change)
-        self.right_images.on_change("data", self.on_change)
-
     @property
     def left_images(self):
         return self.images["left"]
@@ -195,19 +212,12 @@ class Slider(object):
     def right_images(self):
         return self.images["right"]
 
-    def on_change(self, attr, old, new):
+    def notify_client_side(self):
         """Listen for bokeh server-side image array changes
 
         If a shape change is detected pass that information
         to client-side
         """
-        for side in ["left", "right"]:
-            shapes = get_shapes(self.images[side])
-            if tuple(self.shapes[side]) != tuple(shapes):
-                # Note: order important to prevent infinite recursion
-                self.shapes[side] = shapes
-                self.images[side].data["_shape"] = shapes
-
         # Pass latest image shapes to client-side
         self.mousemove.args["left_images"] = self.left_images
         self.mousemove.args["right_images"] = self.right_images

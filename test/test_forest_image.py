@@ -47,3 +47,28 @@ class TestForestImage(unittest.TestCase):
         slider = forest.image.Slider(self.empty_image, image)
         image.data["image"] = [new_pixels]
         self.assertEqual(image.data["_shape"], [new_pixels.shape])
+
+
+class TestToggle(unittest.TestCase):
+    """Toggle to make left/right images switchable"""
+    def setUp(self):
+        self.empty_image = bokeh.models.ColumnDataSource({})
+
+    def test_consistent_alpha(self):
+        """data source image shape change should be handled gracefully"""
+        small_rgba = np.zeros((2, 2, 4))
+        large_rgba = np.zeros((10, 10, 4))
+        large_alpha = large_rgba[..., -1]
+        image = bokeh.models.ColumnDataSource({
+            "image": [small_rgba]
+        })
+        toggle = forest.image.Toggle(image, self.empty_image)
+        toggle.hide(toggle.left_images)
+
+        # Simulate Forest resizing image data
+        image.data = {
+            "image": [large_rgba]
+        }
+
+        # Assertions
+        np.testing.assert_array_equal(image.data["_alpha"][0], large_alpha)

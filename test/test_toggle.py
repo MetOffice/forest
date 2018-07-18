@@ -29,8 +29,12 @@ class TestRGBA(unittest.TestCase):
 class TestToggle(unittest.TestCase):
     """Controller to show/hide RGBA images"""
     def setUp(self):
-        left_image = bokeh.models.ColumnDataSource()
-        right_image = bokeh.models.ColumnDataSource()
+        left_image = bokeh.models.ColumnDataSource({
+            "image": []
+        })
+        right_image = bokeh.models.ColumnDataSource({
+            "image": []
+        })
         self.toggle = forest.image.Toggle(left_image, right_image)
 
     def test_hide_sets_alpha_to_zero(self):
