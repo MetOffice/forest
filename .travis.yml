@@ -15,4 +15,4 @@ install:
 - PATH=`pwd`/linux-amd64/:$PATH
 - helm init --client-only
 script: echo "Run tests here"
-after_success: cd kube && helm upgrade forest .
+after_success: test $TRAVIS_BRANCH = "master" && cd kube && helm upgrade forest .
