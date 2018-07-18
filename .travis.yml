@@ -1,0 +1,18 @@
+language: python
+python:
+- '3.6'
+env:
+  global:
+  - HELM_URL=https://storage.googleapis.com/kubernetes-helm
+  - HELM_TGZ=helm-v2.9.1-linux-amd64.tar.gz
+before_install:
+- mkdir ~/.kube
+- openssl aes-256-cbc -K $encrypted_d3956c9caf44_key -iv $encrypted_d3956c9caf44_iv
+  -in kubeconfig.enc -out ~/.kube/config -d
+install:
+- wget -q ${HELM_URL}/${HELM_TGZ}
+- tar xzfv ${HELM_TGZ}
+- PATH=`pwd`/linux-amd64/:$PATH
+- helm init --client-only
+script: echo "Run tests here"
+after_success: cd kube && helm upgrade forest .
