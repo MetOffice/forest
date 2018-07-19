@@ -203,4 +203,5 @@ def main(bokeh_id):
 
     bokeh_doc.title = 'Two model comparison'    
 
-main(__name__)
+if __name__ == '__main__' or __name__.startswith("bk"):
+    main(__name__)
