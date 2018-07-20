@@ -243,7 +243,6 @@ class ForestDataset(object):
     - __str__() -- String method.
     - check_data() -- Check data exists.
     - get_data() -- Call self.retrieve_data() and self.load_data().
-    - retrieve_data() -- Download data from S3 bucket.
     - load_data() -- Call loader methods.
     - basic_cube_load() -- Load simple data into a cube.
     - wind_speed_loader() -- Load x/y wind data, create speed cube.
@@ -371,14 +370,16 @@ class ForestDataset(object):
         if self.times[var_name] is None:
             if self.bucket.file_exists(self.file_name):
                 # get data from aws s3 storage
-                self.retrieve_data()
+                if self.bucket.do_download:
+                    self.bucket.retrieve_file(self.file_name)
 
                 self.load_times(var_name)
 
         if self.data[var_name][selected_time] is None:
             if self.bucket.file_exists(self.file_name):
                 # Get data from aws s3 storage
-                self.retrieve_data()
+                if self.bucket.do_download:
+                    self.bucket.retrieve_file(self.file_name)
                 # Load the data into memory from file (will only load 
                 # metadata initially)
                 self.load_data(var_name, time_ix)
@@ -392,11 +393,6 @@ class ForestDataset(object):
             else:
                 self.data[var_name] = None
         return self.data[var_name][time_ix]
-
-    def retrieve_data(self):
-        """Download data from S3 bucket."""
-        if self.bucket.do_download:
-            self.bucket.retrieve_file(self.file_name)
 
     def load_data(self, var_name, selected_time):
         """Call loader function.
