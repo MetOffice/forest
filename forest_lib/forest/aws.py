@@ -58,3 +58,11 @@ class S3Bucket(object):
             return util.check_remote_file_exists(self.s3_url(file_name))
         else:
             return os.path.isfile(self.path_to_load(file_name))
+
+    def retrieve_file(self, file_name):
+        directory = self.base_path_local
+        if not os.path.isdir(directory):
+            print("creating directory {0}".format(directory))
+            os.makedirs(directory)
+        util.download_from_s3(self.s3_url(file_name),
+                              self.local_path(file_name))

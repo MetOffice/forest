@@ -67,18 +67,38 @@ class TestS3Bucket(unittest.TestCase):
         self.assertEqual(self.bucket.path_to_load(self.file_name),
                          self.bucket.local_path(self.file_name))
 
-    @unittest.mock.patch("forest.aws.os")
-    @unittest.mock.patch("forest.aws.util")
+@unittest.mock.patch("forest.aws.os")
+@unittest.mock.patch("forest.aws.util")
+class TestS3BucketIO(unittest.TestCase):
+    def setUp(self):
+        self.file_name = "file.nc"
+        self.server_address = "server_address"
+        self.bucket_name = "bucket_name"
+        self.bucket = forest.aws.S3Bucket(self.server_address,
+                                          self.bucket_name)
+
     def test_file_exists_calls_remote_file_exists(self, util, os):
         self.bucket.do_download = True
         self.bucket.file_exists(self.file_name)
         expect = self.bucket.s3_url(self.file_name)
         util.check_remote_file_exists.assert_called_once_with(expect)
 
-    @unittest.mock.patch("forest.aws.os")
-    @unittest.mock.patch("forest.aws.util")
     def test_file_exists_calls_isfile(self, util, os):
         self.bucket.do_download = False
         self.bucket.file_exists(self.file_name)
         expect = self.bucket.path_to_load(self.file_name)
         os.path.isfile.assert_called_once_with(expect)
+
+    def test_retrieve_file_calls_makedirs(self, util, os):
+        os.path.isdir.return_value = False
+        self.bucket.retrieve_file(self.file_name)
+        directory = self.bucket.base_path_local
+        os.path.isdir.assert_called_once_with(directory)
+        os.makedirs.assert_called_once_with(directory)
+
+    def test_retrieve_file_calls_download_from_s3(self, util, os):
+        self.bucket.retrieve_file(self.file_name)
+        directory = self.bucket.base_path_local
+        url = self.bucket.s3_url(self.file_name)
+        local_file = self.bucket.local_path(self.file_name)
+        util.download_from_s3.assert_called_once_with(url, local_file)

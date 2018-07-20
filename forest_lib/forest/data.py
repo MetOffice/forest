@@ -237,12 +237,10 @@ def get_available_datasets(bucket,
 
 
 class ForestDataset(object):
-
     """Declare main class for holding Forest data.
-    
+
     Methods
     -------
-    
     - __init__() -- Factory method.
     - __str__() -- String method.
     - check_data() -- Check data exists.
@@ -255,10 +253,9 @@ class ForestDataset(object):
     - add_accum_precip_keys() -- Add precip. accum. keys to data dict.
     - accum_precip_loader() -- Load precip. data and calc. accums.
     - accum_precip() -- Calculate precip. accumulations.
-    
+
     Attributes
     ----------
-    
     - config_name -- Str; Name of data configuration.
     - var_lookup -- Dict; Links variable names to data keys.
     - file_name -- Str; Specifies netCDF file name.
@@ -273,7 +270,6 @@ class ForestDataset(object):
     - loaders -- Dict; Dictionary of loader functions for vars.
     - data -- Dict; Loaded data cubes.
     - path_to_load -- Str; local/S3 path, based on do_download.
-    
     """
     TIME_INDEX_ALL = 'all'
 
@@ -424,15 +420,9 @@ class ForestDataset(object):
         return self.data[var_name][time_ix]
 
     def retrieve_data(self):
-    
         """Download data from S3 bucket."""
-        
         if self.bucket.do_download:
-            if not (os.path.isdir(self.base_local_path)):
-                print('creating directory {0}'.format(self.base_local_path))
-                os.makedirs(self.base_local_path)
-
-            forest.util.download_from_s3(self.s3_url, self.local_path)
+            self.bucket.retrieve_file(self.file_name)
 
     def load_data(self, var_name, selected_time):
     
