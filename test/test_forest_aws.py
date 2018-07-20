@@ -2,24 +2,23 @@
 import unittest
 import os
 import sys
-script_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, os.path.join(script_dir, "../bokeh_apps",
-                                "plot_sea_two_model_comparison"))
-import main
+import forest.aws
 
 
 class TestS3Bucket(unittest.TestCase):
     """AWS S3 architecture
 
     Forest application should run from either file system
-    or AWS download seemlessly
+    or AWS download seemlessly. Both systems should present
+    a simple API to the internals of Forest
     """
     def setUp(self):
         self.server_address = "https://s3.eu-west-2.amazonaws.com"
         self.bucket_name = "stephen-sea-public-london"
         self.s3_base = "{server}/{bucket}/model_data/".format(server=self.server_address,
                                                               bucket=self.bucket_name)
-        self.bucket = main.S3Bucket()
+        self.bucket = forest.aws.S3Bucket(self.server_address,
+                                          self.bucket_name)
 
     def tearDown(self):
         if "S3_ROOT" in os.environ:

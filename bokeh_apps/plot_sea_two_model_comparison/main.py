@@ -11,44 +11,13 @@ import forest.control
 import forest.data
 
 
-class S3Bucket(object):
-    """S3 bucket infrastructure"""
-    server_address = 'https://s3.eu-west-2.amazonaws.com'
-    bucket_name = 'stephen-sea-public-london'
-
-    def __init__(self):
-        self.use_s3_mount = True
-        self.do_download = False
-
-    @property
-    def s3_base(self):
-        return '{server}/{bucket}/model_data/'.format(server=self.server_address,
-                                                      bucket=self.bucket_name)
-
-    @property
-    def s3_local_base(self):
-        return os.path.join(self.s3_root, self.bucket_name, "model_data")
-
-    @property
-    def s3_root(self):
-        try:
-            return os.environ['S3_ROOT']
-        except KeyError:
-            return os.path.expanduser('~/s3')
-
-    @property
-    def base_path_local(self):
-        try:
-            local_root = os.environ['LOCAL_ROOT']
-        except KeyError:
-            local_root = os.path.expanduser('~/SEA_data')
-        return os.path.join(local_root, 'model_data')
-
-
 @forest.util.timer
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
-    bucket = S3Bucket()
+    bucket = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
+                                 bucket_name='stephen-sea-public-london',
+                                 use_s3_mount=True,
+                                 do_download=False)
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {

@@ -248,6 +248,7 @@ def get_available_datasets(bucket,
             fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
             fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(ds_name,
                                                                        fname1,
+                                                                       bucket,
                                                                        bucket.s3_base,
                                                                        bucket.s3_local_base,
                                                                        bucket.use_s3_mount,
@@ -433,6 +434,7 @@ class ForestDataset(object):
     def __init__(self,
                  config,
                  file_name,
+                 bucket,
                  s3_base,
                  s3_local_base,
                  use_s3_mount,
@@ -445,6 +447,7 @@ class ForestDataset(object):
         self.config_name = config
         self.var_lookup = var_lookup
         self.file_name = file_name
+        self.bucket = bucket
         self.s3_base_url = s3_base
         self.s3_url = os.path.join(self.s3_base_url, self.file_name)
         self.s3_local_base = s3_local_base
