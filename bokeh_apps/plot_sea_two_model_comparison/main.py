@@ -16,6 +16,11 @@ class S3Bucket(object):
     server_address = 'https://s3.eu-west-2.amazonaws.com'
     bucket_name = 'stephen-sea-public-london'
 
+    @property
+    def s3_base(self):
+        return '{server}/{bucket}/model_data/'.format(server=self.server_address,
+                                                      bucket=self.bucket_name)
+
 
 @forest.util.timer
 def main(bokeh_id):
@@ -38,9 +43,6 @@ def main(bokeh_id):
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
-    s3_base = '{server}/{bucket}/model_data/'.format(server=bucket.server_address,
-                                                    bucket=bucket.bucket_name)
-
     try:
         s3_root = os.environ['S3_ROOT']
     except KeyError:
@@ -58,7 +60,7 @@ def main(bokeh_id):
     do_download = False
 
     init_fcast_time, datasets = \
-        forest.data.get_available_datasets(s3_base,
+        forest.data.get_available_datasets(bucket.s3_base,
                                            s3_local_base,
                                            use_s3_mount,
                                            base_path_local,
