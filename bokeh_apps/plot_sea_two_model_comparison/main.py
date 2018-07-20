@@ -16,10 +16,18 @@ class S3Bucket(object):
     server_address = 'https://s3.eu-west-2.amazonaws.com'
     bucket_name = 'stephen-sea-public-london'
 
+    def __init__(self):
+        self.use_s3_mount = True
+        self.do_download = False
+
     @property
     def s3_base(self):
         return '{server}/{bucket}/model_data/'.format(server=self.server_address,
                                                       bucket=self.bucket_name)
+
+    @property
+    def s3_local_base(self):
+        return os.path.join(self.s3_root, self.bucket_name, "model_data")
 
     @property
     def s3_root(self):
@@ -27,6 +35,14 @@ class S3Bucket(object):
             return os.environ['S3_ROOT']
         except KeyError:
             return os.path.expanduser('~/s3')
+
+    @property
+    def base_path_local(self):
+        try:
+            local_root = os.environ['LOCAL_ROOT']
+        except KeyError:
+            local_root = os.path.expanduser('~/SEA_data')
+        return os.path.join(local_root, 'model_data')
 
 
 @forest.util.timer
@@ -50,24 +66,8 @@ def main(bokeh_id):
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
-    s3_local_base = os.path.join(bucket.s3_root,
-                                 bucket.bucket_name,
-                                 'model_data')
-    try:
-        local_root = os.environ['LOCAL_ROOT']
-    except KeyError:
-        local_root = os.path.expanduser('~/SEA_data')
-    base_path_local = os.path.join(local_root, 'model_data')
-
-    use_s3_mount = True
-    do_download = False
-
     init_fcast_time, datasets = \
-        forest.data.get_available_datasets(bucket.s3_base,
-                                           s3_local_base,
-                                           use_s3_mount,
-                                           base_path_local,
-                                           do_download,
+        forest.data.get_available_datasets(bucket,
                                            dataset_template,
                                            forest.data.NUM_DATA_DAYS,
                                            forest.data.NUM_DATA_DAYS,
