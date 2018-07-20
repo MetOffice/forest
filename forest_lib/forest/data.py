@@ -251,7 +251,7 @@ def get_available_datasets(bucket,
                                                                        bucket,
                                                                        dataset_template[ds_name]['var_lookup'])
 
-            model_run_data_present = model_run_data_present and fct_data_dict[ds_name]['data'].check_data()
+            model_run_data_present = model_run_data_present and bucket.file_exists(fname1)
         # include forecast if all configs are present
         # TODO: reconsider data structure to allow for some model configs at different times to be present
         if model_run_data_present:
@@ -461,10 +461,6 @@ class ForestDataset(object):
         """Return string"""
         return 'FOREST dataset'
 
-    def check_data(self):
-        """Check that the data represented by this dataset exists."""
-        return self.bucket.file_exists(self.file_name)
-
     def get_times(self, var_name):
         """
         """
@@ -527,14 +523,14 @@ class ForestDataset(object):
             print('loading data for time {0}'.format(time_ix))
 
         if self.times[var_name] is None:
-            if self.check_data():
+            if self.bucket.file_exists(self.file_name):
                 # get data from aws s3 storage
                 self.retrieve_data()
 
                 self.load_times(var_name)
 
         if self.data[var_name][selected_time] is None:
-            if self.check_data():
+            if self.bucket.file_exists(self.file_name):
                 # Get data from aws s3 storage
                 self.retrieve_data()
                 # Load the data into memory from file (will only load 
