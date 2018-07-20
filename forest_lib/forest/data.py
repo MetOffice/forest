@@ -483,15 +483,8 @@ class ForestDataset(object):
         return 'FOREST dataset'
 
     def check_data(self):
-    
         """Check that the data represented by this dataset exists."""
-
-        file_exists = False
-        if self.bucket.do_download:
-            file_exists = forest.util.check_remote_file_exists(self.s3_url)
-        else:
-            file_exists = os.path.isfile(self.path_to_load)
-        return file_exists
+        return self.bucket.file_exists(self.file_name)
 
     def get_times(self, var_name):
         """
