@@ -11,13 +11,10 @@ import forest.control
 import forest.data
 
 
-# Extract and Load
-bucket_name = 'stephen-sea-public-london'
-
-
 class S3Bucket(object):
     """S3 bucket infrastructure"""
     server_address = 'https://s3.eu-west-2.amazonaws.com'
+    bucket_name = 'stephen-sea-public-london'
 
 
 @forest.util.timer
@@ -42,14 +39,14 @@ def main(bokeh_id):
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
     s3_base = '{server}/{bucket}/model_data/'.format(server=bucket.server_address,
-                                                    bucket=bucket_name)
+                                                    bucket=bucket.bucket_name)
 
     try:
         s3_root = os.environ['S3_ROOT']
     except KeyError:
         s3_root = os.path.expanduser('~/s3')
     s3_local_base = os.path.join(s3_root,
-                                 bucket_name,
+                                 bucket.bucket_name,
                                  'model_data')
     try:
         local_root = os.environ['LOCAL_ROOT']
