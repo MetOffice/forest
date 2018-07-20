@@ -38,3 +38,6 @@ class S3Bucket(object):
 
     def s3_url(self, file_name):
         return os.path.join(self.s3_base, file_name)
+
+    def s3_local_path(self, file_name):
+        return os.path.join(self.s3_local_base, file_name)
