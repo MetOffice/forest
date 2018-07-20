@@ -35,8 +35,11 @@ def add_main_plot(main_layout, bokeh_doc):
 
 # Extract and Load
 bucket_name = 'stephen-sea-public-london'
-server_address = 'https://s3.eu-west-2.amazonaws.com'
 
+
+class S3Bucket(object):
+    """S3 bucket infrastructure"""
+    server_address = 'https://s3.eu-west-2.amazonaws.com'
 
 
 @forest.util.timer
@@ -45,6 +48,7 @@ def main(bokeh_id):
     '''
     
     '''
+    bucket = S3Bucket()
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
@@ -62,7 +66,7 @@ def main(bokeh_id):
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
-    s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
+    s3_base = '{server}/{bucket}/model_data/'.format(server=bucket.server_address,
                                                     bucket=bucket_name)
 
     try:
