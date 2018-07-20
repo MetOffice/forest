@@ -54,3 +54,15 @@ class TestS3Bucket(unittest.TestCase):
 
     def test_base_path_local(self):
         self.assertEqual(self.bucket.base_path_local, os.path.expanduser("~/SEA_data/model_data"))
+
+    def test_path_to_load_given_use_s3_mount_true(self):
+        file_name = "file.nc"
+        self.bucket.use_s3_mount = True
+        self.assertEqual(self.bucket.path_to_load(file_name),
+                         self.bucket.s3_local_path(file_name))
+
+    def test_path_to_load_given_use_s3_mount_false(self):
+        file_name = "file.nc"
+        self.bucket.use_s3_mount = False
+        self.assertEqual(self.bucket.path_to_load(file_name),
+                         self.bucket.local_path(file_name))

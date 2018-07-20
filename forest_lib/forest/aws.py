@@ -41,3 +41,12 @@ class S3Bucket(object):
 
     def s3_local_path(self, file_name):
         return os.path.join(self.s3_local_base, file_name)
+
+    def local_path(self, file_name):
+        return os.path.join(self.base_path_local, file_name)
+
+    def path_to_load(self, file_name):
+        if self.use_s3_mount:
+            return self.s3_local_path(file_name)
+        else:
+            return self.local_path(file_name)
