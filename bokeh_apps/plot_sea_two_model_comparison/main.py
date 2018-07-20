@@ -43,6 +43,13 @@ class S3Bucket(object):
         return '{server}/{bucket}/model_data/'.format(server=self.server_address,
                                                       bucket=self.bucket_name)
 
+    @property
+    def s3_root(self):
+        try:
+            return os.environ['S3_ROOT']
+        except KeyError:
+            return os.path.expanduser('~/s3')
+
 
 @forest.util.timer
 def main(bokeh_id):
@@ -68,11 +75,7 @@ def main(bokeh_id):
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
-    try:
-        s3_root = os.environ['S3_ROOT']
-    except KeyError:
-        s3_root = os.path.expanduser('~/s3')
-    s3_local_base = os.path.join(s3_root,
+    s3_local_base = os.path.join(bucket.s3_root,
                                  bucket.bucket_name,
                                  'model_data')
     try:
@@ -180,8 +183,8 @@ def main(bokeh_id):
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
 
     s3_local_base_feedback = \
-        os.path.join(s3_root,
-                     bucket_name,
+        os.path.join(bucket.s3_root,
+                     bucket.bucket_name,
                      'user_feedback')
 
 

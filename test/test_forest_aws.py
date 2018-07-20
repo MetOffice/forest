@@ -16,6 +16,10 @@ class TestS3Bucket(unittest.TestCase):
                                                               bucket=self.bucket_name)
         self.bucket = main.S3Bucket()
 
+    def tearDown(self):
+        if "S3_ROOT" in os.environ:
+            del os.environ["S3_ROOT"]
+
     def test_server_address(self):
         self.assertEqual(self.bucket.server_address, self.server_address)
 
@@ -24,3 +28,11 @@ class TestS3Bucket(unittest.TestCase):
 
     def test_s3_base(self):
         self.assertEqual(self.bucket.s3_base, self.s3_base)
+
+    def test_s3_root_given_environment_variable(self):
+        s3_root_variable = "s3_root_variable"
+        os.environ["S3_ROOT"] = s3_root_variable
+        self.assertEqual(self.bucket.s3_root, s3_root_variable)
+
+    def test_s3_root_given_user_directory(self):
+        self.assertEqual(self.bucket.s3_root, os.path.expanduser("~/s3"))
