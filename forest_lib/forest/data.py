@@ -217,9 +217,7 @@ def get_available_datasets(bucket,
             fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(ds_name,
                                                                        fname1,
                                                                        bucket,
-                                                                       bucket.base_path_local,
-                                                                       dataset_template[ds_name]['var_lookup'],
-                                                                       )
+                                                                       dataset_template[ds_name]['var_lookup'])
 
             model_run_data_present = model_run_data_present and fct_data_dict[ds_name]['data'].check_data()
         # include forecast if all configs are present
