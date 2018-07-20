@@ -9,6 +9,7 @@ import forest.util
 import forest.plot
 import forest.control
 import forest.data
+import forest.aws
 
 
 @forest.util.timer
