@@ -12,6 +12,8 @@ class TestS3Bucket(unittest.TestCase):
     def setUp(self):
         self.server_address = "https://s3.eu-west-2.amazonaws.com"
         self.bucket_name = "stephen-sea-public-london"
+        self.s3_base = "{server}/{bucket}/model_data/".format(server=self.server_address,
+                                                              bucket=self.bucket_name)
         self.bucket = main.S3Bucket()
 
     def test_server_address(self):
@@ -19,3 +21,6 @@ class TestS3Bucket(unittest.TestCase):
 
     def test_bucket_name(self):
         self.assertEqual(self.bucket.bucket_name, self.bucket_name)
+
+    def test_s3_base(self):
+        self.assertEqual(self.bucket.s3_base, self.s3_base)
