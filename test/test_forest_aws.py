@@ -1,5 +1,6 @@
 """Amazon web services infrastructure"""
 import unittest
+import unittest.mock
 import os
 import sys
 import forest.aws
@@ -13,6 +14,7 @@ class TestS3Bucket(unittest.TestCase):
     a simple API to the internals of Forest
     """
     def setUp(self):
+        self.file_name = "file.nc"
         self.server_address = "https://s3.eu-west-2.amazonaws.com"
         self.bucket_name = "stephen-sea-public-london"
         self.s3_base = "{server}/{bucket}/model_data/".format(server=self.server_address,
@@ -56,13 +58,27 @@ class TestS3Bucket(unittest.TestCase):
         self.assertEqual(self.bucket.base_path_local, os.path.expanduser("~/SEA_data/model_data"))
 
     def test_path_to_load_given_use_s3_mount_true(self):
-        file_name = "file.nc"
         self.bucket.use_s3_mount = True
-        self.assertEqual(self.bucket.path_to_load(file_name),
-                         self.bucket.s3_local_path(file_name))
+        self.assertEqual(self.bucket.path_to_load(self.file_name),
+                         self.bucket.s3_local_path(self.file_name))
 
     def test_path_to_load_given_use_s3_mount_false(self):
-        file_name = "file.nc"
         self.bucket.use_s3_mount = False
-        self.assertEqual(self.bucket.path_to_load(file_name),
-                         self.bucket.local_path(file_name))
+        self.assertEqual(self.bucket.path_to_load(self.file_name),
+                         self.bucket.local_path(self.file_name))
+
+    @unittest.mock.patch("forest.aws.os")
+    @unittest.mock.patch("forest.aws.util")
+    def test_file_exists_calls_remote_file_exists(self, util, os):
+        self.bucket.do_download = True
+        self.bucket.file_exists(self.file_name)
+        expect = self.bucket.s3_url(self.file_name)
+        util.check_remote_file_exists.assert_called_once_with(expect)
+
+    @unittest.mock.patch("forest.aws.os")
+    @unittest.mock.patch("forest.aws.util")
+    def test_file_exists_calls_isfile(self, util, os):
+        self.bucket.do_download = False
+        self.bucket.file_exists(self.file_name)
+        expect = self.bucket.path_to_load(self.file_name)
+        os.path.isfile.assert_called_once_with(expect)

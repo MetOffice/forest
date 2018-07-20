@@ -1,5 +1,6 @@
 """Amazon Web Services infrastructure"""
 import os
+from . import util
 
 
 class S3Bucket(object):
@@ -50,3 +51,10 @@ class S3Bucket(object):
             return self.s3_local_path(file_name)
         else:
             return self.local_path(file_name)
+
+    def file_exists(self, file_name):
+        """AWS file exists or downloaded file exists"""
+        if self.do_download:
+            return util.check_remote_file_exists(self.s3_url(file_name))
+        else:
+            return os.path.isfile(self.path_to_load(file_name))
