@@ -288,7 +288,7 @@ class ForestDataset(object):
         self.file_name = file_name
         self.bucket = bucket
         self.s3_url = self.bucket.s3_url(self.file_name)
-        self.s3_local_path = os.path.join(self.bucket.s3_local_base, self.file_name)
+        self.s3_local_path = self.bucket.s3_local_path(self.file_name)
         self.base_local_path = bucket.base_path_local
         self.local_path = os.path.join(self.base_local_path,
                                        self.file_name)
