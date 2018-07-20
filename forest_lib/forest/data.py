@@ -409,14 +409,6 @@ class ForestDataset(object):
     - config_name -- Str; Name of data configuration.
     - var_lookup -- Dict; Links variable names to data keys.
     - file_name -- Str; Specifies netCDF file name.
-    - s3_base_url -- Str; S3 data basepath.
-    - s3_url -- Str; Combined S3 basepath and filename.
-    - s3_local_base -- Str; Local S3 data basepath.
-    - s3_local_path -- Str; Combined S3 local basepath and filename.
-    - use_s3_local_mount -- Bool; Specify whether to use S3 mount.
-    - base_local_path -- Str; Local basepath to data.
-    - do_download -- Bool; Specify whether to do data download.
-    - local_path -- Str; Combined local basepath and filename.
     - loaders -- Dict; Dictionary of loader functions for vars.
     - data -- Dict; Loaded data cubes.
     - path_to_load -- Str; local/S3 path, based on do_download.
@@ -433,13 +425,8 @@ class ForestDataset(object):
         self.var_lookup = var_lookup
         self.file_name = file_name
         self.bucket = bucket
-        self.s3_url = self.bucket.s3_url(self.file_name)
-        self.base_local_path = bucket.base_path_local
-        self.local_path = bucket.local_path(self.file_name)
 
         # set up time loaders
-
-
         self.time_loaders = dict([(v1, self._basic_time_load) for v1 in VAR_NAMES])
         for wv_var in WIND_VARS:
             self.time_loaders[wv_var] = self._wind_time_load
@@ -473,9 +460,7 @@ class ForestDataset(object):
                 functools.partial(self._precip_accum_ts_load, ws1)
 
     def __str__(self):
-    
         """Return string"""
-        
         return 'FOREST dataset'
 
     def check_data(self):
@@ -530,15 +515,12 @@ class ForestDataset(object):
             numpy.unique(numpy.floor(self.times[PRECIP_VAR_NAME] / window_size1) * window_size1) + (window_size1/2.0)
         self.data[var_name] = dict([(t1, None) for t1 in self.times[var_name]] + [('all',None)])
 
-    def get_data(self, var_name, selected_time, convert_units=True):
-    
+    def _get_data(self, var_name, selected_time, convert_units=True):
         """Calls functions to retrieve and load data.
-        
+
         Arguments
         ---------
-        
         - var_name -- Str; Redundant: used to match other loaders.
-        
         """
         time_ix = selected_time
         if time_ix is None:
@@ -569,8 +551,6 @@ class ForestDataset(object):
                             UNIT_DICT[var_name])
             else:
                 self.data[var_name] = None
-
-
         return self.data[var_name][time_ix]
 
     def retrieve_data(self):
@@ -579,20 +559,15 @@ class ForestDataset(object):
             self.bucket.retrieve_file(self.file_name)
 
     def load_data(self, var_name, selected_time):
-    
         """Call loader function.
-        
+
         Arguments
         ---------
-        
         - var_name -- Str; Var name used as dict key to select loader.
-
         """
-        
         self.loaders[var_name](var_name, selected_time)
 
     def basic_cube_load(self, var_name, time_ix):
-    
         """Load simple cubes.
 
         Arguments
