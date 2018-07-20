@@ -437,13 +437,9 @@ class ForestDataset(object):
         self.var_lookup = var_lookup
         self.file_name = file_name
         self.bucket = bucket
-        self.s3_base_url = bucket.s3_base
-        self.s3_url = os.path.join(self.s3_base_url, self.file_name)
-        self.s3_local_base = bucket.s3_local_base
-        self.s3_local_path = os.path.join(self.s3_local_base, self.file_name)
-        self.use_s3_local_mount = bucket.use_s3_mount
+        self.s3_url = self.bucket.s3_url(self.file_name)
+        self.s3_local_path = os.path.join(self.bucket.s3_local_base, self.file_name)
         self.base_local_path = bucket.base_path_local
-        self.do_download = bucket.do_download
         self.local_path = os.path.join(self.base_local_path,
                                        self.file_name)
 
@@ -471,7 +467,7 @@ class ForestDataset(object):
             self.loaders[accum_precip_var] = functools.partial(self.accum_precip_loader, ws1)
 
         self.data = dict([(v1, None) for v1 in self.loaders.keys()])
-        if self.use_s3_local_mount:
+        if self.bucket.use_s3_mount:
             self.path_to_load = self.s3_local_path
         else:
             self.path_to_load = self.local_path
@@ -496,7 +492,7 @@ class ForestDataset(object):
         """Check that the data represented by this dataset exists."""
 
         file_exists = False
-        if self.do_download:
+        if self.bucket.do_download:
             file_exists = forest.util.check_remote_file_exists(self.s3_url)
         else:
             file_exists = os.path.isfile(self.path_to_load)
@@ -597,7 +593,7 @@ class ForestDataset(object):
     
         """Download data from S3 bucket."""
         
-        if self.do_download:
+        if self.bucket.do_download:
             if not (os.path.isdir(self.base_local_path)):
                 print('creating directory {0}'.format(self.base_local_path))
                 os.makedirs(self.base_local_path)

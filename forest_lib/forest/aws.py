@@ -35,3 +35,6 @@ class S3Bucket(object):
         except KeyError:
             local_root = os.path.expanduser('~/SEA_data')
         return os.path.join(local_root, 'model_data')
+
+    def s3_url(self, file_name):
+        return os.path.join(self.s3_base, file_name)
