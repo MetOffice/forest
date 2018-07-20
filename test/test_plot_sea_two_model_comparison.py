@@ -9,7 +9,8 @@ import forest
 
 
 class TestPlotSeaTwoModelComparison(unittest.TestCase):
-    def test_main(self):
+    @unittest.skip("system not decoupled yet")
+    def test_main(self, bokeh):
         bokeh_id = "bokeh_id"
         main.main(bokeh_id)
 
@@ -18,6 +19,7 @@ class TestPlotSeaTwoModelComparison(unittest.TestCase):
         forest.data.get_available_datasets()
 
 
+@unittest.skip("deprecated API")
 class TestForestDataset(unittest.TestCase):
     def test_can_be_constructed(self):
         forest.data.ForestDataset(*self.args())
