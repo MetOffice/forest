@@ -9,6 +9,11 @@ import main
 
 
 class TestS3Bucket(unittest.TestCase):
+    """AWS S3 architecture
+
+    Forest application should run from either file system
+    or AWS download seemlessly
+    """
     def setUp(self):
         self.server_address = "https://s3.eu-west-2.amazonaws.com"
         self.bucket_name = "stephen-sea-public-london"
@@ -36,3 +41,17 @@ class TestS3Bucket(unittest.TestCase):
 
     def test_s3_root_given_user_directory(self):
         self.assertEqual(self.bucket.s3_root, os.path.expanduser("~/s3"))
+
+    def test_s3_local_base(self):
+        expect = "{}/{}/model_data".format(self.bucket.s3_root,
+                                           self.bucket.bucket_name)
+        self.assertEqual(self.bucket.s3_local_base, expect)
+
+    def test_use_s3_mount_returns_true(self):
+        self.assertEqual(self.bucket.use_s3_mount, True)
+
+    def test_do_download_returns_false(self):
+        self.assertEqual(self.bucket.do_download, False)
+
+    def test_base_path_local(self):
+        self.assertEqual(self.bucket.base_path_local, os.path.expanduser("~/SEA_data/model_data"))

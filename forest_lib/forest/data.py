@@ -192,11 +192,7 @@ def get_available_times(datasets, var1):
     return available_times
 
 
-def get_available_datasets(s3_base,
-                           s3_local_base,
-                           use_s3_mount,
-                           base_path_local,
-                           do_download,
+def get_available_datasets(bucket,
                            dataset_template,
                            days_since_period_start,
                            num_days,
@@ -220,11 +216,11 @@ def get_available_datasets(s3_base,
             fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
             fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(ds_name,
                                                                        fname1,
-                                                                       s3_base,
-                                                                       s3_local_base,
-                                                                       use_s3_mount,
-                                                                       base_path_local,
-                                                                       do_download,
+                                                                       bucket.s3_base,
+                                                                       bucket.s3_local_base,
+                                                                       bucket.use_s3_mount,
+                                                                       bucket.base_path_local,
+                                                                       bucket.do_download,
                                                                        dataset_template[ds_name]['var_lookup'],
                                                                        )
 
