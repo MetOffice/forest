@@ -288,10 +288,8 @@ class ForestDataset(object):
         self.file_name = file_name
         self.bucket = bucket
         self.s3_url = self.bucket.s3_url(self.file_name)
-        self.s3_local_path = self.bucket.s3_local_path(self.file_name)
         self.base_local_path = bucket.base_path_local
-        self.local_path = os.path.join(self.base_local_path,
-                                       self.file_name)
+        self.local_path = bucket.local_path(self.file_name)
 
         # set up time loaders
 
@@ -319,10 +317,7 @@ class ForestDataset(object):
             self.loaders[accum_precip_var] = functools.partial(self.accum_precip_loader, ws1)
 
         self.data = dict([(v1, None) for v1 in self.loaders.keys()])
-        if self.bucket.use_s3_mount:
-            self.path_to_load = self.s3_local_path
-        else:
-            self.path_to_load = self.local_path
+        self.path_to_load = self.bucket.path_to_load(self.file_name)
 
         # set up caching and timer decoration
         self.get_data = \
