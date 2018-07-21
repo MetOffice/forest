@@ -445,7 +445,6 @@ class ForestDataset(object):
             self.loaders[accum_precip_var] = functools.partial(self.accum_precip_loader, ws1)
 
         self.data = dict([(v1, None) for v1 in self.loaders.keys()])
-        self.path_to_load = self.bucket.path_to_load(self.file_name)
 
         self.ts_var_names = dict([(v1, v1) for v1 in VAR_NAMES])
         self.ts_loaders = dict([(v1, self._basic_ts_load) for v1 in VAR_NAMES])
@@ -484,7 +483,7 @@ class ForestDataset(object):
 
         ic1 = iris.Constraint(cube_func=cf1)
 
-        cube1 = iris.load_cube(self.path_to_load, ic1)
+        cube1 = self.bucket.load_cube(self.file_name, ic1)
         self.times[var_name] = cube1.coord('time').points
         self.data[var_name] =  dict([(t1,None) for t1 in self.times[var_name]] + [('all',None)])
 
@@ -557,6 +556,10 @@ class ForestDataset(object):
         """
         self.loaders[var_name](var_name, selected_time)
 
+    @property
+    def path_to_load(self):
+        return self.bucket.path_to_load(self.file_name)
+
     def basic_cube_load(self, var_name, time_ix):
         """Load simple cubes.
 
@@ -572,7 +575,6 @@ class ForestDataset(object):
                            field_dict=field_dict,
                            time_ix=time_ix,
                            lat_long_coord=None)
-
         self.data[var_name][time_ix] = dc1
 
     def wind_speed_loader(self, var_name, time_ix):
@@ -648,7 +650,7 @@ class ForestDataset(object):
         ic1 = iris.Constraint(cube_func=cf1,
                               coord_values=coord_constraint_dict)
 
-        precip_cube1 = iris.load_cube(self.path_to_load, ic1)
+        precip_cube1 = self.bucket.load_cube(self.file_name, ic1)
         precip_cube1.convert_units(UNIT_DICT['precipitation']) # convert to average hourly accumulation
         precip_cube1.data *= 3 #multiply by 3 to get 3 hour accumulation
         if precip_cube1.coord('time').shape[0] == 1:
