@@ -367,18 +367,10 @@ class ForestDataset(object):
             print('loading data for time {0}'.format(time_ix))
 
         if self.times[var_name] is None:
-            if self.bucket.file_exists(self.file_name):
-                # get data from aws s3 storage
-                if self.bucket.do_download:
-                    self.bucket.retrieve_file(self.file_name)
-
-                self.load_times(var_name)
+            self.load_times(var_name)
 
         if self.data[var_name][selected_time] is None:
             if self.bucket.file_exists(self.file_name):
-                # Get data from aws s3 storage
-                if self.bucket.do_download:
-                    self.bucket.retrieve_file(self.file_name)
                 # Load the data into memory from file (will only load 
                 # metadata initially)
                 self.load_data(var_name, time_ix)
