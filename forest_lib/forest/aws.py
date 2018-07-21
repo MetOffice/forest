@@ -1,5 +1,6 @@
 """Amazon Web Services infrastructure"""
 import os
+import iris
 from . import util
 
 
@@ -66,3 +67,7 @@ class S3Bucket(object):
             os.makedirs(directory)
         util.download_from_s3(self.s3_url(file_name),
                               self.local_path(file_name))
+
+    def load_cube(self, file_name, constraint):
+        """Helper method to perform iris.Cube I/O"""
+        return iris.load_cube(self.path_to_load(file_name), constraint)
