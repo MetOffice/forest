@@ -391,7 +391,6 @@ class ForestDataset(object):
     -------
     - __init__() -- Factory method.
     - __str__() -- String method.
-    - check_data() -- Check data exists.
     - get_data() -- Call self.retrieve_data() and self.load_data().
     - load_data() -- Call loader methods.
     - basic_cube_load() -- Load simple data into a cube.
@@ -408,7 +407,6 @@ class ForestDataset(object):
     - file_name -- Str; Specifies netCDF file name.
     - loaders -- Dict; Dictionary of loader functions for vars.
     - data -- Dict; Loaded data cubes.
-    - path_to_load -- Str; local/S3 path, based on do_download.
     """
     TIME_INDEX_ALL = 'all'
 
