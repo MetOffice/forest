@@ -4,6 +4,7 @@ import unittest.mock
 import os
 import sys
 import forest.aws
+import forest.data
 
 
 class TestS3Bucket(unittest.TestCase):
@@ -102,3 +103,51 @@ class TestS3BucketIO(unittest.TestCase):
         url = self.bucket.s3_url(self.file_name)
         local_file = self.bucket.local_path(self.file_name)
         util.download_from_s3.assert_called_once_with(url, local_file)
+
+
+class TestSampleCubes(unittest.TestCase):
+    """unit test synthetic data"""
+    def setUp(self):
+        self.file_name = None
+        self.constraint = None
+        self.samples = forest.aws.SampleCubes()
+        self.cube = self.samples.load_cube(self.file_name, self.constraint)
+
+    def test_path_to_load_function_exists(self):
+        self.samples.path_to_load(self.file_name)
+
+    def test_load_cube_has_time_dimension(self):
+        self.cube.coord('time').points
+
+    def test_load_cube_has_at_least_two_time_points(self):
+        self.cube.coord('time').points[1]
+
+    def test_load_cube_returns_cube_with_latitude_dimcoord(self):
+        self.cube.coords('latitude')[0].points
+
+    def test_load_cube_returns_cube_with_longitude_dimcoord(self):
+        self.cube.coords('longitude')[0].points
+
+    def test_load_cube_has_attributes_stash_section(self):
+        self.cube.attributes['STASH'].section
+
+    def test_get_available_times(self):
+        """sample data should satisfy forest.data.get_available_times"""
+        config = "ga6"
+        file_name = None
+        bucket = self.samples
+        variable = "precipitation"  # Hard-coded Forest key
+        var_lookup = {
+            variable: {
+                "stash_section": "section"
+            }
+        }
+        datasets = {
+            "name": {
+                "data": forest.data.ForestDataset(config,
+                                                  file_name,
+                                                  bucket,
+                                                  var_lookup)
+            }
+        }
+        forest.data.get_available_times(datasets, variable)

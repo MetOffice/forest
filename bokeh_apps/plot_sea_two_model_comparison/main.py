@@ -38,10 +38,14 @@ def add_main_plot(main_layout, bokeh_doc):
 def main(bokeh_id):
     '''
     '''
-    bucket = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
-                                 bucket_name='stephen-sea-public-london',
-                                 use_s3_mount=True,
-                                 do_download=False)
+    file_system = "synthetic"
+    if file_system == "aws":
+        bucket = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
+                                     bucket_name='stephen-sea-public-london',
+                                     use_s3_mount=True,
+                                     do_download=False)
+    else:
+        bucket = forest.aws.SampleCubes()
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {

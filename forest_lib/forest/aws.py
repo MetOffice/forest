@@ -1,7 +1,47 @@
 """Amazon Web Services infrastructure"""
 import os
+import numpy as np
 import iris
 from . import util
+
+
+class SampleCubes(object):
+    """Cube generator
+
+    Useful for developing Forest prototypes since there
+    is no communication with AWS or the file system
+    """
+    def file_exists(self, file_name):
+        return True
+
+    def path_to_load(self, file_name):
+        return file_name
+
+    def load_cube(self, file_name, constraint):
+        n = 5
+        time = iris.coords.DimCoord([0, 1],
+                standard_name="time",
+                units="seconds since 1981-01-01 00:00:00 utc")
+        latitude = iris.coords.DimCoord(np.linspace(-90, 90, n),
+                                        standard_name="latitude",
+                                        units="degrees")
+        longitude = iris.coords.DimCoord(np.linspace(-180, 180, n),
+                                         standard_name="longitude",
+                                         units="degrees")
+        class Code(object):
+            section = "section"
+        attributes = {
+            "STASH": Code()
+        }
+        return iris.cube.Cube(
+            np.zeros((2, n, n)),
+            dim_coords_and_dims=[
+                (time, 0),
+                (latitude, 1),
+                (longitude, 2)
+            ],
+            attributes=attributes
+        ).extract(constraint)
 
 
 class S3Bucket(object):
