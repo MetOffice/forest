@@ -69,5 +69,11 @@ class S3Bucket(object):
                               self.local_path(file_name))
 
     def load_cube(self, file_name, constraint):
-        """Helper method to perform iris.Cube I/O"""
+        """Helper method to perform iris.Cube I/O
+
+        .. note:: This method makes ForestDataset file system
+                  independent
+        """
+        if self.do_download and self.file_exists(file_name):
+            self.retrieve_file(file_name)
         return iris.load_cube(self.path_to_load(file_name), constraint)
