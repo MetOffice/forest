@@ -58,13 +58,22 @@ further details
 ## Testing
 
 The test suite uses Python's builtin unittest module to test the Python
-source code and node package manager (npm) to unit test the JavaScript
-callback code
+source code and node package manager [https://www.npmjs.com/](npm) to unit test the
+JavaScript callback code
 
 ```sh
 > python -m unittest discover
 ```
 
-**Note:** The Python unit test suite has a test that calls `npm test`
-          to run the JavaScript unit tests
+**Note:** To test **forest** it must be available to the Python interpreter
+          invoking the tests. A simple way to achieve this is to include
+          the forest directory in your `PYTHONPATH`
+
+### Node package manager
+
+The Python unit test suite has a test that calls `npm test` to run the
+JavaScript unit tests. If `npm` is not available this test will fail. If
+the `node\_modules/` directory is missing inside `forestjs/`, run
+`npm install` to install `mocha` and `chai` libraries needed by `npm test`
+to run the JS unit tests
 
