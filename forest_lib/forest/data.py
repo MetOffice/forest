@@ -468,6 +468,12 @@ class ForestDataset(object):
 
     def _basic_time_load(self, var_name):
         """
+        Has several responsibilities:
+
+        * Constrains cube to be only variables with correct
+          stash section and item codes
+        * Populates self.times[var_name] = [t0, t1, ...]
+        * Populates self.data[var_name] = {t0: None, t1: None, ...}
         """
         field_dict = self.var_lookup[var_name]
         cf1 = lambda cube1: \
