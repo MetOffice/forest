@@ -25,6 +25,10 @@ from functools import wraps
 __all__ = ["Zoom"]
 
 
+class Overlay(object):
+    """Maintains high-resolution patch"""
+
+
 class throttle(object):
     """Decorator to limit frequency of method calls"""
     def __init__(self, milliseconds=0):

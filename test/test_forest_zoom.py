@@ -5,6 +5,12 @@ import bokeh.plotting
 import forest.zoom
 
 
+class TestOverlay(unittest.TestCase):
+    """Maintain high-resolution patch"""
+    def test_can_be_constructed(self):
+        forest.zoom.Overlay()
+
+
 class FakeCallback(object):
     """Bokeh callback signature but logs calls"""
     def __init__(self):
