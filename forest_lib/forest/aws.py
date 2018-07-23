@@ -6,10 +6,10 @@ from . import util
 
 
 class SyntheticBucket(object):
-    """Cube generator
+    """Synthetic file system
 
     Useful for developing Forest prototypes since there
-    is no communication with AWS or the file system
+    is no communication with AWS or a real file system
     """
     def file_exists(self, file_name):
         return True
