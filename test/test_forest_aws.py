@@ -150,11 +150,3 @@ class TestSyntheticBucket(unittest.TestCase):
             }
         }
         forest.data.get_available_times(datasets, variable)
-
-    def test_dataset_get_times(self):
-        file_name = "file.nc"
-        bucket = forest.aws.SyntheticBucket()
-        var_lookup = {}
-        dataset = forest.data.ForestDataset(file_name,
-                                            bucket,
-                                            var_lookup)
