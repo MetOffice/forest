@@ -5,7 +5,7 @@ import iris
 from . import util
 
 
-class SampleCubes(object):
+class SyntheticBucket(object):
     """Cube generator
 
     Useful for developing Forest prototypes since there
