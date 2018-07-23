@@ -73,7 +73,7 @@ JavaScript callback code
 
 The Python unit test suite has a test that calls `npm test` to run the
 JavaScript unit tests. If `npm` is not available this test will fail. If
-the **node_modules** directory is missing inside **forestjs/**, run
+the **node_modules** directory is missing inside the **forestjs** directory, run
 `npm install` inside **forestjs** to install `mocha` and `chai` libraries
 needed by `npm test` to run the JS unit tests
 
