@@ -11,19 +11,6 @@ import forest.control
 import forest.data
 
 
-def add_main_plot(main_layout, bokeh_doc):
-    '''logic to detect cli or server invocation of bokeh '''
-    print('finished creating, executing document add callback')
-    try:
-        bokeh_mode = os.environ['BOKEH_MODE']
-    except:
-        bokeh_mode = 'server'
-    if bokeh_mode == 'server':
-        bokeh_doc.add_root(main_layout)
-    elif bokeh_mode == 'cli':
-        bokeh.io.show(main_layout)
-
-
 # Extract and Load
 bucket_name = 'stephen-sea-public-london'
 server_address = 'https://s3.eu-west-2.amazonaws.com'
@@ -99,7 +86,6 @@ def main(bokeh_id):
     for var1 in forest.data.PRECIP_ACCUM_VARS:
         plot_type_time_lookups.update({var1:var1})
 
-    bokeh_doc = bokeh.plotting.curdoc()
 
     #Create regions
     region_dict = forest.util.SEA_REGION_DICT
@@ -185,13 +171,21 @@ def main(bokeh_id):
                                                colorbar_widget,
                                                [stats_left, stats_right],
                                                region_dict,
-                                               bokeh_doc,
                                                s3_local_base_feedback,
                                                bokeh_id,
                                                )
 
-    add_main_plot(control1.main_layout, bokeh_doc)
-    bokeh_doc.title = 'Two model comparison'
+    # Attach bokeh layout to current document
+    root = control1.main_layout
+    try:
+        bokeh_mode = os.environ['BOKEH_MODE']
+    except:
+        bokeh_mode = 'server'
+    if bokeh_mode == 'server':
+        bokeh.plotting.curdoc().add_root(root)
+    elif bokeh_mode == 'cli':
+        bokeh.io.show(root)
+    bokeh.plotting.curdoc().title = 'Two model comparison'
 
 
 main(__name__)

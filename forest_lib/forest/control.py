@@ -84,7 +84,6 @@ class ForestController(object):
                  colorbar_widget,
                  stats_widgets,
                  region_dict,
-                 bokeh_doc,
                  feedback_dir,
                  bokeh_id,
                  ):
@@ -117,7 +116,6 @@ class ForestController(object):
         self.num_times = self.available_times.shape[0]
         self.colorbar_div = colorbar_widget
         self.stats_widgets = stats_widgets
-        self.bokeh_doc = bokeh_doc
         self.bokeh_id = bokeh_id
         self.feedback_dir = feedback_dir
         self.feedback_visible = False
