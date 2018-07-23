@@ -5,9 +5,15 @@ Image comparison tools
 
 Tools to compare RGBA images on a pixel by pixel basis
 
-The tools in this module are designed to work with
-:meth:`bokeh.plotting.figure.Figure.image_rgba` GlyphRenderers and
-ColumnDataSources that drive those images
+References to the :class:`bokeh.models.sources.ColumnDataSource` sources
+related to the left/right images should be provided by the user. This
+is typically the responsibility of some glue code, either a ``main.py``
+or some other calling code
+
+.. note:: The algorithms and data structures expose methods
+          that can be attached to bokeh events. They are
+          unaware of the calling code architecture and simply
+          edit appropriate RGBA values
 
 Slider
 ------
