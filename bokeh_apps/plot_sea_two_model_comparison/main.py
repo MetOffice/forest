@@ -45,7 +45,7 @@ def main(bokeh_id):
                                      use_s3_mount=True,
                                      do_download=False)
     else:
-        bucket = forest.aws.SampleCubes()
+        bucket = forest.aws.SyntheticBucket()
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {

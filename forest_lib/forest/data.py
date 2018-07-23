@@ -252,7 +252,6 @@ class ForestDataset(object):
 
     Attributes
     ----------
-    - config_name -- Str; Name of data configuration.
     - var_lookup -- Dict; Links variable names to data keys.
     - file_name -- Str; Specifies netCDF file name.
     - loaders -- Dict; Dictionary of loader functions for vars.
@@ -261,12 +260,10 @@ class ForestDataset(object):
     TIME_INDEX_ALL = 'all'
 
     def __init__(self,
-                 config,
                  file_name,
                  bucket,
                  var_lookup):
         """ForestDataset factory function"""
-        self.config_name = config
         self.var_lookup = var_lookup
         self.file_name = file_name
         self.bucket = bucket
@@ -457,7 +454,7 @@ class ForestDataset(object):
         """
 
         cube_pow = iris.analysis.maths.exponentiate
-        print('calculating wind speed for {0}'.format(self.config_name))
+        print('calculating wind speed')
         cube_x_wind = self.get_data('x_wind', time_ix)
         cube_y_wind = self.get_data('y_wind', time_ix)
 
