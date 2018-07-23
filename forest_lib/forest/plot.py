@@ -42,7 +42,7 @@ class ForestPlot(object):
     def __init__(self,
                  dataset,
                  model_run_time,
-                 po1,
+                 plot_options,
                  figname,
                  plot_var,
                  conf1,
@@ -59,7 +59,7 @@ class ForestPlot(object):
         self.region_dict = rd1
         self.main_plot = None
         self.current_time = init_time
-        self.plot_options = po1
+        self.plot_options = plot_options
         self.dataset = dataset
         self.model_run_time = model_run_time
         self.figure_name = figname

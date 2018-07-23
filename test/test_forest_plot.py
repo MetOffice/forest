@@ -31,9 +31,22 @@ class TestForestPlot(unittest.TestCase):
                 "data_type_name": None
             }
         }
+        plot_options = {
+            "mslp": {
+                "cmap": None,
+                "norm": None
+            }
+        }
+        unit_dict_display = {
+            "mslp": "display units"
+        }
+        model_run_time = "2018-01-01 00:00:00"
         args = self.args(plot_var="mslp",
                          conf1=config,
-                         dataset=dataset)
+                         dataset=dataset,
+                         plot_options=plot_options,
+                         unit_dict_display=unit_dict_display,
+                         model_run_time=model_run_time)
         forest_plot = forest.plot.ForestPlot(*args)
         forest_plot.create_plot()
 
@@ -62,7 +75,10 @@ class TestForestPlot(unittest.TestCase):
     def args(self,
              plot_var='plot_var',
              conf1='current_config',
-             dataset=None):
+             dataset=None,
+             plot_options=None,
+             unit_dict_display=None,
+             model_run_time=None):
         """Helper to construct ForestPlot"""
         if dataset is None:
             dataset = {
@@ -70,20 +86,17 @@ class TestForestPlot(unittest.TestCase):
                     'data_type_name': None
                 }
             }
-        model_run_time = None
-        po1 = None
         figname = None
         reg1 = None
         rd1 = {
-            reg1: [None, None, None, None]
+            reg1: [0, 1, 0, 1]
         }
         unit_dict = None
-        unit_dict_display = None
         app_path = None
         init_time = None
         return (dataset,
                 model_run_time,
-                po1,
+                plot_options,
                 figname,
                 plot_var,
                 conf1,
