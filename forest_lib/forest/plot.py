@@ -17,6 +17,9 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
+import numpy as np
+import scipy.ndimage
+
 
 def rgba_from_mappable(mappable, shape2d):
     """Convert matplotlib scalar mappable to RGBA
@@ -131,17 +134,35 @@ class ForestPlot(object):
     @property
     def current_img_array(self):
         """current image array taken from matplotlib figure canvas"""
+        print("current_img_array accessed")
         rgba_source = "mappable"
         if self.current_figure is None:
             return None
         if self._shape2d is None:
             return None
-        if rgba_source == "figure":
-            return forest.util.get_image_array_from_figure(self.current_figure)
+        if rgba_source == "canvas":
+            array = forest.util.get_image_array_from_figure(self.current_figure)
+            print(array.shape)
+            return array
         else:
             # HACK: self._shape2d is populated by self.get_data()
             ni, nj = self._shape2d
-            return rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
+            array = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
+
+            # Smooth high resolution imagery
+            max_ni, max_nj = 800, 600
+            ni, nj, _ = array.shape
+            if (ni > max_ni) or (nj > max_nj):
+                # int(round(factor * n)) = max_n
+                print("smoothing imagery")
+                factor = fi, fj = (max_ni / ni, max_nj / nj)
+                output_array = np.zeros((max_ni, max_nj, 4), dtype=np.uint8)
+                for i in range(4):
+                    output_array[:, :, i] = scipy.ndimage.zoom(array[:, :, i], factor)
+                array = output_array
+
+            print(array.shape)
+            return array
 
     def _set_config_value(self, new_config):
 
