@@ -38,7 +38,7 @@ def add_main_plot(main_layout, bokeh_doc):
 def main(bokeh_id):
     '''
     '''
-    file_system = "synthetic"
+    file_system = "aws"
     if file_system == "aws":
         bucket = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
                                      bucket_name='stephen-sea-public-london',

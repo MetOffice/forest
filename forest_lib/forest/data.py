@@ -214,8 +214,7 @@ def get_available_datasets(bucket,
         model_run_data_present = True
         for ds_name in dataset_template.keys():
             fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
-            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(ds_name,
-                                                                       fname1,
+            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(fname1,
                                                                        bucket,
                                                                        dataset_template[ds_name]['var_lookup'])
 
