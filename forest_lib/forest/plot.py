@@ -18,6 +18,21 @@ import forest.util
 import forest.data
 
 
+def rgba_from_mappable(mappable, shape2d):
+    """Convert matplotlib scalar mappable to RGBA
+
+    .. note:: 2D shape needs to be provided to reconstruct
+              image array
+
+    :param mappable: matplotlib ScalarMappable instance
+    :param shape2d: tuple describing 2D shape of image
+    :returns: array np.uint8 suitable for use with image_rgba()
+    """
+    ni, nj = shape2d
+    return mappable.to_rgba(mappable.get_array(),
+                            bytes=True).reshape((ni, nj, 4))
+
+
 def coastlines(figure, scale="110m", extent=None):
     """Add cartopy coastline to a figure
 
@@ -111,7 +126,22 @@ class ForestPlot(object):
         self.coast_res = '50m'
         self.display_mode = ForestPlot.MODE_LOADING
 
+        self._shape2d = None
 
+    @property
+    def current_img_array(self):
+        """current image array taken from matplotlib figure canvas"""
+        rgba_source = "mappable"
+        if self.current_figure is None:
+            return None
+        if self._shape2d is None:
+            return None
+        if rgba_source == "figure":
+            return forest.util.get_image_array_from_figure(self.current_figure)
+        else:
+            # HACK: self._shape2d is populated by self.get_data()
+            ni, nj = self._shape2d
+            return rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
 
     def _set_config_value(self, new_config):
 
@@ -219,6 +249,10 @@ class ForestPlot(object):
         else:
             data_cube = config_data.get_data(var_name=self.current_var,
                                              selected_time=self.current_time)
+
+        # HACK: cache image array shape after get_data()
+        self._shape2d = data_cube.data.shape
+
         return data_cube
 
     def update_precip(self):
@@ -738,10 +772,6 @@ class ForestPlot(object):
         '''
 
         '''
-
-        self.current_img_array = forest.util.get_image_array_from_figure(
-            self.current_figure)
-
         cur_region = self.region_dict[self.current_region]
 
         # Set figure navigation limits
@@ -816,8 +846,6 @@ class ForestPlot(object):
                   (cur_region[3] - cur_region[2]), 2))
 
         if self.bokeh_img_ds:
-            self.current_img_array = forest.util.get_image_array_from_figure(
-                self.current_figure)
             self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
             self.bokeh_img_ds.data[u'x'] = [cur_region[2]]
             self.bokeh_img_ds.data[u'y'] = [cur_region[0]]
@@ -827,9 +855,6 @@ class ForestPlot(object):
 
         else:
             try:
-                self.current_img_array = \
-                    forest.util.get_image_array_from_figure(
-                        self.current_figure)
                 self.create_bokeh_img()
                 self.bokeh_figure.title.text = self.current_title
             except:
