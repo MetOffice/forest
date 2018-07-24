@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import iris
 import forest.plot
+import matplotlib
 
 
 class FakeDataset(object):
@@ -49,6 +50,35 @@ class TestForestPlot(unittest.TestCase):
                          model_run_time=model_run_time)
         forest_plot = forest.plot.ForestPlot(*args)
         forest_plot.create_plot()
+
+    def test_create_plot_sets_main_plot(self):
+        config = "config"
+        dataset = {
+            config: {
+                "data": FakeDataset(),
+                "data_type_name": None
+            }
+        }
+        plot_options = {
+            "mslp": {
+                "cmap": None,
+                "norm": None
+            }
+        }
+        unit_dict_display = {
+            "mslp": "display units"
+        }
+        model_run_time = "2018-01-01 00:00:00"
+        args = self.args(plot_var="mslp",
+                         conf1=config,
+                         dataset=dataset,
+                         plot_options=plot_options,
+                         unit_dict_display=unit_dict_display,
+                         model_run_time=model_run_time)
+        forest_plot = forest.plot.ForestPlot(*args)
+        forest_plot.create_plot()
+        self.assertIsInstance(forest_plot.main_plot,
+                              matplotlib.collections.QuadMesh)
 
     def test_plot_funcs_keys(self):
         forest_plot = forest.plot.ForestPlot(*self.args())
