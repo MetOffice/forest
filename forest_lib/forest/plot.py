@@ -18,6 +18,27 @@ import forest.util
 import forest.data
 
 
+def coastlines(figure, scale="110m", extent=None):
+    """Add cartopy coastline to a figure
+
+    Translates cartopy.feature.COASTLINE object
+    into collection of bokeh lines
+
+    .. note:: This method assumes the map projection
+              is cartopy.crs.PlateCarreee
+
+    :param figure: bokeh figure instance
+    :param scale: cartopy coastline scale '110m', '50m' or '10m'
+    :param extent: x_start, x_end, y_start, y_end
+    """
+    coastline = cartopy.feature.COASTLINE
+    coastline.scale = scale
+    for geometry in coastline.intersecting_geometries(extent):
+        figure.line(*geometry[0].xy,
+                    color='black',
+                    level='overlay')
+
+
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom']
 
 class MissingDataError(Exception):
@@ -220,7 +241,6 @@ class ForestPlot(object):
         '''
         data_cube = self.get_data()
         self.update_coords(data_cube)
-        self.current_axes.coastlines(resolution=self.coast_res)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
@@ -270,15 +290,6 @@ class ForestPlot(object):
                                          norm=self.plot_options[
                                              self.current_var]['norm']
                                          )
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
-
         self.quiver_plot = \
             self.current_axes.quiver(
                 self.get_data('wv_X').data,
@@ -356,15 +367,6 @@ class ForestPlot(object):
         self.current_axes.clabel(self.mslp_contour,
                                  inline=False,
                                  fmt=self.mslp_contour_label_dict)
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-
-        self.current_axes.add_feature(coastline_50m)
         self.update_title(wind_speed_cube)
 
     def update_wind_streams(self):
@@ -433,14 +435,6 @@ class ForestPlot(object):
         # the plot is updated
         pl2 = list(self.current_axes.patches)
         self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
         self.update_title(wind_speed_cube)
         self.update_stats(wind_speed_cube)
 
@@ -476,14 +470,6 @@ class ForestPlot(object):
                                          norm=self.plot_options[
                                              self.current_var]['norm']
                                          )
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
         self.update_title(at_cube)
         self.update_stats(at_cube)
 
@@ -517,14 +503,6 @@ class ForestPlot(object):
                                          norm=self.plot_options[
                                              self.current_var]['norm']
                                          )
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
         self.update_title(ap_cube)
         self.update_stats(ap_cube)
 
@@ -559,14 +537,6 @@ class ForestPlot(object):
                                          norm=self.plot_options[
                                              self.current_var]['norm']
                                          )
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
         self.update_title(cloud_cube)
         self.update_stats(cloud_cube)
 
@@ -603,16 +573,6 @@ class ForestPlot(object):
                                                           self.data_bounds[0],
                                                           self.data_bounds[1]),
                                                   origin='upper')
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='g',
-                                                            alpha=0.5,
-                                                            facecolor='none')
-
-        self.current_axes.add_feature(coastline_50m)
         self.current_axes.set_extent((self.data_bounds[2],
                                       self.data_bounds[3],
                                       self.data_bounds[0],
@@ -653,16 +613,6 @@ class ForestPlot(object):
                                          norm=self.plot_options[
                                              self.current_var]['norm']
                                          )
-
-        # Add coastlines to the map created by contourf
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='g',
-                                                            alpha=0.5,
-                                                            facecolor='none')
-
-        self.current_axes.add_feature(coastline_50m)
         self.current_axes.set_extent((self.data_bounds[2],
                                       self.data_bounds[3],
                                       self.data_bounds[0],
@@ -822,6 +772,15 @@ class ForestPlot(object):
                                    text_baseline="middle",
                                    text_align="center",
                                    )
+
+        # Add cartopy coastline to bokeh figure
+        x_start = cur_region[2]
+        x_end = cur_region[3]
+        y_start = cur_region[0]
+        y_end = cur_region[1]
+        coastlines(self.bokeh_figure,
+                   scale=self.coast_res,
+                   extent=(x_start, x_end, y_start, y_end))
 
         self.bokeh_figure.title.text = self.current_title
 
