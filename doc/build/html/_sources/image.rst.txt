@@ -1,0 +1,4 @@
+
+.. automodule:: forest.image
+    :members:
+

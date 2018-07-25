@@ -9,6 +9,7 @@ import bokeh.plotting
 
 import forest.data
 import forest.feedback
+import forest.image
 
 CONFIG_DIR = os.path.dirname(__file__)
 FEEDBACK_CONF_FILENAME = 'feedback_fields.conf'
@@ -83,7 +84,6 @@ class ForestController(object):
                  colorbar_widget,
                  stats_widgets,
                  region_dict,
-                 bokeh_doc,
                  feedback_dir,
                  bokeh_id,
                  ):
@@ -116,7 +116,6 @@ class ForestController(object):
         self.num_times = self.available_times.shape[0]
         self.colorbar_div = colorbar_widget
         self.stats_widgets = stats_widgets
-        self.bokeh_doc = bokeh_doc
         self.bokeh_id = bokeh_id
         self.feedback_dir = feedback_dir
         self.feedback_visible = False
@@ -126,28 +125,51 @@ class ForestController(object):
 
 
     def create_widgets(self):
+        '''
+        '''
+        class Label(object):
+            def __init__(self, template):
+                self.template = template
+                self.drop_down = None
 
-        '''
-        
-        '''
+            def first(self, items):
+                """convenient method"""
+                return self.render(items[0][0])
+
+            def second(self, items):
+                """convenient method"""
+                return self.render(items[1][0])
+
+            def listen_to(self, drop_down):
+                self.drop_down = drop_down
+                self.drop_down.on_change("value", self.on_change)
+
+            def on_change(self, attr, old, new):
+                for label, value in self.drop_down.menu:
+                    if value == new:
+                        self.drop_down.label = self.render(label)
+
+            def render(self, label):
+                return self.template.format(label)
 
         # Create variable selection dropdown widget
         variable_menu_list = \
             create_dropdown_opt_list_from_dict(VARIABLE_DD_DICT,
                                                self.plot_names)
+        label = Label("Variable: {}")
         self.model_var_dd = \
-            bokeh.models.widgets.Dropdown(label='Variable to visualise',
+            bokeh.models.widgets.Dropdown(label=label.first(variable_menu_list),
                                           menu=variable_menu_list,
                                           button_type='warning')
+        label.listen_to(self.model_var_dd)
         self.model_var_dd.on_change('value', self.on_var_change)
 
         # Create previous timestep button widget
         self.time_prev_button = \
-            bokeh.models.widgets.Button(label='Prev',
-                                        button_type='warning',
-                                        width=100)
+            bokeh.models.widgets.Button(label='Previous validity time',
+                                        button_type='warning')
         self.time_prev_button.on_click(self.on_time_prev)
-        
+
         # Create time selection slider widget
         self.data_time_slider = \
             bokeh.models.widgets.Slider(start=0,
@@ -160,51 +182,88 @@ class ForestController(object):
 
         # Create next timestep button widget
         self.time_next_button = \
-            bokeh.models.widgets.Button(label='Next',
-                                        button_type='warning',
-                                        width=100)
+            bokeh.models.widgets.Button(label='Next validity time',
+                                        button_type='warning')
         self.time_next_button.on_click(self.on_time_next)
 
 
         # select model run
+        label = Label("Model run: {}")
         model_run_list = create_model_run_list(self.datasets)
         self.model_run_dd = \
-            bokeh.models.widgets.Dropdown(label='Model run',
+            bokeh.models.widgets.Dropdown(label=label.first(model_run_list),
                                           menu=model_run_list,
                                           button_type='warning')
+        label.listen_to(self.model_run_dd)
         self.model_run_dd.on_change('value', self._on_model_run_change)
-        
+
         # Create region selection dropdown menu region
+        label = Label("Region: {}")
         region_menu_list = \
             create_dropdown_opt_list_from_dict(REGION_DD_DICT,
                                                self.region_dict.keys())
         self.region_dd = bokeh.models.widgets.Dropdown(menu=region_menu_list,
-                                                       label='Region',
+                                                       label=label.first(region_menu_list),
                                                        button_type='warning')
+        label.listen_to(self.region_dd)
         self.region_dd.on_change('value', self.on_region_change)
 
         # Create left figure model selection dropdown menu widget
         dataset_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
                                                                self.datasets[self.current_fcast_time].keys())
+        label = Label("Left image: {}")
         self.left_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label='Left display',
+                                          label=label.first(dataset_menu_list),
                                           button_type='warning')
+        label.listen_to(self.left_model_dd)
         self.left_model_dd.on_change('value',
                                      functools.partial(self.on_config_change,
                                                        0))
         # Create right figure model selection dropdown menu widget
+        label = Label("Right image: {}")
         self.right_model_dd = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label='Right display',
+                                          label=label.second(dataset_menu_list),
                                           button_type='warning')
+        label.listen_to(self.right_model_dd)
         self.right_model_dd.on_change('value',
                                       functools.partial(self.on_config_change,
                                                         1))
+        # Left/Right toggle UI
+        bokeh_figure = self.bokeh_imgs[0]
+        left_image = self.plots[0].bokeh_img_ds
+        right_image = self.plots[1].bokeh_img_ds
+        slider = forest.image.Slider(left_image, right_image)
+        slider.add_figure(bokeh_figure)
+        toggle = forest.image.Toggle(left_image, right_image)
+        toggle.show_left()
+        def left_right_callback(attr, old, new):
+            if new == 0:
+                toggle.show_left()
+            elif new == 1:
+                toggle.show_right()
+        self.left_right_toggle = bokeh.models.RadioButtonGroup(
+                                     labels=["Left image", "Right image", "Slider tool"],
+                                     active=0
+                                 )
+        self.left_right_toggle.on_change("active", left_right_callback)
+        custom_js = bokeh.models.CustomJS(args=dict(hover_tool=slider.hover_tool),
+        code="""
+            // Enable/disable HoverTool using RadioButtonGroup active index
+            // Note: This is only available through BokehJS, there is no
+            //       Python attribute to control HoverTool active state
+            if (cb_obj.active === 2) {
+                hover_tool.active = true;
+            } else {
+                hover_tool.active = false;
+            }
+        """)
+        self.left_right_toggle.js_on_change("active", custom_js)
 
         # Layout widgets
-        self.major_config_row = bokeh.layouts.row(self.model_var_dd, 
-                                                  self.region_dd)
+        sizing_mode = "fixed"
+        sizing_mode = "scale_width"
 
         config_path = os.path.join(CONFIG_DIR, FEEDBACK_CONF_FILENAME)
 
@@ -218,36 +277,69 @@ class ForestController(object):
             bokeh.models.widgets.Toggle(label='Show feedback form',
                                         active=self.feedback_visible)
         self.uf_vis_toggle.on_click(self._on_uf_vis_toggle)
-        self.uf_vis_layout = bokeh.layouts.column()
 
-        self.time_row = \
-            bokeh.layouts.row(self.time_prev_button,
-                              bokeh.models.Spacer(width=20, height=60),
-                              self.data_time_slider,
-                              bokeh.models.Spacer(width=20, height=60),
-                              self.time_next_button,
-                              bokeh.models.Spacer(width=20, height=60),
-                              self.model_run_dd,
-                              )
-        self.minor_config_row = bokeh.layouts.row(self.left_model_dd, 
-                                                  self.right_model_dd)
-        self.plots_row = bokeh.layouts.row(*self.bokeh_imgs)
+        self.uf_vis_layout = bokeh.layouts.column(sizing_mode=sizing_mode)
+        self.main_layout = self.layout_widgets(self.bokeh_imgs,
+                                               self.left_right_toggle,
+                                               self.left_model_dd,
+                                               self.right_model_dd,
+                                               self.model_var_dd,
+                                               self.region_dd,
+                                               self.time_prev_button,
+                                               self.time_next_button,
+                                               self.data_time_slider,
+                                               self.model_run_dd,
+                                               self.stats_widgets,
+                                               self.colorbar_div,
+                                               self.uf_vis_toggle,
+                                               self.uf_vis_layout,
+                                               sizing_mode=sizing_mode)
 
-        for fig1 in self.bokeh_imgs:
-            fig1.on_event(bokeh.events.Tap, self._on_tap)
+    @staticmethod
+    def layout_widgets(bokeh_figures,
+                       left_right_toggle,
+                       left_model_drop_down,
+                       right_model_drop_down,
+                       model_variable_drop_down,
+                       region_drop_down,
+                       time_previous_button,
+                       time_next_button,
+                       time_slider,
+                       model_run_drop_down,
+                       stats_widgets,
+                       colorbar_div,
+                       user_feedback_toggle,
+                       user_feedback_layout,
+                       sizing_mode="fixed"):
+        """Arrange bokeh widgets into a pleasing layout
 
-        self.info_row = bokeh.layouts.row(self.stats_widgets[0], 
-                                          self.colorbar_div,
-                                          self.stats_widgets[1])
+        Place widgets into rows/columns with appropriate sizing_modes
+        to enhance user experience of Forest
+        """
+        rows = [
+            bokeh.layouts.row(model_run_drop_down,
+                              time_previous_button,
+                              time_next_button,
+                              sizing_mode=sizing_mode),
+            bokeh.layouts.row(left_model_drop_down,
+                              right_model_drop_down,
+                              model_variable_drop_down,
+                              region_drop_down,
+                              sizing_mode=sizing_mode),
+            bokeh.layouts.row(left_right_toggle,
+                              sizing_mode=sizing_mode),
+            bokeh.layouts.row(*bokeh_figures,
+                              sizing_mode=sizing_mode),
+            bokeh.layouts.row(colorbar_div,
+                              sizing_mode=sizing_mode),
+            bokeh.layouts.row(stats_widgets[0],
+                              stats_widgets[1],
+                              sizing_mode=sizing_mode),
+            user_feedback_toggle,
+            user_feedback_layout
+        ]
+        return bokeh.layouts.column(*rows, sizing_mode=sizing_mode)
 
-        self.main_layout = bokeh.layouts.column(self.time_row,
-                                                self.major_config_row,
-                                                self.minor_config_row,
-                                                self.plots_row,
-                                                self.info_row,
-                                                self.uf_vis_toggle,
-                                                self.uf_vis_layout,
-                                                )
 
     def on_time_prev(self):
         

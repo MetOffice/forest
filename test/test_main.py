@@ -1,5 +1,11 @@
 import unittest
 import unittest.mock
+import os
+import sys
+TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+APP_DIR = os.path.join(TEST_DIR, "../bokeh_apps/plot_sea_model_and_gpm_mpl/")
+print(APP_DIR)
+sys.path.insert(0, APP_DIR)
 import main
 
 
@@ -7,10 +13,6 @@ class TestMain(unittest.TestCase):
     def setUp(self):
         self.init_fcast_time = "20180101"
         self.gpm_dataset = "GpmDataset"
-
-    def test_main_can_be_called(self):
-        with unittest.mock.patch("main.bokeh") as bokeh:
-            main.main(bokeh_id="")
 
     @unittest.mock.patch("main.forest.plot.ForestPlot")
     @unittest.mock.patch("main.forest.data.get_available_times")
