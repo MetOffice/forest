@@ -90,6 +90,9 @@ def main(bokeh_id):
     #Create regions
     region_dict = forest.util.SEA_REGION_DICT
 
+    # initial selected point is approximately Jakarta, Indonesia
+    selected_point = (-6,103)
+
     #Setup and display plots
     plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
 
@@ -147,14 +150,26 @@ def main(bokeh_id):
     bokeh_figure_right = plot_obj_right.create_plot()
     stats_right = plot_obj_right.create_stats_widget()
 
+
+
     colorbar_widget = plot_obj_left.create_colorbar_widget()
 
     plot_obj_right.link_axes_to_other_plot(plot_obj_left)
+
+
+    plot_obj_ts = forest.plot.ForestTimeSeries(datasets[init_fcast_time],
+                                               init_fcast_time,
+                                               selected_point,
+                                               init_var)
+
+    bokeh_image_ts = plot_obj_ts.create_plot()
+
 
     s3_local_base_feedback = \
         os.path.join(s3_root,
                      bucket_name,
                      'user_feedback')
+
 
     # Set up GUI controller class
     if user_interface == "double-plot":

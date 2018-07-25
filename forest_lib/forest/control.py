@@ -277,6 +277,7 @@ class ForestController(object):
             bokeh.models.widgets.Toggle(label='Show feedback form',
                                         active=self.feedback_visible)
         self.uf_vis_toggle.on_click(self._on_uf_vis_toggle)
+
         self.uf_vis_layout = bokeh.layouts.column(sizing_mode=sizing_mode)
         self.main_layout = self.layout_widgets(self.bokeh_imgs,
                                                self.left_right_toggle,
@@ -338,6 +339,7 @@ class ForestController(object):
             user_feedback_layout
         ]
         return bokeh.layouts.column(*rows, sizing_mode=sizing_mode)
+
 
     def on_time_prev(self):
         
@@ -458,7 +460,7 @@ class ForestController(object):
         self.current_fcast_time = new_val
         new_time = self._refresh_times()
         for p1 in self.plots:
-            # different variables have different times available, soneed to
+            # different variables have different times available, so need to
             # set time when selecting a variable
             p1.current_time = new_time
             p1.set_dataset(self.datasets[self.current_fcast_time],
@@ -473,4 +475,11 @@ class ForestController(object):
             self.uf_vis_layout.children = [self.feedback_layout]
         else:
             self.uf_vis_layout.children = []
+
+    def _on_tap(self, tap_event):
+        print('tap event occured at ({0:.2f},{1:.2f})'.format(tap_event.x,
+                                                              tap_event.y))
+
+        for p1 in self.plots:
+            p1.set_selected_point(tap_event.y, tap_event.x)
 
