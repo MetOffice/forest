@@ -1,8 +1,69 @@
 import unittest
+import sys
+import io
 import numpy as np
 import iris
 import forest.plot
 import matplotlib
+import bokeh.plotting
+from collections import namedtuple
+import array
+
+
+class TestCoastlines(unittest.TestCase):
+    @unittest.mock.patch("forest.plot.cartopy")
+    def test_coastlines(self, cartopy):
+        figure = bokeh.plotting.figure()
+        forest.plot.coastlines(figure)
+        cartopy.feature.COASTLINE.intersecting_geometries.assert_called_once_with(None)
+
+
+Extent = namedtuple("Extent", ["x_start", "x_end",
+                               "y_start", "y_end"])
+
+
+class TestClipXY(unittest.TestCase):
+    def setUp(self):
+        self.x = np.array([1, 2, 3])
+        self.y = np.array([4, 5, 6])
+
+    def test_clip_xy(self):
+        """helper to restrict coastlines to bokeh figure"""
+        extent = Extent(-np.inf, np.inf, -np.inf, np.inf)
+        expect = self.x, self.y
+        self.check_clip_xy(self.x, self.y, extent, expect)
+
+    def test_clip_xy_removes_points_left_of_extent(self):
+        extent = Extent(1.5, np.inf, -np.inf, np.inf)
+        expect = self.x[1:], self.y[1:]
+        self.check_clip_xy(self.x, self.y, extent, expect)
+
+    def test_clip_xy_removes_points_right_of_extent(self):
+        extent = Extent(-np.inf, 2.5, -np.inf, np.inf)
+        expect = self.x[:-1], self.y[:-1]
+        self.check_clip_xy(self.x, self.y, extent, expect)
+
+    def test_clip_xy_removes_points_below_extent(self):
+        extent = Extent(-np.inf, np.inf, 4.5, np.inf)
+        expect = self.x[1:], self.y[1:]
+        self.check_clip_xy(self.x, self.y, extent, expect)
+
+    def test_clip_xy_removes_points_above_extent(self):
+        extent = Extent(-np.inf, np.inf, -np.inf, 5.5)
+        expect = self.x[:-1], self.y[:-1]
+        self.check_clip_xy(self.x, self.y, extent, expect)
+
+    def test_clip_xy_supports_array_array(self):
+        """should handle array.array returned by cartopy geometries"""
+        x = array.array("f", [1, 2, 3])
+        y = array.array("f", [4, 5, 6])
+        extent = Extent(-np.inf, np.inf, -np.inf, 5.5)
+        expect = x[:-1], y[:-1]
+        self.check_clip_xy(x, y, extent, expect)
+
+    def check_clip_xy(self, x, y, extent, expect):
+        result = forest.plot.clip_xy(x, y, extent)
+        np.testing.assert_array_equal(result, expect)
 
 
 class FakeDataset(object):
@@ -23,8 +84,14 @@ class FakeDataset(object):
                               ])
 
 
+@unittest.mock.patch("sys.stderr", new_callable=io.StringIO)
+@unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
 class TestForestPlot(unittest.TestCase):
-    def test_create_plot(self):
+    """
+    .. note:: test suite swallows stdout and stderr to prevent
+              confusion when running other tests
+    """
+    def test_create_plot(self, stdout, stderr):
         config = "config"
         dataset = {
             config: {
@@ -50,8 +117,9 @@ class TestForestPlot(unittest.TestCase):
                          model_run_time=model_run_time)
         forest_plot = forest.plot.ForestPlot(*args)
         forest_plot.create_plot()
+        # WARNING: no assertions made
 
-    def test_create_plot_sets_main_plot(self):
+    def test_create_plot_sets_main_plot(self, stdout, stderr):
         config = "config"
         dataset = {
             config: {
@@ -80,7 +148,7 @@ class TestForestPlot(unittest.TestCase):
         self.assertIsInstance(forest_plot.main_plot,
                               matplotlib.collections.QuadMesh)
 
-    def test_plot_funcs_keys(self):
+    def test_plot_funcs_keys(self, stdout, stderr):
         forest_plot = forest.plot.ForestPlot(*self.args())
         result = sorted(forest_plot.plot_funcs.keys())
         expect = ['I',

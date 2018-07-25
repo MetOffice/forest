@@ -51,10 +51,26 @@ def coastlines(figure, scale="110m", extent=None):
     """
     coastline = cartopy.feature.COASTLINE
     coastline.scale = scale
-    for geometry in coastline.intersecting_geometries(extent):
-        figure.line(*geometry[0].xy,
+    for geometry in coastline.geometries():
+        x, y = geometry[0].xy
+        if extent is not None:
+            x, y = clip_xy(x, y, extent)
+        if x.shape[0] == 0:
+            continue
+        figure.line(x, y,
                     color='black',
                     level='overlay')
+
+
+def clip_xy(x, y, extent):
+    """Clip coastline to be inside figure extent"""
+    x, y = np.asarray(x), np.asarray(y)
+    x_start, x_end, y_start, y_end = extent
+    pts = np.where((x > x_start) &
+                   (x < x_end) &
+                   (y > y_start) &
+                   (y < y_end))
+    return x[pts], y[pts]
 
 
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom']
@@ -126,7 +142,7 @@ class ForestPlot(object):
 
         self.current_figsize = (8.0, 6.0)
         self.bokeh_fig_size = (800,600)
-        self.coast_res = '50m'
+        self.coast_res = '110m'
         self.display_mode = ForestPlot.MODE_LOADING
 
         self._shape2d = None

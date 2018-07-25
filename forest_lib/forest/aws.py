@@ -100,10 +100,11 @@ class S3Bucket(object):
         else:
             return os.path.isfile(self.path_to_load(file_name))
 
-    def retrieve_file(self, file_name):
+    def retrieve_file(self, file_name, verbose=True):
         directory = self.base_path_local
         if not os.path.isdir(directory):
-            print("creating directory {0}".format(directory))
+            if verbose:
+                print("creating directory {0}".format(directory))
             os.makedirs(directory)
         util.download_from_s3(self.s3_url(file_name),
                               self.local_path(file_name))

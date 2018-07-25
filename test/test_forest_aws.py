@@ -92,7 +92,7 @@ class TestS3BucketIO(unittest.TestCase):
 
     def test_retrieve_file_calls_makedirs(self, util, os):
         os.path.isdir.return_value = False
-        self.bucket.retrieve_file(self.file_name)
+        self.bucket.retrieve_file(self.file_name, verbose=False)
         directory = self.bucket.base_path_local
         os.path.isdir.assert_called_once_with(directory)
         os.makedirs.assert_called_once_with(directory)
