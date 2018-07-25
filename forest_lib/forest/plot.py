@@ -150,7 +150,7 @@ class ForestPlot(object):
             array = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
 
             # Smooth high resolution imagery
-            max_ni, max_nj = 800, 600
+            max_ni, max_nj = 10, 10
             ni, nj, _ = array.shape
             if (ni > max_ni) or (nj > max_nj):
                 # int(round(factor * n)) = max_n
