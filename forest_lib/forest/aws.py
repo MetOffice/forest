@@ -8,7 +8,16 @@ print = print
 
 
 class S3Bucket(object):
-    """S3 bucket infrastructure"""
+    """S3 bucket infrastructure
+
+    Loads files from AWS S3 bucket using urllib.requests
+    module
+
+    :param server_address: Amazon server URL
+    :param bucket_name: Name of bucket
+    :param download_directory: Directory on local file system to
+                               store file(s)
+    """
     def __init__(self,
                  server_address,
                  bucket_name,
@@ -22,7 +31,28 @@ class S3Bucket(object):
         return self.remote_file_exists(file_name)
 
     def remote_file_exists(self, file_name):
-        return check_remote_file_exists(self.s3_url(file_name))
+        return self.s3_file_exists(self.s3_url(file_name))
+
+    @staticmethod
+    def s3_file_exists(url):
+        """Check whether a remote file exists; return Bool.
+
+        Check whether a file at the remote location specified by remore
+        path exists by trying to open a url request.
+
+        Arguments
+        ---------
+        - remote_path -- Str; Path to check for file at.
+        """
+        try:
+            _ = urllib.request.urlopen(remote_path)
+            print('file {0} found at remote location.'.format(remote_path))
+            return True
+        except urllib.error.HTTPError:
+            warning_msg1 = 'warning: file {0} NOT found at remote location.'
+            warning_msg1 = warning_msg1.format(remote_path)
+            print(warning_msg1)
+        return False
 
     def local_file_exists(self, file_name):
         return os.path.isfile(self.path_to_load(file_name))
@@ -57,7 +87,10 @@ class S3Bucket(object):
 
 
 class S3Mount(object):
-    """Local file system mount point access to AWS"""
+    """Local file system mount point access to AWS
+
+    :param directory: directory where AWS file system is mounted
+    """
     def __init__(self, directory):
         self.directory = directory
 
@@ -69,25 +102,3 @@ class S3Mount(object):
 
     def load_file(self, file_name, constraint):
         return self.path_to_load(file_name)
-
-
-def check_remote_file_exists(remote_path):
-    """Check whether a remote file exists; return Bool.
-
-    Check whether a file at the remote location specified by remore
-    path exists by trying to open a url request.
-
-    Arguments
-    ---------
-    - remote_path -- Str; Path to check for file at.
-    """
-    file_exists = False
-    try:
-        _ = urllib.request.urlopen(remote_path)
-        print('file {0} found at remote location.'.format(remote_path))
-        file_exists = True
-    except urllib.error.HTTPError:
-        warning_msg1 = 'warning: file {0} NOT found at remote location.'
-        warning_msg1 = warning_msg1.format(remote_path)
-        print(warning_msg1)
-    return file_exists

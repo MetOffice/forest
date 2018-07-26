@@ -85,14 +85,14 @@ class TestS3BucketIO(unittest.TestCase):
                                           self.bucket_name,
                                           self.download_dir)
 
-    def test_file_exists_calls_remote_file_exists(self,
-                                                  mock_print,
-                                                  urllib,
-                                                  os):
-        with unittest.mock.patch("forest.aws.check_remote_file_exists") as check_remote_file_exists:
-            self.bucket.file_exists(self.file_name)
-            expect = self.bucket.s3_url(self.file_name)
-            check_remote_file_exists.assert_called_once_with(expect)
+    def test_file_exists_calls_s3_file_exists(self,
+                                              mock_print,
+                                              urllib,
+                                              os):
+        self.bucket.s3_file_exists = unittest.mock.Mock()
+        self.bucket.file_exists(self.file_name)
+        expect = self.bucket.s3_url(self.file_name)
+        self.bucket.s3_file_exists.assert_called_once_with(expect)
 
     def test_local_file_exists_calls_isfile(self,
                                             mock_print,
