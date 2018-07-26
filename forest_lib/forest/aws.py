@@ -60,8 +60,8 @@ class S3Bucket(object):
     ``urllib.requests``
 
     :param server_address: Amazon server URL
-    :param bucket_name: Name of bucket
-    :param download_directory: Directory on local file system to
+    :param bucket_name: name of bucket
+    :param download_directory: directory on local file system to
                                store file(s)
     """
     def __init__(self,
@@ -167,18 +167,28 @@ class S3Mount(object):
         self.directory = directory
 
     def file_exists(self, path):
+        """Check file exists on file system
+
+        :param file_name: base name of file to be queried
+        :returns: logical indicating file existence
+        """
         return os.path.isfile(path)
 
     def path_to_load(self, file_name):
+        """Compute string representation of mounted file
+
+        :param file_name: base name of file
+        :returns: full path of file
+        """
         return os.path.join(self.directory, file_name)
 
     def load_file(self, file_name):
-        """Full path to file on disk
+        """Full path to file on file system
 
-        .. note:: this method does no I/O it exists to support
-                  the API used by Forest
+        .. note:: Method does not perform i/o, it exists to
+                  fulfill API requirements
 
         :param file_name: base name of file
-        :returns: path_to_file
+        :returns: full path of file
         """
         return self.path_to_load(file_name)
