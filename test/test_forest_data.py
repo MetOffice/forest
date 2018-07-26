@@ -6,7 +6,7 @@ import forest.data
 class TestForestDataset(unittest.TestCase):
     def setUp(self):
         self.file_name = "file.nc"
-        self.bucket = forest.aws.SyntheticBucket()
+        self.bucket = forest.aws.S3Mount("directory")
         self.var_name = "var_name"
         self.var_lookup = {
             self.var_name: {

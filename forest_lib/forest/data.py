@@ -194,7 +194,7 @@ def get_model_run_times(days_since_period_start, num_days, model_run_period):
     return forecast_datetimes, forecast_dt_str_list
 
 
-def get_available_datasets(bucket,
+def get_available_datasets(loader,
                            dataset_template,
                            days_since_period_start,
                            num_days,
@@ -237,10 +237,10 @@ def get_available_datasets(bucket,
         for ds_name in dataset_template.keys():
             fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
             fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(fname1,
-                                                                       bucket,
+                                                                       loader,
                                                                        dataset_template[ds_name]['var_lookup'])
 
-            model_run_data_present = model_run_data_present and bucket.file_exists(fname1)
+            model_run_data_present = model_run_data_present and loader.file_exists(fname1)
         # include forecast if all configs are present
         # TODO: reconsider data structure to allow for some model configs at different times to be present
         if model_run_data_present:
@@ -409,12 +409,12 @@ class ForestDataset(object):
 
     def __init__(self,
                  file_name,
-                 bucket,
+                 file_loader,
                  var_lookup):
         """ForestDataset factory function"""
         self.var_lookup = var_lookup
         self.file_name = file_name
-        self.bucket = bucket
+        self.file_loader = file_loader
 
         # set up time loaders
         self.time_loaders = dict([(v1, self._basic_time_load) for v1 in VAR_NAMES])
@@ -427,17 +427,17 @@ class ForestDataset(object):
 
 
         # set up data loader functions
-        self.loaders = dict([(v1, self.basic_cube_load) for v1 in VAR_NAMES])
-        self.loaders[WIND_SPEED_NAME] = self.wind_speed_loader
-        self.loaders[WIND_STREAM_NAME] = self.wind_speed_loader
+        self.cube_loaders = dict([(v1, self.basic_cube_load) for v1 in VAR_NAMES])
+        self.cube_loaders[WIND_SPEED_NAME] = self.wind_speed_loader
+        self.cube_loaders[WIND_STREAM_NAME] = self.wind_speed_loader
 
         for wv_var in WIND_VECTOR_VARS:
-            self.loaders[wv_var] = self.wind_vector_loader
+            self.cube_loaders[wv_var] = self.wind_vector_loader
         for accum_precip_var in PRECIP_ACCUM_VARS:
             ws1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[accum_precip_var]
-            self.loaders[accum_precip_var] = functools.partial(self.accum_precip_loader, ws1)
+            self.cube_loaders[accum_precip_var] = functools.partial(self.accum_precip_loader, ws1)
 
-        self.data = dict([(v1, None) for v1 in self.loaders.keys()])
+        self.data = dict([(v1, None) for v1 in self.cube_loaders.keys()])
 
         self.ts_var_names = dict([(v1, v1) for v1 in VAR_NAMES])
         self.ts_loaders = dict([(v1, self._basic_ts_load) for v1 in VAR_NAMES])
@@ -468,6 +468,7 @@ class ForestDataset(object):
         * Populates self.times[var_name] = [t0, t1, ...]
         * Populates self.data[var_name] = {t0: None, t1: None, ...}
         """
+        path_to_load = self.file_loader.load_file(self.file_name)
         field_dict = self.var_lookup[var_name]
         cf1 = lambda cube1: \
             cube1.attributes['STASH'].section == \
@@ -475,7 +476,7 @@ class ForestDataset(object):
             cube1.attributes['STASH'].item == \
             field_dict['stash_item']
         ic1 = iris.Constraint(cube_func=cf1)
-        cube1 = self.bucket.load_cube(self.file_name, ic1)
+        cube1 = iris.load_cube(path_to_load, ic1)
         self.times[var_name] = cube1.coord('time').points
         self.data[var_name] =  dict([(t1,None) for t1 in self.times[var_name]] + [('all',None)])
 
@@ -516,7 +517,7 @@ class ForestDataset(object):
             self.load_times(var_name)
 
         if self.data[var_name][selected_time] is None:
-            if self.bucket.file_exists(self.file_name):
+            if self.file_loader.file_exists(self.file_name):
                 # Load the data into memory from file (will only load
                 # metadata initially)
                 self.load_data(var_name, time_ix)
@@ -538,11 +539,7 @@ class ForestDataset(object):
         ---------
         - var_name -- Str; Var name used as dict key to select loader.
         """
-        self.loaders[var_name](var_name, selected_time)
-
-    @property
-    def path_to_load(self):
-        return self.bucket.path_to_load(self.file_name)
+        self.cube_loaders[var_name](var_name, selected_time)
 
     def basic_cube_load(self, var_name, time_ix):
         """Load simple cubes.
@@ -555,7 +552,8 @@ class ForestDataset(object):
 
         """
         field_dict = self.var_lookup[var_name]
-        dc1 = do_cube_load(path_to_load=self.path_to_load,
+        path_to_load = self.file_loader.load_file(self.file_name)
+        dc1 = do_cube_load(path_to_load=path_to_load,
                            field_dict=field_dict,
                            time_ix=time_ix,
                            lat_long_coord=None)
@@ -634,7 +632,8 @@ class ForestDataset(object):
         ic1 = iris.Constraint(cube_func=cf1,
                               coord_values=coord_constraint_dict)
 
-        precip_cube1 = self.bucket.load_cube(self.file_name, ic1)
+        path_to_load = self.file_loader.load_file(self.file_name)
+        precip_cube1 = iris.load_cube(path_to_load, ic1)
         precip_cube1.convert_units(UNIT_DICT['precipitation']) # convert to average hourly accumulation
         precip_cube1.data *= 3 #multiply by 3 to get 3 hour accumulation
         if precip_cube1.coord('time').shape[0] == 1:
@@ -653,7 +652,8 @@ class ForestDataset(object):
             self.load_times(var_name)
 
         if self.data[var_name][time_ix] is None:
-            dc1 = do_cube_load(path_to_load=self.path_to_load,
+            path_to_load = self.file_loader.load_file(self.file_name)
+            dc1 = do_cube_load(path_to_load=path_to_load,
                                field_dict=field_dict,
                                time_ix=time_ix,
                                lat_long_coord=selected_point)

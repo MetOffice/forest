@@ -16,10 +16,23 @@ import forest.aws
 @forest.util.timer
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
-    bucket = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
-                                 bucket_name='stephen-sea-public-london',
-                                 use_s3_mount=False,
-                                 do_download=True)
+    use_s3_mount = False
+    if use_s3_mount:
+        try:
+            mount_directory = os.path.join(os.environ['S3_ROOT'], 'stephen-sea-public-london')
+        except KeyError:
+            mount_directory = os.path.expanduser('~/s3/stephen-sea-public-london')
+        file_loader = forest.aws.S3Mount(mount_directory)
+        user_feedback_directory = os.path.join(mount_directory, 'user_feedback')
+    else:
+        try:
+            download_directory = os.path.join(os.environ['LOCAL_ROOT'], 'model_data')
+        except KeyError:
+            download_directory = os.path.expanduser("~/SEA_data/model_data")
+        file_loader = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
+                                          bucket_name='stephen-sea-public-london',
+                                          download_directory=download_directory)
+        user_feedback_directory = os.path.join(download_directory, 'user_feedback')
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
@@ -38,7 +51,7 @@ def main(bokeh_id):
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
     init_fcast_time, datasets = \
-        forest.data.get_available_datasets(bucket,
+        forest.data.get_available_datasets(file_loader,
                                            dataset_template,
                                            forest.data.NUM_DATA_DAYS,
                                            forest.data.NUM_DATA_DAYS,
@@ -143,12 +156,6 @@ def main(bokeh_id):
     bokeh_image_ts = plot_obj_ts.create_plot()
 
 
-    s3_local_base_feedback = \
-        os.path.join(bucket.s3_root,
-                     bucket.bucket_name,
-                     'user_feedback')
-
-
     # Set up GUI controller class
     if user_interface == "double-plot":
         bokeh_figures = [bokeh_figure_left, bokeh_figure_right]
@@ -164,7 +171,7 @@ def main(bokeh_id):
                                                colorbar_widget,
                                                [stats_left, stats_right],
                                                region_dict,
-                                               s3_local_base_feedback,
+                                               user_feedback_directory,
                                                bokeh_id,
                                                )
 
