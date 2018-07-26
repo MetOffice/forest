@@ -186,7 +186,7 @@ class ForestPlot(object):
             array = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
 
             # Smooth high resolution imagery
-            max_ni, max_nj = 10, 10
+            max_ni, max_nj = 800, 600
             ni, nj, _ = array.shape
             if (ni > max_ni) or (nj > max_nj):
                 # int(round(factor * n)) = max_n
@@ -843,7 +843,8 @@ class ForestPlot(object):
                                 plot_height=self.bokeh_fig_size[1],
                                 x_range=x_limits,
                                 y_range=y_limits,
-                                tools=','.join(BOKEH_TOOLS_LIST))
+                                tools=','.join(BOKEH_TOOLS_LIST),
+                                toolbar_location='above')
 
         if self.current_img_array is not None:
             self.create_bokeh_img()
@@ -872,29 +873,42 @@ class ForestPlot(object):
         self.bokeh_figure.title.text = self.current_title
 
     def create_bokeh_img(self):
-
-        '''
-
-        '''
-
-        cur_region = self.region_dict[self.current_region]
-        # Add mpl image
-        latitude_range = cur_region[1] - cur_region[0]
-        longitude_range = cur_region[3] - cur_region[2]
+        '''create bokeh image from settings or mappable'''
+        x, y, dw, dh = self.get_x_y_dw_dh()
         self.bokeh_image = \
             self.bokeh_figure.image_rgba(image=[self.current_img_array],
-                                         x=[cur_region[2]],
-                                         y=[cur_region[0]],
-                                         dw=[longitude_range],
-                                         dh=[latitude_range])
+                                         x=[x],
+                                         y=[y],
+                                         dw=[dw],
+                                         dh=[dh])
         self.bokeh_img_ds = self.bokeh_image.data_source
 
+    def get_x_y_dw_dh(self):
+        image_source = 'mappable'
+        if image_source == 'mappable':
+            # Use mappable.get_extent() to define image_rgba()
+            if hasattr(self.main_plot, 'get_extent'):
+                left, right, bottom, top = self.main_plot.get_extent()
+            else:
+                left, right = self.coords_long.min(), self.coords_long.max()
+                bottom, top = self.coords_lat.min(), self.coords_lat.max()
+            x = left
+            y = bottom
+            dw = right - left
+            dh = top - bottom
+        else:
+            # Use current region settings to define image_rgba()
+            cur_region = self.region_dict[self.current_region]
+            latitude_range = cur_region[1] - cur_region[0]
+            longitude_range = cur_region[3] - cur_region[2]
+            x = cur_region[2]
+            y = cur_region[0]
+            dw = longitude_range
+            dh = latitude_range
+        return x, y, dw, dh
+
     def update_bokeh_img_plot_from_fig(self):
-
-        '''
-
-        '''
-
+        '''Update image_rgba() data source'''
         cur_region = self.region_dict[self.current_region]
         self.current_figure.set_figwidth(self.current_figsize[0])
         self.current_figure.set_figheight(
@@ -903,13 +917,13 @@ class ForestPlot(object):
                   (cur_region[3] - cur_region[2]), 2))
 
         if self.bokeh_img_ds:
+            x, y, dw, dh = self.get_x_y_dw_dh()
             self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
-            self.bokeh_img_ds.data[u'x'] = [cur_region[2]]
-            self.bokeh_img_ds.data[u'y'] = [cur_region[0]]
-            self.bokeh_img_ds.data[u'dw'] = [cur_region[3] - cur_region[2]]
-            self.bokeh_img_ds.data[u'dh'] = [cur_region[1] - cur_region[0]]
+            self.bokeh_img_ds.data[u'x'] = [x]
+            self.bokeh_img_ds.data[u'y'] = [y]
+            self.bokeh_img_ds.data[u'dw'] = [dw]
+            self.bokeh_img_ds.data[u'dh'] = [dh]
             self.bokeh_figure.title.text = self.current_title
-
         else:
             try:
                 self.create_bokeh_img()

@@ -42,8 +42,8 @@ def main(bokeh_id):
     if file_system == "aws":
         bucket = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
                                      bucket_name='stephen-sea-public-london',
-                                     use_s3_mount=True,
-                                     do_download=False)
+                                     use_s3_mount=False,
+                                     do_download=True)
     else:
         bucket = forest.aws.SyntheticBucket()
 
