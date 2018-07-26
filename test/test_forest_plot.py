@@ -40,7 +40,6 @@ class TestForestPlotSetConfig(unittest.TestCase):
                                app_path,
                                init_time)
 
-    @unittest.skip("cherry pick")
     def test_set_config(self):
         """minimal data needed to call set_config"""
         dataset = {
@@ -89,7 +88,6 @@ class TestForestPlotSetConfig(unittest.TestCase):
             self.assertEqual(forest_plot.current_config, "new_config")
             self.assertEqual(forest_plot.plot_description, "Label")
 
-    @unittest.skip("cherry pick")
     @unittest.mock.patch("forest.plot.matplotlib")
     @unittest.mock.patch("forest.plot.bokeh")
     def test_forest_plot_calls_bokeh_plotting_figure(self,

@@ -5,10 +5,9 @@ import sys
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 APP_DIR = os.path.join(TEST_DIR, "../bokeh_apps/plot_sea_model_and_gpm_mpl/")
 sys.path.insert(0, APP_DIR)
-# import main
+import main
 
 
-@unittest.skip("cherry pick")
 class TestMain(unittest.TestCase):
     def setUp(self):
         self.init_fcast_time = "20180101"

@@ -3,7 +3,6 @@ import forest
 import model_gpm_control
 
 
-@unittest.skip("cherry pick")
 @unittest.mock.patch("model_gpm_control.bokeh")
 class TestModelGpmControl(unittest.TestCase):
     def setUp(self):
