@@ -24,34 +24,6 @@ class TestForestDataset(unittest.TestCase):
                                   self.bucket,
                                   var_lookup)
 
-    @unittest.skip("testing basic_time_load")
-    def test_dataset_get_times(self):
-        var_name = "var_name"
-        var_lookup = {
-            var_name: None
-        }
-        dataset = forest.data.ForestDataset(self.file_name,
-                                            self.bucket,
-                                            var_lookup)
-        dataset.get_times(var_name)
-
-    @unittest.skip("testing basic_time_load")
-    def test_init_makes_data_dictionary(self):
-        self.assertEqual(self.dataset.data, {})
-
-    @unittest.skip("testing basic_time_load")
-    def test_init_makes_time_loaders(self):
-        self.assertEqual(self.dataset.time_loaders, {})
-
-    @unittest.skip("testing basic_time_load")
-    def test_basic_cube_load(self):
-        time_ix = 0
-        dataset.basic_cube_load(var_name, time_ix)
-
-    @unittest.skip("testing basic_time_load")
-    def test_basic_time_load(self):
-        self.dataset._basic_time_load(self.var_name)
-
     def test_get_var_lookup_mslp(self):
         config = forest.data.GA6_CONF_ID
         var_lookup = forest.data.get_var_lookup(config)

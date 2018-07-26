@@ -7,6 +7,22 @@ import forest.aws
 import forest.data
 
 
+@unittest.mock.patch("forest.aws.urllib")
+@unittest.mock.patch("forest.aws.os")
+@unittest.mock.patch("forest.aws.print", autospec=True)
+class TestDownloadFromS3(unittest.TestCase):
+    def test_download_from_s3_calls_urlretrieve(self,
+                                                mock_print,
+                                                os,
+                                                urllib):
+        s3_url = "s3_url"
+        local_path = "local_path"
+        os.path.isfile.return_value = False
+        forest.aws.S3Bucket.s3_download(s3_url, local_path)
+        urllib.request.urlretrieve.assert_called_once_with(s3_url,
+                                                           local_path)
+
+
 class TestS3Bucket(unittest.TestCase):
     """AWS S3 architecture
 
@@ -69,7 +85,8 @@ class TestS3Bucket(unittest.TestCase):
                          self.bucket.local_path(self.file_name))
 
 @unittest.mock.patch("forest.aws.os")
-@unittest.mock.patch("forest.aws.util")
+@unittest.mock.patch("forest.aws.urllib")
+@unittest.mock.patch("forest.aws.print", autospec=True)
 class TestS3BucketIO(unittest.TestCase):
     def setUp(self):
         self.file_name = "file.nc"
@@ -78,31 +95,46 @@ class TestS3BucketIO(unittest.TestCase):
         self.bucket = forest.aws.S3Bucket(self.server_address,
                                           self.bucket_name)
 
-    def test_file_exists_calls_remote_file_exists(self, util, os):
-        self.bucket.do_download = True
-        self.bucket.file_exists(self.file_name)
-        expect = self.bucket.s3_url(self.file_name)
-        util.check_remote_file_exists.assert_called_once_with(expect)
+    def test_file_exists_calls_remote_file_exists(self,
+                                                  mock_print,
+                                                  urllib,
+                                                  os):
+        with unittest.mock.patch("forest.aws.check_remote_file_exists") as check_remote_file_exists:
+            self.bucket.do_download = True
+            self.bucket.file_exists(self.file_name)
+            expect = self.bucket.s3_url(self.file_name)
+            check_remote_file_exists.assert_called_once_with(expect)
 
-    def test_file_exists_calls_isfile(self, util, os):
+    def test_file_exists_calls_isfile(self,
+                                      mock_print,
+                                      urllib,
+                                      os):
         self.bucket.do_download = False
         self.bucket.file_exists(self.file_name)
         expect = self.bucket.path_to_load(self.file_name)
         os.path.isfile.assert_called_once_with(expect)
 
-    def test_retrieve_file_calls_makedirs(self, util, os):
+    def test_retrieve_file_calls_makedirs(self,
+                                          mock_print,
+                                          urllib,
+                                          os):
         os.path.isdir.return_value = False
         self.bucket.retrieve_file(self.file_name)
         directory = self.bucket.base_path_local
         os.path.isdir.assert_called_once_with(directory)
         os.makedirs.assert_called_once_with(directory)
 
-    def test_retrieve_file_calls_download_from_s3(self, util, os):
+    def test_retrieve_file_calls_s3_download(self,
+                                             mock_print,
+                                             urllib,
+                                             os):
+        mock_s3_download = unittest.mock.Mock()
+        self.bucket.s3_download = mock_s3_download
         self.bucket.retrieve_file(self.file_name)
         directory = self.bucket.base_path_local
         url = self.bucket.s3_url(self.file_name)
         local_file = self.bucket.local_path(self.file_name)
-        util.download_from_s3.assert_called_once_with(url, local_file)
+        mock_s3_download.assert_called_once_with(url, local_file)
 
 
 class TestSyntheticBucket(unittest.TestCase):
@@ -130,23 +162,3 @@ class TestSyntheticBucket(unittest.TestCase):
 
     def test_load_cube_has_attributes_stash_section(self):
         self.cube.attributes['STASH'].section
-
-    @unittest.skip("understanding ForestDataset")
-    def test_get_available_times(self):
-        """sample data should satisfy forest.data.get_available_times"""
-        file_name = None
-        bucket = self.samples
-        variable = "precipitation"  # Hard-coded Forest key
-        var_lookup = {
-            variable: {
-                "stash_section": "section"
-            }
-        }
-        datasets = {
-            "name": {
-                "data": forest.data.ForestDataset(file_name,
-                                                  bucket,
-                                                  var_lookup)
-            }
-        }
-        forest.data.get_available_times(datasets, variable)

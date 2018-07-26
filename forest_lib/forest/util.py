@@ -24,7 +24,6 @@ Functions
 
 import time
 import os
-import urllib.request
 import datetime
 
 import matplotlib.colors
@@ -42,26 +41,6 @@ SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
                    'se_asia': [-18.0, 29.96, 90.0, 153.96],
                    }
 
-
-def download_from_s3(s3_url, local_path):
-
-    """Download files from AWS S3 if not already downloaded.
-    
-    Arguments
-    ---------
-     
-    - s3_url -- Str; URL of S3 bucket.
-    - local_path -- Str; path to save downloaded files to.
-    
-    """
-
-    if not os.path.isfile(local_path):
-        print('retrieving file from {0}'.format(s3_url))
-        urllib.request.urlretrieve(s3_url, local_path)
-        print('file {0} downloaded'.format(local_path))
-    else:
-        print(local_path, ' - File already downloaded')
-        
 
 def get_radar_colours():
 
@@ -439,36 +418,6 @@ def get_image_array_from_figure(fig):
     buf = numpy.flipud(buf)
     
     return buf
-
-
-
-
-
-def check_remote_file_exists(remote_path):
-
-    """Check whether a remote file exists; return Bool.
-    
-    Check whether a file at the remote location specified by remore 
-    path exists by trying to open a url request.
-    
-    Arguments
-    ---------
-    
-    - remote_path -- Str; Path to check for file at.
-    
-    """
-
-    file_exists = False
-    try:
-        _ = urllib.request.urlopen(remote_path)
-        print('file {0} found at remote location.'.format(remote_path))
-        file_exists = True
-    except urllib.error.HTTPError:
-        warning_msg1 = 'warning: file {0} NOT found at remote location.'
-        warning_msg1 = warning_msg1.format(remote_path)
-        print(warning_msg1)
-
-    return file_exists
 
 
 def timer(func):

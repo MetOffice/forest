@@ -1,8 +1,12 @@
 """Amazon Web Services infrastructure"""
 import os
+import urllib.request
 import numpy as np
 import iris
-from . import util
+
+
+# expose print to be patched
+print = print
 
 
 class SyntheticBucket(object):
@@ -96,7 +100,7 @@ class S3Bucket(object):
     def file_exists(self, file_name):
         """AWS file exists or downloaded file exists"""
         if self.do_download:
-            return util.check_remote_file_exists(self.s3_url(file_name))
+            return check_remote_file_exists(self.s3_url(file_name))
         else:
             return os.path.isfile(self.path_to_load(file_name))
 
@@ -105,8 +109,18 @@ class S3Bucket(object):
         if not os.path.isdir(directory):
             print("creating directory {0}".format(directory))
             os.makedirs(directory)
-        util.download_from_s3(self.s3_url(file_name),
-                              self.local_path(file_name))
+        self.s3_download(self.s3_url(file_name),
+                         self.local_path(file_name))
+
+    @staticmethod
+    def s3_download(url, path):
+        """port of forest.util.download_from_s3"""
+        if not os.path.isfile(path):
+            print('retrieving file from {0}'.format(url))
+            urllib.request.urlretrieve(url, path)
+            print('file {0} downloaded'.format(path))
+        else:
+            print(path, ' - File already downloaded')
 
     def load_cube(self, file_name, constraint):
         """Helper method to perform iris.Cube I/O
@@ -117,3 +131,25 @@ class S3Bucket(object):
         if self.do_download and self.file_exists(file_name):
             self.retrieve_file(file_name)
         return iris.load_cube(self.path_to_load(file_name), constraint)
+
+
+def check_remote_file_exists(remote_path):
+    """Check whether a remote file exists; return Bool.
+
+    Check whether a file at the remote location specified by remore
+    path exists by trying to open a url request.
+
+    Arguments
+    ---------
+    - remote_path -- Str; Path to check for file at.
+    """
+    file_exists = False
+    try:
+        _ = urllib.request.urlopen(remote_path)
+        print('file {0} found at remote location.'.format(remote_path))
+        file_exists = True
+    except urllib.error.HTTPError:
+        warning_msg1 = 'warning: file {0} NOT found at remote location.'
+        warning_msg1 = warning_msg1.format(remote_path)
+        print(warning_msg1)
+    return file_exists

@@ -1,10 +1,12 @@
 import unittest
-<<<<<<< HEAD
 import unittest.mock
 import forest
+import forest.plot
+import numpy as np
+import iris
 
 
-class TestForestPlot(unittest.TestCase):
+class TestForestPlotSetConfig(unittest.TestCase):
     def test_can_be_constructed(self):
         """the minimal information needed to construct a ForestPlot"""
         dataset = {
@@ -38,6 +40,7 @@ class TestForestPlot(unittest.TestCase):
                                app_path,
                                init_time)
 
+    @unittest.skip("cherry pick")
     def test_set_config(self):
         """minimal data needed to call set_config"""
         dataset = {
@@ -86,6 +89,7 @@ class TestForestPlot(unittest.TestCase):
             self.assertEqual(forest_plot.current_config, "new_config")
             self.assertEqual(forest_plot.plot_description, "Label")
 
+    @unittest.skip("cherry pick")
     @unittest.mock.patch("forest.plot.matplotlib")
     @unittest.mock.patch("forest.plot.bokeh")
     def test_forest_plot_calls_bokeh_plotting_figure(self,
@@ -114,7 +118,7 @@ class TestForestPlot(unittest.TestCase):
             fixture.create_matplotlib_fig()
             fixture.create_bokeh_img_plot_from_fig()
             forest_util.get_image_array_from_figure.assert_called_once_with(figure)
-        tools = "pan,wheel_zoom,reset,save,box_zoom"
+        tools = "pan,wheel_zoom,reset,save,box_zoom,hover"
         x_range = bokeh.models.Range1d.return_value
         y_range = bokeh.models.Range1d.return_value
         bokeh.plotting.figure.assert_called_once_with(plot_height=600,
@@ -132,24 +136,6 @@ class TestForestPlot(unittest.TestCase):
         fake_figure = "bokeh figure"
         forest_plot = forest.plot.ForestPlot(*self.generic_args(),
                                              bokeh_figure=fake_figure)
-        self.assertEqual(forest_plot.bokeh_figure, fake_figure)
-
-    @unittest.skip("developing toggle controller")
-    @unittest.mock.patch("forest.util")
-    @unittest.mock.patch("forest.plot.matplotlib")
-    @unittest.mock.patch("forest.plot.bokeh")
-    def test_forest_plot_should_keep_bokeh_figure(self,
-                                                  bokeh,
-                                                  matplotlib,
-                                                  util):
-        """A user supplied figure should be retained throughout object
-        life cycle"""
-        fake_figure = "bokeh figure"
-        fake_plot_func = unittest.mock.Mock()
-        forest_plot = forest.plot.ForestPlot(*self.generic_args(),
-                                             bokeh_figure=fake_figure)
-        forest_plot.plot_funcs[forest_plot.current_var] = fake_plot_func
-        forest_plot.create_plot()
         self.assertEqual(forest_plot.bokeh_figure, fake_figure)
 
     def test_get_data_returns_cube(self):
@@ -182,10 +168,23 @@ class TestForestPlot(unittest.TestCase):
         reg1 = "current_region"
         rd1 = {
             "current_region": [0, 1, 0, 1]
-=======
-import numpy as np
-import iris
-import forest.plot
+        }
+        unit_dict = None
+        unit_dict_display = None
+        app_path = None
+        init_time = None
+        return (dataset,
+                model_run_time,
+                po1,
+                figname,
+                plot_var,
+                conf1,
+                reg1,
+                rd1,
+                unit_dict,
+                unit_dict_display,
+                app_path,
+                init_time)
 
 
 class FakeDataset(object):
@@ -215,9 +214,29 @@ class TestForestPlot(unittest.TestCase):
                 "data_type_name": None
             }
         }
+        plot_options = {
+            "mslp": {
+                "cmap": None,
+                "norm": None
+            }
+        }
+        unit_dict_display = {
+            "mslp": "display unit"
+        }
+        time = "2018-01-01 00:00:00"
+        region = "region"
+        region_dict = {
+            region: [0, 1, 0, 1]
+        }
         args = self.args(plot_var="mslp",
                          conf1=config,
-                         dataset=dataset)
+                         dataset=dataset,
+                         plot_options=plot_options,
+                         unit_dict_display=unit_dict_display,
+                         init_time=time,
+                         model_run_time=time,
+                         region=region,
+                         region_dict=region_dict)
         forest_plot = forest.plot.ForestPlot(*args)
         forest_plot.create_plot()
 
@@ -246,7 +265,14 @@ class TestForestPlot(unittest.TestCase):
     def args(self,
              plot_var='plot_var',
              conf1='current_config',
-             dataset=None):
+             dataset=None,
+             plot_options=None,
+             unit_dict=None,
+             unit_dict_display=None,
+             init_time=None,
+             model_run_time=None,
+             region_dict=None,
+             region=None):
         """Helper to construct ForestPlot"""
         if dataset is None:
             dataset = {
@@ -254,26 +280,20 @@ class TestForestPlot(unittest.TestCase):
                     'data_type_name': None
                 }
             }
-        model_run_time = None
-        po1 = None
         figname = None
-        reg1 = None
-        rd1 = {
-            reg1: [None, None, None, None]
->>>>>>> 7cd6bc6... added unit test suite to understand ForestPlot design
-        }
-        unit_dict = None
-        unit_dict_display = None
+        if region_dict is None:
+            region_dict = {
+                region: [None, None, None, None]
+            }
         app_path = None
-        init_time = None
         return (dataset,
                 model_run_time,
-                po1,
+                plot_options,
                 figname,
                 plot_var,
                 conf1,
-                reg1,
-                rd1,
+                region,
+                region_dict,
                 unit_dict,
                 unit_dict_display,
                 app_path,

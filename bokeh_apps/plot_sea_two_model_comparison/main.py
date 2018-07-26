@@ -185,4 +185,5 @@ def main(bokeh_id):
     bokeh.plotting.curdoc().title = 'Two model comparison'
 
 
-main(__name__)
+if (__name__ == '__main__') or (__name__.startswith("bk_script")):
+    main(__name__)
