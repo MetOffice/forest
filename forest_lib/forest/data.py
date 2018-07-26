@@ -194,16 +194,6 @@ def get_model_run_times(days_since_period_start, num_days, model_run_period):
     return forecast_datetimes, forecast_dt_str_list
 
 
-def get_available_times(datasets, var1):
-    key0 = list(datasets.keys())[0]
-    available_times = datasets[key0]['data'].get_times(var1)
-
-    for ds_name in datasets:
-        times1 = datasets[ds_name]['data'].get_times(var1)
-        available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
-    return available_times
-
-
 def get_available_datasets(bucket,
                            dataset_template,
                            days_since_period_start,
@@ -246,8 +236,7 @@ def get_available_datasets(bucket,
         model_run_data_present = True
         for ds_name in dataset_template.keys():
             fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
-            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(ds_name,
-                                                                       fname1,
+            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(fname1,
                                                                        bucket,
                                                                        dataset_template[ds_name]['var_lookup'])
 
@@ -264,6 +253,15 @@ def get_available_datasets(bucket,
     except IndexError:
         fcast_time = None
     return fcast_time, datasets
+
+
+def get_available_times(datasets, var1):
+    key0 = list(datasets.keys())[0]
+    available_times = datasets[key0]['data'].get_times(var1)
+    for ds_name in datasets:
+        times1 = datasets[ds_name]['data'].get_times(var1)
+        available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
+    return available_times
 
 
 def check_bounds(cube1, selected_pt):
@@ -455,15 +453,10 @@ class ForestDataset(object):
         return 'FOREST dataset'
 
     def get_times(self, var_name):
-        """
-        """
-        # if self.times[var_name] is None:
         self.load_times(var_name)
         return self.times[var_name]
 
     def load_times(self, var_name):
-        """
-        """
         self.time_loaders[var_name](var_name)
 
     def _basic_time_load(self, var_name):
@@ -481,9 +474,7 @@ class ForestDataset(object):
             field_dict['stash_section'] and \
             cube1.attributes['STASH'].item == \
             field_dict['stash_item']
-
         ic1 = iris.Constraint(cube_func=cf1)
-
         cube1 = self.bucket.load_cube(self.file_name, ic1)
         self.times[var_name] = cube1.coord('time').points
         self.data[var_name] =  dict([(t1,None) for t1 in self.times[var_name]] + [('all',None)])
@@ -508,7 +499,7 @@ class ForestDataset(object):
             numpy.unique(numpy.floor(self.times[PRECIP_VAR_NAME] / window_size1) * window_size1) + (window_size1/2.0)
         self.data[var_name] = dict([(t1, None) for t1 in self.times[var_name]] + [('all',None)])
 
-    def _get_data(self, var_name, selected_time, convert_units=True):
+    def get_data(self, var_name, selected_time, convert_units=True):
         """Calls functions to retrieve and load data.
 
         Arguments
@@ -526,7 +517,7 @@ class ForestDataset(object):
 
         if self.data[var_name][selected_time] is None:
             if self.bucket.file_exists(self.file_name):
-                # Load the data into memory from file (will only load 
+                # Load the data into memory from file (will only load
                 # metadata initially)
                 self.load_data(var_name, time_ix)
                 has_units = \
@@ -659,20 +650,13 @@ class ForestDataset(object):
         time_ix = ForestDataset.TIME_INDEX_ALL
         dc1 = None
         if self.times[var_name] is None:
-            if self.check_data():
-                # get data from aws s3 storage
-                self.retrieve_data()
-
-                self.load_times(var_name)
+            self.load_times(var_name)
 
         if self.data[var_name][time_ix] is None:
-            if self.check_data():
-                # Get data from aws s3 storage
-                self.retrieve_data()
-                dc1 = do_cube_load(path_to_load=self.path_to_load,
-                                   field_dict=field_dict,
-                                   time_ix=time_ix,
-                                   lat_long_coord=selected_point)
+            dc1 = do_cube_load(path_to_load=self.path_to_load,
+                               field_dict=field_dict,
+                               time_ix=time_ix,
+                               lat_long_coord=selected_point)
         return dc1
 
 

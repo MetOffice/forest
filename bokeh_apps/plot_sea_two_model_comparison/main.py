@@ -3,6 +3,7 @@ import warnings
 warnings.filterwarnings('ignore')
 import bokeh.io
 import bokeh.plotting
+import numpy
 import matplotlib
 matplotlib.use('agg')
 import forest.util
@@ -15,14 +16,10 @@ import forest.aws
 @forest.util.timer
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
-    file_system = "synthetic"
-    if file_system == "aws":
-        bucket = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
-                                     bucket_name='stephen-sea-public-london',
-                                     use_s3_mount=True,
-                                     do_download=False)
-    else:
-        bucket = forest.aws.SyntheticBucket()
+    bucket = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
+                                 bucket_name='stephen-sea-public-london',
+                                 use_s3_mount=False,
+                                 do_download=True)
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
@@ -86,9 +83,8 @@ def main(bokeh_id):
     init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
-    available_times = \
-        forest.data.get_available_times(datasets[init_fcast_time],
-                                        plot_type_time_lookups[init_var])
+    available_times = forest.data.get_available_times(datasets[init_fcast_time],
+                                                      plot_type_time_lookups[init_var])
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
