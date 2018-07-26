@@ -194,7 +194,7 @@ def get_model_run_times(days_since_period_start, num_days, model_run_period):
     return forecast_datetimes, forecast_dt_str_list
 
 
-def get_available_datasets(loader,
+def get_available_datasets(file_loader,
                            dataset_template,
                            days_since_period_start,
                            num_days,
@@ -204,15 +204,7 @@ def get_available_datasets(loader,
     Get a list of model runs times for which there is model output data
     available, and list of dictionaries with a dataset for each model run time.
 
-    :param s3_base: The S3 url to check for datasets
-    :param s3_local_base: The local mount location of that S3 URL
-                          (using fuse mount)
-    :param use_s3_mount: If true, use the local s3 mount rather than download
-                         files
-    :param base_path_local: The local path to files. Only used if use_s3_mount
-                            is false
-    :param do_download: if true and use_s3_mount is false, the files will be
-                        downloaded from the S3 bucket to a local folder
+    :param file_loader: class responsible for loading remote or local files
     :param dataset_template: A dictionary of dataset configs, which will be
                              used a template for each model run that is
                              available.
@@ -237,10 +229,10 @@ def get_available_datasets(loader,
         for ds_name in dataset_template.keys():
             fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
             fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(fname1,
-                                                                       loader,
+                                                                       file_loader,
                                                                        dataset_template[ds_name]['var_lookup'])
 
-            model_run_data_present = model_run_data_present and loader.file_exists(fname1)
+            model_run_data_present = model_run_data_present and file_loader.file_exists(fname1)
         # include forecast if all configs are present
         # TODO: reconsider data structure to allow for some model configs at different times to be present
         if model_run_data_present:
