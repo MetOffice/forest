@@ -25,17 +25,18 @@ class TestDownloadFromS3(unittest.TestCase):
 
 class TestS3Mount(unittest.TestCase):
     def setUp(self):
-        self.file_name = "file.nc"
+        self.file_name = "model_data/file.nc"
         self.directory = "directory"
         self.mount = forest.aws.S3Mount(self.directory)
 
     def test_mount_directory(self):
         self.assertEqual(self.mount.directory, self.directory)
 
-    @unittest.mock.patch("forest.aws.os")
-    def test_file_exists_queries_file_system(self, os):
+    @unittest.mock.patch("forest.aws.os.path.isfile")
+    def test_file_exists_queries_file_system(self, isfile):
         self.mount.file_exists(self.file_name)
-        os.path.isfile.assert_called_once_with(self.file_name)
+        expect = os.path.join(self.directory, self.file_name)
+        isfile.assert_called_once_with(expect)
 
     def test_path_to_load(self):
         result = self.mount.path_to_load(self.file_name)
@@ -51,11 +52,11 @@ class TestS3Bucket(unittest.TestCase):
     a simple API to the internals of Forest
     """
     def setUp(self):
-        self.file_name = "file.nc"
+        self.file_name = "model_data/file.nc"
         self.server_address = "https://s3.eu-west-2.amazonaws.com"
         self.bucket_name = "stephen-sea-public-london"
-        self.s3_base = "{server}/{bucket}/model_data/".format(server=self.server_address,
-                                                              bucket=self.bucket_name)
+        self.s3_base = "{server}/{bucket}".format(server=self.server_address,
+                                                  bucket=self.bucket_name)
         self.download_dir = "download_directory"
         self.bucket = forest.aws.S3Bucket(self.server_address,
                                           self.bucket_name,
@@ -77,11 +78,11 @@ class TestS3Bucket(unittest.TestCase):
 @unittest.mock.patch("forest.aws.print", autospec=True)
 class TestS3BucketIO(unittest.TestCase):
     def setUp(self):
-        self.file_name = "file.nc"
+        self.file_name = "model_data/file.nc"
         self.server_address = "server_address"
         self.bucket_name = "bucket_name"
         self.download_dir = "download_directory"
-        self.url = os.path.join(self.server_address, self.bucket_name, "model_data", self.file_name)
+        self.url = os.path.join(self.server_address, self.bucket_name, self.file_name)
         self.bucket = forest.aws.S3Bucket(self.server_address,
                                           self.bucket_name,
                                           self.download_dir)
@@ -116,7 +117,6 @@ class TestS3BucketIO(unittest.TestCase):
                                          isfile,
                                          mock_print,
                                          urllib):
-        
         isfile.return_value = False
         path = self.bucket.load_file(self.file_name)
         url = self.url

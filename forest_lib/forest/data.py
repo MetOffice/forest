@@ -227,12 +227,12 @@ def get_available_datasets(file_loader,
         fct_data_dict = copy.deepcopy(dict(dataset_template))
         model_run_data_present = True
         for ds_name in dataset_template.keys():
-            fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
-            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(fname1,
+            file_name = 'model_data/SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
+            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(file_name,
                                                                        file_loader,
                                                                        dataset_template[ds_name]['var_lookup'])
 
-            model_run_data_present = model_run_data_present and file_loader.file_exists(fname1)
+            model_run_data_present = model_run_data_present and file_loader.file_exists(file_name)
         # include forecast if all configs are present
         # TODO: reconsider data structure to allow for some model configs at different times to be present
         if model_run_data_present:

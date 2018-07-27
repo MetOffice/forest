@@ -11,8 +11,6 @@ import forest.plot
 import forest.control
 import forest.data
 import forest.aws
-import forest.environment
-
 
 
 
@@ -20,21 +18,20 @@ import forest.environment
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
 
-    use_s3_mount = os.getenv("FOREST_DOWNLOAD_DATA", default="False").upper() == "TRUE"
+    download_data = os.getenv("FOREST_DOWNLOAD_DATA", default="False").upper() == "TRUE"
 
-    if use_s3_mount:
-        s3_root = os.getenv("S3_ROOT", os.path.expanduser("~/s3/"))
-        mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
-        file_loader = forest.aws.S3Mount(mount_directory)
-        user_feedback_directory = os.path.join(mount_directory, 'user_feedback')
-    else:
-        local_root = os.environ.get('LOCAL_ROOT', "~/SEA_data/")
-        download_directory = os.path.join(local_root, 'model_data')
-
+    if download_data:
+        download_directory = os.environ.get('LOCAL_ROOT', os.path.expanduser("~/SEA_data/"))
         file_loader = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
                                           bucket_name='stephen-sea-public-london',
                                           download_directory=download_directory)
         user_feedback_directory = os.path.join(download_directory, 'user_feedback')
+    else:
+        # FUSE mounted file system
+        s3_root = os.getenv("S3_ROOT", os.path.expanduser("~/s3/"))
+        mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
+        file_loader = forest.aws.S3Mount(mount_directory)
+        user_feedback_directory = os.path.join(mount_directory, 'user_feedback')
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
