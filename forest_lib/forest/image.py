@@ -59,7 +59,7 @@ is Left the toggle `show_left()` method has been called
 to get the app into a consistent state
 
 Application programming interface (API)
-=======================================
+---------------------------------------
 
 The following classes have been made available to users
 of Forest for custom visualisations

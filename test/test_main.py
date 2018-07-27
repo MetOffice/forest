@@ -4,7 +4,6 @@ import os
 import sys
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 APP_DIR = os.path.join(TEST_DIR, "../bokeh_apps/plot_sea_model_and_gpm_mpl/")
-print(APP_DIR)
 sys.path.insert(0, APP_DIR)
 import main
 

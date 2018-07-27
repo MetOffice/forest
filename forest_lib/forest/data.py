@@ -194,21 +194,7 @@ def get_model_run_times(days_since_period_start, num_days, model_run_period):
     return forecast_datetimes, forecast_dt_str_list
 
 
-def get_available_times(datasets, var1):
-    key0 = list(datasets.keys())[0]
-    available_times = datasets[key0]['data'].get_times(var1)
-
-    for ds_name in datasets:
-        times1 = datasets[ds_name]['data'].get_times(var1)
-        available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
-    return available_times
-
-
-def get_available_datasets(s3_base,
-                           s3_local_base,
-                           use_s3_mount,
-                           base_path_local,
-                           do_download,
+def get_available_datasets(file_loader,
                            dataset_template,
                            days_since_period_start,
                            num_days,
@@ -218,15 +204,7 @@ def get_available_datasets(s3_base,
     Get a list of model runs times for which there is model output data
     available, and list of dictionaries with a dataset for each model run time.
 
-    :param s3_base: The S3 url to check for datasets
-    :param s3_local_base: The local mount location of that S3 URL
-                          (using fuse mount)
-    :param use_s3_mount: If true, use the local s3 mount rather than download
-                         files
-    :param base_path_local: The local path to files. Only used if use_s3_mount
-                            is false
-    :param do_download: if true and use_s3_mount is false, the files will be
-                        downloaded from the S3 bucket to a local folder
+    :param file_loader: class responsible for loading remote or local files
     :param dataset_template: A dictionary of dataset configs, which will be
                              used a template for each model run that is
                              available.
@@ -249,18 +227,12 @@ def get_available_datasets(s3_base,
         fct_data_dict = copy.deepcopy(dict(dataset_template))
         model_run_data_present = True
         for ds_name in dataset_template.keys():
-            fname1 = 'SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
-            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(ds_name,
-                                                                       fname1,
-                                                                       s3_base,
-                                                                       s3_local_base,
-                                                                       use_s3_mount,
-                                                                       base_path_local,
-                                                                       do_download,
-                                                                       dataset_template[ds_name]['var_lookup'],
-                                                                       )
+            file_name = 'model_data/SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
+            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(file_name,
+                                                                       file_loader,
+                                                                       dataset_template[ds_name]['var_lookup'])
 
-            model_run_data_present = model_run_data_present and fct_data_dict[ds_name]['data'].check_data()
+            model_run_data_present = model_run_data_present and file_loader.file_exists(file_name)
         # include forecast if all configs are present
         # TODO: reconsider data structure to allow for some model configs at different times to be present
         if model_run_data_present:
@@ -273,6 +245,15 @@ def get_available_datasets(s3_base,
     except IndexError:
         fcast_time = None
     return fcast_time, datasets
+
+
+def get_available_times(datasets, var1):
+    key0 = list(datasets.keys())[0]
+    available_times = datasets[key0]['data'].get_times(var1)
+    for ds_name in datasets:
+        times1 = datasets[ds_name]['data'].get_times(var1)
+        available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
+    return available_times
 
 
 def check_bounds(cube1, selected_pt):
@@ -394,17 +375,13 @@ def do_cube_load(path_to_load,
 
 
 class ForestDataset(object):
-
     """Declare main class for holding Forest data.
-    
+
     Methods
     -------
-    
     - __init__() -- Factory method.
     - __str__() -- String method.
-    - check_data() -- Check data exists.
     - get_data() -- Call self.retrieve_data() and self.load_data().
-    - retrieve_data() -- Download data from S3 bucket.
     - load_data() -- Call loader methods.
     - basic_cube_load() -- Load simple data into a cube.
     - wind_speed_loader() -- Load x/y wind data, create speed cube.
@@ -412,56 +389,26 @@ class ForestDataset(object):
     - add_accum_precip_keys() -- Add precip. accum. keys to data dict.
     - accum_precip_loader() -- Load precip. data and calc. accums.
     - accum_precip() -- Calculate precip. accumulations.
-    
+
     Attributes
     ----------
-    
-    - config_name -- Str; Name of data configuration.
     - var_lookup -- Dict; Links variable names to data keys.
     - file_name -- Str; Specifies netCDF file name.
-    - s3_base_url -- Str; S3 data basepath.
-    - s3_url -- Str; Combined S3 basepath and filename.
-    - s3_local_base -- Str; Local S3 data basepath.
-    - s3_local_path -- Str; Combined S3 local basepath and filename.
-    - use_s3_local_mount -- Bool; Specify whether to use S3 mount.
-    - base_local_path -- Str; Local basepath to data.
-    - do_download -- Bool; Specify whether to do data download.
-    - local_path -- Str; Combined local basepath and filename.
     - loaders -- Dict; Dictionary of loader functions for vars.
     - data -- Dict; Loaded data cubes.
-    - path_to_load -- Str; local/S3 path, based on do_download.
-    
     """
     TIME_INDEX_ALL = 'all'
 
     def __init__(self,
-                 config,
                  file_name,
-                 s3_base,
-                 s3_local_base,
-                 use_s3_mount,
-                 base_local_path,
-                 do_download,
+                 file_loader,
                  var_lookup):
-        
         """ForestDataset factory function"""
-        
-        self.config_name = config
         self.var_lookup = var_lookup
         self.file_name = file_name
-        self.s3_base_url = s3_base
-        self.s3_url = os.path.join(self.s3_base_url, self.file_name)
-        self.s3_local_base = s3_local_base
-        self.s3_local_path = os.path.join(self.s3_local_base, self.file_name)
-        self.use_s3_local_mount = use_s3_mount
-        self.base_local_path = base_local_path
-        self.do_download = do_download
-        self.local_path = os.path.join(self.base_local_path,
-                                       self.file_name)
+        self.file_loader = file_loader
 
         # set up time loaders
-
-
         self.time_loaders = dict([(v1, self._basic_time_load) for v1 in VAR_NAMES])
         for wv_var in WIND_VARS:
             self.time_loaders[wv_var] = self._wind_time_load
@@ -472,21 +419,17 @@ class ForestDataset(object):
 
 
         # set up data loader functions
-        self.loaders = dict([(v1, self.basic_cube_load) for v1 in VAR_NAMES])
-        self.loaders[WIND_SPEED_NAME] = self.wind_speed_loader
-        self.loaders[WIND_STREAM_NAME] = self.wind_speed_loader
+        self.cube_loaders = dict([(v1, self.basic_cube_load) for v1 in VAR_NAMES])
+        self.cube_loaders[WIND_SPEED_NAME] = self.wind_speed_loader
+        self.cube_loaders[WIND_STREAM_NAME] = self.wind_speed_loader
 
         for wv_var in WIND_VECTOR_VARS:
-            self.loaders[wv_var] = self.wind_vector_loader
+            self.cube_loaders[wv_var] = self.wind_vector_loader
         for accum_precip_var in PRECIP_ACCUM_VARS:
             ws1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[accum_precip_var]
-            self.loaders[accum_precip_var] = functools.partial(self.accum_precip_loader, ws1)
+            self.cube_loaders[accum_precip_var] = functools.partial(self.accum_precip_loader, ws1)
 
-        self.data = dict([(v1, None) for v1 in self.loaders.keys()])
-        if self.use_s3_local_mount:
-            self.path_to_load = self.s3_local_path
-        else:
-            self.path_to_load = self.local_path
+        self.data = dict([(v1, None) for v1 in self.cube_loaders.keys()])
 
         self.ts_var_names = dict([(v1, v1) for v1 in VAR_NAMES])
         self.ts_loaders = dict([(v1, self._basic_ts_load) for v1 in VAR_NAMES])
@@ -498,47 +441,34 @@ class ForestDataset(object):
                 functools.partial(self._precip_accum_ts_load, ws1)
 
     def __str__(self):
-    
         """Return string"""
-        
         return 'FOREST dataset'
 
-    def check_data(self):
-    
-        """Check that the data represented by this dataset exists."""
-
-        file_exists = False
-        if self.do_download:
-            file_exists = forest.util.check_remote_file_exists(self.s3_url)
-        else:
-            file_exists = os.path.isfile(self.path_to_load)
-        return file_exists
-
     def get_times(self, var_name):
-        """
-        """
-        # if self.times[var_name] is None:
         self.load_times(var_name)
         return self.times[var_name]
 
     def load_times(self, var_name):
-        """
-        """
         self.time_loaders[var_name](var_name)
 
     def _basic_time_load(self, var_name):
         """
+        Has several responsibilities:
+
+        * Constrains cube to be only variables with correct
+          stash section and item codes
+        * Populates self.times[var_name] = [t0, t1, ...]
+        * Populates self.data[var_name] = {t0: None, t1: None, ...}
         """
+        path_to_load = self.file_loader.load_file(self.file_name)
         field_dict = self.var_lookup[var_name]
         cf1 = lambda cube1: \
             cube1.attributes['STASH'].section == \
             field_dict['stash_section'] and \
             cube1.attributes['STASH'].item == \
             field_dict['stash_item']
-
         ic1 = iris.Constraint(cube_func=cf1)
-
-        cube1 = iris.load_cube(self.path_to_load, ic1)
+        cube1 = iris.load_cube(path_to_load, ic1)
         self.times[var_name] = cube1.coord('time').points
         self.data[var_name] =  dict([(t1,None) for t1 in self.times[var_name]] + [('all',None)])
 
@@ -563,14 +493,11 @@ class ForestDataset(object):
         self.data[var_name] = dict([(t1, None) for t1 in self.times[var_name]] + [('all',None)])
 
     def get_data(self, var_name, selected_time, convert_units=True):
-    
         """Calls functions to retrieve and load data.
-        
+
         Arguments
         ---------
-        
         - var_name -- Str; Redundant: used to match other loaders.
-        
         """
         time_ix = selected_time
         if time_ix is None:
@@ -579,17 +506,11 @@ class ForestDataset(object):
             print('loading data for time {0}'.format(time_ix))
 
         if self.times[var_name] is None:
-            if self.check_data():
-                # get data from aws s3 storage
-                self.retrieve_data()
-
-                self.load_times(var_name)
+            self.load_times(var_name)
 
         if self.data[var_name][selected_time] is None:
-            if self.check_data():
-                # Get data from aws s3 storage
-                self.retrieve_data()
-                # Load the data into memory from file (will only load 
+            if self.file_loader.file_exists(self.file_name):
+                # Load the data into memory from file (will only load
                 # metadata initially)
                 self.load_data(var_name, time_ix)
                 has_units = \
@@ -601,36 +522,18 @@ class ForestDataset(object):
                             UNIT_DICT[var_name])
             else:
                 self.data[var_name] = None
-
-
         return self.data[var_name][time_ix]
 
-    def retrieve_data(self):
-    
-        """Download data from S3 bucket."""
-        
-        if self.do_download:
-            if not (os.path.isdir(self.base_local_path)):
-                print('creating directory {0}'.format(self.base_local_path))
-                os.makedirs(self.base_local_path)
-
-            forest.util.download_from_s3(self.s3_url, self.local_path)
-
     def load_data(self, var_name, selected_time):
-    
         """Call loader function.
-        
+
         Arguments
         ---------
-        
         - var_name -- Str; Var name used as dict key to select loader.
-
         """
-        
-        self.loaders[var_name](var_name, selected_time)
+        self.cube_loaders[var_name](var_name, selected_time)
 
     def basic_cube_load(self, var_name, time_ix):
-    
         """Load simple cubes.
 
         Arguments
@@ -641,11 +544,11 @@ class ForestDataset(object):
 
         """
         field_dict = self.var_lookup[var_name]
-        dc1 = do_cube_load(path_to_load=self.path_to_load,
+        path_to_load = self.file_loader.load_file(self.file_name)
+        dc1 = do_cube_load(path_to_load=path_to_load,
                            field_dict=field_dict,
                            time_ix=time_ix,
                            lat_long_coord=None)
-
         self.data[var_name][time_ix] = dc1
 
     def wind_speed_loader(self, var_name, time_ix):
@@ -661,7 +564,7 @@ class ForestDataset(object):
         """
 
         cube_pow = iris.analysis.maths.exponentiate
-        print('calculating wind speed for {0}'.format(self.config_name))
+        print('calculating wind speed')
         cube_x_wind = self.get_data('x_wind', time_ix)
         cube_y_wind = self.get_data('y_wind', time_ix)
 
@@ -721,7 +624,8 @@ class ForestDataset(object):
         ic1 = iris.Constraint(cube_func=cf1,
                               coord_values=coord_constraint_dict)
 
-        precip_cube1 = iris.load_cube(self.path_to_load, ic1)
+        path_to_load = self.file_loader.load_file(self.file_name)
+        precip_cube1 = iris.load_cube(path_to_load, ic1)
         precip_cube1.convert_units(UNIT_DICT['precipitation']) # convert to average hourly accumulation
         precip_cube1.data *= 3 #multiply by 3 to get 3 hour accumulation
         if precip_cube1.coord('time').shape[0] == 1:
@@ -737,20 +641,14 @@ class ForestDataset(object):
         time_ix = ForestDataset.TIME_INDEX_ALL
         dc1 = None
         if self.times[var_name] is None:
-            if self.check_data():
-                # get data from aws s3 storage
-                self.retrieve_data()
-
-                self.load_times(var_name)
+            self.load_times(var_name)
 
         if self.data[var_name][time_ix] is None:
-            if self.check_data():
-                # Get data from aws s3 storage
-                self.retrieve_data()
-                dc1 = do_cube_load(path_to_load=self.path_to_load,
-                                   field_dict=field_dict,
-                                   time_ix=time_ix,
-                                   lat_long_coord=selected_point)
+            path_to_load = self.file_loader.load_file(self.file_name)
+            dc1 = do_cube_load(path_to_load=path_to_load,
+                               field_dict=field_dict,
+                               time_ix=time_ix,
+                               lat_long_coord=selected_point)
         return dc1
 
 

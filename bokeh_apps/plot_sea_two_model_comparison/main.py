@@ -3,22 +3,36 @@ import warnings
 warnings.filterwarnings('ignore')
 import bokeh.io
 import bokeh.plotting
+import numpy
 import matplotlib
 matplotlib.use('agg')
 import forest.util
 import forest.plot
 import forest.control
 import forest.data
+import forest.aws
 
-
-# Extract and Load
-bucket_name = 'stephen-sea-public-london'
-server_address = 'https://s3.eu-west-2.amazonaws.com'
 
 
 @forest.util.timer
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
+
+    download_data = os.getenv("FOREST_DOWNLOAD_DATA", default="False").upper() == "TRUE"
+
+    if download_data:
+        download_directory = os.environ.get('LOCAL_ROOT', os.path.expanduser("~/SEA_data/"))
+        file_loader = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
+                                          bucket_name='stephen-sea-public-london',
+                                          download_directory=download_directory)
+        user_feedback_directory = os.path.join(download_directory, 'user_feedback')
+    else:
+        # FUSE mounted file system
+        s3_root = os.getenv("S3_ROOT", os.path.expanduser("~/s3/"))
+        mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
+        file_loader = forest.aws.S3Mount(mount_directory)
+        user_feedback_directory = os.path.join(mount_directory, 'user_feedback')
+
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
         forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model',
@@ -35,31 +49,8 @@ def main(bokeh_id):
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
-    s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
-                                                    bucket=bucket_name)
-
-    try:
-        s3_root = os.environ['S3_ROOT']
-    except KeyError:
-        s3_root = os.path.expanduser('~/s3')
-    s3_local_base = os.path.join(s3_root,
-                                 bucket_name,
-                                 'model_data')
-    try:
-        local_root = os.environ['LOCAL_ROOT']
-    except KeyError:
-        local_root = os.path.expanduser('~/SEA_data')
-    base_path_local = os.path.join(local_root, 'model_data')
-
-    use_s3_mount = True
-    do_download = False
-
     init_fcast_time, datasets = \
-        forest.data.get_available_datasets(s3_base,
-                                           s3_local_base,
-                                           use_s3_mount,
-                                           base_path_local,
-                                           do_download,
+        forest.data.get_available_datasets(file_loader,
                                            dataset_template,
                                            forest.data.NUM_DATA_DAYS,
                                            forest.data.NUM_DATA_DAYS,
@@ -104,9 +95,8 @@ def main(bokeh_id):
     init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
-    available_times = \
-        forest.data.get_available_times(datasets[init_fcast_time],
-                                        plot_type_time_lookups[init_var])
+    available_times = forest.data.get_available_times(datasets[init_fcast_time],
+                                                      plot_type_time_lookups[init_var])
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
@@ -165,12 +155,6 @@ def main(bokeh_id):
     bokeh_image_ts = plot_obj_ts.create_plot()
 
 
-    s3_local_base_feedback = \
-        os.path.join(s3_root,
-                     bucket_name,
-                     'user_feedback')
-
-
     # Set up GUI controller class
     if user_interface == "double-plot":
         bokeh_figures = [bokeh_figure_left, bokeh_figure_right]
@@ -186,7 +170,7 @@ def main(bokeh_id):
                                                colorbar_widget,
                                                [stats_left, stats_right],
                                                region_dict,
-                                               s3_local_base_feedback,
+                                               user_feedback_directory,
                                                bokeh_id,
                                                )
 
@@ -203,4 +187,5 @@ def main(bokeh_id):
     bokeh.plotting.curdoc().title = 'Two model comparison'
 
 
-main(__name__)
+if (__name__ == '__main__') or (__name__.startswith("bk_script")):
+    main(__name__)
