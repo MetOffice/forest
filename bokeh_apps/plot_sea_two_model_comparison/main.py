@@ -11,24 +11,26 @@ import forest.plot
 import forest.control
 import forest.data
 import forest.aws
+import forest.environment
+
+
 
 
 @forest.util.timer
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
-    use_s3_mount = False
+
+    use_s3_mount = os.getenv("FOREST_DOWNLOAD_DATA", default="False").upper() == "TRUE"
+
     if use_s3_mount:
-        try:
-            mount_directory = os.path.join(os.environ['S3_ROOT'], 'stephen-sea-public-london')
-        except KeyError:
-            mount_directory = os.path.expanduser('~/s3/stephen-sea-public-london')
+        s3_root = os.getenv("S3_ROOT", os.path.expanduser("~/s3/"))
+        mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
         file_loader = forest.aws.S3Mount(mount_directory)
         user_feedback_directory = os.path.join(mount_directory, 'user_feedback')
     else:
-        try:
-            download_directory = os.path.join(os.environ['LOCAL_ROOT'], 'model_data')
-        except KeyError:
-            download_directory = os.path.expanduser("~/SEA_data/model_data")
+        local_root = os.environ.get('LOCAL_ROOT', "~/SEA_data/")
+        download_directory = os.path.join(local_root, 'model_data')
+
         file_loader = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
                                           bucket_name='stephen-sea-public-london',
                                           download_directory=download_directory)

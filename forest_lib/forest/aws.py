@@ -102,12 +102,12 @@ class S3Bucket(object):
         :returns: logical indicating file existence
         """
         try:
-            _ = urllib.request.urlopen(remote_path)
-            print('file {0} found at remote location.'.format(remote_path))
+            _ = urllib.request.urlopen(url)
+            print('file {0} found at remote location.'.format(url))
             return True
         except urllib.error.HTTPError:
             warning_msg1 = 'warning: file {0} NOT found at remote location.'
-            warning_msg1 = warning_msg1.format(remote_path)
+            warning_msg1 = warning_msg1.format(url)
             print(warning_msg1)
         return False
 
@@ -136,7 +136,7 @@ class S3Bucket(object):
         if not os.path.isdir(self.download_directory):
             print("creating directory {0}".format(self.download_directory))
             os.makedirs(self.download_directory)
-        if not self.local_file_exists(file_name) and self.remote_file_exists(file_name):
+        if not self.local_file_exists(file_name):
             self.s3_download(self.s3_url(file_name),
                              self.path_to_load(file_name))
         return self.path_to_load(file_name)
@@ -150,12 +150,10 @@ class S3Bucket(object):
     @staticmethod
     def s3_download(url, path):
         """port of forest.util.download_from_s3"""
-        if not os.path.isfile(path):
-            print('retrieving file from {0}'.format(url))
-            urllib.request.urlretrieve(url, path)
-            print('file {0} downloaded'.format(path))
-        else:
-            print(path, ' - File already downloaded')
+        
+        print('retrieving file from {0}'.format(url))
+        urllib.request.urlretrieve(url, path)
+        print('file {0} downloaded'.format(path))
 
 
 class S3Mount(object):
