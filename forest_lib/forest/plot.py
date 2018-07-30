@@ -884,10 +884,7 @@ class ForestPlot(object):
 
 
     def create_bokeh_img_plot_from_fig(self):
-
-        '''
-
-        '''
+        ''''''
         cur_region = self.region_dict[self.current_region]
 
         if self.bokeh_figure is None:
@@ -903,16 +900,8 @@ class ForestPlot(object):
                                       plot_height=self.bokeh_fig_size[1],
                                       x_range=x_limits,
                                       y_range=y_limits,
-                                      tools=','.join(BOKEH_TOOLS_LIST))
-
-        # Initialize figure
-        self.bokeh_figure = \
-            pretty_bokeh_figure(plot_width=self.bokeh_fig_size[0],
-                                plot_height=self.bokeh_fig_size[1],
-                                x_range=x_limits,
-                                y_range=y_limits,
-                                tools=','.join(BOKEH_TOOLS_LIST),
-                                toolbar_location='above')
+                                      tools=','.join(BOKEH_TOOLS_LIST),
+                                      toolbar_location='above')
 
         if self.current_img_array is not None:
             self.create_bokeh_img()
