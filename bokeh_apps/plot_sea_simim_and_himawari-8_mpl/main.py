@@ -1,11 +1,10 @@
 '''SE Asia Sim. Im. and Himawari-8 Matplotlib app
 
- This script creates plots of simulated satellite imagery and 
-  Himawari-8 imagery for SE Asia using the Matplotlib plotting 
+ This script creates plots of simulated satellite imagery and
+  Himawari-8 imagery for SE Asia using the Matplotlib plotting
   library to provide images to a Bokeh Server app.
 
 '''
-
 import os
 import datetime
 import copy
@@ -24,6 +23,8 @@ import forest.plot
 
 import simim_sat_control
 import simim_sat_data
+
+
 
 def main(bokeh_id):
     

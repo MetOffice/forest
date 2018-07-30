@@ -7,6 +7,43 @@ import forest.aws
 import forest.data
 
 
+@unittest.mock.patch("forest.aws.urllib")
+@unittest.mock.patch("forest.aws.os")
+@unittest.mock.patch("forest.aws.print", autospec=True)
+class TestDownloadFromS3(unittest.TestCase):
+    def test_download_from_s3_calls_urlretrieve(self,
+                                                mock_print,
+                                                os,
+                                                urllib):
+        s3_url = "s3_url"
+        local_path = "local_path"
+        os.path.isfile.return_value = False
+        forest.aws.S3Bucket.s3_download(s3_url, local_path)
+        urllib.request.urlretrieve.assert_called_once_with(s3_url,
+                                                           local_path)
+
+
+class TestS3Mount(unittest.TestCase):
+    def setUp(self):
+        self.file_name = "model_data/file.nc"
+        self.directory = "directory"
+        self.mount = forest.aws.S3Mount(self.directory)
+
+    def test_mount_directory(self):
+        self.assertEqual(self.mount.directory, self.directory)
+
+    @unittest.mock.patch("forest.aws.os.path.isfile")
+    def test_file_exists_queries_file_system(self, isfile):
+        self.mount.file_exists(self.file_name)
+        expect = os.path.join(self.directory, self.file_name)
+        isfile.assert_called_once_with(expect)
+
+    def test_path_to_load(self):
+        result = self.mount.path_to_load(self.file_name)
+        expect = os.path.join(self.directory, self.file_name)
+        self.assertEqual(result, expect)
+
+
 class TestS3Bucket(unittest.TestCase):
     """AWS S3 architecture
 
@@ -15,17 +52,15 @@ class TestS3Bucket(unittest.TestCase):
     a simple API to the internals of Forest
     """
     def setUp(self):
-        self.file_name = "file.nc"
+        self.file_name = "model_data/file.nc"
         self.server_address = "https://s3.eu-west-2.amazonaws.com"
         self.bucket_name = "stephen-sea-public-london"
-        self.s3_base = "{server}/{bucket}/model_data/".format(server=self.server_address,
-                                                              bucket=self.bucket_name)
+        self.s3_base = "{server}/{bucket}".format(server=self.server_address,
+                                                  bucket=self.bucket_name)
+        self.download_dir = "download_directory"
         self.bucket = forest.aws.S3Bucket(self.server_address,
-                                          self.bucket_name)
-
-    def tearDown(self):
-        if "S3_ROOT" in os.environ:
-            del os.environ["S3_ROOT"]
+                                          self.bucket_name,
+                                          self.download_dir)
 
     def test_server_address(self):
         self.assertEqual(self.bucket.server_address, self.server_address)
@@ -33,120 +68,56 @@ class TestS3Bucket(unittest.TestCase):
     def test_bucket_name(self):
         self.assertEqual(self.bucket.bucket_name, self.bucket_name)
 
-    def test_s3_base(self):
-        self.assertEqual(self.bucket.s3_base, self.s3_base)
+    def test_path_to_load(self):
+        result = self.bucket.path_to_load(self.file_name)
+        expect = os.path.join(self.download_dir, self.file_name)
+        self.assertEqual(result, expect)
 
-    def test_s3_root_given_environment_variable(self):
-        s3_root_variable = "s3_root_variable"
-        os.environ["S3_ROOT"] = s3_root_variable
-        self.assertEqual(self.bucket.s3_root, s3_root_variable)
 
-    def test_s3_root_given_user_directory(self):
-        self.assertEqual(self.bucket.s3_root, os.path.expanduser("~/s3"))
-
-    def test_s3_local_base(self):
-        expect = "{}/{}/model_data".format(self.bucket.s3_root,
-                                           self.bucket.bucket_name)
-        self.assertEqual(self.bucket.s3_local_base, expect)
-
-    def test_use_s3_mount_returns_true(self):
-        self.assertEqual(self.bucket.use_s3_mount, True)
-
-    def test_do_download_returns_false(self):
-        self.assertEqual(self.bucket.do_download, False)
-
-    def test_base_path_local(self):
-        self.assertEqual(self.bucket.base_path_local, os.path.expanduser("~/SEA_data/model_data"))
-
-    def test_path_to_load_given_use_s3_mount_true(self):
-        self.bucket.use_s3_mount = True
-        self.assertEqual(self.bucket.path_to_load(self.file_name),
-                         self.bucket.s3_local_path(self.file_name))
-
-    def test_path_to_load_given_use_s3_mount_false(self):
-        self.bucket.use_s3_mount = False
-        self.assertEqual(self.bucket.path_to_load(self.file_name),
-                         self.bucket.local_path(self.file_name))
-
-@unittest.mock.patch("forest.aws.os")
-@unittest.mock.patch("forest.aws.util")
+@unittest.mock.patch("forest.aws.urllib")
+@unittest.mock.patch("forest.aws.print", autospec=True)
 class TestS3BucketIO(unittest.TestCase):
     def setUp(self):
-        self.file_name = "file.nc"
+        self.file_name = "model_data/file.nc"
         self.server_address = "server_address"
         self.bucket_name = "bucket_name"
+        self.download_dir = "download_directory"
+        self.url = os.path.join(self.server_address, self.bucket_name, self.file_name)
         self.bucket = forest.aws.S3Bucket(self.server_address,
-                                          self.bucket_name)
+                                          self.bucket_name,
+                                          self.download_dir)
 
-    def test_file_exists_calls_remote_file_exists(self, util, os):
-        self.bucket.do_download = True
+    def test_file_exists_calls_s3_file_exists(self,
+                                              mock_print,
+                                              urllib):
         self.bucket.file_exists(self.file_name)
-        expect = self.bucket.s3_url(self.file_name)
-        util.check_remote_file_exists.assert_called_once_with(expect)
+        expect = self.url
+        urllib.request.urlopen.assert_called_once_with(expect)
 
-    def test_file_exists_calls_isfile(self, util, os):
-        self.bucket.do_download = False
-        self.bucket.file_exists(self.file_name)
-        expect = self.bucket.path_to_load(self.file_name)
-        os.path.isfile.assert_called_once_with(expect)
+    def test_local_file_exists(self,
+                                mock_print,
+                                urllib):
+        with unittest.mock.patch("forest.aws.os.path.isfile") as isfile:
+            self.bucket.local_file_exists(self.file_name)
+            expect = self.download_dir + '/' + self.file_name
+            isfile.assert_called_once_with(expect)
 
-    def test_retrieve_file_calls_makedirs(self, util, os):
+    @unittest.mock.patch("forest.aws.os")
+    def test_load_file_calls_makedirs(self,
+                                      os,
+                                      mock_print,
+                                      urllib):
         os.path.isdir.return_value = False
-        self.bucket.retrieve_file(self.file_name, verbose=False)
-        directory = self.bucket.base_path_local
-        os.path.isdir.assert_called_once_with(directory)
-        os.makedirs.assert_called_once_with(directory)
+        self.bucket.load_file(self.file_name)
+        os.path.isdir.assert_called_once_with(self.download_dir)
+        os.makedirs.assert_called_once_with(self.download_dir)
 
-    def test_retrieve_file_calls_download_from_s3(self, util, os):
-        self.bucket.retrieve_file(self.file_name)
-        directory = self.bucket.base_path_local
-        url = self.bucket.s3_url(self.file_name)
-        local_file = self.bucket.local_path(self.file_name)
-        util.download_from_s3.assert_called_once_with(url, local_file)
-
-
-class TestSyntheticBucket(unittest.TestCase):
-    """unit test synthetic data"""
-    def setUp(self):
-        self.file_name = None
-        self.constraint = None
-        self.samples = forest.aws.SyntheticBucket()
-        self.cube = self.samples.load_cube(self.file_name, self.constraint)
-
-    def test_path_to_load_function_exists(self):
-        self.samples.path_to_load(self.file_name)
-
-    def test_load_cube_has_time_dimension(self):
-        self.cube.coord('time').points
-
-    def test_load_cube_has_at_least_two_time_points(self):
-        self.cube.coord('time').points[1]
-
-    def test_load_cube_returns_cube_with_latitude_dimcoord(self):
-        self.cube.coords('latitude')[0].points
-
-    def test_load_cube_returns_cube_with_longitude_dimcoord(self):
-        self.cube.coords('longitude')[0].points
-
-    def test_load_cube_has_attributes_stash_section(self):
-        self.cube.attributes['STASH'].section
-
-    @unittest.skip("understanding ForestDataset")
-    def test_get_available_times(self):
-        """sample data should satisfy forest.data.get_available_times"""
-        file_name = None
-        bucket = self.samples
-        variable = "precipitation"  # Hard-coded Forest key
-        var_lookup = {
-            variable: {
-                "stash_section": "section"
-            }
-        }
-        datasets = {
-            "name": {
-                "data": forest.data.ForestDataset(file_name,
-                                                  bucket,
-                                                  var_lookup)
-            }
-        }
-        forest.data.get_available_times(datasets, variable)
+    @unittest.mock.patch("forest.aws.os.path.isfile")
+    def test_load_file_calls_s3_download(self,
+                                         isfile,
+                                         mock_print,
+                                         urllib):
+        isfile.return_value = False
+        path = self.bucket.load_file(self.file_name)
+        url = self.url
+        urllib.request.urlretrieve.assert_called_once_with(url, path)

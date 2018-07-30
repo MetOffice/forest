@@ -19,6 +19,7 @@ import forest.data
 
 import numpy as np
 import scipy.ndimage
+import iris.analysis
 
 
 def rgba_from_mappable(mappable, shape2d):
@@ -73,7 +74,7 @@ def clip_xy(x, y, extent):
     return x[pts], y[pts]
 
 
-BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom']
+BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
 
 class MissingDataError(Exception):
     def __init__(self, config, var, time):
@@ -126,7 +127,8 @@ class ForestPlot(object):
                  unit_dict,
                  unit_dict_display,
                  app_path,
-                 init_time):
+                 init_time,
+                 bokeh_figure=None):
 
         '''Initialisation function for ForestPlot class
         '''
@@ -143,6 +145,7 @@ class ForestPlot(object):
         self.current_region = reg1
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
+        self.selected_point = None
         self.show_colorbar = False
         self.show_axis_ticks = False
         self.use_mpl_title = False
@@ -151,7 +154,7 @@ class ForestPlot(object):
         self.current_title = ''
         self.stats_string = ''
         self.colorbar_link = plot_var + '_colorbar.png'
-        self.bokeh_figure = None
+        self.bokeh_figure = bokeh_figure
         self.bokeh_image = None
         self.bokeh_img_ds = None
         self.async = False
@@ -270,15 +273,10 @@ class ForestPlot(object):
                              'V': self.update_sat_simim_imagery,
                              'blank': self.create_blank,
                              }
-
-        #timer decorations
-        for key1 in self.update_funcs:
-            self.update_funcs[key1] = \
-                forest.util.timer(self.update_funcs[key1])
-
-        for key1 in self.plot_funcs:
-            self.plot_funcs[key1] = \
-                forest.util.timer(self.plot_funcs[key1])
+        self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
+        self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
+        self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
+        self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
 
     def update_coords(self, data_cube):
 
@@ -352,7 +350,7 @@ class ForestPlot(object):
 
         '''
 
-        wind_speed_cube = self.get_data()
+        wind_speed_cube = self.get_data(forest.data.WIND_SPEED_NAME)
 
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
@@ -752,7 +750,40 @@ class ForestPlot(object):
         model_run_info += '{dt.hour:02d}{dt.minute:02d}Z'
         model_run_info = model_run_info.format(dt=mr_dtobj)
 
+        selected_pt_info = 'No point selected'
+        if self.selected_point is not None:
+            if self.selected_point[0] > 0.0:
+                lat_str = '{0:.2f} N'.format(abs(self.selected_point[0]))
+            else:
+                lat_str = '{0:.2f} S'.format(abs(self.selected_point[0]))
+
+            if self.selected_point[1] > 0.0:
+                long_str = '{0:.2f} E'.format(abs(self.selected_point[1]))
+            else:
+                long_str = '{0:.2f} W'.format(abs(self.selected_point[1]))
+
+
+            sample_pts = [('latitude', self.selected_point[0]),
+                          ('longitude', self.selected_point[1])]
+            select_val_cube = \
+                current_cube.interpolate(sample_pts,
+                                            iris.analysis.Linear())
+
+            select_val = float(select_val_cube.data)
+
+            field_val_str = \
+                'value: {val:.2f} {unit_str}'.format(val=select_val,
+                                                     unit_str=unit_str)
+
+            selected_pt_info = 'selected point {lat},{long}<br>'
+            selected_pt_info += 'field value {fv}'
+            selected_pt_info = selected_pt_info.format(lat=lat_str,
+                                                       long=long_str,
+                                                       fv=field_val_str)
+
+
         stats_str_list += [model_run_info,'']
+        stats_str_list += [selected_pt_info, '']
         stats_str_list += ['Max = {0:.4f} {1}'.format(max_val, unit_str)]
         stats_str_list += ['Min = {0:.4f} {1}'.format(min_val, unit_str)]
         stats_str_list += ['Mean = {0:.4f} {1}'.format(mean_val, unit_str)]
@@ -795,6 +826,7 @@ class ForestPlot(object):
 
         return self.bokeh_figure
 
+    @forest.util.timer
     def create_matplotlib_fig(self):
 
         '''
@@ -824,6 +856,33 @@ class ForestPlot(object):
 
             self.current_figure.canvas.draw()
 
+    def _setup_tools(self):
+        self.bokeh_tools = dict([(k1,None) for k1 in BOKEH_TOOLS_LIST])
+        if 'pan' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['pan'] = bokeh.models.PanTool()
+        if 'wheel_zoom' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['wheel_zoom'] = bokeh.models.WheelZoomTool()
+        if 'reset' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['reset'] = bokeh.models.ResetTool()
+        if 'save' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['save'] = bokeh.models.SaveTool()
+        if 'box_zoom' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['box_zoom'] = bokeh.models.BoxZoomTool()
+        if 'hover' in BOKEH_TOOLS_LIST:
+            self.bokeh_tools['hover'] = bokeh.models.HoverTool(
+                tooltips=[
+                    ("(x,y)", "($x, $y)"),
+                ])
+
+        self.active_bokeh_tools = {}
+        self.active_bokeh_tools['drag'] = self.bokeh_tools['pan']
+        self.active_bokeh_tools['inspect'] = self.bokeh_tools['hover']
+        self.active_bokeh_tools['scroll'] = self.bokeh_tools['wheel_zoom']
+        self.active_bokeh_tools['tap'] = None
+
+
+
+
     def create_bokeh_img_plot_from_fig(self):
 
         '''
@@ -831,11 +890,20 @@ class ForestPlot(object):
         '''
         cur_region = self.region_dict[self.current_region]
 
-        # Set figure navigation limits
-        x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3],
-                                        bounds=(cur_region[2], cur_region[3]))
-        y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1],
-                                        bounds=(cur_region[0], cur_region[1]))
+        if self.bokeh_figure is None:
+            # Set figure navigation limits
+            x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3],
+                                            bounds=(cur_region[2], cur_region[3]))
+            y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1],
+                                            bounds=(cur_region[0], cur_region[1]))
+
+            # Initialize figure
+            self.bokeh_figure = \
+                bokeh.plotting.figure(plot_width=self.bokeh_fig_size[0],
+                                      plot_height=self.bokeh_fig_size[1],
+                                      x_range=x_limits,
+                                      y_range=y_limits,
+                                      tools=','.join(BOKEH_TOOLS_LIST))
 
         # Initialize figure
         self.bokeh_figure = \
@@ -1005,6 +1073,7 @@ class ForestPlot(object):
         except AttributeError as e1:
             print('Unable to update colorbar as colorbar widget not initiated')
 
+    @forest.util.timer
     def set_data_time(self, new_time):
 
         '''
@@ -1014,7 +1083,14 @@ class ForestPlot(object):
         print('selected new time {0}'.format(new_time))
 
         self.current_time = new_time
-        self.update_plot()
+        # self.update_plot()
+        self.create_matplotlib_fig()
+        if not self.async:
+            self.update_bokeh_img_plot_from_fig()
+            if self.stats_widget:
+                self.update_stats_widget()
+            if self.colorbar_widget:
+                self.update_colorbar_widget()
 
     def set_var(self, new_var):
 
@@ -1072,6 +1148,16 @@ class ForestPlot(object):
             if self.stats_widget:
                 self.update_stats_widget()
 
+    def set_selected_point(self, latitude, longitude):
+        self.selected_point = (latitude, longitude)
+        if not self.async:
+
+            if self.stats_widget:
+                current_data = \
+                    self.get_data(self.stats_data_var[self.current_var])
+                self.update_stats(current_data)
+                self.update_stats_widget()
+
 
     def link_axes_to_other_plot(self, other_plot):
 
@@ -1084,3 +1170,161 @@ class ForestPlot(object):
             self.bokeh_figure.y_range = other_plot.bokeh_figure.y_range
         except:
             print('bokeh plot linking failed.')
+
+
+class ForestTimeSeries():
+    """
+    Class representing a time series plot. Unlike a map based plot, where
+    each plot represents a single dataset, the timeseries plot plot several
+    datasets together in the same plot for comparison purposes.
+    """
+    def __init__(self,
+                 datasets,
+                 model_run_time,
+                 selected_point,
+                 current_var):
+        """
+
+        :param datasets: A dictionary object of datasets
+        :param model_run_time: A string representing the model run to be
+                               displayed. All configs for the given model run
+                               will be displayed on the timeseries graph.
+        :param selected_point: The lat/long coordinates of the point to
+                               display the timeseries for.
+        :param current_var: The current variable to be displyed
+                            e.g. precipitation
+        """
+        self.datasets = datasets
+        self.model_run_time = model_run_time
+        self.current_point = selected_point
+        self.current_fig = None
+        self.current_var = current_var
+        self.cds_dict = {}
+
+        self.placeholder_data = {'x_values': [0.0,1.0],
+                                 'y_values': [0.0,0.0]}
+
+
+    def __str__(self):
+        """
+
+        :return: A string describing the class.
+        """
+        return 'Class representing a time series plot in the forest tool'
+
+    def create_plot(self):
+        """
+        Create the timeseries plot in a bokeh figure. This is where the actual
+        work is done.
+        :return: A bokeh figure object containing the timeseries plot.
+        """
+        self.current_fig = bokeh.plotting.figure(tools=BOKEH_TOOLS_LIST)
+        self.bokeh_lines = {}
+        self.cds_list = {}
+        for ds_name in self.datasets.keys():
+            current_ds = self.datasets[ds_name]['data']
+            times1 = current_ds.get_times(self.current_var)
+            times1 = times1 - times1[0]
+            var_cube = \
+                current_ds.get_timeseries(self.current_var,
+                                          self.current_point)
+            if var_cube:
+                var_values = var_cube.data
+
+                data1 = {'x_values': times1,
+                         'y_values': var_values}
+
+                ds_source = bokeh.models.ColumnDataSource(data=data1)
+
+                ds_line_plot = self.current_fig.line(x='x_values',
+                                                     y='y_values',
+                                                     source=ds_source,
+                                                     name=ds_name)
+            else:
+                ds_source = \
+                    bokeh.models.ColumnDataSource(data=self.placeholder_data)
+                ds_line_plot = self.current_fig.line(x='x_values',
+                                                     y='y_values',
+                                                     source=ds_source,
+                                                     name=ds_name)
+
+            self.cds_dict[ds_name] = ds_source
+            self.bokeh_lines[ds_name] = ds_line_plot
+
+        self._update_fig_title()
+
+        return self.current_fig
+
+    def _update_plot(self):
+        """
+        Update the bokeh figure with a new timeseries plot. This is called by
+        functions that are called to change an input, and should not be called
+        by a user directly.
+        :return:
+        """
+        for ds_name in self.datasets.keys():
+            if self.cds_dict[ds_name] is not None:
+                current_ds = self.datasets[ds_name]['data']
+                times1 = current_ds.get_times(self.current_var)
+                times1 = times1 - times1[0]
+                var_cube = \
+                    current_ds.get_timeseries(self.current_var,
+                                              self.current_point)
+
+                if var_cube is not None:
+                    var_values = var_cube.data
+
+                    data1 = {'x_values': times1,
+                         'y_values': var_values}
+
+                    self.cds_dict[ds_name].data = data1
+                else:
+                    self.cds_dict[ds_name].data = self.placeholder_data
+        self._update_fig_title()
+
+    def _update_fig_title(self):
+        """
+        Update the title of the bokeh figure.
+        :return: No return.
+        """
+        fig_title = 'Plotting variable {var} for model run {mr}'
+        fig_title = fig_title.format(var=self.current_var,
+                                     mr=str(self.model_run_time))
+        self.current_fig.title.text = fig_title
+
+    def set_var(self, new_var):
+        """
+        Set the timeseries to display the
+        :param new_var: The new variable to be displayed.
+        :return: No return value
+        """
+        self.current_var = new_var
+        self._update_plot()
+
+    def set_selected_point(self, latitude, longitude):
+        """
+        Set a new location for the timeseries display.
+        :param latitude: Latitude of the location to display.
+        :param longitude: longitude of the location to display.
+        :return: No return value.
+        """
+        self.current_point = (latitude, longitude)
+        self._update_plot()
+
+    def set_data_time(self, new_time):
+        """
+        This function is provided for a consistent interface with other plot
+        classes, but does nothing.
+        """
+        pass
+
+    def set_dataset(self, new_dataset, new_model_run_time):
+        """
+        Set a new model run as the input to the timeseries.
+        :param new_dataset: The dictionary representing the new model run
+                            dataset.
+        :param new_model_run_time: A string representing the model run time.
+        :return: No return value.
+        """
+        self.datasets = new_dataset
+        self.model_run_time = new_model_run_time
