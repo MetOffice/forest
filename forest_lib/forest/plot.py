@@ -56,7 +56,7 @@ class ForestPlot(object):
                  unit_dict_display,
                  app_path,
                  init_time,
-                 ):
+                 bokeh_figure=None):
 
         '''Initialisation function for ForestPlot class
         '''
@@ -82,7 +82,7 @@ class ForestPlot(object):
         self.current_title = ''
         self.stats_string = ''
         self.colorbar_link = plot_var + '_colorbar.png'
-        self.bokeh_figure = None
+        self.bokeh_figure = bokeh_figure
         self.bokeh_image = None
         self.bokeh_img_ds = None
         self.async = False
@@ -878,34 +878,26 @@ class ForestPlot(object):
         print('executing create_bokeh_img_plot_from_fig')
         cur_region = self.region_dict[self.current_region]
 
-        # Set figure navigation limits
-        x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3],
-                                        bounds=(cur_region[2], cur_region[3]))
-        y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1],
-                                        bounds=(cur_region[0], cur_region[1]))
+        if self.bokeh_figure is None:
+            # Set figure navigation limits
+            x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3],
+                                            bounds=(cur_region[2], cur_region[3]))
+            y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1],
+                                            bounds=(cur_region[0], cur_region[1]))
 
-        self._setup_tools()
-        tools_list = \
-            [self.bokeh_tools[k1] for k1 in self.bokeh_tools.keys()]
+            # Initialize figure
+            self.bokeh_figure = \
+                bokeh.plotting.figure(plot_width=self.bokeh_fig_size[0],
+                                      plot_height=self.bokeh_fig_size[1],
+                                      x_range=x_limits,
+                                      y_range=y_limits,
+                                      tools=','.join(BOKEH_TOOLS_LIST))
 
-        # Initialize figure
-        self.bokeh_figure = \
-            bokeh.plotting.figure(plot_width=self.bokeh_fig_size[0],
-                                  plot_height=self.bokeh_fig_size[1],
-                                  x_range=x_limits,
-                                  y_range=y_limits,
-                                  tools=tools_list,
-                                  )
-        cur_tb = self.bokeh_figure.toolbar
-        cur_tb.active_drag = self.active_bokeh_tools['drag']
-        cur_tb.active_inspect = self.active_bokeh_tools['inspect']
-        cur_tb.active_tap = self.active_bokeh_tools['tap']
-        cur_tb.active_scroll = self.active_bokeh_tools['scroll']
 
         if self.current_img_array is not None:
             self.create_bokeh_img()
         else:
-
+            #TODO: create a blank placeholder image wit data source for the slider tool to use
             mid_x = (cur_region[2] + cur_region[3]) * 0.5
             mid_y = (cur_region[0] + cur_region[1]) * 0.5
             self.overlay_text = self.bokeh_figure.text(x=[mid_x],
@@ -1150,7 +1142,6 @@ class ForestPlot(object):
         except:
             print('bokeh plot linking failed.')
 
-
 class ForestTimeSeries():
     """
     Class representing a time series plot. Unlike a map based plot, where
@@ -1207,12 +1198,12 @@ class ForestTimeSeries():
         for ds_name in self.datasets.keys():
 
             if do_blank_var:
-                ds_source = \
+                self.bokeh_img_ds = \
                     bokeh.models.ColumnDataSource(data=self.placeholder_data)
                 self.current_data[ds_name] = self.placeholder_data
                 ds_line_plot = self.current_fig.line(x='x_values',
                                                      y='y_values',
-                                                     source=ds_source,
+                                                     source=self.bokeh_img_ds,
                                                      name=ds_name)
             else:
                 current_ds = self.datasets[ds_name]['data']
@@ -1227,23 +1218,23 @@ class ForestTimeSeries():
                     data1 = {'x_values': times1,
                              'y_values': var_values}
 
-                    ds_source = bokeh.models.ColumnDataSource(data=data1)
+                    self.bokeh_img_ds = bokeh.models.ColumnDataSource(data=data1)
                     self.current_data[ds_name] = data1
 
                     ds_line_plot = self.current_fig.line(x='x_values',
                                                          y='y_values',
-                                                         source=ds_source,
+                                                         source=self.bokeh_img_ds,
                                                          name=ds_name)
                 else:
-                    ds_source = \
+                    self.bokeh_img_ds = \
                         bokeh.models.ColumnDataSource(data=self.placeholder_data)
                     self.current_data[ds_name] = self.placeholder_data
                     ds_line_plot = self.current_fig.line(x='x_values',
                                                          y='y_values',
-                                                         source=ds_source,
+                                                         source=self.bokeh_img_ds,
                                                          name=ds_name)
 
-            self.cds_dict[ds_name] = ds_source
+            self.cds_dict[ds_name] = self.bokeh_img_ds
             self.bokeh_lines[ds_name] = ds_line_plot
 
         self._update_fig_title()

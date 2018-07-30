@@ -309,4 +309,6 @@ def main(bokeh_id):
                                    1000)
 
 
-main(__name__)
+
+if (__name__ == '__main__') or (__name__.startswith("bk_script")):
+    main(__name__)

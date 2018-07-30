@@ -41,7 +41,7 @@ spec:
         - name: git-volume
           gitRepo:
             repository: "https://github.com/informatics-lab/forest.git"
-            revision: "HEAD"
+            revision: {{ .Values.manager.revision }}
 
 
 

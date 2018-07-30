@@ -7,7 +7,7 @@ import functools
 
 import bokeh.io
 import bokeh.plotting
-
+import numpy
 import matplotlib
 matplotlib.use('agg')
 
@@ -18,29 +18,7 @@ import forest.util
 import forest.plot
 import forest.control
 import forest.data
-
-def add_main_plot(main_layout, bokeh_doc):
-    
-    '''
-    
-    '''
-    
-    print('finished creating, executing document add callback')
-
-    try:
-        bokeh_mode = os.environ['BOKEH_MODE']
-    except:
-        bokeh_mode = 'server'    
-        
-    if bokeh_mode == 'server':
-        bokeh_doc.add_root(main_layout)
-    elif bokeh_mode == 'cli':
-        bokeh.io.show(main_layout)
-
-
-# Extract and Load
-bucket_name = 'stephen-sea-public-london'
-server_address = 'https://s3.eu-west-2.amazonaws.com'
+import forest.aws
 
 @tornado.gen.coroutine
 def update_document_callback(plot_list):
@@ -75,10 +53,22 @@ def do_init_plotting(control1, init_var):
 
 @forest.util.timer
 def main(bokeh_id):
+    '''Two-model bokeh application main program'''
 
-    '''
-    
-    '''
+    download_data = os.getenv("FOREST_DOWNLOAD_DATA", default="False").upper() == "TRUE"
+
+    if download_data:
+        download_directory = os.environ.get('LOCAL_ROOT', os.path.expanduser("~/SEA_data/"))
+        file_loader = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
+                                          bucket_name='stephen-sea-public-london',
+                                          download_directory=download_directory)
+        user_feedback_directory = os.path.join(download_directory, 'user_feedback')
+    else:
+        # FUSE mounted file system
+        s3_root = os.getenv("S3_ROOT", os.path.expanduser("~/s3/"))
+        mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
+        file_loader = forest.aws.S3Mount(mount_directory)
+        user_feedback_directory = os.path.join(mount_directory, 'user_feedback')
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
@@ -96,32 +86,8 @@ def main(bokeh_id):
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
-    s3_base = '{server}/{bucket}/model_data/'.format(server=server_address,
-                                                    bucket=bucket_name)
-
-    try:
-        s3_root = os.environ['S3_ROOT']
-    except KeyError:
-        s3_root = os.path.expanduser('~/s3')
-    s3_local_base = os.path.join(s3_root,
-                                 bucket_name,
-                                 'model_data')
-    try:
-        local_root = os.environ['LOCAL_ROOT']
-    except KeyError:
-        local_root = os.path.expanduser('~/SEA_data')
-    base_path_local = os.path.join(local_root, 'model_data')
-
-
-    use_s3_mount = True
-    do_download = False
-
     init_fcast_time, datasets = \
-        forest.data.get_available_datasets(s3_base,
-                                           s3_local_base,
-                                           use_s3_mount,
-                                           base_path_local,
-                                           do_download,
+        forest.data.get_available_datasets(file_loader,
                                            dataset_template,
                                            forest.data.NUM_DATA_DAYS,
                                            forest.data.NUM_DATA_DAYS,
@@ -132,7 +98,6 @@ def main(bokeh_id):
         layout1 = forest.util.load_error_page()
         bokeh.plotting.curdoc().add_root(layout1)
         return
-
 
     print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
 
@@ -149,10 +114,11 @@ def main(bokeh_id):
     for var1 in forest.data.PRECIP_ACCUM_VARS:
         plot_type_time_lookups.update({var1:var1})
 
-    bokeh_doc = bokeh.plotting.curdoc()
 
     #Create regions
     region_dict = forest.util.SEA_REGION_DICT
+
+    bokeh_doc = bokeh.plotting.curdoc()
 
     # initial selected point is approximately Jakarta, Indonesia
     selected_point = (-6,103)
@@ -178,8 +144,12 @@ def main(bokeh_id):
     init_data_time = datetime.datetime.now()
     num_times = 0
 
+    user_interface = "single-plot"
+    if user_interface == "single-plot":
+        bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
+                                             active_inspect=None)
+
     plot_list = []
-    img_list = []
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
                                            init_fcast_time,
@@ -193,13 +163,10 @@ def main(bokeh_id):
                                            forest.data.UNIT_DICT_DISPLAY,
                                            app_path,
                                            init_data_time,
-                                           )
-
-    plot_obj_left.selected_point = selected_point
-    bokeh_img_left = plot_obj_left.create_plot()
-    stats_left = plot_obj_left.create_stats_widget()
+                                           bokeh_figure=bokeh_figure)
     plot_list += [plot_obj_left]
-    img_list += [bokeh_img_left]
+    bokeh_figure_left = plot_obj_left.create_plot()
+    stats_left = plot_obj_left.create_stats_widget()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
                                             init_fcast_time,
@@ -213,13 +180,10 @@ def main(bokeh_id):
                                             forest.data.UNIT_DICT_DISPLAY,
                                             app_path,
                                             init_data_time,
-                                            )
-
-    plot_obj_right.selected_point = selected_point
-    bokeh_img_right = plot_obj_right.create_plot()
-    stats_right = plot_obj_right.create_stats_widget()
+                                            bokeh_figure=bokeh_figure)
     plot_list += [plot_obj_right]
-    img_list += [bokeh_img_right]
+    bokeh_figure_right = plot_obj_right.create_plot()
+    stats_right = plot_obj_right.create_stats_widget()
 
 
 
@@ -232,37 +196,41 @@ def main(bokeh_id):
                                                init_fcast_time,
                                                selected_point,
                                                forest.plot.ForestPlot.BLANK)
-
-    bokeh_image_ts = plot_obj_ts.create_plot()
     plot_list += [plot_obj_ts]
-    img_list += [bokeh_image_ts]
-
-
-    s3_local_base_feedback = \
-        os.path.join(s3_root,
-                     bucket_name,
-                     'user_feedback')
+    bokeh_image_ts = plot_obj_ts.create_plot()
 
 
     # Set up GUI controller class
+    if user_interface == "double-plot":
+        bokeh_figures = [bokeh_figure_left, bokeh_figure_right]
+    else:
+        bokeh_figures = [bokeh_figure]
     control1 = forest.control.ForestController(init_var,
                                                init_data_time_index,
                                                datasets,
                                                init_fcast_time,
                                                plot_type_time_lookups,
-                                               plot_list,
-                                               img_list,
+                                               [plot_obj_left, plot_obj_right],
+                                               bokeh_figures,
                                                colorbar_widget,
                                                [stats_left, stats_right],
                                                region_dict,
-                                               bokeh_doc,
-                                               s3_local_base_feedback,
+                                               user_feedback_directory,
                                                bokeh_id,
                                                )
 
-    add_main_plot(control1.main_layout, bokeh_doc)
+    # Attach bokeh layout to current document
+    root = control1.main_layout
+    try:
+        bokeh_mode = os.environ['BOKEH_MODE']
+    except:
+        bokeh_mode = 'server'
+    if bokeh_mode == 'server':
+        bokeh.plotting.curdoc().add_root(root)
+    elif bokeh_mode == 'cli':
+        bokeh.io.show(root)
+    bokeh.plotting.curdoc().title = 'Two model comparison'
 
-    bokeh_doc.title = 'Two model comparison'
 
     plot_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
@@ -278,4 +246,5 @@ def main(bokeh_id):
                                    1000)
 
 
-main(__name__)
+if (__name__ == '__main__') or (__name__.startswith("bk_script")):
+    main(__name__)
