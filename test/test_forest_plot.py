@@ -17,7 +17,7 @@ class TestCoastlines(unittest.TestCase):
     def test_coastlines(self, cartopy):
         figure = bokeh.plotting.figure()
         forest.plot.coastlines(figure)
-        cartopy.feature.COASTLINE.intersecting_geometries.assert_called_once_with(None)
+        cartopy.feature.COASTLINE.geometries.assert_called_once_with()
 
 
 Extent = namedtuple("Extent", ["x_start", "x_end",
@@ -150,43 +150,6 @@ class TestForestPlotSetConfig(unittest.TestCase):
             self.assertEqual(forest_plot.current_config, "new_config")
             self.assertEqual(forest_plot.plot_description, "Label")
 
-    @unittest.mock.patch("forest.plot.matplotlib")
-    @unittest.mock.patch("forest.plot.bokeh")
-    def test_forest_plot_calls_bokeh_plotting_figure(self,
-                                                     bokeh,
-                                                     matplotlib):
-        """ForestPlot constructs its own bokeh.Figure instance
-
-        .. note:: Every time create_plot() is called a call
-                  to create_bokeh_img_plot_from_fig() inside
-                  which bokeh.plotting.figure() is called
-
-        .. warn:: ForestPlot does not initialise a reference
-                  to self.current_figure that is done by
-                  self.create_matplotlib_fig()
-
-        .. note:: ForestPlot.create_matplotlib_fig() expects
-                  self.current_var to be a key in self.plot_funcs
-
-        .. note:: forest.util.get_image_array_from_figure() takes
-                  a matplotlib.Figure instance
-        """
-        figure = matplotlib.pyplot.figure.return_value
-        with unittest.mock.patch("forest.util") as forest_util:
-            fixture = forest.plot.ForestPlot(*self.generic_args())
-            fixture.plot_funcs["plot_variable"] = unittest.mock.Mock()
-            fixture.create_matplotlib_fig()
-            fixture.create_bokeh_img_plot_from_fig()
-            forest_util.get_image_array_from_figure.assert_called_once_with(figure)
-        tools = "pan,wheel_zoom,reset,save,box_zoom,hover"
-        x_range = bokeh.models.Range1d.return_value
-        y_range = bokeh.models.Range1d.return_value
-        bokeh.plotting.figure.assert_called_once_with(plot_height=600,
-                                                      plot_width=800,
-                                                      tools=tools,
-                                                      x_range=x_range,
-                                                      y_range=y_range)
-
     def test_forest_plot_should_accept_bokeh_figure(self):
         """To open forest to allow generic layouts
 
@@ -197,22 +160,6 @@ class TestForestPlotSetConfig(unittest.TestCase):
         forest_plot = forest.plot.ForestPlot(*self.generic_args(),
                                              bokeh_figure=fake_figure)
         self.assertEqual(forest_plot.bokeh_figure, fake_figure)
-
-    def test_get_data_returns_cube(self):
-        """Separation of concerns needed to separate Forest infrastructure from plotting"""
-        class FakeData(object):
-            def get_data(self, var_name, selected_time):
-                pass
-        fake_data = FakeData()
-        dataset, *remaining_args = self.generic_args()
-        dataset = {
-            "current_config": {
-                "data_type_name": None,
-                "data": fake_data
-            }
-        }
-        forest_plot = forest.plot.ForestPlot(dataset, *remaining_args)
-        forest_plot.get_data()
 
     def generic_args(self, plot_var="plot_variable"):
         """Helper to construct ForestPlot"""
@@ -361,7 +308,7 @@ class TestForestPlot(unittest.TestCase):
              init_time=None,
              model_run_time=None,
              region_dict=None,
-             region=None):
+             region="region"):
         """Helper to construct ForestPlot"""
         if dataset is None:
             dataset = {
@@ -370,10 +317,10 @@ class TestForestPlot(unittest.TestCase):
                 }
             }
         figname = None
-        reg1 = None
-        rd1 = {
-            reg1: [0, 1, 0, 1]
-        }
+        if region_dict is None:
+            region_dict = {
+                region: [0, 1, 0, 1]
+            }
         unit_dict = None
         app_path = None
         init_time = None
