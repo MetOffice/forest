@@ -19,7 +19,6 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
-
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
 
 class MissingDataError(Exception):
@@ -897,19 +896,35 @@ class ForestPlot(object):
         if self.current_img_array is not None:
             self.create_bokeh_img()
         else:
-            #TODO: create a blank placeholder image wit data source for the slider tool to use
-            mid_x = (cur_region[2] + cur_region[3]) * 0.5
-            mid_y = (cur_region[0] + cur_region[1]) * 0.5
-            self.overlay_text = self.bokeh_figure.text(x=[mid_x],
-                                                       y=[mid_y],
-                                                       text=['Plot loading'],
-                                                       text_color=['#FF0000'],
-                                                       text_font_size="20pt",
-                                                       text_baseline="middle",
-                                                       text_align="center",
-                                                       )
+            self._create_bokeh_placeholder_img()
 
         self.bokeh_figure.title.text = self.current_title
+
+    def _create_bokeh_placeholder_img(self):
+
+        self.current_img_array = numpy.ones((80,60,4))
+        cur_region = self.region_dict[self.current_region]
+        mid_x = (cur_region[2] + cur_region[3]) * 0.5
+        mid_y = (cur_region[0] + cur_region[1]) * 0.5
+        latitude_range = cur_region[1] - cur_region[0]
+        longitude_range = cur_region[3] - cur_region[2]
+        self.bokeh_image = \
+            self.bokeh_figure.image_rgba(image=[self.current_img_array],
+                                         x=[cur_region[2]],
+                                         y=[cur_region[0]],
+                                         dw=[longitude_range],
+                                         dh=[latitude_range])
+        self.bokeh_img_ds = self.bokeh_image.data_source
+
+
+        self.overlay_text = self.bokeh_figure.text(x=[mid_x],
+                                                   y=[mid_y],
+                                                   text=['Plot loading'],
+                                                   text_color=['#FF0000'],
+                                                   text_font_size="20pt",
+                                                   text_baseline="middle",
+                                                   text_align="center",
+                                                   )
 
     def create_bokeh_img(self):
 
