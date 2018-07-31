@@ -68,39 +68,46 @@ class TestClipXY(unittest.TestCase):
         np.testing.assert_array_equal(result, expect)
 
 
+class TestForestPlotSetRegion(unittest.TestCase):
+    """Forest callback to set_region should only change bokeh extents"""
+    def setUp(self):
+        new_region = "new region"
+        old_region = "old region"
+        self.x_start, self.x_end, self.y_start, self.y_end = 1, 2, 3, 4
+        region_dict = {
+            new_region: [
+                self.y_start,
+                self.y_end,
+                self.x_start,
+                self.x_end
+            ],
+            old_region: [1, 2, 1, 2]
+        }
+        self.bokeh_figure = bokeh.plotting.figure()
+        self.forest_plot = forest.plot.ForestPlot(*forest_plot_args(
+            region=old_region,
+            region_dict=region_dict
+        ), bokeh_figure=self.bokeh_figure)
+        self.forest_plot.set_region(new_region)
+
+    def test_set_region_sets_bokeh_figure_x_start(self):
+        self.assertEqual(self.bokeh_figure.x_range.start, self.x_start)
+
+    def test_set_region_sets_bokeh_figure_x_end(self):
+        self.assertEqual(self.bokeh_figure.x_range.end, self.x_end)
+
+    def test_set_region_sets_bokeh_figure_y_start(self):
+        self.assertEqual(self.bokeh_figure.y_range.start, self.y_start)
+
+    def test_set_region_sets_bokeh_figure_y_end(self):
+        self.assertEqual(self.bokeh_figure.y_range.end, self.y_end)
+
+
+
 class TestForestPlotSetConfig(unittest.TestCase):
     def test_can_be_constructed(self):
         """the minimal information needed to construct a ForestPlot"""
-        dataset = {
-            "current_config": {
-                "data_type_name": None
-            }
-        }
-        model_run_time = None
-        po1 = None
-        figname = None
-        plot_var = "plot_variable"
-        conf1 = "current_config"
-        reg1 = "current_region"
-        rd1 = {
-            "current_region": None
-        }
-        unit_dict = None
-        unit_dict_display = None
-        app_path = None
-        init_time = None
-        forest.plot.ForestPlot(dataset,
-                               model_run_time,
-                               po1,
-                               figname,
-                               plot_var,
-                               conf1,
-                               reg1,
-                               rd1,
-                               unit_dict,
-                               unit_dict_display,
-                               app_path,
-                               init_time)
+        forest.plot.ForestPlot(*forest_plot_args())
 
     def test_set_config(self):
         """minimal data needed to call set_config"""
@@ -163,35 +170,7 @@ class TestForestPlotSetConfig(unittest.TestCase):
 
     def generic_args(self, plot_var="plot_variable"):
         """Helper to construct ForestPlot"""
-        dataset = {
-            "current_config": {
-                "data_type_name": None
-            }
-        }
-        model_run_time = None
-        po1 = None
-        figname = None
-        conf1 = "current_config"
-        reg1 = "current_region"
-        rd1 = {
-            "current_region": [0, 1, 0, 1]
-        }
-        unit_dict = None
-        unit_dict_display = None
-        app_path = None
-        init_time = None
-        return (dataset,
-                model_run_time,
-                po1,
-                figname,
-                plot_var,
-                conf1,
-                reg1,
-                rd1,
-                unit_dict,
-                unit_dict_display,
-                app_path,
-                init_time)
+        return forest_plot_args(plot_var=plot_var)
 
 
 class FakeDataset(object):
@@ -298,41 +277,44 @@ class TestForestPlot(unittest.TestCase):
                   'wind_vectors']
         self.assertEqual(result, expect)
 
-    def args(self,
-             plot_var='plot_var',
-             conf1='current_config',
-             dataset=None,
-             plot_options=None,
-             unit_dict=None,
-             unit_dict_display=None,
-             init_time=None,
-             model_run_time=None,
-             region_dict=None,
-             region="region"):
-        """Helper to construct ForestPlot"""
-        if dataset is None:
-            dataset = {
-                conf1: {
-                    'data_type_name': None
-                }
+    def args(self, *args, **kwargs):
+        return forest_plot_args(*args, **kwargs)
+
+
+def forest_plot_args(plot_var='plot_var',
+                     conf1='current_config',
+                     dataset=None,
+                     plot_options=None,
+                     unit_dict=None,
+                     unit_dict_display=None,
+                     init_time=None,
+                     model_run_time=None,
+                     region_dict=None,
+                     region="region"):
+    """Helper to construct ForestPlot"""
+    if dataset is None:
+        dataset = {
+            conf1: {
+                'data_type_name': None
             }
-        figname = None
-        if region_dict is None:
-            region_dict = {
-                region: [0, 1, 0, 1]
-            }
-        unit_dict = None
-        app_path = None
-        init_time = None
-        return (dataset,
-                model_run_time,
-                plot_options,
-                figname,
-                plot_var,
-                conf1,
-                region,
-                region_dict,
-                unit_dict,
-                unit_dict_display,
-                app_path,
-                init_time)
+        }
+    figname = None
+    if region_dict is None:
+        region_dict = {
+            region: [0, 1, 0, 1]
+        }
+    unit_dict = None
+    app_path = None
+    init_time = None
+    return (dataset,
+            model_run_time,
+            plot_options,
+            figname,
+            plot_var,
+            conf1,
+            region,
+            region_dict,
+            unit_dict,
+            unit_dict_display,
+            app_path,
+            init_time)
