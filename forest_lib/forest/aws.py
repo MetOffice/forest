@@ -64,6 +64,7 @@ class S3Bucket(object):
     :param download_directory: directory on local file system to
                                store file(s)
     """
+
     def __init__(self,
                  server_address,
                  bucket_name,
@@ -133,9 +134,10 @@ class S3Bucket(object):
         :param key: amazon s3 key
         :returns: path_to_file
         """
-        if not os.path.isdir(self.download_directory):
-            print("creating directory {0}".format(self.download_directory))
-            os.makedirs(self.download_directory)
+        dest_folder = os.path.join(self.download_directory, os.path.dirname(key))
+        if not os.path.isdir(dest_folder):
+            print("creating directory {0}".format(dest_folder))
+            os.makedirs(dest_folder)
         if not self.local_file_exists(key):
             self.s3_download(self.s3_url(key),
                              self.path_to_load(key))
@@ -159,6 +161,7 @@ class S3Mount(object):
 
     :param directory: directory where AWS file system is mounted
     """
+
     def __init__(self, directory):
         self.directory = directory
 

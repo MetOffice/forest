@@ -5,6 +5,7 @@ import os
 import sys
 import forest.aws
 import forest.data
+from tempfile import TemporaryDirectory
 
 
 @unittest.mock.patch("forest.aws.urllib")
@@ -51,6 +52,7 @@ class TestS3Bucket(unittest.TestCase):
     or AWS download seemlessly. Both systems should present
     a simple API to the internals of Forest
     """
+
     def setUp(self):
         self.file_name = "model_data/file.nc"
         self.server_address = "https://s3.eu-west-2.amazonaws.com"
@@ -95,8 +97,8 @@ class TestS3BucketIO(unittest.TestCase):
         urllib.request.urlopen.assert_called_once_with(expect)
 
     def test_local_file_exists(self,
-                                mock_print,
-                                urllib):
+                               mock_print,
+                               urllib):
         with unittest.mock.patch("forest.aws.os.path.isfile") as isfile:
             self.bucket.local_file_exists(self.file_name)
             expect = self.download_dir + '/' + self.file_name
@@ -121,3 +123,11 @@ class TestS3BucketIO(unittest.TestCase):
         path = self.bucket.load_file(self.file_name)
         url = self.url
         urllib.request.urlretrieve.assert_called_once_with(url, path)
+
+    def test_makes_intermediate_folders(self, mock_print, urllib):
+        with TemporaryDirectory() as download_dir:
+            bucket = forest.aws.S3Bucket(self.server_address, self.bucket_name, download_dir)
+            aws_key = 'file/with/nested/dir/mydata.dat'
+            bucket.load_file(aws_key)
+            dest_dir = os.path.join(download_dir, os.path.dirname(aws_key))
+            self.assertTrue(os.path.exists(dest_dir))
