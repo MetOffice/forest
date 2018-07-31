@@ -812,7 +812,6 @@ class ForestPlot(object):
         self.current_title = \
             '\n'.join(textwrap.wrap(str1,
                                     ForestPlot.TITLE_TEXT_WIDTH))
-    @forest.util.timer
     def create_plot(self):
 
         '''Main plotting function. Generic elements of the plot are created
@@ -826,7 +825,6 @@ class ForestPlot(object):
 
         return self.bokeh_figure
 
-    @forest.util.timer
     def create_matplotlib_fig(self):
 
         '''
@@ -1062,7 +1060,6 @@ class ForestPlot(object):
         except AttributeError as e1:
             print('Unable to update colorbar as colorbar widget not initiated')
 
-    @forest.util.timer
     def set_data_time(self, new_time):
 
         '''

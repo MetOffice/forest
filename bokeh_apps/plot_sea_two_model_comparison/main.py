@@ -14,7 +14,6 @@ import forest.aws
 
 
 
-@forest.util.timer
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
 
