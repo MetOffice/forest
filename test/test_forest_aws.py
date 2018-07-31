@@ -104,16 +104,6 @@ class TestS3BucketIO(unittest.TestCase):
             expect = self.download_dir + '/' + self.file_name
             isfile.assert_called_once_with(expect)
 
-    @unittest.mock.patch("forest.aws.os")
-    def test_load_file_calls_makedirs(self,
-                                      os,
-                                      mock_print,
-                                      urllib):
-        os.path.isdir.return_value = False
-        self.bucket.load_file(self.file_name)
-        os.path.isdir.assert_called_once_with(self.download_dir)
-        os.makedirs.assert_called_once_with(self.download_dir)
-
     @unittest.mock.patch("forest.aws.os.path.isfile")
     def test_load_file_calls_s3_download(self,
                                          isfile,
