@@ -1095,38 +1095,26 @@ class ForestPlot(object):
             if self.colorbar_widget:
                 self.update_colorbar_widget()
 
-    def set_region(self, region):
+    def _set_region(self, region):
         '''Event handler for a change in the selected plot region'''
         print('selected new region {0}'.format(region))
         self.current_region = region
-        # self.data_bounds = self.region_dict[self.current_region]
-        # self.create_matplotlib_fig()
-        # if not self.async:
-        #     self.update_bokeh_img_plot_from_fig()
-        #     if self.stats_widget:
-        #         self.update_stats_widget()
+        self.data_bounds = self.region_dict[self.current_region]
+        self.create_matplotlib_fig()
+        if not self.async:
+            self.update_bokeh_img_plot_from_fig()
+            if self.stats_widget:
+                self.update_stats_widget()
 
-        # Update bokeh figure extents
-        self.bokeh_figure.x_range.start = self.x_start
-        self.bokeh_figure.x_range.end = self.x_end
-        self.bokeh_figure.y_range.start = self.y_start
-        self.bokeh_figure.y_range.end = self.y_end
-
-    @property
-    def x_start(self):
-        return self.region_dict[self.current_region][2]
-
-    @property
-    def x_end(self):
-        return self.region_dict[self.current_region][3]
-
-    @property
-    def y_start(self):
-        return self.region_dict[self.current_region][0]
-
-    @property
-    def y_end(self):
-        return self.region_dict[self.current_region][1]
+    def set_region(self, region):
+        """Adjust bokeh figure extents"""
+        self.current_region = region
+        extents = self.region_dict[self.current_region]
+        y_start, y_end, x_start, x_end = extents
+        self.bokeh_figure.x_range.start = x_start
+        self.bokeh_figure.x_range.end = x_end
+        self.bokeh_figure.y_range.start = y_start
+        self.bokeh_figure.y_range.end = y_end
 
     def set_config(self, new_config):
 
