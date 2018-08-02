@@ -978,16 +978,13 @@ class ForestPlot(object):
                 self.current_img_array = None
 
     def update_plot(self):
-        pass
+        print("{}.update_plot() called".format(self.__class__.__name__))
 
-    def _update_plot(self):
-
+    def mpl_update_plot(self):
         '''Main plot update function. Generic elements of the plot are
         updated here where possible, and then the plot update function for
         the specific variable is called using the self.plot_funcs dictionary.
-        
         '''
-
         self.update_funcs[self.current_var]()
         if self.use_mpl_title:
             self.current_axes.set_title(self.current_title)
