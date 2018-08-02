@@ -103,6 +103,18 @@ def pretty_bokeh_figure(*args, **kwargs):
     return figure
 
 
+def smooth_image(array, output_shape):
+    """Smooth high resolution imagery"""
+    max_ni, max_nj = output_shape
+    ni, nj, _ = array.shape
+    # scipy docs: int(round(factor * n)) = max_n
+    factor = max_ni / ni, max_nj / nj
+    output_array = np.zeros((max_ni, max_nj, 4), dtype=np.uint8)
+    for i in range(4):
+        output_array[:, :, i] = scipy.ndimage.zoom(array[:, :, i], factor)
+    return output_array
+
+
 class ForestPlot(object):
 
     '''
@@ -119,7 +131,7 @@ class ForestPlot(object):
                  dataset,
                  model_run_time,
                  plot_options,
-                 figname,
+                 figure_name,
                  plot_var,
                  conf1,
                  reg1,
@@ -132,6 +144,9 @@ class ForestPlot(object):
 
         '''Initialisation function for ForestPlot class
         '''
+        projection = cartopy.crs.PlateCarree()
+        self.current_figure = matplotlib.pyplot.figure(figure_name)
+        self.current_axes = self.current_figure.add_subplot(111, projection=projection)
 
         self.region_dict = rd1
         self.main_plot = None
@@ -139,15 +154,15 @@ class ForestPlot(object):
         self.plot_options = plot_options
         self.dataset = dataset
         self.model_run_time = model_run_time
-        self.figure_name = figname
+        self._figure_name = figure_name
         self.current_var = plot_var
         self._set_config_value(conf1)
         self.current_region = reg1
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
         self.selected_point = None
-        self.show_colorbar = False
-        self.show_axis_ticks = False
+        self._show_colorbar = False
+        self._show_axis_ticks = False
         self.use_mpl_title = False
         self.setup_plot_funcs()
         self.setup_pressure_labels()
@@ -163,7 +178,7 @@ class ForestPlot(object):
         self.stats_widget = None
         self.colorbar_widget = None
 
-        self.current_figsize = (8.0, 6.0)
+        self._current_figsize = (8.0, 6.0)
         self.bokeh_fig_size = (800,600)
         self.coast_res = '110m'
         self.display_mode = ForestPlot.MODE_LOADING
@@ -192,16 +207,9 @@ class ForestPlot(object):
             max_ni, max_nj = 800, 600
             ni, nj, _ = array.shape
             if (ni > max_ni) or (nj > max_nj):
-                # int(round(factor * n)) = max_n
-                print("smoothing imagery")
-                factor = fi, fj = (max_ni / ni, max_nj / nj)
-                output_array = np.zeros((max_ni, max_nj, 4), dtype=np.uint8)
-                for i in range(4):
-                    output_array[:, :, i] = scipy.ndimage.zoom(array[:, :, i], factor)
-                array = output_array
-
-            print(array.shape)
-            return array
+                return smooth_image(array, (max_ni, max_nj))
+            else:
+                return array
 
     def _set_config_value(self, new_config):
 
@@ -813,46 +821,16 @@ class ForestPlot(object):
             '\n'.join(textwrap.wrap(str1,
                                     ForestPlot.TITLE_TEXT_WIDTH))
     def create_plot(self):
-
         '''Main plotting function. Generic elements of the plot are created
         here, and then the plotting function for the specific variable is
         called using the self.plot_funcs dictionary.
-        
         '''
-
         self.create_matplotlib_fig()
         self.create_bokeh_img_plot_from_fig()
-
         return self.bokeh_figure
 
     def create_matplotlib_fig(self):
-
-        '''
-
-        '''
-        self.current_figure = matplotlib.pyplot.figure(self.figure_name,
-                                                       figsize=self.current_figsize)
-        self.current_figure.clf()
-        self.current_axes = \
-            self.current_figure.add_subplot(
-                111,
-                projection=cartopy.crs.PlateCarree())
-        self.current_axes.set_position([0, 0, 1, 1])
         self.plot_funcs[self.current_var]()
-        if self.main_plot:
-            if self.use_mpl_title:
-                self.current_axes.set_title(self.current_title)
-            self.current_axes.set_xlim(
-                self.data_bounds[2], self.data_bounds[3])
-            self.current_axes.set_ylim(
-                self.data_bounds[0], self.data_bounds[1])
-            self.current_axes.xaxis.set_visible(self.show_axis_ticks)
-            self.current_axes.yaxis.set_visible(self.show_axis_ticks)
-            if self.show_colorbar:
-                self.current_figure.colorbar(self.main_plot,
-                                             orientation='horizontal')
-
-            self.current_figure.canvas.draw()
 
     def _setup_tools(self):
         self.bokeh_tools = dict([(k1,None) for k1 in BOKEH_TOOLS_LIST])
@@ -877,9 +855,6 @@ class ForestPlot(object):
         self.active_bokeh_tools['inspect'] = self.bokeh_tools['hover']
         self.active_bokeh_tools['scroll'] = self.bokeh_tools['wheel_zoom']
         self.active_bokeh_tools['tap'] = None
-
-
-
 
     def create_bokeh_img_plot_from_fig(self):
         ''''''
@@ -964,6 +939,22 @@ class ForestPlot(object):
 
     def update_bokeh_img_plot_from_fig(self):
         '''Update image_rgba() data source'''
+        if self.bokeh_img_ds:
+            x, y, dw, dh = self.get_x_y_dw_dh()
+            self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
+            self.bokeh_img_ds.data[u'x'] = [x]
+            self.bokeh_img_ds.data[u'y'] = [y]
+            self.bokeh_img_ds.data[u'dw'] = [dw]
+            self.bokeh_img_ds.data[u'dh'] = [dh]
+        else:
+            try:
+                self.create_bokeh_img()
+            except:
+                self.current_img_array = None
+        self.bokeh_figure.title.text = self.current_title
+
+    def _update_bokeh_img_plot_from_fig(self):
+        '''Update image_rgba() data source'''
         cur_region = self.region_dict[self.current_region]
         self.current_figure.set_figwidth(self.current_figsize[0])
         self.current_figure.set_figheight(
@@ -987,6 +978,9 @@ class ForestPlot(object):
                 self.current_img_array = None
 
     def update_plot(self):
+        pass
+
+    def _update_plot(self):
 
         '''Main plot update function. Generic elements of the plot are
         updated here where possible, and then the plot update function for
