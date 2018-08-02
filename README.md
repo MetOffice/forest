@@ -43,7 +43,7 @@ the relevant modules can be imported.
 
 To run you must ensure that the forest_lib directory is in you python PATH.
 
-`EXPORT PYTHONPATH=<path to forest_lib>:$PYHTONPATH`
+`export PYTHONPATH=forest_lib/:$PYHTONPATH`
 
 If S3 is mounted run:
 `bokeh serve bokeh_apps/plot_sea_two_model_comparison`
