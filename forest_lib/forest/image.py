@@ -83,7 +83,6 @@ class CachedRGBA(object):
     def __init__(self, source):
         self._callbacks = []
         self.source = source
-        pdb.set_trace()
         if "_alpha" not in source.data:
             source.data["_alpha"] = get_alpha(source)
         self.shapes = get_shapes(self.source)

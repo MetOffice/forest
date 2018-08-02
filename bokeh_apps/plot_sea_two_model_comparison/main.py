@@ -217,6 +217,7 @@ def main(bokeh_id):
                                                region_dict,
                                                user_feedback_directory,
                                                bokeh_id,
+                                               bokeh_doc,
                                                )
 
     # Attach bokeh layout to current document

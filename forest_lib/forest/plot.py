@@ -19,6 +19,8 @@ import bokeh.plotting
 import forest.util
 import forest.data
 
+import pdb
+
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
 
 class MissingDataError(Exception):
@@ -190,6 +192,8 @@ class ForestPlot(object):
 
         self.main_plot = None
         self.current_title = 'Blank plot'
+        self.current_img_array = numpy.ones((30,40,4),
+                                            dtype=numpy.uint8)
 
     def get_data(self, var_name=None):
         config_data = self.dataset[self.current_config]['data']
@@ -826,6 +830,8 @@ class ForestPlot(object):
 
             img_array = forest.util.get_image_array_from_figure(
                 self.current_figure)
+        else:
+            img_array = self.current_img_array
 
         stats = self.stats_string
         title = self.current_title
@@ -895,28 +901,18 @@ class ForestPlot(object):
 
         if self.current_img_array is not None:
             self.create_bokeh_img()
-        else:
-            self._create_bokeh_placeholder_img()
+
+        if self.current_var == self.BLANK:
+            self._create_bokeh_placeholder_text()
+
 
         self.bokeh_figure.title.text = self.current_title
 
-    def _create_bokeh_placeholder_img(self):
+    def _create_bokeh_placeholder_text(self):
 
-        self.current_img_array = numpy.ones((80,60,4))
         cur_region = self.region_dict[self.current_region]
         mid_x = (cur_region[2] + cur_region[3]) * 0.5
         mid_y = (cur_region[0] + cur_region[1]) * 0.5
-        latitude_range = cur_region[1] - cur_region[0]
-        longitude_range = cur_region[3] - cur_region[2]
-        self.bokeh_image = \
-            self.bokeh_figure.image_rgba(image=[self.current_img_array],
-                                         x=[cur_region[2]],
-                                         y=[cur_region[0]],
-                                         dw=[longitude_range],
-                                         dh=[latitude_range])
-        self.bokeh_img_ds = self.bokeh_image.data_source
-
-
         self.overlay_text = self.bokeh_figure.text(x=[mid_x],
                                                    y=[mid_y],
                                                    text=['Plot loading'],
@@ -963,6 +959,12 @@ class ForestPlot(object):
             self.bokeh_img_ds.data[u'dw'] = [cur_region[3] - cur_region[2]]
             self.bokeh_img_ds.data[u'dh'] = [cur_region[1] - cur_region[0]]
             self.bokeh_figure.title.text = self.current_title
+            if self.current_var != self.BLANK:
+                if self.overlay_text:
+                    self.overlay_text.glyph.text = ''
+                    self.overlay_text.visible = False
+                    self.overlay_text.update()
+
 
         else:
             try:
@@ -1241,6 +1243,7 @@ class ForestTimeSeries():
                                                          source=self.bokeh_img_ds,
                                                          name=ds_name)
                 else:
+
                     self.bokeh_img_ds = \
                         bokeh.models.ColumnDataSource(data=self.placeholder_data)
                     self.current_data[ds_name] = self.placeholder_data

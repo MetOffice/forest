@@ -35,6 +35,7 @@ import iris
 import bokeh.models.widgets
 import bokeh.layouts
 
+
 SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
                    'malaysia': [-2.75, 10.7365, 95.25, 108.737],
                    'phillipines': [3.1375, 21.349, 115.8, 131.987],
@@ -404,7 +405,6 @@ def get_image_array_from_figure(fig):
     - fig -- matplotlib Figure; Figure to convert into buffer array.
     
     """
-
     h, w = fig.canvas.get_width_height()
 
     fig.canvas.draw()

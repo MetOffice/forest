@@ -13,8 +13,6 @@ import forest.data
 import forest.feedback
 import forest.image
 
-import pdb
-
 CONFIG_DIR = os.path.dirname(__file__)
 FEEDBACK_CONF_FILENAME = 'feedback_fields.conf'
 
@@ -90,6 +88,7 @@ class ForestController(object):
                  region_dict,
                  feedback_dir,
                  bokeh_id,
+                 bokeh_doc,
                  ):
 
         '''
@@ -105,6 +104,7 @@ class ForestController(object):
         self.left_model_dd = None
         self.right_model_dd = None
 
+        self.bokeh_doc = bokeh_doc
         self.plots = plots
         self.bokeh_imgs = bokeh_imgs
         self.region_dict = region_dict
@@ -245,13 +245,16 @@ class ForestController(object):
         # Left/Right toggle UI
         bokeh_figure = self.bokeh_imgs[0]
         left_image = self.plots[0].bokeh_img_ds
-
         right_image = self.plots[1].bokeh_img_ds
-        pdb.set_trace()
+
         slider = forest.image.Slider(left_image, right_image)
         slider.add_figure(bokeh_figure)
+        self.slider_image_control = slider
+
         toggle = forest.image.Toggle(left_image, right_image)
         toggle.show_left()
+        self.toggle_image_control = toggle
+
         def left_right_callback(attr, old, new):
             if new == 0:
                 toggle.show_left()
@@ -263,6 +266,7 @@ class ForestController(object):
                                  )
         self.left_right_toggle.on_change("active", left_right_callback)
         custom_js = bokeh.models.CustomJS(args=dict(hover_tool=slider.hover_tool),
+
         code="""
             // Enable/disable HoverTool using RadioButtonGroup active index
             // Note: This is only available through BokehJS, there is no
@@ -453,11 +457,18 @@ class ForestController(object):
         for p1 in self.plots:
             old_mode = p1.async
             p1.async = async_mode
-            # different variables have different times available, soneed to
+            # different variables have different times available, so need to
             # set time when selecting a variable
             p1.current_time = new_time
             p1.set_var(new_val)
             p1.async = old_mode
+
+        # left_image = self.plots[0].bokeh_img_ds
+        # right_image = self.plots[1].bokeh_img_ds
+        #
+        # # update the slider and toggle with the new data source
+        # self.slider_image_control.update_images(left_image, right_image)
+        # self.toggle_image_control.update_images(left_image, right_image)
 
 
     def on_region_change(self, attr1, old_val, new_val):
