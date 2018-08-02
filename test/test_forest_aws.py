@@ -104,11 +104,14 @@ class TestS3BucketIO(unittest.TestCase):
             expect = self.download_dir + '/' + self.file_name
             isfile.assert_called_once_with(expect)
 
+    @unittest.mock.patch("forest.aws.os.makedirs")
     @unittest.mock.patch("forest.aws.os.path.isfile")
     def test_load_file_calls_s3_download(self,
                                          isfile,
+                                         makedirs,
                                          mock_print,
                                          urllib):
+        """makedirs patched since it is side-effect of load_file"""
         isfile.return_value = False
         path = self.bucket.load_file(self.file_name)
         url = self.url

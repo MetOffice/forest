@@ -131,6 +131,9 @@ class S3Bucket(object):
     def load_file(self, key):
         """Do download from S3 bucket if file not already on disk
 
+        .. note:: Makes download directory if it does not
+                  exist already
+
         :param key: amazon s3 key
         :returns: path_to_file
         """
