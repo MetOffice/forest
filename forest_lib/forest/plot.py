@@ -760,9 +760,10 @@ class ForestPlot(object):
 
     def create_bokeh_img(self):
         '''create bokeh image from settings or mappable'''
+        image = self.current_img_array
         x, y, dw, dh = self.get_x_y_dw_dh()
         self.bokeh_image = \
-            self.bokeh_figure.image_rgba(image=[self.current_img_array],
+            self.bokeh_figure.image_rgba(image=[image],
                                          x=[x],
                                          y=[y],
                                          dw=[dw],
@@ -772,8 +773,9 @@ class ForestPlot(object):
     def update_bokeh_img_plot_from_fig(self):
         '''Update image_rgba() data source'''
         if self.bokeh_img_ds:
+            image = self.current_img_array
             x, y, dw, dh = self.get_x_y_dw_dh()
-            self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
+            self.bokeh_img_ds.data[u'image'] = [image]
             self.bokeh_img_ds.data[u'x'] = [x]
             self.bokeh_img_ds.data[u'y'] = [y]
             self.bokeh_img_ds.data[u'dw'] = [dw]
