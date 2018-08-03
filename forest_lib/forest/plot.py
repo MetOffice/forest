@@ -162,9 +162,6 @@ class ForestPlot(object):
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
         self.selected_point = None
-        self._show_colorbar = False
-        self._show_axis_ticks = False
-        self.use_mpl_title = False
         self.setup_plot_funcs()
         self.setup_pressure_labels()
         self.current_title = ''
@@ -993,8 +990,6 @@ class ForestPlot(object):
         the specific variable is called using the self.plot_funcs dictionary.
         '''
         self.update_funcs[self.current_var]()
-        if self.use_mpl_title:
-            self.current_axes.set_title(self.current_title)
         self.current_figure.canvas.draw_idle()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
