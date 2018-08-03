@@ -726,9 +726,8 @@ class ForestPlot(object):
         if self.visible:
             self.create_matplotlib_fig()
             cur_region = self.region_dict[self.current_region]
-            if self.current_img_array is not None:
-                self.create_bokeh_img()
-            else:
+            if self.current_img_array is None:
+                # Image array not loaded yet
                 mid_x = (cur_region[2] + cur_region[3]) * 0.5
                 mid_y = (cur_region[0] + cur_region[1]) * 0.5
                 self.bokeh_figure.text(x=[mid_x],
@@ -739,6 +738,8 @@ class ForestPlot(object):
                                        text_baseline="middle",
                                        text_align="center",
                                        )
+            else:
+                self.create_bokeh_img()
 
             # Add cartopy coastline to bokeh figure
             x_start = cur_region[2]
