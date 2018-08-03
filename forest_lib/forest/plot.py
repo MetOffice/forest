@@ -195,7 +195,10 @@ class ForestPlot(object):
         self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
         self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
         self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
-        self.setup_pressure_labels()
+        self.mslp_contour_label_dict = {}
+        for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
+            self.mslp_contour_label_dict[
+                pressure1] = '{0:d}hPa'.format(int(pressure1))
         self.current_title = ''
         self.stats_string = ''
         self.colorbar_link = plot_var + '_colorbar.png'
@@ -252,15 +255,6 @@ class ForestPlot(object):
         self.current_config = new_config
         self.plot_description = self.dataset[
             self.current_config]['data_type_name']
-
-    def setup_pressure_labels(self):
-        '''Create dict of pressure levels, to be used labelling MSLP contour
-        plots.
-        '''
-        self.mslp_contour_label_dict = {}
-        for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
-            self.mslp_contour_label_dict[
-                pressure1] = '{0:d}hPa'.format(int(pressure1))
 
     def update_coords(self, data_cube):
         '''Update the latitude and longitude coordinates for the data.
