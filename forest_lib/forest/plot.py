@@ -177,16 +177,11 @@ class ForestPlot(object):
     @property
     def current_img_array(self):
         """current image array taken from matplotlib figure canvas"""
-        print("current_img_array accessed")
         rgba_source = "mappable"
-        if self.current_figure is None:
-            return None
         if self._shape2d is None:
             return None
         if rgba_source == "canvas":
-            array = forest.util.get_image_array_from_figure(self.current_figure)
-            print(array.shape)
-            return array
+            return forest.util.get_image_array_from_figure(self.current_figure)
         else:
             # HACK: self._shape2d is populated by self.get_data()
             ni, nj = self._shape2d
