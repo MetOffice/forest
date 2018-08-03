@@ -155,7 +155,6 @@ class ForestPlot(object):
         self.plot_options = plot_options
         self.dataset = dataset
         self.model_run_time = model_run_time
-        self._figure_name = figure_name
         self.current_var = plot_var
         self._set_config_value(conf1)
         self.current_region = reg1
