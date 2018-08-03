@@ -725,7 +725,7 @@ class ForestPlot(object):
         called using the self.plot_funcs dictionary.
         '''
         if self.visible:
-            self.create_matplotlib_fig()
+            self.plot_funcs[self.current_var]()
             cur_region = self.region_dict[self.current_region]
             if self.current_img_array is None:
                 # Image array not loaded yet

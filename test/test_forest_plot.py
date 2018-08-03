@@ -7,6 +7,7 @@ import iris
 import forest
 import forest.plot
 import matplotlib
+import matplotlib.pyplot as plt
 import bokeh.plotting
 from collections import namedtuple
 import array
@@ -173,7 +174,7 @@ class TestForestPlotSetConfig(unittest.TestCase):
         return forest_plot_args(plot_var=plot_var)
 
 
-class TestForestPlotPlotMethods(unittest.TestCase):
+class TestForestPlotPressureLevelsHPa(unittest.TestCase):
     def test_pressure_levels_hpa(self):
         args = forest_plot_args()
         forest_plot = forest.plot.ForestPlot(*args)
@@ -187,25 +188,21 @@ class TestForestPlotPlotMethods(unittest.TestCase):
         ]
         self.assertEqual(result, expect)
 
-    @unittest.skip("nested dictionary needed")
-    def test_plot_precip(self):
-        args = forest_plot_args()
-        forest_plot = forest.plot.ForestPlot(*args)
-        forest_plot.plot_precip()
-
 
 class FakeDataset(object):
+    def __init__(self, data):
+        self.data = data
+
     def get_data(self, var_name, selected_time):
         # Fake Cube generator
-        nx, ny = 10, 10
+        nx, ny = self.data.shape
         longitude = iris.coords.DimCoord(np.linspace(-180, 180, nx),
                                          standard_name="longitude",
                                          units="degrees")
         latitude = iris.coords.DimCoord(np.linspace(-90, 90, ny),
                                         standard_name="latitude",
                                         units="degrees")
-        data = np.zeros((nx, ny), dtype=np.float)
-        return iris.cube.Cube(data,
+        return iris.cube.Cube(self.data,
                               dim_coords_and_dims=[
                                   (longitude, 0),
                                   (latitude, 1)
@@ -221,9 +218,10 @@ class TestForestPlot(unittest.TestCase):
     """
     def test_create_plot(self, stdout, stderr):
         config = "config"
+        fake_data = np.arange(4).reshape((2, 2))
         dataset = {
             config: {
-                "data": FakeDataset(),
+                "data": FakeDataset(fake_data),
                 "data_type_name": None
             }
         }
@@ -245,13 +243,18 @@ class TestForestPlot(unittest.TestCase):
                          model_run_time=model_run_time)
         forest_plot = forest.plot.ForestPlot(*args)
         forest_plot.create_plot()
-        # WARNING: no assertions made
+
+        # Assert bokeh ColumnDataSource correctly populated
+        result = forest_plot.bokeh_img_ds.data["image"][0]
+        expect = [[[68, 1, 84, 255]]]
+        np.testing.assert_array_equal(result, expect)
 
     def test_create_plot_sets_main_plot(self, stdout, stderr):
         config = "config"
+        fake_data = np.zeros((2, 2))
         dataset = {
             config: {
-                "data": FakeDataset(),
+                "data": FakeDataset(fake_data),
                 "data_type_name": None
             }
         }
@@ -339,3 +342,21 @@ def forest_plot_args(plot_var='plot_var',
             unit_dict_display,
             app_path,
             init_time)
+
+
+class TestPColorMesh(unittest.TestCase):
+    def test_get_array(self):
+        fake_data = np.arange(4).reshape((2, 2))
+        result = plt.pcolormesh(fake_data).get_array()
+        expect = [0, 1, 2, 3]
+        np.testing.assert_array_equal(result, expect)
+
+    def test_to_rgba_given_bytes_true(self):
+        x = np.array([0, 1])
+        y = np.array([0, 1])
+        z = np.arange(4).reshape((2, 2))
+        quad_mesh = plt.pcolormesh(x, y, z)
+        result = quad_mesh.to_rgba(quad_mesh.get_array(),
+                                   bytes=True)
+        expect = [[68, 1, 84, 255]]
+        np.testing.assert_array_equal(result, expect)
