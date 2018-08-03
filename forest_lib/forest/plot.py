@@ -793,6 +793,22 @@ class ForestPlot(object):
                                          dh=[dh])
         self.bokeh_img_ds = self.bokeh_image.data_source
 
+    def update_bokeh_img_plot_from_fig(self):
+        '''Update image_rgba() data source'''
+        if self.bokeh_img_ds:
+            x, y, dw, dh = self.get_x_y_dw_dh()
+            self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
+            self.bokeh_img_ds.data[u'x'] = [x]
+            self.bokeh_img_ds.data[u'y'] = [y]
+            self.bokeh_img_ds.data[u'dw'] = [dw]
+            self.bokeh_img_ds.data[u'dh'] = [dh]
+        else:
+            try:
+                self.create_bokeh_img()
+            except:
+                self.current_img_array = None
+        self.bokeh_figure.title.text = self.current_title
+
     def get_x_y_dw_dh(self):
         image_source = 'mappable'
         if image_source == 'mappable':
@@ -816,22 +832,6 @@ class ForestPlot(object):
             dw = longitude_range
             dh = latitude_range
         return x, y, dw, dh
-
-    def update_bokeh_img_plot_from_fig(self):
-        '''Update image_rgba() data source'''
-        if self.bokeh_img_ds:
-            x, y, dw, dh = self.get_x_y_dw_dh()
-            self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
-            self.bokeh_img_ds.data[u'x'] = [x]
-            self.bokeh_img_ds.data[u'y'] = [y]
-            self.bokeh_img_ds.data[u'dw'] = [dw]
-            self.bokeh_img_ds.data[u'dh'] = [dh]
-        else:
-            try:
-                self.create_bokeh_img()
-            except:
-                self.current_img_array = None
-        self.bokeh_figure.title.text = self.current_title
 
     def update_plot(self):
         print("{}.update_plot() called".format(self.__class__.__name__))

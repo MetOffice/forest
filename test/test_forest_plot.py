@@ -173,6 +173,26 @@ class TestForestPlotSetConfig(unittest.TestCase):
         return forest_plot_args(plot_var=plot_var)
 
 
+class TestForestPlotPlotMethods(unittest.TestCase):
+    def test_pressure_levels_hpa(self):
+        args = forest_plot_args()
+        forest_plot = forest.plot.ForestPlot(*args)
+        result = list(forest_plot.PRESSURE_LEVELS_HPA)
+        expect = [
+              980,  982,  984,  986,  988,  990,
+              992,  994,  996,  998, 1000, 1002,
+             1004, 1006, 1008, 1010, 1012, 1014,
+             1016, 1018, 1020, 1022, 1024, 1026,
+             1028
+        ]
+        self.assertEqual(result, expect)
+
+    def test_plot_precip(self):
+        args = forest_plot_args()
+        forest_plot = forest.plot.ForestPlot(*args)
+        forest_plot.plot_precip()
+
+
 class FakeDataset(object):
     def get_data(self, var_name, selected_time):
         # Fake Cube generator
