@@ -731,30 +731,6 @@ class ForestPlot(object):
     def create_matplotlib_fig(self):
         self.plot_funcs[self.current_var]()
 
-    def _setup_tools(self):
-        self.bokeh_tools = dict([(k1,None) for k1 in BOKEH_TOOLS_LIST])
-        if 'pan' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['pan'] = bokeh.models.PanTool()
-        if 'wheel_zoom' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['wheel_zoom'] = bokeh.models.WheelZoomTool()
-        if 'reset' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['reset'] = bokeh.models.ResetTool()
-        if 'save' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['save'] = bokeh.models.SaveTool()
-        if 'box_zoom' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['box_zoom'] = bokeh.models.BoxZoomTool()
-        if 'hover' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['hover'] = bokeh.models.HoverTool(
-                tooltips=[
-                    ("(x,y)", "($x, $y)"),
-                ])
-
-        self.active_bokeh_tools = {}
-        self.active_bokeh_tools['drag'] = self.bokeh_tools['pan']
-        self.active_bokeh_tools['inspect'] = self.bokeh_tools['hover']
-        self.active_bokeh_tools['scroll'] = self.bokeh_tools['wheel_zoom']
-        self.active_bokeh_tools['tap'] = None
-
     def create_bokeh_img_plot_from_fig(self):
         cur_region = self.region_dict[self.current_region]
         if self.current_img_array is not None:

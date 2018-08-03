@@ -187,6 +187,7 @@ class TestForestPlotPlotMethods(unittest.TestCase):
         ]
         self.assertEqual(result, expect)
 
+    @unittest.skip("nested dictionary needed")
     def test_plot_precip(self):
         args = forest_plot_args()
         forest_plot = forest.plot.ForestPlot(*args)
