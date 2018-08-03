@@ -126,7 +126,7 @@ class TestForestPlotSetConfig(unittest.TestCase):
         conf1 = "current_config"
         reg1 = "current_region"
         rd1 = {
-            "current_region": None
+            "current_region": (0, 1, 0, 1)
         }
         unit_dict = None
         unit_dict_display = None

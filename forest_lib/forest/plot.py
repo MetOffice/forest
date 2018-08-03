@@ -160,6 +160,21 @@ class ForestPlot(object):
         self.current_title = ''
         self.stats_string = ''
         self.colorbar_link = plot_var + '_colorbar.png'
+        if bokeh_figure is None:
+            cur_region = self.region_dict[self.current_region]
+            assert len(cur_region) == 4, "must provide y_start, y_end, x_start, x_end"
+            y_start = cur_region[0]
+            y_end = cur_region[1]
+            x_start = cur_region[2]
+            x_end = cur_region[3]
+            x_range = bokeh.models.Range1d(x_start, x_end, bounds=(x_start, x_end))
+            y_range = bokeh.models.Range1d(y_start, y_end, bounds=(y_start, y_end))
+            bokeh_figure = bokeh.plotting.figure(plot_width=800,
+                                                 plot_height=600,
+                                                 x_range=x_range,
+                                                 y_range=y_range,
+                                                 tools=','.join(BOKEH_TOOLS_LIST),
+                                                 toolbar_location='above')
         self.bokeh_figure = bokeh_figure
         self.bokeh_image = None
         self.bokeh_img_ds = None
@@ -168,7 +183,6 @@ class ForestPlot(object):
         self.stats_widget = None
         self.colorbar_widget = None
 
-        self.bokeh_fig_size = (800,600)
         self.coast_res = '110m'
 
         self.visible = visible
@@ -760,27 +774,9 @@ class ForestPlot(object):
 
     def create_bokeh_img_plot_from_fig(self):
         cur_region = self.region_dict[self.current_region]
-
-        if self.bokeh_figure is None:
-            # Set figure navigation limits
-            x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3],
-                                            bounds=(cur_region[2], cur_region[3]))
-            y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1],
-                                            bounds=(cur_region[0], cur_region[1]))
-
-            # Initialize figure
-            self.bokeh_figure = \
-                bokeh.plotting.figure(plot_width=self.bokeh_fig_size[0],
-                                      plot_height=self.bokeh_fig_size[1],
-                                      x_range=x_limits,
-                                      y_range=y_limits,
-                                      tools=','.join(BOKEH_TOOLS_LIST),
-                                      toolbar_location='above')
-
         if self.current_img_array is not None:
             self.create_bokeh_img()
         else:
-
             mid_x = (cur_region[2] + cur_region[3]) * 0.5
             mid_y = (cur_region[0] + cur_region[1]) * 0.5
             self.bokeh_figure.text(x=[mid_x],
