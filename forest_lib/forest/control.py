@@ -230,36 +230,42 @@ class ForestController(object):
         self.right_model_dd.on_change('value',
                                       functools.partial(self.on_config_change,
                                                         1))
-        # Left/Right toggle UI
-        bokeh_figure = self.bokeh_imgs[0]
-        left_image = self.plots[0].bokeh_img_ds
-        right_image = self.plots[1].bokeh_img_ds
-        slider = forest.image.Slider(left_image, right_image)
-        slider.add_figure(bokeh_figure)
-        toggle = forest.image.Toggle(left_image, right_image)
-        toggle.show_left()
-        def left_right_callback(attr, old, new):
-            if new == 0:
-                toggle.show_left()
-            elif new == 1:
-                toggle.show_right()
-        self.left_right_toggle = bokeh.models.RadioButtonGroup(
-                                     labels=["Left image", "Right image", "Slider tool"],
-                                     active=0
-                                 )
-        self.left_right_toggle.on_change("active", left_right_callback)
-        custom_js = bokeh.models.CustomJS(args=dict(hover_tool=slider.hover_tool),
-        code="""
-            // Enable/disable HoverTool using RadioButtonGroup active index
-            // Note: This is only available through BokehJS, there is no
-            //       Python attribute to control HoverTool active state
-            if (cb_obj.active === 2) {
-                hover_tool.active = true;
-            } else {
-                hover_tool.active = false;
-            }
-        """)
-        self.left_right_toggle.js_on_change("active", custom_js)
+        if False:
+            # Left/Right toggle UI
+            bokeh_figure = self.bokeh_imgs[0]
+            left_image = self.plots[0].bokeh_img_ds
+            right_image = self.plots[1].bokeh_img_ds
+            slider = forest.image.Slider(left_image, right_image)
+            slider.add_figure(bokeh_figure)
+            toggle = forest.image.Toggle(left_image, right_image)
+            toggle.show_left()
+            def left_right_callback(attr, old, new):
+                if new == 0:
+                    toggle.show_left()
+                elif new == 1:
+                    toggle.show_right()
+            self.left_right_toggle = bokeh.models.RadioButtonGroup(
+                                         labels=["Left image", "Right image", "Slider tool"],
+                                         active=0
+                                     )
+            self.left_right_toggle.on_change("active", left_right_callback)
+            custom_js = bokeh.models.CustomJS(args=dict(hover_tool=slider.hover_tool),
+            code="""
+                // Enable/disable HoverTool using RadioButtonGroup active index
+                // Note: This is only available through BokehJS, there is no
+                //       Python attribute to control HoverTool active state
+                if (cb_obj.active === 2) {
+                    hover_tool.active = true;
+                } else {
+                    hover_tool.active = false;
+                }
+            """)
+            self.left_right_toggle.js_on_change("active", custom_js)
+        else:
+            self.left_right_toggle = bokeh.models.RadioButtonGroup(
+                                         labels=["Left image", "Right image", "Slider tool"],
+                                         active=0
+                                     )
 
         # Layout widgets
         sizing_mode = "fixed"

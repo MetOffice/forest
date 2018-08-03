@@ -140,7 +140,8 @@ class ForestPlot(object):
                  unit_dict_display,
                  app_path,
                  init_time,
-                 bokeh_figure=None):
+                 bokeh_figure=None,
+                 visible=True):
 
         '''Initialisation function for ForestPlot class
         '''
@@ -183,6 +184,7 @@ class ForestPlot(object):
         self.coast_res = '110m'
         self.display_mode = ForestPlot.MODE_LOADING
 
+        self.visible = visible
         self._shape2d = None
 
     @property
@@ -740,6 +742,10 @@ class ForestPlot(object):
             self.plot_simim()
 
     def update_stats(self, current_cube):
+        print("dummy update_stats called")
+        pass
+
+    def _update_stats(self, current_cube):
 
         '''
 
@@ -825,8 +831,9 @@ class ForestPlot(object):
         here, and then the plotting function for the specific variable is
         called using the self.plot_funcs dictionary.
         '''
-        self.create_matplotlib_fig()
-        self.create_bokeh_img_plot_from_fig()
+        if self.visible:
+            self.create_matplotlib_fig()
+            self.create_bokeh_img_plot_from_fig()
         return self.bokeh_figure
 
     def create_matplotlib_fig(self):
@@ -1061,6 +1068,8 @@ class ForestPlot(object):
 
         self.current_time = new_time
         # self.update_plot()
+        if not self.visible:
+            return
         self.create_matplotlib_fig()
         if not self.async:
             self.update_bokeh_img_plot_from_fig()
@@ -1076,15 +1085,16 @@ class ForestPlot(object):
         '''
 
         print('selected new var {0}'.format(new_var))
-
         self.current_var = new_var
-        self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
-            if self.colorbar_widget:
-                self.update_colorbar_widget()
+
+        if self.visible:
+            self.create_matplotlib_fig()
+            if not self.async:
+                self.update_bokeh_img_plot_from_fig()
+                if self.stats_widget:
+                    self.update_stats_widget()
+                if self.colorbar_widget:
+                    self.update_colorbar_widget()
 
     def _set_region(self, region):
         '''Event handler for a change in the selected plot region'''
@@ -1115,20 +1125,22 @@ class ForestPlot(object):
 
         print('setting new config {0}'.format(new_config))
         self._set_config_value(new_config)
-        self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
+        if self.visible:
+            self.create_matplotlib_fig()
+            if not self.async:
+                self.update_bokeh_img_plot_from_fig()
+                if self.stats_widget:
+                    self.update_stats_widget()
 
     def set_dataset(self, new_dataset, new_model_run_time):
         self.dataset = new_dataset
         self.model_run_time = new_model_run_time
-        self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
+        if self.visible:
+            self.create_matplotlib_fig()
+            if not self.async:
+                self.update_bokeh_img_plot_from_fig()
+                if self.stats_widget:
+                    self.update_stats_widget()
 
     def set_selected_point(self, latitude, longitude):
         self.selected_point = (latitude, longitude)

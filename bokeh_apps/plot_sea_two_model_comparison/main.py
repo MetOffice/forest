@@ -134,7 +134,8 @@ def main(bokeh_id):
                                             forest.data.UNIT_DICT_DISPLAY,
                                             app_path,
                                             init_data_time,
-                                            bokeh_figure=bokeh_figure)
+                                            bokeh_figure=bokeh_figure,
+                                            visible=False)
 
     bokeh_figure_right = plot_obj_right.create_plot()
     stats_right = plot_obj_right.create_stats_widget()
