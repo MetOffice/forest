@@ -116,16 +116,11 @@ def smooth_image(array, output_shape):
 
 
 class ForestPlot(object):
-
     '''
     Main plot class. The plotting function is create_plot().
     '''
     TITLE_TEXT_WIDTH = 40
     PRESSURE_LEVELS_HPA = range(980, 1030, 2)
-
-    MODE_PLOT = 'plot'
-    MODE_LOADING = 'loading'
-    MODE_MISSING_DATA = 'missing_data'
 
     def __init__(self,
                  dataset,
@@ -142,7 +137,6 @@ class ForestPlot(object):
                  init_time,
                  bokeh_figure=None,
                  visible=True):
-
         '''Initialisation function for ForestPlot class
         '''
         projection = cartopy.crs.PlateCarree()
@@ -176,7 +170,6 @@ class ForestPlot(object):
 
         self.bokeh_fig_size = (800,600)
         self.coast_res = '110m'
-        self.display_mode = ForestPlot.MODE_LOADING
 
         self.visible = visible
         self._shape2d = None
