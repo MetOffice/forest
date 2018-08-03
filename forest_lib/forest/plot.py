@@ -237,8 +237,8 @@ class ForestPlot(object):
         if self.visible:
             self.plot_funcs[self.current_var]()
             cur_region = self.region_dict[self.current_region]
-            if self.current_img_array is None:
-                # Image array not loaded yet
+            if self.main_plot is None:
+                # Plot not finished yet
                 mid_x = (cur_region[2] + cur_region[3]) * 0.5
                 mid_y = (cur_region[0] + cur_region[1]) * 0.5
                 self.bokeh_figure.text(x=[mid_x],
@@ -251,7 +251,17 @@ class ForestPlot(object):
                                        )
             else:
                 # Image array is loaded
-                image = self.current_img_array
+                # HACK: self._shape2d is populated by self.get_data()
+                ni, nj = self._shape2d
+                image = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
+
+                # Smooth high resolution imagery
+                max_ni, max_nj = 800, 600
+                ni, nj, _ = image.shape
+                if (ni > max_ni) or (nj > max_nj):
+                    image = smooth_image(image, (max_ni, max_nj))
+
+                # Plot bokeh image rgba
                 x, y, dw, dh = self.get_x_y_dw_dh()
                 self.bokeh_image = \
                     self.bokeh_figure.image_rgba(image=[image],
