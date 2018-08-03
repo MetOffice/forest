@@ -225,32 +225,71 @@ class ForestPlot(object):
         self.unit_dict_display = unit_dict_display
         self.stats_widget = None
         self.colorbar_widget = None
-
         self.coast_res = '110m'
-
         self.visible = visible
         self._shape2d = None
+
+    def create_plot(self):
+        '''Main plotting function. Generic elements of the plot are created
+        here, and then the plotting function for the specific variable is
+        called using the self.plot_funcs dictionary.
+        '''
+        if self.visible:
+            self.plot_funcs[self.current_var]()
+            cur_region = self.region_dict[self.current_region]
+            if self.current_img_array is None:
+                # Image array not loaded yet
+                mid_x = (cur_region[2] + cur_region[3]) * 0.5
+                mid_y = (cur_region[0] + cur_region[1]) * 0.5
+                self.bokeh_figure.text(x=[mid_x],
+                                       y=[mid_y],
+                                       text=['Plot loading'],
+                                       text_color=['#FF0000'],
+                                       text_font_size="20pt",
+                                       text_baseline="middle",
+                                       text_align="center",
+                                       )
+            else:
+                # Image array is loaded
+                image = self.current_img_array
+                x, y, dw, dh = self.get_x_y_dw_dh()
+                self.bokeh_image = \
+                    self.bokeh_figure.image_rgba(image=[image],
+                                                 x=[x],
+                                                 y=[y],
+                                                 dw=[dw],
+                                                 dh=[dh])
+                self.bokeh_img_ds = self.bokeh_image.data_source
+
+            # Add cartopy coastline to bokeh figure
+            x_start = cur_region[2]
+            x_end = cur_region[3]
+            y_start = cur_region[0]
+            y_end = cur_region[1]
+            coastlines(self.bokeh_figure,
+                       scale=self.coast_res,
+                       extent=(x_start, x_end, y_start, y_end))
+
+            self.bokeh_figure.title.text = self.current_title
+        return self.bokeh_figure
 
     @property
     def current_img_array(self):
         """current image array taken from matplotlib figure canvas"""
-        rgba_source = "mappable"
         if self._shape2d is None:
             return None
-        if rgba_source == "canvas":
-            return forest.util.get_image_array_from_figure(self.current_figure)
-        else:
-            # HACK: self._shape2d is populated by self.get_data()
-            ni, nj = self._shape2d
-            array = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
 
-            # Smooth high resolution imagery
-            max_ni, max_nj = 800, 600
-            ni, nj, _ = array.shape
-            if (ni > max_ni) or (nj > max_nj):
-                return smooth_image(array, (max_ni, max_nj))
-            else:
-                return array
+        # HACK: self._shape2d is populated by self.get_data()
+        ni, nj = self._shape2d
+        array = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
+
+        # Smooth high resolution imagery
+        max_ni, max_nj = 800, 600
+        ni, nj, _ = array.shape
+        if (ni > max_ni) or (nj > max_nj):
+            return smooth_image(array, (max_ni, max_nj))
+        else:
+            return array
 
     def _set_config_value(self, new_config):
         self.current_config = new_config
@@ -719,49 +758,6 @@ class ForestPlot(object):
         self.current_title = \
             '\n'.join(textwrap.wrap(str1,
                                     ForestPlot.TITLE_TEXT_WIDTH))
-    def create_plot(self):
-        '''Main plotting function. Generic elements of the plot are created
-        here, and then the plotting function for the specific variable is
-        called using the self.plot_funcs dictionary.
-        '''
-        if self.visible:
-            self.plot_funcs[self.current_var]()
-            cur_region = self.region_dict[self.current_region]
-            if self.current_img_array is None:
-                # Image array not loaded yet
-                mid_x = (cur_region[2] + cur_region[3]) * 0.5
-                mid_y = (cur_region[0] + cur_region[1]) * 0.5
-                self.bokeh_figure.text(x=[mid_x],
-                                       y=[mid_y],
-                                       text=['Plot loading'],
-                                       text_color=['#FF0000'],
-                                       text_font_size="20pt",
-                                       text_baseline="middle",
-                                       text_align="center",
-                                       )
-            else:
-                # Image array is loaded
-                image = self.current_img_array
-                x, y, dw, dh = self.get_x_y_dw_dh()
-                self.bokeh_image = \
-                    self.bokeh_figure.image_rgba(image=[image],
-                                                 x=[x],
-                                                 y=[y],
-                                                 dw=[dw],
-                                                 dh=[dh])
-                self.bokeh_img_ds = self.bokeh_image.data_source
-
-            # Add cartopy coastline to bokeh figure
-            x_start = cur_region[2]
-            x_end = cur_region[3]
-            y_start = cur_region[0]
-            y_end = cur_region[1]
-            coastlines(self.bokeh_figure,
-                       scale=self.coast_res,
-                       extent=(x_start, x_end, y_start, y_end))
-
-            self.bokeh_figure.title.text = self.current_title
-        return self.bokeh_figure
 
     def create_matplotlib_fig(self):
         self.plot_funcs[self.current_var]()
