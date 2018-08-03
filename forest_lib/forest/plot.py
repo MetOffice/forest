@@ -739,7 +739,16 @@ class ForestPlot(object):
                                        text_align="center",
                                        )
             else:
-                self.create_bokeh_img()
+                # Image array is loaded
+                image = self.current_img_array
+                x, y, dw, dh = self.get_x_y_dw_dh()
+                self.bokeh_image = \
+                    self.bokeh_figure.image_rgba(image=[image],
+                                                 x=[x],
+                                                 y=[y],
+                                                 dw=[dw],
+                                                 dh=[dh])
+                self.bokeh_img_ds = self.bokeh_image.data_source
 
             # Add cartopy coastline to bokeh figure
             x_start = cur_region[2]
@@ -756,18 +765,6 @@ class ForestPlot(object):
     def create_matplotlib_fig(self):
         self.plot_funcs[self.current_var]()
 
-    def create_bokeh_img(self):
-        '''create bokeh image from settings or mappable'''
-        image = self.current_img_array
-        x, y, dw, dh = self.get_x_y_dw_dh()
-        self.bokeh_image = \
-            self.bokeh_figure.image_rgba(image=[image],
-                                         x=[x],
-                                         y=[y],
-                                         dw=[dw],
-                                         dh=[dh])
-        self.bokeh_img_ds = self.bokeh_image.data_source
-
     def update_bokeh_img_plot_from_fig(self):
         '''Update image_rgba() data source'''
         if self.bokeh_img_ds:
@@ -780,7 +777,15 @@ class ForestPlot(object):
             self.bokeh_img_ds.data[u'dh'] = [dh]
         else:
             try:
-                self.create_bokeh_img()
+                image = self.current_img_array
+                x, y, dw, dh = self.get_x_y_dw_dh()
+                self.bokeh_image = \
+                    self.bokeh_figure.image_rgba(image=[image],
+                                                 x=[x],
+                                                 y=[y],
+                                                 dw=[dw],
+                                                 dh=[dh])
+                self.bokeh_img_ds = self.bokeh_image.data_source
             except:
                 self.current_img_array = None
         self.bokeh_figure.title.text = self.current_title
