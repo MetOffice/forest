@@ -196,38 +196,27 @@ class ForestPlot(object):
                 return array
 
     def _set_config_value(self, new_config):
-
-        '''
-
-        '''
-
         self.current_config = new_config
         self.plot_description = self.dataset[
             self.current_config]['data_type_name']
 
     def setup_pressure_labels(self):
-
         '''Create dict of pressure levels, to be used labelling MSLP contour
         plots.
-
         '''
-
         self.mslp_contour_label_dict = {}
         for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
             self.mslp_contour_label_dict[
                 pressure1] = '{0:d}hPa'.format(int(pressure1))
 
     def setup_plot_funcs(self):
-
         '''Set up dictionary of plot functions. This is used by the main
         create_plot() function to call the plotting function relevant to the
         specific variable being plotted. There is also a second dictionary
         which is by the update_plot() function, which does the minimum amount
         of work to update the plot, and is used for some option changes,
         mainly a change in the forecast time selected.
-
         '''
-
         self.plot_funcs = {'precipitation': self.plot_precip,
                            'accum_precip_3hr': self.plot_precip,
                            'accum_precip_6hr': self.plot_precip,
@@ -271,20 +260,12 @@ class ForestPlot(object):
         self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
 
     def update_coords(self, data_cube):
-
         '''Update the latitude and longitude coordinates for the data.
-
         '''
-
         self.coords_lat = data_cube.coords('latitude')[0].points
         self.coords_long = data_cube.coords('longitude')[0].points
 
     def create_blank(self):
-
-        '''
-
-        '''
-
         self.main_plot = None
         self.current_title = 'Blank plot'
 
@@ -299,14 +280,11 @@ class ForestPlot(object):
 
         # HACK: cache image array shape after get_data()
         self._shape2d = data_cube.data.shape
-
         return data_cube
 
     def update_precip(self):
-
         '''Update function for precipitation plots, called by update_plot() when
         precipitation is the selected plot type.
-
         '''
         data_cube = self.get_data()
         array_for_update = data_cube.data[:-1, :-1].ravel()
@@ -315,33 +293,28 @@ class ForestPlot(object):
         self.update_stats(data_cube)
 
     def plot_precip(self):
-
         '''Function for creating precipitation plots, called by create_plot when
         precipitation is the selected plot type.
-
         '''
         data_cube = self.get_data()
+        cmap = self.plot_options[self.current_var]['cmap']
+        norm = self.plot_options[self.current_var]['norm']
         self.update_coords(data_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
                                          data_cube.data,
-                                         cmap=self.plot_options[
-                                             self.current_var]['cmap'],
-                                         norm=self.plot_options[
-                                             self.current_var]['norm'],
+                                         cmap=cmap,
+                                         norm=norm,
                                          edgecolor='face',
                                          transform=cartopy.crs.PlateCarree())
         self.update_title(data_cube)
         self.update_stats(data_cube)
 
     def update_wind_vectors(self):
-
         '''Update function for wind vector plots, called by update_plot() when
         wind vectors is the selected plot type.
-
         '''
-
         wind_speed_cube = self.get_data(forest.data.WIND_SPEED_NAME)
 
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
@@ -354,12 +327,9 @@ class ForestPlot(object):
                                  wv_v_data)
 
     def plot_wind_vectors(self):
-
         '''Function for creating wind vector plots, called by create_plot when
         wind vectors is the selected plot type.
-
         '''
-
         wind_speed_cube = self.get_data(forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
@@ -389,10 +359,8 @@ class ForestPlot(object):
         self.update_stats(wind_speed_cube)
 
     def update_wind_mslp(self):
-
         '''Update function for wind speed with MSLP contours plots, called by
         update_plot() when wind speed with MSLP is the selected plot type.
-
         '''
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
@@ -416,11 +384,9 @@ class ForestPlot(object):
         self.update_stats(wind_speed_cube)
 
     def plot_wind_mslp(self):
-
         '''Function for creating wind speed with MSLP contour plots, called by
         create_plot when wind speed with MSLP contours is the selected plot
         type.
-
         '''
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
@@ -451,12 +417,9 @@ class ForestPlot(object):
         self.update_title(wind_speed_cube)
 
     def update_wind_streams(self):
-
         '''Update function for wind streamline plots, called by update_plot()
         when wind streamlines is the selected plot type.
-
         '''
-
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
@@ -485,10 +448,8 @@ class ForestPlot(object):
         self.update_stats(wind_speed_cube)
 
     def plot_wind_streams(self):
-
         '''Function for creating wind streamline plots, called by create_plot when
         wind streamlines is the selected plot type.
-
         '''
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
@@ -521,12 +482,9 @@ class ForestPlot(object):
 
 
     def update_air_temp(self):
-
         '''Update function for air temperature plots, called by update_plot() when
         air temperature is the selected plot type.
-
         '''
-
         at_cube = self.get_data()
         array_for_update = at_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
@@ -534,12 +492,9 @@ class ForestPlot(object):
         self.update_stats(at_cube)
 
     def plot_air_temp(self):
-
         '''Function for creating air temperature plots, called by create_plot when
         air temperature is the selected plot type.
-
         '''
-
         at_cube = self.get_data()
         self.update_coords(at_cube)
         self.main_plot = \
@@ -555,10 +510,8 @@ class ForestPlot(object):
         self.update_stats(at_cube)
 
     def update_mslp(self):
-
         '''Update function for MSLP plots, called by update_plot() when
         MSLP is the selected plot type.
-
         '''
         ap_cube = self.get_data()
         array_for_update = ap_cube.data[:-1, :-1].ravel()
@@ -567,12 +520,9 @@ class ForestPlot(object):
         self.update_stats(ap_cube)
 
     def plot_mslp(self):
-
         '''Function for creating MSLP plots, called by create_plot when
         MSLP is the selected plot type.
-
         '''
-
         ap_cube = self.get_data()
         self.update_coords(ap_cube)
         self.main_plot = \
@@ -588,12 +538,9 @@ class ForestPlot(object):
         self.update_stats(ap_cube)
 
     def update_cloud(self):
-
         '''Update function for cloud fraction plots, called by update_plot() when
         cloud fraction is the selected plot type.
-
         '''
-
         cloud_cube = self.get_data()
         array_for_update = cloud_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
@@ -601,12 +548,9 @@ class ForestPlot(object):
         self.update_stats(cloud_cube)
 
     def plot_cloud(self):
-
         '''Function for creating cloud fraction plots, called by create_plot when
         cloud fraction is the selected plot type.
-
         '''
-
         cloud_cube = self.get_data()
         self.update_coords(cloud_cube)
         self.main_plot = \
@@ -622,10 +566,8 @@ class ForestPlot(object):
         self.update_stats(cloud_cube)
 
     def update_him8(self):
-
         '''Update function for himawari-8 image plots, called by update_plot()
         when cloud fraction is the selected plot type.
-
         '''
         him8_image = self.dataset[
             'himawari-8']['data'].get_data(self.current_var, selected_time=self.current_time)
@@ -639,12 +581,9 @@ class ForestPlot(object):
         self.update_title(None)
 
     def plot_him8(self):
-
         '''Function for creating himawari-8 image plots, called by create_plot()
         when cloud fraction is the selected plot type.
-
         '''
-
         him8_data = self.dataset['himawari-8']['data']
         him8_image = him8_data.get_data(self.current_var,
                                         selected_time=self.current_time)
@@ -662,12 +601,9 @@ class ForestPlot(object):
         self.update_title(None)
 
     def update_simim(self):
-
         '''Update function for himawari-8 image plots, called by update_plot()
         when cloud fraction is the selected plot type.
-
         '''
-
         simim_cube = self.dataset['simim']['data'].get_data(
             self.current_var, selected_time=self.current_time)
         array_for_update = simim_cube.data[:-1, :-1].ravel()
@@ -675,12 +611,9 @@ class ForestPlot(object):
         self.update_title(None)
 
     def plot_simim(self):
-
         '''Function for creating himawari-8 image plots, called by create_plot()
         when cloud fraction is the selected plot type.
-
         '''
-
         simim_cube = self.dataset['simim']['data'].get_data(self.current_var,
                                                             selected_time=self.current_time)
         lats = simim_cube.coord('grid_latitude').points
@@ -702,22 +635,12 @@ class ForestPlot(object):
         self.update_title(None)
 
     def update_sat_simim_imagery(self):
-
-        '''
-
-        '''
-
         if self.current_config == 'himawari-8':
             self.update_him8()
         elif self.current_config == 'simim':
             self.update_simim()
 
     def plot_sat_simim_imagery(self):
-
-        '''
-
-        '''
-
         if self.current_config == 'himawari-8':
             self.plot_him8()
         elif self.current_config == 'simim':
@@ -725,13 +648,8 @@ class ForestPlot(object):
 
     def update_stats(self, current_cube):
         print("dummy update_stats called")
-        pass
 
     def _update_stats(self, current_cube):
-
-        '''
-
-        '''
         data_to_process = current_cube.data
         stats_str_list = [self.current_title]
         unit_str = self.unit_dict_display[self.current_var]
@@ -777,7 +695,6 @@ class ForestPlot(object):
                                                        long=long_str,
                                                        fv=field_val_str)
 
-
         stats_str_list += [model_run_info,'']
         stats_str_list += [selected_pt_info, '']
         stats_str_list += ['Max = {0:.4f} {1}'.format(max_val, unit_str)]
@@ -785,15 +702,11 @@ class ForestPlot(object):
         stats_str_list += ['Mean = {0:.4f} {1}'.format(mean_val, unit_str)]
         stats_str_list += ['STD = {0:.4f} {1}'.format(std_val, unit_str)]
         stats_str_list += ['RMS = {0:.4f} {1}'.format(rms_val, unit_str)]
-
         self.stats_string = '</br>'.join(stats_str_list)
 
     def update_title(self, current_cube):
-
         '''Update plot title.
-
         '''
-
         try:
             datestr1 = forest.util.get_time_str(self.current_time)
         except:
@@ -846,7 +759,6 @@ class ForestPlot(object):
         self.active_bokeh_tools['tap'] = None
 
     def create_bokeh_img_plot_from_fig(self):
-        ''''''
         cur_region = self.region_dict[self.current_region]
 
         if self.bokeh_figure is None:
@@ -957,11 +869,6 @@ class ForestPlot(object):
             self.update_stats_widget()
 
     def create_stats_widget(self):
-
-        '''
-
-        '''
-
         self.stats_widget = bokeh.models.widgets.Div(text=self.stats_string,
                                                      height=200,
                                                      width=400,
@@ -969,14 +876,8 @@ class ForestPlot(object):
         return self.stats_widget
 
     def create_colorbar_widget(self):
-
-        '''
-
-        '''
-
         colorbar_html = "<img src='" + self.app_path + "/static/" + \
                         self.colorbar_link + "'\>"
-            
         self.colorbar_widget = bokeh.models.widgets.Div(text=colorbar_html,
                                                         height=100,
                                                         width=800,
@@ -984,24 +885,13 @@ class ForestPlot(object):
         return self.colorbar_widget
 
     def update_stats_widget(self):
-
-        '''
-
-        '''
-
         print('Updating stats widget')
-
         try:
             self.stats_widget.text = self.stats_string
         except AttributeError as e1:
             print('Unable to update stats as stats widget not initiated')
 
     def update_colorbar_widget(self):
-
-        '''
-
-        '''
-
         self.colorbar_link = self.current_var + '_colorbar.png'
         colorbar_html = "<img src='" + self.app_path + "/static/" + \
                         self.colorbar_link + "'\>"
@@ -1014,11 +904,6 @@ class ForestPlot(object):
             print('Unable to update colorbar as colorbar widget not initiated')
 
     def set_data_time(self, new_time):
-
-        '''
-
-        '''
-
         print('selected new time {0}'.format(new_time))
 
         self.current_time = new_time
@@ -1033,11 +918,6 @@ class ForestPlot(object):
             self.update_colorbar_widget()
 
     def set_var(self, new_var):
-
-        '''
-
-        '''
-
         print('selected new var {0}'.format(new_var))
         self.current_var = new_var
 
@@ -1070,11 +950,8 @@ class ForestPlot(object):
         self.bokeh_figure.y_range.end = y_end
 
     def set_config(self, new_config):
-
         '''Function to set a new value of config and do an update
-
         '''
-
         print('setting new config {0}'.format(new_config))
         self._set_config_value(new_config)
         if self.visible:
@@ -1102,11 +979,6 @@ class ForestPlot(object):
 
 
     def link_axes_to_other_plot(self, other_plot):
-
-        '''
-
-        '''
-
         try:
             self.bokeh_figure.x_range = other_plot.bokeh_figure.x_range
             self.bokeh_figure.y_range = other_plot.bokeh_figure.y_range
