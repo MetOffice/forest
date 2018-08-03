@@ -105,6 +105,7 @@ def pretty_bokeh_figure(*args, **kwargs):
 
 def smooth_image(array, output_shape):
     """Smooth high resolution imagery"""
+    print("smoothing")
     max_ni, max_nj = output_shape
     ni, nj, _ = array.shape
     # scipy docs: int(round(factor * n)) = max_n
