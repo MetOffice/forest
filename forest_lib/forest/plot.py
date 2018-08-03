@@ -155,7 +155,46 @@ class ForestPlot(object):
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
         self.selected_point = None
-        self.setup_plot_funcs()
+        self.plot_funcs = {'precipitation': self.plot_precip,
+                           'accum_precip_3hr': self.plot_precip,
+                           'accum_precip_6hr': self.plot_precip,
+                           'accum_precip_12hr': self.plot_precip,
+                           'accum_precip_24hr': self.plot_precip,
+                           'wind_vectors': self.plot_wind_vectors,
+                           'wind_mslp': self.plot_wind_mslp,
+                           'wind_streams': self.plot_wind_streams,
+                           'mslp': self.plot_mslp,
+                           'air_temperature': self.plot_air_temp,
+                           'cloud_fraction': self.plot_cloud,
+                           'himawari-8': self.plot_him8,
+                           'simim': self.plot_simim,
+                           'W': self.plot_sat_simim_imagery,
+                           'I': self.plot_sat_simim_imagery,
+                           'V': self.plot_sat_simim_imagery,
+                           'blank': self.create_blank,
+                           }
+        self.update_funcs = {'precipitation': self.update_precip,
+                             'accum_precip_3hr': self.update_precip,
+                             'accum_precip_6hr': self.update_precip,
+                             'accum_precip_12hr': self.update_precip,
+                             'accum_precip_24hr': self.update_precip,
+                             'wind_vectors': self.update_wind_vectors,
+                             'wind_mslp': self.update_wind_mslp,
+                             'wind_streams': self.update_wind_streams,
+                             'mslp': self.update_mslp,
+                             'air_temperature': self.update_air_temp,
+                             'cloud_fraction': self.update_cloud,
+                             'himawari-8': self.update_him8,
+                             'simim': self.update_simim,
+                             'W': self.update_sat_simim_imagery,
+                             'I': self.update_sat_simim_imagery,
+                             'V': self.update_sat_simim_imagery,
+                             'blank': self.create_blank,
+                             }
+        self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
+        self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
+        self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
+        self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
         self.setup_pressure_labels()
         self.current_title = ''
         self.stats_string = ''
@@ -222,56 +261,6 @@ class ForestPlot(object):
         for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
             self.mslp_contour_label_dict[
                 pressure1] = '{0:d}hPa'.format(int(pressure1))
-
-    def setup_plot_funcs(self):
-        '''Set up dictionary of plot functions. This is used by the main
-        create_plot() function to call the plotting function relevant to the
-        specific variable being plotted. There is also a second dictionary
-        which is by the update_plot() function, which does the minimum amount
-        of work to update the plot, and is used for some option changes,
-        mainly a change in the forecast time selected.
-        '''
-        self.plot_funcs = {'precipitation': self.plot_precip,
-                           'accum_precip_3hr': self.plot_precip,
-                           'accum_precip_6hr': self.plot_precip,
-                           'accum_precip_12hr': self.plot_precip,
-                           'accum_precip_24hr': self.plot_precip,
-                           'wind_vectors': self.plot_wind_vectors,
-                           'wind_mslp': self.plot_wind_mslp,
-                           'wind_streams': self.plot_wind_streams,
-                           'mslp': self.plot_mslp,
-                           'air_temperature': self.plot_air_temp,
-                           'cloud_fraction': self.plot_cloud,
-                           'himawari-8': self.plot_him8,
-                           'simim': self.plot_simim,
-                           'W': self.plot_sat_simim_imagery,
-                           'I': self.plot_sat_simim_imagery,
-                           'V': self.plot_sat_simim_imagery,
-                           'blank': self.create_blank,
-                           }
-
-        self.update_funcs = {'precipitation': self.update_precip,
-                             'accum_precip_3hr': self.update_precip,
-                             'accum_precip_6hr': self.update_precip,
-                             'accum_precip_12hr': self.update_precip,
-                             'accum_precip_24hr': self.update_precip,
-                             'wind_vectors': self.update_wind_vectors,
-                             'wind_mslp': self.update_wind_mslp,
-                             'wind_streams': self.update_wind_streams,
-                             'mslp': self.update_mslp,
-                             'air_temperature': self.update_air_temp,
-                             'cloud_fraction': self.update_cloud,
-                             'himawari-8': self.update_him8,
-                             'simim': self.update_simim,
-                             'W': self.update_sat_simim_imagery,
-                             'I': self.update_sat_simim_imagery,
-                             'V': self.update_sat_simim_imagery,
-                             'blank': self.create_blank,
-                             }
-        self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
-        self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
-        self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
-        self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
 
     def update_coords(self, data_cube):
         '''Update the latitude and longitude coordinates for the data.
