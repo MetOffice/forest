@@ -174,7 +174,6 @@ class ForestPlot(object):
         self.stats_widget = None
         self.colorbar_widget = None
 
-        self._current_figsize = (8.0, 6.0)
         self.bokeh_fig_size = (800,600)
         self.coast_res = '110m'
         self.display_mode = ForestPlot.MODE_LOADING
@@ -954,30 +953,6 @@ class ForestPlot(object):
             except:
                 self.current_img_array = None
         self.bokeh_figure.title.text = self.current_title
-
-    def _update_bokeh_img_plot_from_fig(self):
-        '''Update image_rgba() data source'''
-        cur_region = self.region_dict[self.current_region]
-        self.current_figure.set_figwidth(self.current_figsize[0])
-        self.current_figure.set_figheight(
-            round(self.current_figure.get_figwidth() *
-                  (cur_region[1] - cur_region[0]) /
-                  (cur_region[3] - cur_region[2]), 2))
-
-        if self.bokeh_img_ds:
-            x, y, dw, dh = self.get_x_y_dw_dh()
-            self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
-            self.bokeh_img_ds.data[u'x'] = [x]
-            self.bokeh_img_ds.data[u'y'] = [y]
-            self.bokeh_img_ds.data[u'dw'] = [dw]
-            self.bokeh_img_ds.data[u'dh'] = [dh]
-            self.bokeh_figure.title.text = self.current_title
-        else:
-            try:
-                self.create_bokeh_img()
-                self.bokeh_figure.title.text = self.current_title
-            except:
-                self.current_img_array = None
 
     def update_plot(self):
         print("{}.update_plot() called".format(self.__class__.__name__))
