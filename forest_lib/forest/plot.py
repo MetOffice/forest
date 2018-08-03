@@ -170,7 +170,6 @@ class ForestPlot(object):
         self.bokeh_figure = bokeh_figure
         self.bokeh_image = None
         self.bokeh_img_ds = None
-        self.async = False
         self.unit_dict = unit_dict
         self.unit_dict_display = unit_dict_display
         self.stats_widget = None
@@ -991,8 +990,7 @@ class ForestPlot(object):
         '''
         self.update_funcs[self.current_var]()
         self.current_figure.canvas.draw_idle()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
+        self.update_bokeh_img_plot_from_fig()
         if self.stats_widget:
             self.update_stats_widget()
 
@@ -1066,12 +1064,11 @@ class ForestPlot(object):
         if not self.visible:
             return
         self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
-            if self.colorbar_widget:
-                self.update_colorbar_widget()
+        self.update_bokeh_img_plot_from_fig()
+        if self.stats_widget:
+            self.update_stats_widget()
+        if self.colorbar_widget:
+            self.update_colorbar_widget()
 
     def set_var(self, new_var):
 
@@ -1084,12 +1081,11 @@ class ForestPlot(object):
 
         if self.visible:
             self.create_matplotlib_fig()
-            if not self.async:
-                self.update_bokeh_img_plot_from_fig()
-                if self.stats_widget:
-                    self.update_stats_widget()
-                if self.colorbar_widget:
-                    self.update_colorbar_widget()
+            self.update_bokeh_img_plot_from_fig()
+            if self.stats_widget:
+                self.update_stats_widget()
+            if self.colorbar_widget:
+                self.update_colorbar_widget()
 
     def _set_region(self, region):
         '''Event handler for a change in the selected plot region'''
@@ -1097,10 +1093,9 @@ class ForestPlot(object):
         self.current_region = region
         self.data_bounds = self.region_dict[self.current_region]
         self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
+        self.update_bokeh_img_plot_from_fig()
+        if self.stats_widget:
+            self.update_stats_widget()
 
     def set_region(self, region):
         """Adjust bokeh figure extents"""
@@ -1122,30 +1117,26 @@ class ForestPlot(object):
         self._set_config_value(new_config)
         if self.visible:
             self.create_matplotlib_fig()
-            if not self.async:
-                self.update_bokeh_img_plot_from_fig()
-                if self.stats_widget:
-                    self.update_stats_widget()
+            self.update_bokeh_img_plot_from_fig()
+            if self.stats_widget:
+                self.update_stats_widget()
 
     def set_dataset(self, new_dataset, new_model_run_time):
         self.dataset = new_dataset
         self.model_run_time = new_model_run_time
         if self.visible:
             self.create_matplotlib_fig()
-            if not self.async:
-                self.update_bokeh_img_plot_from_fig()
-                if self.stats_widget:
-                    self.update_stats_widget()
+            self.update_bokeh_img_plot_from_fig()
+            if self.stats_widget:
+                self.update_stats_widget()
 
     def set_selected_point(self, latitude, longitude):
         self.selected_point = (latitude, longitude)
-        if not self.async:
-
-            if self.stats_widget:
-                current_data = \
-                    self.get_data(self.stats_data_var[self.current_var])
-                self.update_stats(current_data)
-                self.update_stats_widget()
+        if self.stats_widget:
+            current_data = \
+                self.get_data(self.stats_data_var[self.current_var])
+            self.update_stats(current_data)
+            self.update_stats_widget()
 
 
     def link_axes_to_other_plot(self, other_plot):
