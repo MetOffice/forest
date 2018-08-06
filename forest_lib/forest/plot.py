@@ -774,11 +774,13 @@ class ForestPlot(object):
         if self.bokeh_img_ds:
             image = self.current_img_array
             x, y, dw, dh = self.get_x_y_dw_dh()
-            self.bokeh_img_ds.data[u'image'] = [image]
-            self.bokeh_img_ds.data[u'x'] = [x]
-            self.bokeh_img_ds.data[u'y'] = [y]
-            self.bokeh_img_ds.data[u'dw'] = [dw]
-            self.bokeh_img_ds.data[u'dh'] = [dh]
+            self.bokeh_img_ds.data = {
+                u'image': [image],
+                u'x': [x],
+                u'y': [y],
+                u'dw': [dw],
+                u'dh': [dh]
+            }
         else:
             try:
                 image = self.current_img_array
