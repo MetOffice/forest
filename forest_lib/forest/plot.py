@@ -37,7 +37,7 @@ def rgba_from_mappable(mappable, shape2d):
                             bytes=True).reshape((ni, nj, 4))
 
 
-def coastlines(figure, scale="110m", extent=None):
+def coastlines(scale="110m", extent=None):
     """Add cartopy coastline to a figure
 
     Translates cartopy.feature.COASTLINE object
@@ -46,7 +46,6 @@ def coastlines(figure, scale="110m", extent=None):
     .. note:: This method assumes the map projection
               is cartopy.crs.PlateCarreee
 
-    :param figure: bokeh figure instance
     :param scale: cartopy coastline scale '110m', '50m' or '10m'
     :param extent: x_start, x_end, y_start, y_end
     """
@@ -54,13 +53,12 @@ def coastlines(figure, scale="110m", extent=None):
     coastline.scale = scale
     for geometry in coastline.geometries():
         x, y = geometry[0].xy
+        x, y = np.asarray(x), np.asarray(y)
         if extent is not None:
             x, y = clip_xy(x, y, extent)
         if x.shape[0] == 0:
             continue
-        figure.line(x, y,
-                    color='black',
-                    level='overlay')
+        yield x, y
 
 
 def clip_xy(x, y, extent):
@@ -278,9 +276,12 @@ class ForestPlot(object):
             x_end = cur_region[3]
             y_start = cur_region[0]
             y_end = cur_region[1]
-            coastlines(self.bokeh_figure,
-                       scale=self.coast_res,
-                       extent=(x_start, x_end, y_start, y_end))
+            for x, y in coastlines(scale=self.coast_res,
+                                   extent=(x_start, x_end,
+                                           y_start, y_end)):
+                self.bokeh_figure.line(x, y,
+                                       color='black',
+                                       level='overlay')
 
             self.bokeh_figure.title.text = self.current_title
         return self.bokeh_figure

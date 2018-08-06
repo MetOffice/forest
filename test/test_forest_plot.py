@@ -14,11 +14,23 @@ import array
 
 
 class TestCoastlines(unittest.TestCase):
-    @unittest.mock.patch("forest.plot.cartopy")
-    def test_coastlines(self, cartopy):
-        figure = bokeh.plotting.figure()
-        forest.plot.coastlines(figure)
-        cartopy.feature.COASTLINE.geometries.assert_called_once_with()
+    def test_global_110m_coastline(self):
+        x, y = next(forest.plot.coastlines())
+        result = x[0], y[0]
+        expect = -163.712896, -78.595667
+        np.testing.assert_array_almost_equal(result, expect)
+
+    def test_global_50m_coastline(self):
+        x, y = next(forest.plot.coastlines("50m"))
+        result = x[0], y[0]
+        expect = 180., -16.15293
+        np.testing.assert_array_almost_equal(result, expect)
+
+    def test_global_10m_coastline(self):
+        x, y = next(forest.plot.coastlines("10m"))
+        result = x[0], y[0]
+        expect = 59.916026, -67.400486
+        np.testing.assert_array_almost_equal(result, expect)
 
 
 Extent = namedtuple("Extent", ["x_start", "x_end",
