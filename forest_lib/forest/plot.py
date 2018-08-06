@@ -871,17 +871,15 @@ class ForestPlot(object):
 
     def set_data_time(self, new_time):
         print('selected new time {0}'.format(new_time))
-
         self.current_time = new_time
         # self.update_plot()
-        if not self.visible:
-            return
-        self.create_matplotlib_fig()
-        self.update_bokeh_img_plot_from_fig()
-        if self.stats_widget:
-            self.update_stats_widget()
-        if self.colorbar_widget:
-            self.update_colorbar_widget()
+        if self.visible:
+            self.create_matplotlib_fig()
+            self.update_bokeh_img_plot_from_fig()
+            if self.stats_widget:
+                self.update_stats_widget()
+            if self.colorbar_widget:
+                self.update_colorbar_widget()
 
     def set_var(self, new_var):
         print('selected new var {0}'.format(new_var))
@@ -944,7 +942,6 @@ class ForestPlot(object):
                 self.get_data(self.stats_data_var[self.current_var])
             self.update_stats(current_data)
             self.update_stats_widget()
-
 
     def link_axes_to_other_plot(self, other_plot):
         try:
