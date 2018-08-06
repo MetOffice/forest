@@ -106,10 +106,8 @@ class MissingDataError(Exception):
         self.time = time
 
 
-def pretty_bokeh_figure(*args, **kwargs):
+def add_axes(figure):
     """Helper to make prettier bokeh figures"""
-    figure = bokeh.plotting.figure(*args, **kwargs)
-
     # Extra x-axis above figure
     position = 'above'
     figure.extra_x_ranges[position] = figure.x_range
@@ -243,6 +241,7 @@ class ForestPlot(object):
                                                  y_range=y_range,
                                                  tools=','.join(BOKEH_TOOLS_LIST),
                                                  toolbar_location='above')
+
         self.bokeh_figure = bokeh_figure
         self.bokeh_image = None
         self.bokeh_img_ds = None
