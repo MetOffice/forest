@@ -151,7 +151,9 @@ class ForestPlot(object):
         self.dataset = dataset
         self.model_run_time = model_run_time
         self.current_var = plot_var
-        self._set_config_value(conf1)
+        self.current_config = conf1
+        self.plot_description = self.dataset[
+            self.current_config]['data_type_name']
         self.current_region = reg1
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
@@ -300,11 +302,6 @@ class ForestPlot(object):
             return smooth_image(array, (max_ni, max_nj))
         else:
             return array
-
-    def _set_config_value(self, new_config):
-        self.current_config = new_config
-        self.plot_description = self.dataset[
-            self.current_config]['data_type_name']
 
     def update_coords(self, data_cube):
         '''Update the latitude and longitude coordinates for the data.
@@ -920,7 +917,9 @@ class ForestPlot(object):
         '''Function to set a new value of config and do an update
         '''
         print('setting new config {0}'.format(new_config))
-        self._set_config_value(new_config)
+        self.current_config = new_config
+        self.plot_description = self.dataset[
+            self.current_config]['data_type_name']
         if self.visible:
             self.create_matplotlib_fig()
             self.update_bokeh_img_plot_from_fig()
