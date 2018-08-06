@@ -41,17 +41,39 @@ def coastlines(scale="110m", extent=None):
     """Add cartopy coastline to a figure
 
     Translates cartopy.feature.COASTLINE object
-    into collection of bokeh lines
+    into collection of lines
 
     .. note:: This method assumes the map projection
               is cartopy.crs.PlateCarreee
 
-    :param scale: cartopy coastline scale '110m', '50m' or '10m'
+    :param scale: cartopy scale '110m', '50m' or '10m'
     :param extent: x_start, x_end, y_start, y_end
     """
-    coastline = cartopy.feature.COASTLINE
-    coastline.scale = scale
-    for geometry in coastline.geometries():
+    return feature_lines(cartopy.feature.COASTLINE,
+                         scale=scale,
+                         extent=extent)
+
+
+def borders(scale="110m", extent=None):
+    """Add cartopy borders to a figure
+
+    Translates cartopy.feature.BORDERS feature
+    into collection of lines
+
+    .. note:: This method assumes the map projection
+              is cartopy.crs.PlateCarreee
+
+    :param scale: cartopy scale '110m', '50m' or '10m'
+    :param extent: x_start, x_end, y_start, y_end
+    """
+    return feature_lines(cartopy.feature.BORDERS,
+                         scale=scale,
+                         extent=extent)
+
+
+def feature_lines(feature, scale="110m", extent=None):
+    feature.scale = scale
+    for geometry in feature.geometries():
         x, y = geometry[0].xy
         x, y = np.asarray(x), np.asarray(y)
         if extent is not None:
@@ -281,6 +303,12 @@ class ForestPlot(object):
                                            y_start, y_end)):
                 self.bokeh_figure.line(x, y,
                                        color='black',
+                                       level='overlay')
+            for x, y in borders(scale=self.coast_res,
+                                extent=(x_start, x_end,
+                                        y_start, y_end)):
+                self.bokeh_figure.line(x, y,
+                                       color='blue',
                                        level='overlay')
 
             self.bokeh_figure.title.text = self.current_title
