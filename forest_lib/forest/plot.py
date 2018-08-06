@@ -37,7 +37,7 @@ def rgba_from_mappable(mappable, shape2d):
                             bytes=True).reshape((ni, nj, 4))
 
 
-def coastlines(scale="110m", extent=None):
+def coastlines(scale="110m"):
     """Add cartopy coastline to a figure
 
     Translates cartopy.feature.COASTLINE object
@@ -50,11 +50,10 @@ def coastlines(scale="110m", extent=None):
     :param extent: x_start, x_end, y_start, y_end
     """
     return feature_lines(cartopy.feature.COASTLINE,
-                         scale=scale,
-                         extent=extent)
+                         scale=scale)
 
 
-def borders(scale="110m", extent=None):
+def borders(scale="110m"):
     """Add cartopy borders to a figure
 
     Translates cartopy.feature.BORDERS feature
@@ -64,23 +63,16 @@ def borders(scale="110m", extent=None):
               is cartopy.crs.PlateCarreee
 
     :param scale: cartopy scale '110m', '50m' or '10m'
-    :param extent: x_start, x_end, y_start, y_end
     """
     return feature_lines(cartopy.feature.BORDERS,
-                         scale=scale,
-                         extent=extent)
+                         scale=scale)
 
 
-def feature_lines(feature, scale="110m", extent=None):
+def feature_lines(feature, scale="110m"):
     feature.scale = scale
     for geometry in feature.geometries():
         x, y = geometry[0].xy
-        x, y = np.asarray(x), np.asarray(y)
-        if extent is not None:
-            x, y = clip_xy(x, y, extent)
-        if x.shape[0] == 0:
-            continue
-        yield x, y
+        yield np.asarray(x), np.asarray(y)
 
 
 def clip_xy(x, y, extent):
@@ -91,6 +83,17 @@ def clip_xy(x, y, extent):
                    (x < x_end) &
                    (y > y_start) &
                    (y < y_end))
+    return x[pts], y[pts]
+
+
+def cutout_xy(x, y, extent):
+    """Cutout x, y inside a box"""
+    x, y = np.asarray(x), np.asarray(y)
+    x_start, x_end, y_start, y_end = extent
+    pts = np.where((x <= x_start) |
+                   (x >= x_end) |
+                   (y <= y_start) |
+                   (y >= y_end))
     return x[pts], y[pts]
 
 
@@ -298,17 +301,39 @@ class ForestPlot(object):
             x_end = cur_region[3]
             y_start = cur_region[0]
             y_end = cur_region[1]
-            for x, y in coastlines(scale=self.coast_res,
-                                   extent=(x_start, x_end,
-                                           y_start, y_end)):
+            south_east_asia_extent = (x_start, x_end, y_start, y_end)
+            malaysia_extent = 95, 110, -3, 11
+            for x, y in coastlines(scale=self.coast_res):
+                x, y = clip_xy(x, y, south_east_asia_extent)
+                x, y = cutout_xy(x, y, malaysia_extent)
+                if x.shape[0] == 0:
+                    continue
                 self.bokeh_figure.line(x, y,
                                        color='black',
                                        level='overlay')
-            for x, y in borders(scale=self.coast_res,
-                                extent=(x_start, x_end,
-                                        y_start, y_end)):
+            for x, y in borders(scale=self.coast_res):
+                x, y = clip_xy(x, y, south_east_asia_extent)
+                x, y = cutout_xy(x, y, malaysia_extent)
+                if x.shape[0] == 0:
+                    continue
                 self.bokeh_figure.line(x, y,
-                                       color='blue',
+                                       color='grey',
+                                       level='overlay')
+            # High-res malaysia
+            scale = "10m"
+            for x, y in coastlines(scale=scale):
+                x, y = clip_xy(x, y, malaysia_extent)
+                if x.shape[0] == 0:
+                    continue
+                self.bokeh_figure.line(x, y,
+                                       color='black',
+                                       level='overlay')
+            for x, y in borders(scale=scale):
+                x, y = clip_xy(x, y, malaysia_extent)
+                if x.shape[0] == 0:
+                    continue
+                self.bokeh_figure.line(x, y,
+                                       color='grey',
                                        level='overlay')
 
             self.bokeh_figure.title.text = self.current_title
