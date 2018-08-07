@@ -13,7 +13,7 @@ from collections import namedtuple
 import array
 
 
-class TestCut(unittest.TestCase):
+class TestBoxSplit(unittest.TestCase):
     """Cut a piecewise linear coastline"""
     def test_box_split_given_vertical_line(self):
         x, y = [0.5, 0.5, 0.5], [-0.5, 0.5, 1.5]

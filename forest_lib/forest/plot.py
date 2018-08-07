@@ -313,46 +313,55 @@ class ForestPlot(object):
                 self.bokeh_img_ds = self.bokeh_image.data_source
 
             # Add cartopy coastline to bokeh figure
-            x_start = cur_region[2]
-            x_end = cur_region[3]
-            y_start = cur_region[0]
-            y_end = cur_region[1]
-            south_east_asia_extent = (x_start, x_end, y_start, y_end)
-            malaysia_extent = 95, 110, -3, 11
-            for x, y in coastlines(scale=self.coast_res):
-                for xs, ys in box_split(x, y, malaysia_extent):
-                    xs, ys = clip_xy(xs, ys, south_east_asia_extent)
-                    xs, ys = cutout_xy(xs, ys, malaysia_extent)
-                    if xs.shape[0] == 0:
-                        continue
-                    self.bokeh_figure.line(xs, ys,
-                                           color='black',
-                                           level='overlay')
+            sea_regions = forest.util.SEA_REGION_DICT
+            def get_extent(region):
+                x_start = region[2]
+                x_end = region[3]
+                y_start = region[0]
+                y_end = region[1]
+                return (x_start, x_end, y_start, y_end)
+            south_east_asia = get_extent(cur_region)
+            indonesia = get_extent(sea_regions["indonesia"])
+            malaysia = get_extent(sea_regions["malaysia"])
+            philippines = get_extent(sea_regions["phillipines"])  # typo in dict key
+
+            # Low-res borders
             for x, y in borders(scale=self.coast_res):
-                x, y = clip_xy(x, y, south_east_asia_extent)
-                x, y = cutout_xy(x, y, malaysia_extent)
+                x, y = clip_xy(x, y, south_east_asia)
+                x, y = cutout_xy(x, y, malaysia)
                 if x.shape[0] == 0:
                     continue
                 self.bokeh_figure.line(x, y,
                                        color='grey',
                                        level='overlay')
-            # High-res malaysia
-            scale = "10m"
-            for x, y in coastlines(scale=scale):
-                for xs, ys in box_split(x, y, malaysia_extent):
-                    xs, ys = clip_xy(xs, ys, malaysia_extent)
-                    if xs.shape[0] == 0:
-                        continue
-                    self.bokeh_figure.line(xs, ys,
-                                           color='black',
-                                           level='overlay')
-            for x, y in borders(scale=scale):
-                x, y = clip_xy(x, y, malaysia_extent)
+
+            # Coastlines Low-res and High-res patches
+            hires_extents = [malaysia, indonesia, philippines]
+            xs, ys = [], []
+            # Low-res (with hi-res regions removed)
+            for xl, yl in coastlines(scale="110m"):
+                xl, yl = clip_xy(xl, yl, south_east_asia)
+                for hires in hires_extents:
+                    xl, yl = cutout_xy(xl, yl, hires)
+                if xl.shape[0] == 0:
+                    continue
+                xs.append(xl)
+                ys.append(yl)
+            # High-res
+            for x, y in coastlines(scale="10m"):
+                x, y = clip_xy(x, y, south_east_asia)
                 if x.shape[0] == 0:
                     continue
-                self.bokeh_figure.line(x, y,
-                                       color='grey',
-                                       level='overlay')
+                for hires in hires_extents:
+                    for xh, yh in box_split(x, y, hires):
+                        xh, yh = clip_xy(xh, yh, hires)
+                        if xh.shape[0] == 0:
+                            continue
+                        xs.append(xh)
+                        ys.append(yh)
+            self.bokeh_figure.multi_line(xs, ys,
+                                         color='black',
+                                         level='overlay')
 
             self.bokeh_figure.title.text = self.current_title
         return self.bokeh_figure
