@@ -13,6 +13,29 @@ from collections import namedtuple
 import array
 
 
+class TestCut(unittest.TestCase):
+    """Cut a piecewise linear coastline"""
+    def test_box_split_given_vertical_line(self):
+        x, y = [0.5, 0.5, 0.5], [-0.5, 0.5, 1.5]
+        extent = (0, 1, 0, 1)
+        result = list(forest.plot.box_split(x, y, extent))
+        expect = [
+            [[0.5], [-0.5]],
+            [[0.5], [0.5]],
+            [[0.5], [1.5]]
+        ]
+        np.testing.assert_array_equal(result, expect)
+
+    def test_box_split_given_vertical_line_outside_box(self):
+        x, y = [2, 2, 2], [-0.5, 0.5, 1.5]
+        extent = (0, 1, 0, 1)
+        result = list(forest.plot.box_split(x, y, extent))
+        expect = [
+            [x, y]
+        ]
+        np.testing.assert_array_equal(result, expect)
+
+
 class TestCoastlines(unittest.TestCase):
     def test_global_110m_coastline(self):
         x, y = next(forest.plot.coastlines())

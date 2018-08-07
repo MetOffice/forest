@@ -97,6 +97,23 @@ def cutout_xy(x, y, extent):
     return x[pts], y[pts]
 
 
+def box_split(x, y, extent):
+    """Split a polygonal chain into segments inside/outside box"""
+    pts = np.where(np.diff(in_box(x, y, extent)))[0]
+    if len(pts) == 0:
+        return [[x, y]]
+    return zip(np.split(x, pts + 1), np.split(y, pts + 1))
+
+
+def in_box(x, y, extent):
+    x, y = np.asarray(x), np.asarray(y)
+    x_start, x_end, y_start, y_end = extent
+    return ((x <= x_start) |
+            (x >= x_end) |
+            (y <= y_start) |
+            (y >= y_end))
+
+
 BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
 
 class MissingDataError(Exception):
@@ -303,13 +320,14 @@ class ForestPlot(object):
             south_east_asia_extent = (x_start, x_end, y_start, y_end)
             malaysia_extent = 95, 110, -3, 11
             for x, y in coastlines(scale=self.coast_res):
-                x, y = clip_xy(x, y, south_east_asia_extent)
-                x, y = cutout_xy(x, y, malaysia_extent)
-                if x.shape[0] == 0:
-                    continue
-                self.bokeh_figure.line(x, y,
-                                       color='black',
-                                       level='overlay')
+                for xs, ys in box_split(x, y, malaysia_extent):
+                    xs, ys = clip_xy(xs, ys, south_east_asia_extent)
+                    xs, ys = cutout_xy(xs, ys, malaysia_extent)
+                    if xs.shape[0] == 0:
+                        continue
+                    self.bokeh_figure.line(xs, ys,
+                                           color='black',
+                                           level='overlay')
             for x, y in borders(scale=self.coast_res):
                 x, y = clip_xy(x, y, south_east_asia_extent)
                 x, y = cutout_xy(x, y, malaysia_extent)
@@ -321,12 +339,13 @@ class ForestPlot(object):
             # High-res malaysia
             scale = "10m"
             for x, y in coastlines(scale=scale):
-                x, y = clip_xy(x, y, malaysia_extent)
-                if x.shape[0] == 0:
-                    continue
-                self.bokeh_figure.line(x, y,
-                                       color='black',
-                                       level='overlay')
+                for xs, ys in box_split(x, y, malaysia_extent):
+                    xs, ys = clip_xy(xs, ys, malaysia_extent)
+                    if xs.shape[0] == 0:
+                        continue
+                    self.bokeh_figure.line(xs, ys,
+                                           color='black',
+                                           level='overlay')
             for x, y in borders(scale=scale):
                 x, y = clip_xy(x, y, malaysia_extent)
                 if x.shape[0] == 0:
