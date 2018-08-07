@@ -321,44 +321,15 @@ class ForestPlot(object):
                 y_end = region[1]
                 return (x_start, x_end, y_start, y_end)
             south_east_asia = get_extent(cur_region)
-            indonesia = get_extent(sea_regions["indonesia"])
-            malaysia = get_extent(sea_regions["malaysia"])
-            philippines = get_extent(sea_regions["phillipines"])  # typo in dict key
 
-            # Low-res borders
-            for x, y in borders(scale=self.coast_res):
-                x, y = clip_xy(x, y, south_east_asia)
-                x, y = cutout_xy(x, y, malaysia)
-                if x.shape[0] == 0:
-                    continue
-                self.bokeh_figure.line(x, y,
-                                       color='grey',
-                                       level='overlay')
-
-            # Coastlines Low-res and High-res patches
-            hires_extents = [malaysia, indonesia, philippines]
+            # Coastlines
             xs, ys = [], []
-            # Low-res (with hi-res regions removed)
-            for xl, yl in coastlines(scale="110m"):
-                xl, yl = clip_xy(xl, yl, south_east_asia)
-                for hires in hires_extents:
-                    xl, yl = cutout_xy(xl, yl, hires)
-                if xl.shape[0] == 0:
-                    continue
-                xs.append(xl)
-                ys.append(yl)
-            # High-res
             for x, y in coastlines(scale="10m"):
                 x, y = clip_xy(x, y, south_east_asia)
                 if x.shape[0] == 0:
                     continue
-                for hires in hires_extents:
-                    for xh, yh in box_split(x, y, hires):
-                        xh, yh = clip_xy(xh, yh, hires)
-                        if xh.shape[0] == 0:
-                            continue
-                        xs.append(xh)
-                        ys.append(yh)
+                xs.append(x)
+                ys.append(y)
             self.bokeh_figure.multi_line(xs, ys,
                                          color='black',
                                          level='overlay')
