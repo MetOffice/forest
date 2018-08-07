@@ -71,8 +71,9 @@ def borders(scale="110m"):
 def feature_lines(feature, scale="110m"):
     feature.scale = scale
     for geometry in feature.geometries():
-        x, y = geometry[0].xy
-        yield np.asarray(x), np.asarray(y)
+        for g in geometry:
+            x, y = g.xy
+            yield np.asarray(x), np.asarray(y)
 
 
 def clip_xy(x, y, extent):
@@ -324,7 +325,7 @@ class ForestPlot(object):
 
             # Coastlines
             xs, ys = [], []
-            for x, y in coastlines(scale="10m"):
+            for x, y in coastlines(scale="50m"):
                 x, y = clip_xy(x, y, south_east_asia)
                 if x.shape[0] == 0:
                     continue
@@ -332,6 +333,17 @@ class ForestPlot(object):
                 ys.append(y)
             self.bokeh_figure.multi_line(xs, ys,
                                          color='black',
+                                         level='overlay')
+            # Borders
+            xs, ys = [], []
+            for x, y in borders(scale="50m"):
+                x, y = clip_xy(x, y, south_east_asia)
+                if x.shape[0] == 0:
+                    continue
+                xs.append(x)
+                ys.append(y)
+            self.bokeh_figure.multi_line(xs, ys,
+                                         color='grey',
                                          level='overlay')
 
             self.bokeh_figure.title.text = self.current_title
