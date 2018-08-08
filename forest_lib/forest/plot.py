@@ -21,6 +21,7 @@ import forest.geography
 import numpy as np
 import scipy.ndimage
 import iris.analysis
+import skimage.transform
 
 
 def rgba_from_mappable(mappable, shape2d):
@@ -66,17 +67,27 @@ def add_axes(figure):
     return figure
 
 
+@forest.util.counter
+@forest.util.timer
 def smooth_image(array, output_shape):
     """Smooth high resolution imagery"""
-    print("smoothing")
-    max_ni, max_nj = output_shape
-    ni, nj, _ = array.shape
-    # scipy docs: int(round(factor * n)) = max_n
-    factor = max_ni / ni, max_nj / nj
-    output_array = np.zeros((max_ni, max_nj, 4), dtype=np.uint8)
-    for i in range(4):
-        output_array[:, :, i] = scipy.ndimage.zoom(array[:, :, i], factor)
-    return output_array
+    use_scikit_image = True
+    if use_scikit_image:
+        resized = skimage.transform.resize(array,
+                                           output_shape,
+                                           mode='reflect')
+        resized = 255 * resized
+        return np.ascontiguousarray(resized, dtype=np.uint8)
+    else:
+        # My own implementation of skimage.transform.resize
+        max_ni, max_nj = output_shape
+        ni, nj, _ = array.shape
+        # scipy docs: int(round(factor * n)) = max_n
+        factor = max_ni / ni, max_nj / nj
+        output_array = np.zeros((max_ni, max_nj, 4), dtype=np.uint8)
+        for i in range(4):
+            output_array[:, :, i] = scipy.ndimage.zoom(array[:, :, i], factor)
+        return output_array
 
 
 class ForestPlot(object):
@@ -194,6 +205,7 @@ class ForestPlot(object):
         self.visible = visible
         self._shape2d = None
 
+    @forest.util.counter
     def create_plot(self):
         '''Main plotting function. Generic elements of the plot are created
         here, and then the plotting function for the specific variable is
@@ -283,6 +295,7 @@ class ForestPlot(object):
         self.main_plot = None
         self.current_title = 'Blank plot'
 
+    @forest.util.counter
     def get_data(self, var_name=None):
         config_data = self.dataset[self.current_config]['data']
         if var_name:
@@ -296,6 +309,7 @@ class ForestPlot(object):
         self._shape2d = data_cube.data.shape
         return data_cube
 
+    @forest.util.counter
     def update_precip(self):
         '''Update function for precipitation plots, called by update_plot() when
         precipitation is the selected plot type.
@@ -306,6 +320,7 @@ class ForestPlot(object):
         self.update_title(data_cube)
         self.update_stats(data_cube)
 
+    @forest.util.counter
     def plot_precip(self):
         '''Function for creating precipitation plots, called by create_plot when
         precipitation is the selected plot type.

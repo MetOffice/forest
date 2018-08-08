@@ -447,13 +447,13 @@ def timer(func):
     return timed_func
 
 
-def count_calls(func):
+def counter(func):
     """Decorator to report of function invocation"""
-    counter = 0
+    count = 0
     def wrapper(*args, **kwargs):
-        nonlocal counter
-        counter += 1
-        print(func.__name__, "called", counter, "times")
+        nonlocal count
+        count += 1
+        print(str(func), "called :", count, "times")
         return func(*args, **kwargs)
     return wrapper
 

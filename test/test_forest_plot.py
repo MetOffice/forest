@@ -322,3 +322,15 @@ class TestPColorMesh(unittest.TestCase):
                                    bytes=True)
         expect = [[68, 1, 84, 255]]
         np.testing.assert_array_equal(result, expect)
+
+
+import skimage.transform
+class TestSmoothImage(unittest.TestCase):
+    def test_skimage_transform_resize(self):
+        image = np.ones((10, 10, 4))
+        output_shape = (5, 5)
+        result = skimage.transform.resize(image,
+                                          output_shape)
+        result = result.astype(np.uint8)
+        expect = np.ones((5, 5, 4), dtype=np.uint8)
+        np.testing.assert_array_equal(expect, result)
