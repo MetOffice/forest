@@ -755,30 +755,19 @@ class ForestPlot(object):
         self.plot_funcs[self.current_var]()
 
     def update_bokeh_img_plot_from_fig(self):
-        '''Update image_rgba() data source'''
-        if self.bokeh_img_ds:
-            image = self.current_img_array
-            x, y, dw, dh = self.get_x_y_dw_dh()
-            self.bokeh_img_ds.data = {
-                u'image': [image],
-                u'x': [x],
-                u'y': [y],
-                u'dw': [dw],
-                u'dh': [dh]
-            }
-        else:
-            try:
-                image = self.current_img_array
-                x, y, dw, dh = self.get_x_y_dw_dh()
-                self.bokeh_image = \
-                    self.bokeh_figure.image_rgba(image=[image],
-                                                 x=[x],
-                                                 y=[y],
-                                                 dw=[dw],
-                                                 dh=[dh])
-                self.bokeh_img_ds = self.bokeh_image.data_source
-            except:
-                self.current_img_array = None
+        '''Update image_rgba() data source
+
+        .. note:: assumes bokeh_img_ds exists
+        '''
+        image = self.current_img_array
+        x, y, dw, dh = self.get_x_y_dw_dh()
+        self.bokeh_img_ds.data = {
+            u'image': [image],
+            u'x': [x],
+            u'y': [y],
+            u'dw': [dw],
+            u'dh': [dh]
+        }
         self.bokeh_figure.title.text = self.current_title
 
     def get_x_y_dw_dh(self):
