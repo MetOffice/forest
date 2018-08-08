@@ -191,7 +191,6 @@ class ForestPlot(object):
         self.unit_dict_display = unit_dict_display
         self.stats_widget = None
         self.colorbar_widget = None
-        self.coast_res = '110m'
         self.visible = visible
         self._shape2d = None
 
@@ -234,11 +233,11 @@ class ForestPlot(object):
                                                  x=[x],
                                                  y=[y],
                                                  dw=[dw],
-                                                 dh=[dh])
+                                                 dh=[dh],
+                                                 level="underlay")
                 self.bokeh_img_ds = self.bokeh_image.data_source
 
             # Add cartopy coastline to bokeh figure
-            sea_regions = forest.util.SEA_REGION_DICT
             def get_extent(region):
                 x_start = region[2]
                 x_end = region[3]
@@ -246,10 +245,12 @@ class ForestPlot(object):
                 y_end = region[1]
                 return (x_start, x_end, y_start, y_end)
             south_east_asia = get_extent(cur_region)
-            forest.geography.add_coastlines(self.bokeh_figure,
-                                            south_east_asia)
-            forest.geography.add_borders(self.bokeh_figure,
-                                         south_east_asia)
+            xs, ys = forest.geography.coastlines(south_east_asia)
+            self.bokeh_figure.multi_line(xs, ys,
+                                         color='black')
+            xs, ys = forest.geography.borders(south_east_asia)
+            self.bokeh_figure.multi_line(xs, ys,
+                                         color='grey')
 
             self.bokeh_figure.title.text = self.current_title
         return self.bokeh_figure

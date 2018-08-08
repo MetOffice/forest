@@ -3,33 +3,7 @@ import numpy as np
 import cartopy
 
 
-def add_coastlines(figure, extent):
-    xs, ys = [], []
-    for x, y in coastlines(scale="50m"):
-        x, y = clip_xy(x, y, extent)
-        if x.shape[0] == 0:
-            continue
-        xs.append(x)
-        ys.append(y)
-    figure.multi_line(xs, ys,
-                      color='black',
-                      level='overlay')
-
-
-def add_borders(figure, extent):
-    xs, ys = [], []
-    for x, y in borders(scale="50m"):
-        x, y = clip_xy(x, y, extent)
-        if x.shape[0] == 0:
-            continue
-        xs.append(x)
-        ys.append(y)
-    figure.multi_line(xs, ys,
-                      color='grey',
-                      level='overlay')
-
-
-def coastlines(scale="110m"):
+def coastlines(extent, scale="50m"):
     """Add cartopy coastline to a figure
 
     Translates cartopy.feature.COASTLINE object
@@ -41,11 +15,18 @@ def coastlines(scale="110m"):
     :param scale: cartopy scale '110m', '50m' or '10m'
     :param extent: x_start, x_end, y_start, y_end
     """
-    return feature_lines(cartopy.feature.COASTLINE,
-                         scale=scale)
+    xs, ys = [], []
+    for x, y in feature_lines(cartopy.feature.COASTLINE,
+                              scale=scale):
+        x, y = clip_xy(x, y, extent)
+        if x.shape[0] == 0:
+            continue
+        xs.append(x)
+        ys.append(y)
+    return xs, ys
 
 
-def borders(scale="110m"):
+def borders(extent, scale="50m"):
     """Add cartopy borders to a figure
 
     Translates cartopy.feature.BORDERS feature
@@ -56,8 +37,15 @@ def borders(scale="110m"):
 
     :param scale: cartopy scale '110m', '50m' or '10m'
     """
-    return feature_lines(cartopy.feature.BORDERS,
-                         scale=scale)
+    xs, ys = [], []
+    for x, y in feature_lines(cartopy.feature.BORDERS,
+                              scale=scale):
+        x, y = clip_xy(x, y, extent)
+        if x.shape[0] == 0:
+            continue
+        xs.append(x)
+        ys.append(y)
+    return xs, ys
 
 
 def feature_lines(feature, scale="110m"):
