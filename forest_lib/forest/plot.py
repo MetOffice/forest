@@ -267,24 +267,6 @@ class ForestPlot(object):
             self.bokeh_figure.title.text = self.current_title
         return self.bokeh_figure
 
-    @property
-    def current_img_array(self):
-        """current image array taken from matplotlib figure canvas"""
-        if self._shape2d is None:
-            return None
-
-        # HACK: self._shape2d is populated by self.get_data()
-        ni, nj = self._shape2d
-        array = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
-
-        # Smooth high resolution imagery
-        max_ni, max_nj = 800, 600
-        ni, nj, _ = array.shape
-        if (ni > max_ni) or (nj > max_nj):
-            return smooth_image(array, (max_ni, max_nj))
-        else:
-            return array
-
     def update_coords(self, data_cube):
         '''Update the latitude and longitude coordinates for the data.
         '''
@@ -759,7 +741,19 @@ class ForestPlot(object):
 
         .. note:: assumes bokeh_img_ds exists
         '''
-        image = self.current_img_array
+        if self._shape2d is None:
+            return None
+
+        # HACK: self._shape2d is populated by self.get_data()
+        ni, nj = self._shape2d
+        image = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
+
+        # Smooth high resolution imagery
+        max_ni, max_nj = 800, 600
+        ni, nj, _ = image.shape
+        if (ni > max_ni) or (nj > max_nj):
+            image = smooth_image(image, (max_ni, max_nj))
+
         x, y, dw, dh = self.get_x_y_dw_dh()
         self.bokeh_img_ds.data = {
             u'image': [image],
