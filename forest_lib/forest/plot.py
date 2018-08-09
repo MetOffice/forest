@@ -205,41 +205,63 @@ class ForestPlot(object):
         self.visible = visible
         self._shape2d = None
 
+        # Add cartopy coastline to bokeh figure
+        region = self.region_dict[self.current_region]
+        x_start = region[2]
+        x_end = region[3]
+        y_start = region[0]
+        y_end = region[1]
+        extent = (x_start, x_end, y_start, y_end)
+        xs, ys = forest.geography.coastlines(extent)
+        self.bokeh_figure.multi_line(xs, ys,
+                                     color='black')
+        xs, ys = forest.geography.borders(extent)
+        self.bokeh_figure.multi_line(xs, ys,
+                                     color='grey')
+
     @forest.util.counter
     def create_plot(self):
         '''Main plotting function. Generic elements of the plot are created
         here, and then the plotting function for the specific variable is
         called using the self.plot_funcs dictionary.
         '''
-        if self.visible:
-            self.plot_funcs[self.current_var]()
+        self.render()
+        return self.bokeh_figure
+
+    @forest.util.timer
+    def render(self):
+        """Plot RGBA images"""
+        if not self.visible:
+            return
+        self.plot_funcs[self.current_var]()
+        if self.main_plot is None:
+            # Plot not finished yet
             cur_region = self.region_dict[self.current_region]
-            if self.main_plot is None:
-                # Plot not finished yet
-                mid_x = (cur_region[2] + cur_region[3]) * 0.5
-                mid_y = (cur_region[0] + cur_region[1]) * 0.5
-                self.bokeh_figure.text(x=[mid_x],
-                                       y=[mid_y],
-                                       text=['Plot loading'],
-                                       text_color=['#FF0000'],
-                                       text_font_size="20pt",
-                                       text_baseline="middle",
-                                       text_align="center",
-                                       )
-            else:
-                # Image array is loaded
-                # HACK: self._shape2d is populated by self.get_data()
-                ni, nj = self._shape2d
-                image = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
+            mid_x = (cur_region[2] + cur_region[3]) * 0.5
+            mid_y = (cur_region[0] + cur_region[1]) * 0.5
+            self.bokeh_figure.text(x=[mid_x],
+                                   y=[mid_y],
+                                   text=['Plot loading'],
+                                   text_color=['#FF0000'],
+                                   text_font_size="20pt",
+                                   text_baseline="middle",
+                                   text_align="center",
+                                   )
+        else:
+            # Image array is loaded
+            # HACK: self._shape2d is populated by self.get_data()
+            ni, nj = self._shape2d
+            image = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
 
-                # Smooth high resolution imagery
-                max_ni, max_nj = 800, 600
-                ni, nj, _ = image.shape
-                if (ni > max_ni) or (nj > max_nj):
-                    image = smooth_image(image, (max_ni, max_nj))
+            # Smooth high resolution imagery
+            max_ni, max_nj = 800, 600
+            ni, nj, _ = image.shape
+            if (ni > max_ni) or (nj > max_nj):
+                image = smooth_image(image, (max_ni, max_nj))
 
-                # Plot bokeh image rgba
-                x, y, dw, dh = self.get_x_y_dw_dh()
+            # Plot bokeh image rgba
+            x, y, dw, dh = self.get_x_y_dw_dh()
+            if self.bokeh_img_ds is None:
                 self.bokeh_image = \
                     self.bokeh_figure.image_rgba(image=[image],
                                                  x=[x],
@@ -248,24 +270,15 @@ class ForestPlot(object):
                                                  dh=[dh],
                                                  level="underlay")
                 self.bokeh_img_ds = self.bokeh_image.data_source
-
-            # Add cartopy coastline to bokeh figure
-            def get_extent(region):
-                x_start = region[2]
-                x_end = region[3]
-                y_start = region[0]
-                y_end = region[1]
-                return (x_start, x_end, y_start, y_end)
-            south_east_asia = get_extent(cur_region)
-            xs, ys = forest.geography.coastlines(south_east_asia)
-            self.bokeh_figure.multi_line(xs, ys,
-                                         color='black')
-            xs, ys = forest.geography.borders(south_east_asia)
-            self.bokeh_figure.multi_line(xs, ys,
-                                         color='grey')
-
-            self.bokeh_figure.title.text = self.current_title
-        return self.bokeh_figure
+            else:
+                self.bokeh_img_ds.data = {
+                    u'image': [image],
+                    u'x': [x],
+                    u'y': [y],
+                    u'dw': [dw],
+                    u'dh': [dh]
+                }
+        self.bokeh_figure.title.text = self.current_title
 
     def update_coords(self, data_cube):
         '''Update the latitude and longitude coordinates for the data.
@@ -733,37 +746,6 @@ class ForestPlot(object):
             '\n'.join(textwrap.wrap(str1,
                                     ForestPlot.TITLE_TEXT_WIDTH))
 
-    def create_matplotlib_fig(self):
-        self.plot_funcs[self.current_var]()
-
-    def update_bokeh_img_plot_from_fig(self):
-        '''Update image_rgba() data source
-
-        .. note:: assumes bokeh_img_ds exists
-        '''
-        if self._shape2d is None:
-            return None
-
-        # HACK: self._shape2d is populated by self.get_data()
-        ni, nj = self._shape2d
-        image = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
-
-        # Smooth high resolution imagery
-        max_ni, max_nj = 800, 600
-        ni, nj, _ = image.shape
-        if (ni > max_ni) or (nj > max_nj):
-            image = smooth_image(image, (max_ni, max_nj))
-
-        x, y, dw, dh = self.get_x_y_dw_dh()
-        self.bokeh_img_ds.data = {
-            u'image': [image],
-            u'x': [x],
-            u'y': [y],
-            u'dw': [dw],
-            u'dh': [dh]
-        }
-        self.bokeh_figure.title.text = self.current_title
-
     def get_x_y_dw_dh(self):
         image_source = 'mappable'
         if image_source == 'mappable':
@@ -842,8 +824,7 @@ class ForestPlot(object):
         self.current_time = new_time
         # self.update_plot()
         if self.visible:
-            self.create_matplotlib_fig()
-            self.update_bokeh_img_plot_from_fig()
+            self.render()
             if self.stats_widget:
                 self.update_stats_widget()
             if self.colorbar_widget:
@@ -854,22 +835,11 @@ class ForestPlot(object):
         self.current_var = new_var
 
         if self.visible:
-            self.create_matplotlib_fig()
-            self.update_bokeh_img_plot_from_fig()
+            self.render()
             if self.stats_widget:
                 self.update_stats_widget()
             if self.colorbar_widget:
                 self.update_colorbar_widget()
-
-    def _set_region(self, region):
-        '''Event handler for a change in the selected plot region'''
-        print('selected new region {0}'.format(region))
-        self.current_region = region
-        self.data_bounds = self.region_dict[self.current_region]
-        self.create_matplotlib_fig()
-        self.update_bokeh_img_plot_from_fig()
-        if self.stats_widget:
-            self.update_stats_widget()
 
     def set_region(self, region):
         """Adjust bokeh figure extents"""
@@ -889,8 +859,7 @@ class ForestPlot(object):
         self.plot_description = self.dataset[
             self.current_config]['data_type_name']
         if self.visible:
-            self.create_matplotlib_fig()
-            self.update_bokeh_img_plot_from_fig()
+            self.render()
             if self.stats_widget:
                 self.update_stats_widget()
 
@@ -898,8 +867,7 @@ class ForestPlot(object):
         self.dataset = new_dataset
         self.model_run_time = new_model_run_time
         if self.visible:
-            self.create_matplotlib_fig()
-            self.update_bokeh_img_plot_from_fig()
+            self.render()
             if self.stats_widget:
                 self.update_stats_widget()
 
