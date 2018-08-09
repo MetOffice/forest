@@ -22,6 +22,7 @@ import numpy as np
 import scipy.ndimage
 import iris.analysis
 import skimage.transform
+from functools import lru_cache
 
 
 def rgba_from_mappable(mappable, shape2d):
@@ -231,53 +232,50 @@ class ForestPlot(object):
         """Plot RGBA images"""
         if not self.visible:
             return
-        self.plot_funcs[self.current_var]()
-        if self.main_plot is None:
-            # Plot not finished yet
-            cur_region = self.region_dict[self.current_region]
-            mid_x = (cur_region[2] + cur_region[3]) * 0.5
-            mid_y = (cur_region[0] + cur_region[1]) * 0.5
-            self.bokeh_figure.text(x=[mid_x],
-                                   y=[mid_y],
-                                   text=['Plot loading'],
-                                   text_color=['#FF0000'],
-                                   text_font_size="20pt",
-                                   text_baseline="middle",
-                                   text_align="center",
-                                   )
+        x, y, dw, dh, image = self.render_image(self.current_config,
+                                                self.current_var,
+                                                self.current_time)
+        if self.bokeh_img_ds is None:
+            self.bokeh_image = \
+                self.bokeh_figure.image_rgba(image=[image],
+                                             x=[x],
+                                             y=[y],
+                                             dw=[dw],
+                                             dh=[dh],
+                                             level="underlay")
+            self.bokeh_img_ds = self.bokeh_image.data_source
         else:
-            # Image array is loaded
-            # HACK: self._shape2d is populated by self.get_data()
-            ni, nj = self._shape2d
-            shape = (ni - 1, nj - 1)
-            image = rgba_from_mappable(self.main_plot, shape)
-
-            # Smooth high resolution imagery
-            max_ni, max_nj = 800, 600
-            ni, nj, _ = image.shape
-            if (ni > max_ni) or (nj > max_nj):
-                image = smooth_image(image, (max_ni, max_nj))
-
-            # Plot bokeh image rgba
-            x, y, dw, dh = self.get_x_y_dw_dh()
-            if self.bokeh_img_ds is None:
-                self.bokeh_image = \
-                    self.bokeh_figure.image_rgba(image=[image],
-                                                 x=[x],
-                                                 y=[y],
-                                                 dw=[dw],
-                                                 dh=[dh],
-                                                 level="underlay")
-                self.bokeh_img_ds = self.bokeh_image.data_source
-            else:
-                self.bokeh_img_ds.data = {
-                    u'image': [image],
-                    u'x': [x],
-                    u'y': [y],
-                    u'dw': [dw],
-                    u'dh': [dh]
-                }
+            self.bokeh_img_ds.data = {
+                u'image': [image],
+                u'x': [x],
+                u'y': [y],
+                u'dw': [dw],
+                u'dh': [dh]
+            }
         self.bokeh_figure.title.text = self.current_title
+
+    @lru_cache(maxsize=32)
+    def render_image(self,
+                     current_config,
+                     current_var,
+                     current_time):
+        """Plot RGBA images"""
+        self.plot_funcs[current_var]()
+
+        # HACK: self._shape2d is populated by self.get_data()
+        ni, nj = self._shape2d
+        shape = (ni - 1, nj - 1)
+        image = rgba_from_mappable(self.main_plot, shape)
+
+        # Smooth high resolution imagery
+        max_ni, max_nj = 800, 600
+        ni, nj, _ = image.shape
+        if (ni > max_ni) or (nj > max_nj):
+            image = smooth_image(image, (max_ni, max_nj))
+
+        # Plot bokeh image rgba
+        x, y, dw, dh = self.get_x_y_dw_dh()
+        return x, y, dw, dh, image
 
     def update_coords(self, data_cube):
         '''Update the latitude and longitude coordinates for the data.
@@ -290,15 +288,14 @@ class ForestPlot(object):
         self.current_title = 'Blank plot'
 
     @forest.util.timer
-    def get_data(self, var_name=None):
-        config_data = self.dataset[self.current_config]['data']
-        if var_name:
-            data_cube = config_data.get_data(var_name=var_name,
-                                 selected_time = self.current_time)
-        else:
-            data_cube = config_data.get_data(var_name=self.current_var,
-                                             selected_time=self.current_time)
-
+    def get_data(self, var_name, selected_time=None, config_name=None):
+        if selected_time is None:
+            selected_time = self.current_time
+        if config_name is None:
+            config_name = self.current_config
+        config_data = self.dataset[config_name]['data']
+        data_cube = config_data.get_data(var_name=var_name,
+                                         selected_time=selected_time)
         # HACK: cache image array shape after get_data()
         self._shape2d = data_cube.data.shape
         return data_cube
@@ -308,7 +305,7 @@ class ForestPlot(object):
         '''Update function for precipitation plots, called by update_plot() when
         precipitation is the selected plot type.
         '''
-        data_cube = self.get_data()
+        data_cube = self.get_data(self.current_var)
         array_for_update = data_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(data_cube)
@@ -319,7 +316,7 @@ class ForestPlot(object):
         '''Function for creating precipitation plots, called by create_plot when
         precipitation is the selected plot type.
         '''
-        data_cube = self.get_data()
+        data_cube = self.get_data(self.current_var)
         cmap = self.plot_options[self.current_var]['cmap']
         norm = self.plot_options[self.current_var]['norm']
         self.update_coords(data_cube)
@@ -507,7 +504,7 @@ class ForestPlot(object):
         '''Update function for air temperature plots, called by update_plot() when
         air temperature is the selected plot type.
         '''
-        at_cube = self.get_data()
+        at_cube = self.get_data(self.current_var)
         array_for_update = at_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(at_cube)
@@ -517,7 +514,7 @@ class ForestPlot(object):
         '''Function for creating air temperature plots, called by create_plot when
         air temperature is the selected plot type.
         '''
-        at_cube = self.get_data()
+        at_cube = self.get_data(self.current_var)
         self.update_coords(at_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -535,7 +532,7 @@ class ForestPlot(object):
         '''Update function for MSLP plots, called by update_plot() when
         MSLP is the selected plot type.
         '''
-        ap_cube = self.get_data()
+        ap_cube = self.get_data(self.current_var)
         array_for_update = ap_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(ap_cube)
@@ -545,7 +542,7 @@ class ForestPlot(object):
         '''Function for creating MSLP plots, called by create_plot when
         MSLP is the selected plot type.
         '''
-        ap_cube = self.get_data()
+        ap_cube = self.get_data(self.current_var)
         self.update_coords(ap_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
@@ -563,7 +560,7 @@ class ForestPlot(object):
         '''Update function for cloud fraction plots, called by update_plot() when
         cloud fraction is the selected plot type.
         '''
-        cloud_cube = self.get_data()
+        cloud_cube = self.get_data(self.current_var)
         array_for_update = cloud_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(cloud_cube)
@@ -573,7 +570,7 @@ class ForestPlot(object):
         '''Function for creating cloud fraction plots, called by create_plot when
         cloud fraction is the selected plot type.
         '''
-        cloud_cube = self.get_data()
+        cloud_cube = self.get_data(self.current_var)
         self.update_coords(cloud_cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
