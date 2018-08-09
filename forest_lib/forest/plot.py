@@ -67,7 +67,6 @@ def add_axes(figure):
     return figure
 
 
-@forest.util.counter
 @forest.util.timer
 def smooth_image(array, output_shape):
     """Smooth high resolution imagery"""
@@ -114,9 +113,8 @@ class ForestPlot(object):
                  visible=True):
         '''Initialisation function for ForestPlot class
         '''
-        projection = cartopy.crs.PlateCarree()
         self.current_figure = matplotlib.pyplot.figure(figure_name)
-        self.current_axes = self.current_figure.add_subplot(111, projection=projection)
+        self.current_axes = self.current_figure.add_subplot(111)
 
         self.region_dict = rd1
         self.main_plot = None
@@ -251,7 +249,8 @@ class ForestPlot(object):
             # Image array is loaded
             # HACK: self._shape2d is populated by self.get_data()
             ni, nj = self._shape2d
-            image = rgba_from_mappable(self.main_plot, (ni - 1, nj - 1))
+            shape = (ni - 1, nj - 1)
+            image = rgba_from_mappable(self.main_plot, shape)
 
             # Smooth high resolution imagery
             max_ni, max_nj = 800, 600
@@ -290,7 +289,7 @@ class ForestPlot(object):
         self.main_plot = None
         self.current_title = 'Blank plot'
 
-    @forest.util.counter
+    @forest.util.timer
     def get_data(self, var_name=None):
         config_data = self.dataset[self.current_config]['data']
         if var_name:
@@ -315,7 +314,7 @@ class ForestPlot(object):
         self.update_title(data_cube)
         self.update_stats(data_cube)
 
-    @forest.util.counter
+    @forest.util.timer
     def plot_precip(self):
         '''Function for creating precipitation plots, called by create_plot when
         precipitation is the selected plot type.
@@ -330,10 +329,9 @@ class ForestPlot(object):
                                          data_cube.data,
                                          cmap=cmap,
                                          norm=norm,
-                                         edgecolor='face',
-                                         transform=cartopy.crs.PlateCarree())
+                                         edgecolor='face')
         self.update_title(data_cube)
-        self.update_stats(data_cube)
+        # self.update_stats(data_cube)
 
     def update_wind_vectors(self):
         '''Update function for wind vector plots, called by update_plot() when
