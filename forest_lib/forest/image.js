@@ -17,12 +17,22 @@ let reveal_image = function(side,
     previous_mouse_x,
     use_previous_mouse_x) {
     // RGBA image extents in mouse position space
-    console.log("reveal_image >>",
-        source)
+
+    if (source.data["x"].length === 0) {
+        return
+    }
     let x = source.data["x"][0];
     let y = source.data["y"][0];
     let dw = source.data["dw"][0];
     let dh = source.data["dh"][0];
+
+    if (source.data["_alpha"].length === 0) {
+        return
+    }
+
+    if (source.data["_shape"].length === 0) {
+        return
+    }
     let original_alpha = source.data["_alpha"][0];
     let ni = source.data["_shape"][0][0];
     let nj = source.data["_shape"][0][1];

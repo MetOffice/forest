@@ -235,13 +235,13 @@ class ForestPlot(object):
                                                 self.current_var,
                                                 self.current_time)
 
-        self.bokeh_img_ds.data = {
+        self.bokeh_img_ds.data.update({
             'image': [image],
             'x': [x],
             'y': [y],
             'dw': [dw],
             'dh': [dh]
-        }
+        })
         self.bokeh_figure.title.text = self.current_title
 
     @lru_cache(maxsize=32)
