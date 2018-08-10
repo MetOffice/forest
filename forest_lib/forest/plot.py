@@ -298,7 +298,6 @@ class ForestPlot(object):
         array_for_update = data_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(data_cube)
-        self.update_stats(data_cube)
 
     @forest.util.timer
     def plot_precip(self):
@@ -317,7 +316,6 @@ class ForestPlot(object):
                                          norm=norm,
                                          edgecolor='face')
         self.update_title(data_cube)
-        # self.update_stats(data_cube)
 
     def update_wind_vectors(self):
         '''Update function for wind vector plots, called by update_plot() when
@@ -328,7 +326,6 @@ class ForestPlot(object):
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
         wv_u_data = self.get_data(var_name='wv_U').data
         wv_v_data = self.get_data(var_name='wv_V').data
         self.quiver_plot.set_UVC(wv_u_data,
@@ -364,7 +361,6 @@ class ForestPlot(object):
                                          labelpos='E',
                                          coordinates='figure')
         self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
 
     def update_wind_mslp(self):
         '''Update function for wind speed with MSLP contours plots, called by
@@ -389,7 +385,6 @@ class ForestPlot(object):
                                  fmt=self.mslp_contour_label_dict)
 
         self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
 
     def plot_wind_mslp(self):
         '''Function for creating wind speed with MSLP contour plots, called by
@@ -432,7 +427,6 @@ class ForestPlot(object):
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
 
         # remove old plot elements if they are still present
         self.current_axes.collections.remove(self.wind_stream_plot.lines)
@@ -452,8 +446,6 @@ class ForestPlot(object):
         # the plot is updated
         pl2 = list(self.current_axes.patches)
         self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
-
-        self.update_stats(wind_speed_cube)
 
     def plot_wind_streams(self):
         '''Function for creating wind streamline plots, called by create_plot when
@@ -486,8 +478,6 @@ class ForestPlot(object):
         pl2 = list(self.current_axes.patches)
         self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
         self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
-
 
     def update_air_temp(self):
         '''Update function for air temperature plots, called by update_plot() when
@@ -497,7 +487,6 @@ class ForestPlot(object):
         array_for_update = at_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(at_cube)
-        self.update_stats(at_cube)
 
     def plot_air_temp(self):
         '''Function for creating air temperature plots, called by create_plot when
@@ -515,7 +504,6 @@ class ForestPlot(object):
                                              self.current_var]['norm']
                                          )
         self.update_title(at_cube)
-        self.update_stats(at_cube)
 
     def update_mslp(self):
         '''Update function for MSLP plots, called by update_plot() when
@@ -525,7 +513,6 @@ class ForestPlot(object):
         array_for_update = ap_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(ap_cube)
-        self.update_stats(ap_cube)
 
     def plot_mslp(self):
         '''Function for creating MSLP plots, called by create_plot when
@@ -543,7 +530,6 @@ class ForestPlot(object):
                                              self.current_var]['norm']
                                          )
         self.update_title(ap_cube)
-        self.update_stats(ap_cube)
 
     def update_cloud(self):
         '''Update function for cloud fraction plots, called by update_plot() when
@@ -553,7 +539,6 @@ class ForestPlot(object):
         array_for_update = cloud_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
         self.update_title(cloud_cube)
-        self.update_stats(cloud_cube)
 
     def plot_cloud(self):
         '''Function for creating cloud fraction plots, called by create_plot when
@@ -571,7 +556,6 @@ class ForestPlot(object):
                                              self.current_var]['norm']
                                          )
         self.update_title(cloud_cube)
-        self.update_stats(cloud_cube)
 
     def update_him8(self):
         '''Update function for himawari-8 image plots, called by update_plot()
@@ -654,9 +638,6 @@ class ForestPlot(object):
         elif self.current_config == 'simim':
             self.plot_simim()
 
-    def update_stats(self, current_cube):
-        raise DeprecationWarning("Use ForestStats.update() instead")
-
     def update_title(self, current_cube):
         '''Update plot title.
         '''
@@ -710,11 +691,6 @@ class ForestPlot(object):
         self.update_funcs[self.current_var]()
         self.current_figure.canvas.draw_idle()
         self.update_bokeh_img_plot_from_fig()
-        if self.stats_widget:
-            self.update_stats_widget()
-
-    def create_stats_widget(self):
-        raise DeprecationWarning("Use ForestStats.create_widget()")
 
     def create_colorbar_widget(self):
         colorbar_html = "<img src='" + self.app_path + "/static/" + \
@@ -724,9 +700,6 @@ class ForestPlot(object):
                                                         width=800,
                                                         )
         return self.colorbar_widget
-
-    def update_stats_widget(self):
-        raise DeprecationWarning("Use ForestStats.update_widget()")
 
     def update_colorbar_widget(self):
         self.colorbar_link = self.current_var + '_colorbar.png'
@@ -745,8 +718,6 @@ class ForestPlot(object):
         self.current_time = new_time
         if self.visible:
             self.render()
-            if self.stats_widget:
-                self.update_stats_widget()
             if self.colorbar_widget:
                 self.update_colorbar_widget()
 
@@ -755,8 +726,6 @@ class ForestPlot(object):
         self.current_var = new_var
         if self.visible:
             self.render()
-            if self.stats_widget:
-                self.update_stats_widget()
             if self.colorbar_widget:
                 self.update_colorbar_widget()
 
@@ -779,19 +748,12 @@ class ForestPlot(object):
             self.current_config]['data_type_name']
         if self.visible:
             self.render()
-            if self.stats_widget:
-                self.update_stats_widget()
 
     def set_dataset(self, new_dataset, new_model_run_time):
         self.dataset = new_dataset
         self.model_run_time = new_model_run_time
         if self.visible:
             self.render()
-            if self.stats_widget:
-                self.update_stats_widget()
-
-    def set_selected_point(self, latitude, longitude):
-        raise DeprecationWarning("Use ForestStats.set_selected_point()")
 
     def link_axes_to_other_plot(self, other_plot):
         try:
