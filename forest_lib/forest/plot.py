@@ -146,17 +146,9 @@ class ForestPlot(object):
                            'V': self.plot_sat_simim_imagery,
                            'blank': self.create_blank,
                            }
-        self.update_funcs = {'precipitation': self.update_precip,
-                             'accum_precip_3hr': self.update_precip,
-                             'accum_precip_6hr': self.update_precip,
-                             'accum_precip_12hr': self.update_precip,
-                             'accum_precip_24hr': self.update_precip,
-                             'wind_vectors': self.update_wind_vectors,
+        self.update_funcs = {'wind_vectors': self.update_wind_vectors,
                              'wind_mslp': self.update_wind_mslp,
                              'wind_streams': self.update_wind_streams,
-                             'mslp': self.update_mslp,
-                             'air_temperature': self.update_air_temp,
-                             'cloud_fraction': self.update_cloud,
                              'himawari-8': self.update_him8,
                              'simim': self.update_simim,
                              'W': self.update_sat_simim_imagery,
@@ -288,16 +280,6 @@ class ForestPlot(object):
         # HACK: cache image array shape after get_data()
         self._shape2d = data_cube.data.shape
         return data_cube
-
-    @forest.util.counter
-    def update_precip(self):
-        '''Update function for precipitation plots, called by update_plot() when
-        precipitation is the selected plot type.
-        '''
-        data_cube = self.get_data(self.current_var)
-        array_for_update = data_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(data_cube)
 
     @forest.util.timer
     def plot_precip(self):
@@ -479,15 +461,6 @@ class ForestPlot(object):
         self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
         self.update_title(wind_speed_cube)
 
-    def update_air_temp(self):
-        '''Update function for air temperature plots, called by update_plot() when
-        air temperature is the selected plot type.
-        '''
-        at_cube = self.get_data(self.current_var)
-        array_for_update = at_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(at_cube)
-
     def plot_air_temp(self):
         '''Function for creating air temperature plots, called by create_plot when
         air temperature is the selected plot type.
@@ -505,15 +478,6 @@ class ForestPlot(object):
                                          )
         self.update_title(at_cube)
 
-    def update_mslp(self):
-        '''Update function for MSLP plots, called by update_plot() when
-        MSLP is the selected plot type.
-        '''
-        ap_cube = self.get_data(self.current_var)
-        array_for_update = ap_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(ap_cube)
-
     def plot_mslp(self):
         '''Function for creating MSLP plots, called by create_plot when
         MSLP is the selected plot type.
@@ -530,15 +494,6 @@ class ForestPlot(object):
                                              self.current_var]['norm']
                                          )
         self.update_title(ap_cube)
-
-    def update_cloud(self):
-        '''Update function for cloud fraction plots, called by update_plot() when
-        cloud fraction is the selected plot type.
-        '''
-        cloud_cube = self.get_data(self.current_var)
-        array_for_update = cloud_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(cloud_cube)
 
     def plot_cloud(self):
         '''Function for creating cloud fraction plots, called by create_plot when
@@ -679,18 +634,6 @@ class ForestPlot(object):
             dw = longitude_range
             dh = latitude_range
         return x, y, dw, dh
-
-    def update_plot(self):
-        raise Exception("Code should not be used")
-
-    def _update_plot(self):
-        '''Main plot update function. Generic elements of the plot are
-        updated here where possible, and then the plot update function for
-        the specific variable is called using the self.plot_funcs dictionary.
-        '''
-        self.update_funcs[self.current_var]()
-        self.current_figure.canvas.draw_idle()
-        self.update_bokeh_img_plot_from_fig()
 
     def create_colorbar_widget(self):
         colorbar_html = "<img src='" + self.app_path + "/static/" + \
