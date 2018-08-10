@@ -52,20 +52,33 @@ class TestForestPlotSetConfig(unittest.TestCase):
         """the minimal information needed to construct a ForestPlot"""
         forest.plot.ForestPlot(*forest_plot_args())
 
-    def test_set_config(self):
+    @unittest.mock.patch("forest.plot.bokeh")
+    def test_set_config(self, bokeh):
         """minimal data needed to call set_config"""
+        data = np.arange(9).reshape((3, 3))
+        longitudes = np.linspace(0, 10, 3)
+        latitudes = np.linspace(0, 10, 3)
+        fake_dataset = FakeDataset(data=data,
+                                   longitudes=longitudes,
+                                   latitudes=latitudes)
         dataset = {
             "current_config": {
                 "data_type_name": None
             },
             "new_config": {
-                "data_type_name": "Label"
+                "data_type_name": "Label",
+                "data": fake_dataset
             }
         }
         model_run_time = None
-        po1 = None
+        plot_options = {
+            "precipitation": {
+                "cmap": None,
+                "norm": None
+            }
+        }
         figname = None
-        plot_var = "plot_variable"
+        plot_var = "precipitation"
         conf1 = "current_config"
         reg1 = "current_region"
         rd1 = {
@@ -75,30 +88,24 @@ class TestForestPlotSetConfig(unittest.TestCase):
         unit_dict_display = None
         app_path = None
         init_time = None
-        mock_plot = unittest.mock.Mock()
-        with unittest.mock.patch("forest.plot.matplotlib") as matplotlib:
-            forest_plot = forest.plot.ForestPlot(dataset,
-                                                 model_run_time,
-                                                 po1,
-                                                 figname,
-                                                 plot_var,
-                                                 conf1,
-                                                 reg1,
-                                                 rd1,
-                                                 unit_dict,
-                                                 unit_dict_display,
-                                                 app_path,
-                                                 init_time)
-            forest_plot.plot_funcs[plot_var] = mock_plot
-            forest_plot.update_bokeh_img_plot_from_fig = unittest.mock.Mock()
-            # System under test
-            forest_plot.set_config("new_config")
+        forest_plot = forest.plot.ForestPlot(dataset,
+                                             model_run_time,
+                                             plot_options,
+                                             figname,
+                                             plot_var,
+                                             conf1,
+                                             reg1,
+                                             rd1,
+                                             unit_dict,
+                                             unit_dict_display,
+                                             app_path,
+                                             init_time)
+        # System under test
+        forest_plot.set_config("new_config")
 
-            # Assertions
-            forest_plot.update_bokeh_img_plot_from_fig.assert_called_once_with()
-            mock_plot.assert_called_once_with()
-            self.assertEqual(forest_plot.current_config, "new_config")
-            self.assertEqual(forest_plot.plot_description, "Label")
+        # Assertions
+        self.assertEqual(forest_plot.current_config, "new_config")
+        self.assertEqual(forest_plot.plot_description, "Label")
 
     def test_forest_plot_should_accept_bokeh_figure(self):
         """To open forest to allow generic layouts

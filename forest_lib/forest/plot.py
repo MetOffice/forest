@@ -802,6 +802,7 @@ class ForestPlot(object):
         except AttributeError as e1:
             print('Unable to update stats as stats widget not initiated')
 
+    @forest.util.timer
     def update_colorbar_widget(self):
         self.colorbar_link = self.current_var + '_colorbar.png'
         colorbar_html = "<img src='" + self.app_path + "/static/" + \
