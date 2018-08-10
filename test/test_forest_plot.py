@@ -84,8 +84,6 @@ class TestForestPlotSetConfig(unittest.TestCase):
         rd1 = {
             "current_region": (0, 1, 0, 1)
         }
-        unit_dict = None
-        unit_dict_display = None
         app_path = None
         init_time = None
         forest_plot = forest.plot.ForestPlot(dataset,
@@ -96,8 +94,6 @@ class TestForestPlotSetConfig(unittest.TestCase):
                                              conf1,
                                              reg1,
                                              rd1,
-                                             unit_dict,
-                                             unit_dict_display,
                                              app_path,
                                              init_time)
         # System under test
@@ -184,10 +180,6 @@ class TestForestPlot(unittest.TestCase):
                 "norm": None
             }
         }
-        unit_dict=None
-        unit_dict_display = {
-            "mslp": "display units"
-        }
         model_run_time = "2018-01-01 00:00:00"
         init_time=None
         figure_name = None
@@ -205,8 +197,6 @@ class TestForestPlot(unittest.TestCase):
             config,
             region,
             region_dict,
-            unit_dict,
-            unit_dict_display,
             app_path,
             init_time
         )
@@ -233,15 +223,11 @@ class TestForestPlot(unittest.TestCase):
                 "norm": None
             }
         }
-        unit_dict_display = {
-            "mslp": "display units"
-        }
         model_run_time = "2018-01-01 00:00:00"
         args = self.args(plot_var="mslp",
                          conf1=config,
                          dataset=dataset,
                          plot_options=plot_options,
-                         unit_dict_display=unit_dict_display,
                          model_run_time=model_run_time)
         forest_plot = forest.plot.ForestPlot(*args)
         forest_plot.create_plot()
@@ -278,8 +264,6 @@ def forest_plot_args(plot_var='plot_var',
                      conf1='current_config',
                      dataset=None,
                      plot_options=None,
-                     unit_dict=None,
-                     unit_dict_display=None,
                      init_time=None,
                      model_run_time=None,
                      region_dict=None,
@@ -296,7 +280,6 @@ def forest_plot_args(plot_var='plot_var',
         region_dict = {
             region: [0, 1, 0, 1]
         }
-    unit_dict = None
     app_path = None
     init_time = None
     return (dataset,
@@ -307,8 +290,6 @@ def forest_plot_args(plot_var='plot_var',
             conf1,
             region,
             region_dict,
-            unit_dict,
-            unit_dict_display,
             app_path,
             init_time)
 

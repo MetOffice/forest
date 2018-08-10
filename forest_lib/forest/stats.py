@@ -3,7 +3,10 @@
 
 class ForestStats(object):
     """Compute and display summary statistics"""
-    def __init__(self):
+    def __init__(self, unit_dict, unit_dict_display):
+        self.selected_point = None
+        self.unit_dict = unit_dict
+        self.unit_dict_display = unit_dict_display
         self.stats_widget = None
         self.stats_string = ''
         self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
@@ -25,6 +28,14 @@ class ForestStats(object):
             self.stats_widget.text = self.stats_string
         except AttributeError as e1:
             print('Unable to update stats as stats widget not initiated')
+
+    def set_selected_point(self, latitude, longitude):
+        self.selected_point = (latitude, longitude)
+        if self.stats_widget:
+            current_data = \
+                self.get_data(self.stats_data_var[self.current_var])
+            self.update_stats(current_data)
+            self.update_stats_widget()
 
     def update(self, current_cube):
         data_to_process = current_cube.data

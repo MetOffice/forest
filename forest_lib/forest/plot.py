@@ -106,8 +106,6 @@ class ForestPlot(object):
                  conf1,
                  reg1,
                  rd1,
-                 unit_dict,
-                 unit_dict_display,
                  app_path,
                  init_time,
                  bokeh_figure=None,
@@ -130,7 +128,6 @@ class ForestPlot(object):
         self.current_region = reg1
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
-        self.selected_point = None
         self.plot_funcs = {'precipitation': self.plot_precip,
                            'accum_precip_3hr': self.plot_precip,
                            'accum_precip_6hr': self.plot_precip,
@@ -192,8 +189,6 @@ class ForestPlot(object):
         self.bokeh_figure = bokeh_figure
         self.bokeh_image = None
         self.bokeh_img_ds = None
-        self.unit_dict = unit_dict
-        self.unit_dict_display = unit_dict_display
         self.colorbar_widget = None
         self.visible = visible
         self._shape2d = None
@@ -796,12 +791,7 @@ class ForestPlot(object):
                 self.update_stats_widget()
 
     def set_selected_point(self, latitude, longitude):
-        self.selected_point = (latitude, longitude)
-        if self.stats_widget:
-            current_data = \
-                self.get_data(self.stats_data_var[self.current_var])
-            self.update_stats(current_data)
-            self.update_stats_widget()
+        raise DeprecationWarning("Use ForestStats.set_selected_point()")
 
     def link_axes_to_other_plot(self, other_plot):
         try:
