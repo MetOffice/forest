@@ -167,16 +167,11 @@ class ForestPlot(object):
                              'V': self.update_sat_simim_imagery,
                              'blank': self.create_blank,
                              }
-        self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
-        self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
-        self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
-        self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
         self.mslp_contour_label_dict = {}
         for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
             self.mslp_contour_label_dict[
                 pressure1] = '{0:d}hPa'.format(int(pressure1))
         self.current_title = ''
-        self.stats_string = ''
         self.colorbar_link = plot_var + '_colorbar.png'
         if bokeh_figure is None:
             cur_region = self.region_dict[self.current_region]
@@ -199,7 +194,6 @@ class ForestPlot(object):
         self.bokeh_img_ds = None
         self.unit_dict = unit_dict
         self.unit_dict_display = unit_dict_display
-        self.stats_widget = None
         self.colorbar_widget = None
         self.visible = visible
         self._shape2d = None
@@ -725,11 +719,7 @@ class ForestPlot(object):
             self.update_stats_widget()
 
     def create_stats_widget(self):
-        self.stats_widget = bokeh.models.widgets.Div(text=self.stats_string,
-                                                     height=200,
-                                                     width=400,
-                                                     )
-        return self.stats_widget
+        raise DeprecationWarning("Use ForestStats.create_widget()")
 
     def create_colorbar_widget(self):
         colorbar_html = "<img src='" + self.app_path + "/static/" + \
@@ -741,11 +731,7 @@ class ForestPlot(object):
         return self.colorbar_widget
 
     def update_stats_widget(self):
-        print('Updating stats widget')
-        try:
-            self.stats_widget.text = self.stats_string
-        except AttributeError as e1:
-            print('Unable to update stats as stats widget not initiated')
+        raise DeprecationWarning("Use ForestStats.update_widget()")
 
     def update_colorbar_widget(self):
         self.colorbar_link = self.current_var + '_colorbar.png'

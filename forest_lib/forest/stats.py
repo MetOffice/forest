@@ -4,7 +4,27 @@
 class ForestStats(object):
     """Compute and display summary statistics"""
     def __init__(self):
-        pass
+        self.stats_widget = None
+        self.stats_string = ''
+        self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
+        self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
+        self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
+        self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
+
+    def create_widget(self):
+        self.stats_widget = bokeh.models.widgets.Div(
+            text=self.stats_string,
+            height=200,
+            width=400,
+        )
+        return self.stats_widget
+
+    def update_widget(self):
+        print('Updating stats widget')
+        try:
+            self.stats_widget.text = self.stats_string
+        except AttributeError as e1:
+            print('Unable to update stats as stats widget not initiated')
 
     def update(self, current_cube):
         data_to_process = current_cube.data
