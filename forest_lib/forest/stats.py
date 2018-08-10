@@ -1,15 +1,34 @@
 """Forest statistics widget"""
+import bokeh.models
+import forest.data
 
 
 class ForestStats(object):
     """Compute and display summary statistics"""
     def __init__(self, unit_dict, unit_dict_display):
+        self._plot_keys = ['precipitation',
+                           'accum_precip_3hr',
+                           'accum_precip_6hr',
+                           'accum_precip_12hr',
+                           'accum_precip_24hr',
+                           'wind_vectors',
+                           'wind_mslp',
+                           'wind_streams',
+                           'mslp',
+                           'air_temperature',
+                           'cloud_fraction',
+                           'himawari-8',
+                           'simim',
+                           'W',
+                           'I',
+                           'V',
+                           'blank']
         self.selected_point = None
         self.unit_dict = unit_dict
         self.unit_dict_display = unit_dict_display
         self.stats_widget = None
         self.stats_string = ''
-        self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
+        self.stats_data_var = dict([(k1,k1) for k1 in self._plot_keys])
         self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
         self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
         self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
@@ -34,8 +53,11 @@ class ForestStats(object):
         if self.stats_widget:
             current_data = \
                 self.get_data(self.stats_data_var[self.current_var])
-            self.update_stats(current_data)
-            self.update_stats_widget()
+            self.update(current_data)
+            self.update_widget()
+
+    def get_data(self, variable):
+        raise NotImplementedError("Get data not implemented yet")
 
     def update(self, current_cube):
         data_to_process = current_cube.data

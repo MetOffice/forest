@@ -114,14 +114,15 @@ def main(bokeh_id):
                                            init_model_left,
                                            init_region,
                                            region_dict,
-                                           forest.data.UNIT_DICT,
-                                           forest.data.UNIT_DICT_DISPLAY,
                                            app_path,
                                            init_data_time,
                                            bokeh_figure=bokeh_figure)
 
     bokeh_figure_left = plot_obj_left.create_plot()
-    stats_left = plot_obj_left.create_stats_widget()
+
+    forest_stats_left = forest.ForestStats(forest.data.UNIT_DICT,
+                                           forest.data.UNIT_DICT_DISPLAY)
+    stats_left = forest_stats_left.create_widget()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
                                             init_fcast_time,
@@ -131,17 +132,15 @@ def main(bokeh_id):
                                             init_model_right,
                                             init_region,
                                             region_dict,
-                                            forest.data.UNIT_DICT,
-                                            forest.data.UNIT_DICT_DISPLAY,
                                             app_path,
                                             init_data_time,
                                             bokeh_figure=bokeh_figure,
                                             visible=False)
-
     bokeh_figure_right = plot_obj_right.create_plot()
-    stats_right = plot_obj_right.create_stats_widget()
 
-
+    forest_stats_right = forest.ForestStats(forest.data.UNIT_DICT,
+                                            forest.data.UNIT_DICT_DISPLAY)
+    stats_right = forest_stats_right.create_widget()
 
     colorbar_widget = plot_obj_left.create_colorbar_widget()
 

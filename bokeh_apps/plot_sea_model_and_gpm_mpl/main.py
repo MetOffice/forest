@@ -198,17 +198,17 @@ def main(bokeh_id):
                                            init_model_left,
                                            init_region,
                                            region_dict,
-                                           forest.data.UNIT_DICT,
-                                           forest.data.UNIT_DICT_DISPLAY,
                                            app_path,
                                            init_time,
                                            )
 
     # Create a plot object for the left model display
-
     plot_obj_left.current_time = init_time
     bokeh_img_left = plot_obj_left.create_plot()
-    stats_left = plot_obj_left.create_stats_widget()
+
+    forest_stats_left = forest.ForestStats(forest.data.UNIT_DICT,
+                                           forest.data.UNIT_DICT_DISPLAY)
+    stats_left = forest_stats_left.create_widget()
 
     # Create a plot object for the right model display
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
@@ -219,15 +219,16 @@ def main(bokeh_id):
                                             init_model_right,
                                             init_region,
                                             region_dict,
-                                            forest.data.UNIT_DICT,
-                                            forest.data.UNIT_DICT_DISPLAY,
                                             app_path,
                                             init_time,
                                             )
 
     plot_obj_right.current_time = init_time
     bokeh_img_right = plot_obj_right.create_plot()
-    stats_right = plot_obj_right.create_stats_widget()
+
+    forest_stats_right = forest.ForestStats(forest.data.UNIT_DICT,
+                                            forest.data.UNIT_DICT_DISPLAY)
+    stats_right = forest_stats_right.create_widget()
 
     stats_list = [stats_left, stats_right]
 

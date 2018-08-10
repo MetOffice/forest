@@ -681,7 +681,7 @@ class ForestPlot(object):
         return x, y, dw, dh
 
     def update_plot(self):
-        print("{}.update_plot() called".format(self.__class__.__name__))
+        raise Exception("Code should not be used")
 
     def _update_plot(self):
         '''Main plot update function. Generic elements of the plot are
