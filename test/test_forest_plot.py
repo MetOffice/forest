@@ -113,7 +113,7 @@ class TestForestPlotSetConfig(unittest.TestCase):
         Decoupling the design to allow app specific bokeh figures
         will make managing layouts easier
         """
-        fake_figure = "bokeh figure"
+        fake_figure = unittest.mock.Mock()
         forest_plot = forest.plot.ForestPlot(*self.generic_args(),
                                              bokeh_figure=fake_figure)
         self.assertEqual(forest_plot.bokeh_figure, fake_figure)
