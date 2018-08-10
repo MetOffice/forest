@@ -128,17 +128,17 @@ class ForestPlot(object):
         self.current_region = reg1
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
-        self.plot_funcs = {'precipitation': self.plot_precip,
-                           'accum_precip_3hr': self.plot_precip,
-                           'accum_precip_6hr': self.plot_precip,
-                           'accum_precip_12hr': self.plot_precip,
-                           'accum_precip_24hr': self.plot_precip,
+        self.plot_funcs = {'precipitation': self.plot_pcolormesh,
+                           'accum_precip_3hr': self.plot_pcolormesh,
+                           'accum_precip_6hr': self.plot_pcolormesh,
+                           'accum_precip_12hr': self.plot_pcolormesh,
+                           'accum_precip_24hr': self.plot_pcolormesh,
                            'wind_vectors': self.plot_wind_vectors,
                            'wind_mslp': self.plot_wind_mslp,
                            'wind_streams': self.plot_wind_streams,
-                           'mslp': self.plot_mslp,
-                           'air_temperature': self.plot_air_temp,
-                           'cloud_fraction': self.plot_cloud,
+                           'mslp': self.plot_pcolormesh,
+                           'air_temperature': self.plot_pcolormesh,
+                           'cloud_fraction': self.plot_pcolormesh,
                            'himawari-8': self.plot_him8,
                            'simim': self.plot_simim,
                            'W': self.plot_sat_simim_imagery,
@@ -282,22 +282,19 @@ class ForestPlot(object):
         return data_cube
 
     @forest.util.timer
-    def plot_precip(self):
-        '''Function for creating precipitation plots, called by create_plot when
-        precipitation is the selected plot type.
-        '''
-        data_cube = self.get_data(self.current_var)
+    def plot_pcolormesh(self):
+        cube = self.get_data(self.current_var)
         cmap = self.plot_options[self.current_var]['cmap']
         norm = self.plot_options[self.current_var]['norm']
-        self.update_coords(data_cube)
+        self.update_coords(cube)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_long,
                                          self.coords_lat,
-                                         data_cube.data,
+                                         cube.data,
                                          cmap=cmap,
                                          norm=norm,
                                          edgecolor='face')
-        self.update_title(data_cube)
+        self.update_title(cube)
 
     def update_wind_vectors(self):
         '''Update function for wind vector plots, called by update_plot() when
@@ -460,57 +457,6 @@ class ForestPlot(object):
         pl2 = list(self.current_axes.patches)
         self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
         self.update_title(wind_speed_cube)
-
-    def plot_air_temp(self):
-        '''Function for creating air temperature plots, called by create_plot when
-        air temperature is the selected plot type.
-        '''
-        at_cube = self.get_data(self.current_var)
-        self.update_coords(at_cube)
-        self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
-                                         self.coords_lat,
-                                         at_cube.data,
-                                         cmap=self.plot_options[
-                                             self.current_var]['cmap'],
-                                         norm=self.plot_options[
-                                             self.current_var]['norm']
-                                         )
-        self.update_title(at_cube)
-
-    def plot_mslp(self):
-        '''Function for creating MSLP plots, called by create_plot when
-        MSLP is the selected plot type.
-        '''
-        ap_cube = self.get_data(self.current_var)
-        self.update_coords(ap_cube)
-        self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
-                                         self.coords_lat,
-                                         ap_cube.data,
-                                         cmap=self.plot_options[
-                                             self.current_var]['cmap'],
-                                         norm=self.plot_options[
-                                             self.current_var]['norm']
-                                         )
-        self.update_title(ap_cube)
-
-    def plot_cloud(self):
-        '''Function for creating cloud fraction plots, called by create_plot when
-        cloud fraction is the selected plot type.
-        '''
-        cloud_cube = self.get_data(self.current_var)
-        self.update_coords(cloud_cube)
-        self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
-                                         self.coords_lat,
-                                         cloud_cube.data,
-                                         cmap=self.plot_options[
-                                             self.current_var]['cmap'],
-                                         norm=self.plot_options[
-                                             self.current_var]['norm']
-                                         )
-        self.update_title(cloud_cube)
 
     def update_him8(self):
         '''Update function for himawari-8 image plots, called by update_plot()
