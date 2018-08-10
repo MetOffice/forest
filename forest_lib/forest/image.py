@@ -79,6 +79,7 @@ with open(JS_FILE, "r") as stream:
 
 class CachedRGBA(object):
     """Cache alpha/shapes to maintain consistency"""
+
     def __init__(self, source):
         self._callbacks = []
         self.source = source
@@ -102,6 +103,8 @@ class CachedRGBA(object):
             for callback in self._callbacks:
                 callback()
 
+# TODO: We can get rid of this?
+
 
 class Toggle(object):
     """Controls alpha values of bokeh RGBA ColumnDataSources
@@ -114,6 +117,7 @@ class Toggle(object):
     :param right_images: ColumnDataSource or GlyphRenderer used to
                          define RGBA images when toggle is set to right
     """
+
     def __init__(self, left_images, right_images):
         self.left_images = left_images
         self._left_cache = CachedRGBA(left_images)
@@ -186,6 +190,7 @@ class Slider(object):
     :param right_images: ColumnDataSource or GlyphRenderer used to
                          define RGBA images to the right of the cursor
     """
+
     def __init__(self, left_images, right_images):
         self.images = {
             "left": left_images,

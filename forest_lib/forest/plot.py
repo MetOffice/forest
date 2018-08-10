@@ -40,7 +40,7 @@ def rgba_from_mappable(mappable, shape2d):
                             bytes=True).reshape((ni, nj, 4))
 
 
-BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
+BOKEH_TOOLS_LIST = ['pan', 'wheel_zoom', 'reset', 'save', 'box_zoom', 'hover']
 
 
 class MissingDataError(Exception):
@@ -179,8 +179,15 @@ class ForestPlot(object):
                                                  toolbar_location='above')
 
         self.bokeh_figure = bokeh_figure
-        self.bokeh_image = None
-        self.bokeh_img_ds = None
+        # IDEA:
+        self.bokeh_image = self.bokeh_figure.image_rgba(image=[],
+                                                        x=[],
+                                                        y=[],
+                                                        dw=[],
+                                                        dh=[],
+                                                        level="underlay")
+        self.bokeh_img_ds = self.bokeh_image.data_source
+
         self.colorbar_widget = None
         self.visible = visible
         self._shape2d = None
@@ -199,6 +206,17 @@ class ForestPlot(object):
         self.bokeh_figure.multi_line(xs, ys,
                                      color='grey')
 
+    @property
+    def visible(self):
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        if getattr(self, 'bokeh_image', None) is not None:
+            self.bokeh_image.glyph.global_alpha = 1 if value else 0
+        self._visible = value
+        self.render()
+
     @forest.util.counter
     def create_plot(self):
         '''Main plotting function. Generic elements of the plot are created
@@ -216,23 +234,14 @@ class ForestPlot(object):
         x, y, dw, dh, image = self.render_image(self.current_config,
                                                 self.current_var,
                                                 self.current_time)
-        if self.bokeh_img_ds is None:
-            self.bokeh_image = \
-                self.bokeh_figure.image_rgba(image=[image],
-                                             x=[x],
-                                             y=[y],
-                                             dw=[dw],
-                                             dh=[dh],
-                                             level="underlay")
-            self.bokeh_img_ds = self.bokeh_image.data_source
-        else:
-            self.bokeh_img_ds.data = {
-                u'image': [image],
-                u'x': [x],
-                u'y': [y],
-                u'dw': [dw],
-                u'dh': [dh]
-            }
+
+        self.bokeh_img_ds.data = {
+            'image': [image],
+            'x': [x],
+            'y': [y],
+            'dw': [dw],
+            'dh': [dh]
+        }
         self.bokeh_figure.title.text = self.current_title
 
     @lru_cache(maxsize=32)
@@ -552,7 +561,7 @@ class ForestPlot(object):
                 var_name=self.current_var,
                 fcst_time=datestr1,
                 plot_desc=self.plot_description,
-                )
+            )
         self.current_title = \
             '\n'.join(textwrap.wrap(str1,
                                     ForestPlot.TITLE_TEXT_WIDTH))
@@ -658,6 +667,7 @@ class ForestTimeSeries():
     each plot represents a single dataset, the timeseries plot plot several
     datasets together in the same plot for comparison purposes.
     """
+
     def __init__(self,
                  datasets,
                  model_run_time,
@@ -681,9 +691,8 @@ class ForestTimeSeries():
         self.current_var = current_var
         self.cds_dict = {}
 
-        self.placeholder_data = {'x_values': [0.0,1.0],
-                                 'y_values': [0.0,0.0]}
-
+        self.placeholder_data = {'x_values': [0.0, 1.0],
+                                 'y_values': [0.0, 0.0]}
 
     def __str__(self):
         """
@@ -755,7 +764,7 @@ class ForestTimeSeries():
                     var_values = var_cube.data
 
                     data1 = {'x_values': times1,
-                         'y_values': var_values}
+                             'y_values': var_values}
 
                     self.cds_dict[ds_name].data = data1
                 else:

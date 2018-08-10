@@ -13,6 +13,7 @@ import bokeh.plotting
 
 class TestForestPlotSetRegion(unittest.TestCase):
     """Forest callback to set_region should only change bokeh extents"""
+
     def setUp(self):
         new_region = "new region"
         old_region = "old region"
@@ -46,7 +47,6 @@ class TestForestPlotSetRegion(unittest.TestCase):
         self.assertEqual(self.bokeh_figure.y_range.end, self.y_end)
 
 
-
 class TestForestPlotSetConfig(unittest.TestCase):
     def test_can_be_constructed(self):
         """the minimal information needed to construct a ForestPlot"""
@@ -54,50 +54,8 @@ class TestForestPlotSetConfig(unittest.TestCase):
 
     @unittest.mock.patch("forest.plot.bokeh")
     def test_set_config(self, bokeh):
-        """minimal data needed to call set_config"""
-        data = np.arange(9).reshape((3, 3))
-        longitudes = np.linspace(0, 10, 3)
-        latitudes = np.linspace(0, 10, 3)
-        fake_dataset = FakeDataset(data=data,
-                                   longitudes=longitudes,
-                                   latitudes=latitudes)
-        dataset = {
-            "current_config": {
-                "data_type_name": None
-            },
-            "new_config": {
-                "data_type_name": "Label",
-                "data": fake_dataset
-            }
-        }
-        model_run_time = None
-        plot_options = {
-            "precipitation": {
-                "cmap": None,
-                "norm": None
-            }
-        }
-        figname = None
-        plot_var = "precipitation"
-        conf1 = "current_config"
-        reg1 = "current_region"
-        rd1 = {
-            "current_region": (0, 1, 0, 1)
-        }
-        app_path = None
-        init_time = None
-        forest_plot = forest.plot.ForestPlot(dataset,
-                                             model_run_time,
-                                             plot_options,
-                                             figname,
-                                             plot_var,
-                                             conf1,
-                                             reg1,
-                                             rd1,
-                                             app_path,
-                                             init_time)
-        # System under test
-        forest_plot.set_config("new_config")
+        # TODO:  THIS test doesn't make sense anymore?
+        forest_plot = make_forest_plot()
 
         # Assertions
         self.assertEqual(forest_plot.current_config, "new_config")
@@ -125,11 +83,11 @@ class TestForestPlotPressureLevelsHPa(unittest.TestCase):
         forest_plot = forest.plot.ForestPlot(*args)
         result = list(forest_plot.PRESSURE_LEVELS_HPA)
         expect = [
-              980,  982,  984,  986,  988,  990,
-              992,  994,  996,  998, 1000, 1002,
-             1004, 1006, 1008, 1010, 1012, 1014,
-             1016, 1018, 1020, 1022, 1024, 1026,
-             1028
+            980,  982,  984,  986,  988,  990,
+            992,  994,  996,  998, 1000, 1002,
+            1004, 1006, 1008, 1010, 1012, 1014,
+            1016, 1018, 1020, 1022, 1024, 1026,
+            1028
         ]
         self.assertEqual(result, expect)
 
@@ -160,6 +118,7 @@ class TestForestPlot(unittest.TestCase):
     .. note:: test suite swallows stdout and stderr to prevent
               confusion when running other tests
     """
+
     def test_create_plot(self):
         fake_data = np.arange(4).reshape((2, 2))
         fake_lons = [0, 1]
@@ -181,9 +140,9 @@ class TestForestPlot(unittest.TestCase):
             }
         }
         model_run_time = "2018-01-01 00:00:00"
-        init_time=None
+        init_time = None
         figure_name = None
-        region="region"
+        region = "region"
         region_dict = {
             region: [0, 1, 0, 1]
         }
@@ -260,6 +219,49 @@ class TestForestPlot(unittest.TestCase):
         return forest_plot_args(*args, **kwargs)
 
 
+def make_forest_plot():
+    """minimal data needed to call set_config"""
+    data = np.arange(9).reshape((3, 3))
+    longitudes = np.linspace(0, 10, 3)
+    latitudes = np.linspace(0, 10, 3)
+    fake_dataset = FakeDataset(data=data,
+                               longitudes=longitudes,
+                               latitudes=latitudes)
+    dataset = {
+        "current_config": {
+            "data_type_name": "Label",
+            "data": fake_dataset
+        }
+    }
+    model_run_time = None
+    plot_options = {
+        "precipitation": {
+            "cmap": None,
+            "norm": None
+        }
+    }
+    figname = None
+    plot_var = "precipitation"
+    conf1 = "current_config"
+    reg1 = "current_region"
+    rd1 = {
+        "current_region": (0, 1, 0, 1)
+    }
+    app_path = None
+    init_time = None
+    forest_plot = forest.plot.ForestPlot(dataset,
+                                         model_run_time,
+                                         plot_options,
+                                         figname,
+                                         plot_var,
+                                         conf1,
+                                         reg1,
+                                         rd1,
+                                         app_path,
+                                         init_time)
+    return forest_plot
+
+
 def forest_plot_args(plot_var='plot_var',
                      conf1='current_config',
                      dataset=None,
@@ -313,6 +315,8 @@ class TestPColorMesh(unittest.TestCase):
 
 
 import skimage.transform
+
+
 class TestSmoothImage(unittest.TestCase):
     def test_skimage_transform_resize(self):
         image = np.ones((10, 10, 4))
@@ -322,3 +326,22 @@ class TestSmoothImage(unittest.TestCase):
         result = result.astype(np.uint8)
         expect = np.ones((5, 5, 4), dtype=np.uint8)
         np.testing.assert_array_equal(expect, result)
+
+
+class TestVisability(unittest.TestCase):
+    def test_when_visible_is_set_false_alpha_is_0(self):
+        fplot = make_forest_plot()
+        fplot.render()
+        fplot.visible = False
+        self.assertEqual(fplot.bokeh_image.glyph.global_alpha, 0)
+
+    def test_when_visible_is_set_true_alpha_is_0(self):
+        fplot = make_forest_plot()
+        fplot.render()
+        fplot.visible = True
+        self.assertEqual(fplot.bokeh_image.glyph.global_alpha, 1)
+
+    def test_bokeh_img_is_created_if_visible(self):
+        fplot = make_forest_plot()
+        fplot.visible = True
+        self.assertIsNotNone(fplot.bokeh_image)

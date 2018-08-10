@@ -15,42 +15,40 @@ CONFIG_DIR = os.path.dirname(__file__)
 FEEDBACK_CONF_FILENAME = 'feedback_fields.conf'
 
 MODEL_DD_DICT = {'n1280_ga6': '"Global" GA6 10km',
-                 'km4p4_ra1t': 'SE Asia 4.4km', 
-                 'indon2km1p5_ra1t': 'Indonesia 1.5km', 
-                 'mal2km1p5_ra1t': 'Malaysia 1.5km', 
+                 'km4p4_ra1t': 'SE Asia 4.4km',
+                 'indon2km1p5_ra1t': 'Indonesia 1.5km',
+                 'mal2km1p5_ra1t': 'Malaysia 1.5km',
                  'phi2km1p5_ra1t': 'Philippines 1.5km'}
 
-VARIABLE_DD_DICT = {'precipitation': 'Precipitation', 
-                    'air_temperature': 'Air Temperature', 
-                    'wind_vectors': 'Wind vectors', 
-                    'wind_mslp': 'Wind and MSLP', 
-                    'wind_streams': 'Wind streamlines', 
-                    'mslp': 'MSLP', 
+VARIABLE_DD_DICT = {'precipitation': 'Precipitation',
+                    'air_temperature': 'Air Temperature',
+                    'wind_vectors': 'Wind vectors',
+                    'wind_mslp': 'Wind and MSLP',
+                    'wind_streams': 'Wind streamlines',
+                    'mslp': 'MSLP',
                     'cloud_fraction': 'Cloud fraction'}
 
-REGION_DD_DICT = {'indonesia': 'Indonesia', 
-                  'malaysia': 'Malaysia', 
-                  'phillipines': 'Philippines', 
+REGION_DD_DICT = {'indonesia': 'Indonesia',
+                  'malaysia': 'Malaysia',
+                  'phillipines': 'Philippines',
                   'se_asia': 'SE Asia'}
 
 
 def create_dropdown_opt_list(iterable1):
-    
     '''Create list of 2-tuples with matching values from list for
         creating dropdown menu labels.
-    
+
     '''
-    
+
     return [(k1, k1) for k1 in iterable1]
 
 
 def create_dropdown_opt_list_from_dict(dict1, iterable1):
-    
     '''Create list of 2-tuples from dictionary for creating dropdown 
         menu labels.
-    
+
     '''
-    
+
     dd_tuple_list = [(dict1[k1], k1) if k1 in dict1.keys()
                      else (k1, k1) for k1 in iterable1]
 
@@ -61,7 +59,7 @@ def create_model_run_list(model_run_str_list):
     mr_list = []
     for d1 in model_run_str_list.keys():
         dtobj = dateutil.parser.parse(d1)
-        dt_str = ('{dt.year}-{dt.month}-{dt.day} ' \
+        dt_str = ('{dt.year}-{dt.month}-{dt.day} '
                   + '{dt.hour:02d}:{dt.minute:02d}').format(dt=dtobj)
         mr_list += [(dt_str, d1)]
     return mr_list
@@ -87,9 +85,8 @@ class ForestController(object):
                  feedback_dir,
                  bokeh_id,
                  ):
-
         '''
-        
+
         '''
 
         self.data_time_slider = None
@@ -122,7 +119,6 @@ class ForestController(object):
 
         self.create_widgets()
         self.process_events = True
-
 
     def create_widgets(self):
         '''
@@ -186,7 +182,6 @@ class ForestController(object):
                                         button_type='warning')
         self.time_next_button.on_click(self.on_time_next)
 
-
         # select model run
         label = Label("Model run: {}")
         model_run_list = create_model_run_list(self.datasets)
@@ -230,42 +225,36 @@ class ForestController(object):
         self.right_model_dd.on_change('value',
                                       functools.partial(self.on_config_change,
                                                         1))
-        if False:
-            # Left/Right toggle UI
-            bokeh_figure = self.bokeh_imgs[0]
-            left_image = self.plots[0].bokeh_img_ds
-            right_image = self.plots[1].bokeh_img_ds
-            slider = forest.image.Slider(left_image, right_image)
-            slider.add_figure(bokeh_figure)
-            toggle = forest.image.Toggle(left_image, right_image)
-            toggle.show_left()
-            def left_right_callback(attr, old, new):
-                if new == 0:
-                    toggle.show_left()
-                elif new == 1:
-                    toggle.show_right()
-            self.left_right_toggle = bokeh.models.RadioButtonGroup(
-                                         labels=["Left image", "Right image", "Slider tool"],
-                                         active=0
-                                     )
-            self.left_right_toggle.on_change("active", left_right_callback)
-            custom_js = bokeh.models.CustomJS(args=dict(hover_tool=slider.hover_tool),
-            code="""
-                // Enable/disable HoverTool using RadioButtonGroup active index
-                // Note: This is only available through BokehJS, there is no
-                //       Python attribute to control HoverTool active state
-                if (cb_obj.active === 2) {
-                    hover_tool.active = true;
-                } else {
-                    hover_tool.active = false;
-                }
-            """)
-            self.left_right_toggle.js_on_change("active", custom_js)
-        else:
-            self.left_right_toggle = bokeh.models.RadioButtonGroup(
-                                         labels=["Left image", "Right image", "Slider tool"],
-                                         active=0
-                                     )
+        # Left/Right toggle UI
+        bokeh_figure = self.bokeh_imgs[0]
+        left_image = self.plots[0]
+        right_image = self.plots[1]
+        slider = forest.image.Slider(left_image.bokeh_img_ds, right_image.bokeh_img_ds)
+        slider.add_figure(bokeh_figure)
+        left_image.visible = True
+        right_image.visible = False
+
+        def left_right_callback(attr, old, new):
+            states = {0: (True, False), 1: (False, True), 2: (True, True)}
+            left_image.visible, right_image.visible = states[new]
+
+        self.left_right_toggle = bokeh.models.RadioButtonGroup(
+            labels=["Left image", "Right image", "Slider tool"],
+            active=0
+        )
+        self.left_right_toggle.on_change("active", left_right_callback)
+        custom_js = bokeh.models.CustomJS(args=dict(hover_tool=slider.hover_tool),
+                                          code="""
+            // Enable/disable HoverTool using RadioButtonGroup active index
+            // Note: This is only available through BokehJS, there is no
+            //       Python attribute to control HoverTool active state
+            if (cb_obj.active === 2) {
+                hover_tool.active = true;
+            } else {
+                hover_tool.active = false;
+            }
+        """)
+        self.left_right_toggle.js_on_change("active", custom_js)
 
         # Layout widgets
         sizing_mode = "fixed"
@@ -346,16 +335,14 @@ class ForestController(object):
         ]
         return bokeh.layouts.column(*rows, sizing_mode=sizing_mode)
 
-
     def on_time_prev(self):
-        
         '''Event handler for changing to previous time step
-        
+
         '''
         if not self.process_events:
             return
         print('selected previous time step')
-        
+
         new_time = int(self.data_time_slider.value - 1)
         if new_time >= 0:
             self.current_time_index = new_time
@@ -364,11 +351,10 @@ class ForestController(object):
             print('Cannot select time < 0')
 
     def on_time_next(self):
-        
         '''
-        
+
         '''
-        
+
         if not self.process_events:
             return
         print('selected next time step')
@@ -378,10 +364,9 @@ class ForestController(object):
             self.current_time_index = new_time
             self.data_time_slider.value = self.current_time_index
         else:
-            print('Cannot select time > num_times')      
-        
-    def on_data_time_change(self, attr1, old_val, new_val):
+            print('Cannot select time > num_times')
 
+    def on_data_time_change(self, attr1, old_val, new_val):
         '''Event handler for a change in the selected forecast data time.
 
         '''
@@ -395,7 +380,6 @@ class ForestController(object):
             new_time1 = self.available_times[self.current_time_index]
             # self.data_time_slider.label = 'Data time {0}'.format(new_time1)
             p1.set_data_time(new_time1)
-
 
     def _refresh_times(self, update_gui=True):
         self.available_times = \
@@ -416,9 +400,7 @@ class ForestController(object):
             self.data_time_slider.end = self.available_times.shape[0]
         return new_time
 
-
     def on_var_change(self, attr1, old_val, new_val):
-
         '''Event handler for a change in the selected plot type.
 
         '''
@@ -435,7 +417,6 @@ class ForestController(object):
             p1.set_var(new_val)
 
     def on_region_change(self, attr1, old_val, new_val):
-
         '''Event handler for a change in the selected plot region.
 
         '''
@@ -448,7 +429,6 @@ class ForestController(object):
             p1.set_region(new_val)
 
     def on_config_change(self, plot_index, attr1, old_val, new_val):
-
         '''Event handler for a change in the selected model configuration output.
 
         '''
@@ -456,7 +436,7 @@ class ForestController(object):
         if not self.process_events:
             return
         print('config change handler')
-        
+
         self.plots[plot_index].set_config(new_val)
 
     def _on_model_run_change(self, attr1, old_val, new_val):
@@ -488,4 +468,3 @@ class ForestController(object):
 
         for p1 in self.plots:
             p1.set_selected_point(tap_event.y, tap_event.x)
-
