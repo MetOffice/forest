@@ -50,22 +50,20 @@ class MissingDataError(Exception):
         self.time = time
 
 
-def add_axes(figure):
-    """Helper to make prettier bokeh figures"""
-    # Extra x-axis above figure
-    position = 'above'
+def add_x_axes(figure, position='above'):
+    """Extra x-axis above figure"""
     figure.extra_x_ranges[position] = figure.x_range
     axis = bokeh.models.LinearAxis(x_range_name=position)
     axis.major_label_text_font_size = '0pt'
     figure.add_layout(axis, position)
 
-    # Extra y-axis right of figure
-    position = 'right'
+
+def add_y_axes(figure, position="right"):
+    """Extra y-axis right of figure"""
     figure.extra_y_ranges[position] = figure.y_range
     axis = bokeh.models.LinearAxis(y_range_name=position)
     axis.major_label_text_font_size = '0pt'
     figure.add_layout(axis, position)
-    return figure
 
 
 def add_coastlines(bokeh_figure, extent):

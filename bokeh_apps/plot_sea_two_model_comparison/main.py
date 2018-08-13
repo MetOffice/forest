@@ -101,7 +101,8 @@ def main(bokeh_id):
     if user_interface == "single-plot":
         bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
                                              active_inspect=None)
-        forest.plot.add_axes(bokeh_figure)
+        forest.plot.add_x_axes(bokeh_figure, "above")
+        forest.plot.add_y_axes(bokeh_figure, "right")
 
         # Add cartopy coastline to bokeh figure
         region = region_dict[init_region]
