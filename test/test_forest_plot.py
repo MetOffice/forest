@@ -104,12 +104,7 @@ class FakeDataset(object):
 
 
 class TestForestPlot(unittest.TestCase):
-    """
-    .. note:: test suite swallows stdout and stderr to prevent
-              confusion when running other tests
-    """
-
-    def test_create_plot(self):
+    def test_render(self):
         fake_data = np.arange(4).reshape((2, 2))
         fake_lons = [0, 1]
         fake_lats = [0, 1]
@@ -149,39 +144,12 @@ class TestForestPlot(unittest.TestCase):
             app_path,
             init_time
         )
-        forest_plot.create_plot()
+        forest_plot.render()
 
         # Assert bokeh ColumnDataSource correctly populated
         result = forest_plot.bokeh_img_ds.data["image"][0]
         expect = [[[68, 1, 84, 255]]]
         np.testing.assert_array_equal(result, expect)
-
-    @unittest.skip("understanding other test")
-    def test_create_plot_sets_main_plot(self):
-        config = "config"
-        fake_data = np.zeros((2, 2))
-        dataset = {
-            config: {
-                "data": FakeDataset(fake_data),
-                "data_type_name": None
-            }
-        }
-        plot_options = {
-            "mslp": {
-                "cmap": None,
-                "norm": None
-            }
-        }
-        model_run_time = "2018-01-01 00:00:00"
-        args = self.args(plot_var="mslp",
-                         conf1=config,
-                         dataset=dataset,
-                         plot_options=plot_options,
-                         model_run_time=model_run_time)
-        forest_plot = forest.plot.ForestPlot(*args)
-        forest_plot.create_plot()
-        self.assertIsInstance(forest_plot.main_plot,
-                              matplotlib.collections.QuadMesh)
 
     def test_plot_funcs_keys(self):
         forest_plot = forest.plot.ForestPlot(*self.args())

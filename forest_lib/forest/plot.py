@@ -212,15 +212,6 @@ class ForestPlot(object):
         self._visible = value
         self.render()
 
-    @forest.util.counter
-    def create_plot(self):
-        '''Main plotting function. Generic elements of the plot are created
-        here, and then the plotting function for the specific variable is
-        called using the self.plot_funcs dictionary.
-        '''
-        self.render()
-        return self.bokeh_figure
-
     @forest.util.timer
     def render(self):
         """Plot RGBA images"""
