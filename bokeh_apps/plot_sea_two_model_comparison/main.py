@@ -97,22 +97,20 @@ def main(bokeh_id):
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
-    user_interface = "single-plot"
-    if user_interface == "single-plot":
-        bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
-                                             active_inspect=None)
-        forest.plot.add_x_axes(bokeh_figure, "above")
-        forest.plot.add_y_axes(bokeh_figure, "right")
+    bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
+                                         active_inspect=None)
+    forest.plot.add_x_axes(bokeh_figure, "above")
+    forest.plot.add_y_axes(bokeh_figure, "right")
 
-        # Add cartopy coastline to bokeh figure
-        region = region_dict[south_east_asia_region]
-        y_start = region[0]
-        y_end = region[1]
-        x_start = region[2]
-        x_end = region[3]
-        extent = (x_start, x_end, y_start, y_end)
-        forest.plot.add_coastlines(bokeh_figure, extent)
-        forest.plot.add_borders(bokeh_figure, extent)
+    # Add cartopy coastline to bokeh figure
+    region = region_dict[south_east_asia_region]
+    y_start = region[0]
+    y_end = region[1]
+    x_start = region[2]
+    x_end = region[3]
+    extent = (x_start, x_end, y_start, y_end)
+    forest.plot.add_coastlines(bokeh_figure, extent)
+    forest.plot.add_borders(bokeh_figure, extent)
 
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
@@ -126,12 +124,7 @@ def main(bokeh_id):
                                            app_path,
                                            init_data_time,
                                            bokeh_figure=bokeh_figure)
-# TODO: Get rid of this line?!
-    bokeh_figure_left = plot_obj_left.create_plot()
-
-    forest_stats_left = forest.ForestStats(forest.data.UNIT_DICT,
-                                           forest.data.UNIT_DICT_DISPLAY)
-    stats_left = forest_stats_left.create_widget()
+    plot_obj_left.render()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
                                             init_fcast_time,
@@ -145,37 +138,17 @@ def main(bokeh_id):
                                             init_data_time,
                                             bokeh_figure=bokeh_figure,
                                             visible=False)
-    bokeh_figure_right = plot_obj_right.create_plot()
-
-    forest_stats_right = forest.ForestStats(forest.data.UNIT_DICT,
-                                            forest.data.UNIT_DICT_DISPLAY)
-    stats_right = forest_stats_right.create_widget()
 
     colorbar_widget = plot_obj_left.create_colorbar_widget()
 
-    # TODO: this is redundant now!?
-    plot_obj_right.link_axes_to_other_plot(plot_obj_left)
-
-    # plot_obj_ts = forest.plot.ForestTimeSeries(datasets[init_fcast_time],
-    #                                            init_fcast_time,
-    #                                            selected_point,
-    #                                            init_var)
-
-    # bokeh_image_ts = plot_obj_ts.create_plot()
-
     # Set up GUI controller class
-    # TODO: Kill double-plot
-    if user_interface == "double-plot":
-        bokeh_figures = [bokeh_figure_left, bokeh_figure_right]
-    else:
-        bokeh_figures = [bokeh_figure]
     control1 = forest.control.ForestController(init_var,
                                                init_data_time_index,
                                                datasets,
                                                init_fcast_time,
                                                plot_type_time_lookups,
                                                [plot_obj_left, plot_obj_right],
-                                               bokeh_figures,
+                                               [bokeh_figure],
                                                colorbar_widget,
                                                [stats_left, stats_right],
                                                region_dict,
