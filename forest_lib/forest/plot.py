@@ -199,7 +199,7 @@ class ForestPlot(object):
         self.bokeh_img_ds = self.bokeh_image.data_source
 
         self.colorbar_widget = None
-        self.visible = visible
+        self._visible = visible
         self._shape2d = None
 
     @property

@@ -13,7 +13,6 @@ import bokeh.plotting
 
 class TestForestPlotSetRegion(unittest.TestCase):
     """Forest callback to set_region should only change bokeh extents"""
-
     def setUp(self):
         new_region = "new region"
         old_region = "old region"
@@ -51,15 +50,6 @@ class TestForestPlotSetConfig(unittest.TestCase):
     def test_can_be_constructed(self):
         """the minimal information needed to construct a ForestPlot"""
         forest.plot.ForestPlot(*forest_plot_args())
-
-    @unittest.mock.patch("forest.plot.bokeh")
-    def test_set_config(self, bokeh):
-        # TODO:  THIS test doesn't make sense anymore?
-        forest_plot = make_forest_plot()
-
-        # Assertions
-        self.assertEqual(forest_plot.current_config, "new_config")
-        self.assertEqual(forest_plot.plot_description, "Label")
 
     def test_forest_plot_should_accept_bokeh_figure(self):
         """To open forest to allow generic layouts
