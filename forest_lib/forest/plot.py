@@ -68,6 +68,18 @@ def add_axes(figure):
     return figure
 
 
+def add_coastlines(bokeh_figure, extent):
+    """Add coastlines to bokeh figure"""
+    xs, ys = forest.geography.coastlines(extent)
+    bokeh_figure.multi_line(xs, ys, color='black')
+
+
+def add_borders(bokeh_figure, extent):
+    """Add borders to bokeh figure"""
+    xs, ys = forest.geography.borders(extent)
+    bokeh_figure.multi_line(xs, ys, color='grey')
+
+
 @forest.util.timer
 def smooth_image(array, output_shape):
     """Smooth high resolution imagery"""
@@ -191,20 +203,6 @@ class ForestPlot(object):
         self.colorbar_widget = None
         self.visible = visible
         self._shape2d = None
-
-        # Add cartopy coastline to bokeh figure
-        region = self.region_dict[self.current_region]
-        x_start = region[2]
-        x_end = region[3]
-        y_start = region[0]
-        y_end = region[1]
-        extent = (x_start, x_end, y_start, y_end)
-        xs, ys = forest.geography.coastlines(extent)
-        self.bokeh_figure.multi_line(xs, ys,
-                                     color='black')
-        xs, ys = forest.geography.borders(extent)
-        self.bokeh_figure.multi_line(xs, ys,
-                                     color='grey')
 
     @property
     def visible(self):
