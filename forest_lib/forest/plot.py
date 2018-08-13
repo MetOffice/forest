@@ -124,7 +124,6 @@ class ForestPlot(object):
         '''
         self.current_figure = matplotlib.pyplot.figure(figure_name)
         self.current_axes = self.current_figure.add_subplot(111)
-
         self.region_dict = rd1
         self.main_plot = None
         self.current_time = init_time
@@ -246,12 +245,30 @@ class ForestPlot(object):
                      current_var,
                      current_time):
         """Plot RGBA images"""
-        self.plot_funcs[current_var]()
-
-        # HACK: self._shape2d is populated by self.get_data()
-        ni, nj = self._shape2d
-        shape = (ni - 1, nj - 1)
-        image = rgba_from_mappable(self.main_plot, shape)
+        if self.uses_mappable(current_var):
+            self.plot_funcs[current_var]()
+            # HACK: self._shape2d is populated by self.get_data()
+            ni, nj = self._shape2d
+            shape = (ni - 1, nj - 1)
+            image = rgba_from_mappable(self.main_plot, shape)
+        else:
+            # Rasterize Figure instance instead of mappable
+            y_start, y_end, x_start, x_end = self.region_dict[self.current_region]
+            current_figsize = (8.0, 6.0)
+            aspect_ratio = (y_end - y_start) / (x_end - x_start)
+            self.current_figure.set_figwidth(current_figsize[0])
+            self.current_figure.set_figheight(
+                round(self.current_figure.get_figwidth() * aspect_ratio, 2)
+            )
+            self.current_axes.cla()
+            self.current_axes.set_position([0, 0, 1, 1])
+            self.current_axes.set_xlim((x_start, x_end))
+            self.current_axes.set_ylim((y_start, y_end))
+            self.current_axes.xaxis.set_visible(False)
+            self.current_axes.yaxis.set_visible(False)
+            self.plot_funcs[current_var]()
+            self.current_figure.canvas.draw()
+            image = forest.util.get_image_array_from_figure(self.current_figure)
 
         # Smooth high resolution imagery
         max_ni, max_nj = 800, 600
@@ -262,6 +279,17 @@ class ForestPlot(object):
         # Plot bokeh image rgba
         x, y, dw, dh = self.get_x_y_dw_dh()
         return x, y, dw, dh, image
+
+    @staticmethod
+    def uses_mappable(variable):
+        return variable.lower() in ['precipitation',
+                                    'accum_precip_3hr',
+                                    'accum_precip_6hr',
+                                    'accum_precip_12hr',
+                                    'accum_precip_24hr',
+                                    'mslp',
+                                    'air_temperature',
+                                    'cloud_fraction']
 
     def update_coords(self, data_cube):
         '''Update the latitude and longitude coordinates for the data.
