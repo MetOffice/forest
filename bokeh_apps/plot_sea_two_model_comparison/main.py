@@ -87,7 +87,7 @@ def main(bokeh_id):
     init_data_time_index = 1
     init_var = 'precipitation'
 
-    init_region = 'se_asia'
+    south_east_asia_region = 'se_asia'
     init_model_left = forest.data.N1280_GA6_KEY  # KM4P4_RA1T_KEY
     init_model_right = forest.data.KM4P4_RA1T_KEY  # N1280_GA6_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
@@ -105,7 +105,7 @@ def main(bokeh_id):
         forest.plot.add_y_axes(bokeh_figure, "right")
 
         # Add cartopy coastline to bokeh figure
-        region = region_dict[init_region]
+        region = region_dict[south_east_asia_region]
         y_start = region[0]
         y_end = region[1]
         x_start = region[2]
@@ -121,7 +121,7 @@ def main(bokeh_id):
                                            'plot_left' + bokeh_id,
                                            init_var,
                                            init_model_left,
-                                           init_region,
+                                           south_east_asia_region,
                                            region_dict,
                                            app_path,
                                            init_data_time,
@@ -139,7 +139,7 @@ def main(bokeh_id):
                                             'plot_right' + bokeh_id,
                                             init_var,
                                             init_model_right,
-                                            init_region,
+                                            south_east_asia_region,
                                             region_dict,
                                             app_path,
                                             init_data_time,
