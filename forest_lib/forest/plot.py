@@ -219,14 +219,8 @@ class ForestPlot(object):
                      current_var,
                      current_time):
         """Plot RGBA images"""
-        if self.uses_mappable(current_var):
-            self.plot_funcs[current_var]()
-            # HACK: self._shape2d is populated by self.get_data()
-            ni, nj = self._shape2d
-            shape = (ni - 1, nj - 1)
-            image = rgba_from_mappable(self.main_plot, shape)
-        else:
-            # Rasterize Figure instance instead of mappable
+        if self._plot_uses_figure(current_var):
+            # Rasterize Figure instance
             y_start, y_end, x_start, x_end = self.region_dict[self.current_region]
             current_figsize = (8.0, 6.0)
             aspect_ratio = (y_end - y_start) / (x_end - x_start)
@@ -243,6 +237,13 @@ class ForestPlot(object):
             self.plot_funcs[current_var]()
             self.current_figure.canvas.draw()
             image = forest.util.get_image_array_from_figure(self.current_figure)
+        else:
+            # Rasterize matplotlib mappable
+            self.plot_funcs[current_var]()
+            # HACK: self._shape2d is populated by self.get_data()
+            ni, nj = self._shape2d
+            shape = (ni - 1, nj - 1)
+            image = rgba_from_mappable(self.main_plot, shape)
 
         # Smooth high resolution imagery
         max_ni, max_nj = 800, 600
@@ -255,15 +256,16 @@ class ForestPlot(object):
         return x, y, dw, dh, image
 
     @staticmethod
-    def uses_mappable(variable):
-        return variable.lower() in ['precipitation',
-                                    'accum_precip_3hr',
-                                    'accum_precip_6hr',
-                                    'accum_precip_12hr',
-                                    'accum_precip_24hr',
-                                    'mslp',
-                                    'air_temperature',
-                                    'cloud_fraction']
+    def _plot_uses_figure(variable):
+        """Check variable requires Figure to be rasterized"""
+        return variable.lower() not in ['precipitation',
+                                        'accum_precip_3hr',
+                                        'accum_precip_6hr',
+                                        'accum_precip_12hr',
+                                        'accum_precip_24hr',
+                                        'mslp',
+                                        'air_temperature',
+                                        'cloud_fraction']
 
     def update_coords(self, data_cube):
         '''Update the latitude and longitude coordinates for the data.
