@@ -46,32 +46,6 @@ with open(JS_FILE, "r") as stream:
     JS_CODE = stream.read()
 
 
-class CachedRGBA(object):
-    """Cache alpha/shapes to maintain consistency"""
-    def __init__(self, source):
-        self._callbacks = []
-        self.source = source
-        if "original_alpha" not in source.data:
-            source.data["original_alpha"] = get_alpha(source)
-        self.shapes = get_shapes(self.source)
-        if "shape" not in source.data:
-            source.data["shape"] = self.shapes
-        self.source.on_change("data", self.on_source_change)
-
-    def on_shape_change(self, callback):
-        self._callbacks.append(callback)
-
-    def on_source_change(self, attr, old, new):
-        shapes = get_shapes(self.source)
-        if tuple(self.shapes) != tuple(shapes):
-            # Note: order important to prevent infinite recursion
-            self.shapes = shapes
-            self.source.data["shape"] = get_shapes(self.source)
-            self.source.data["original_alpha"] = get_alpha(self.source)
-            for callback in self._callbacks:
-                callback()
-
-
 class Slider(object):
     """Controls alpha values of bokeh RGBA ColumnDataSources
 
@@ -98,10 +72,6 @@ class Slider(object):
             "left": left_images,
             "right": right_images
         }
-        self._left_cache = CachedRGBA(left_images)
-        self._left_cache.on_shape_change(self.notify_client_side)
-        self._right_cache = CachedRGBA(right_images)
-        self._right_cache.on_shape_change(self.notify_client_side)
         self.span = bokeh.models.Span(location=0,
                                       dimension='height',
                                       line_color='black',
@@ -124,16 +94,6 @@ class Slider(object):
     @property
     def right_images(self):
         return self.images["right"]
-
-    def notify_client_side(self):
-        """Listen for bokeh server-side image array changes
-
-        If a shape change is detected pass that information
-        to client-side
-        """
-        # Pass latest image shapes to client-side
-        self.mousemove.args["left_images"] = self.left_images
-        self.mousemove.args["right_images"] = self.right_images
 
     def add_figure(self, figure):
         """Attach various callbacks to a particular figure"""
