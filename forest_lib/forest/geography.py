@@ -65,31 +65,3 @@ def clip_xy(x, y, extent):
                    (y > y_start) &
                    (y < y_end))
     return x[pts], y[pts]
-
-
-def cutout_xy(x, y, extent):
-    """Cutout x, y inside a box"""
-    x, y = np.asarray(x), np.asarray(y)
-    x_start, x_end, y_start, y_end = extent
-    pts = np.where((x <= x_start) |
-                   (x >= x_end) |
-                   (y <= y_start) |
-                   (y >= y_end))
-    return x[pts], y[pts]
-
-
-def box_split(x, y, extent):
-    """Split a polygonal chain into segments inside/outside box"""
-    pts = np.where(np.diff(in_box(x, y, extent)))[0]
-    if len(pts) == 0:
-        return [[x, y]]
-    return zip(np.split(x, pts + 1), np.split(y, pts + 1))
-
-
-def in_box(x, y, extent):
-    x, y = np.asarray(x), np.asarray(y)
-    x_start, x_end, y_start, y_end = extent
-    return ((x <= x_start) |
-            (x >= x_end) |
-            (y <= y_start) |
-            (y >= y_end))
