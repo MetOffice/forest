@@ -153,16 +153,6 @@ class ForestPlot(object):
                            'V': self.plot_sat_simim_imagery,
                            'blank': self.create_blank,
                            }
-        self.update_funcs = {'wind_vectors': self.update_wind_vectors,
-                             'wind_mslp': self.update_wind_mslp,
-                             'wind_streams': self.update_wind_streams,
-                             'himawari-8': self.update_him8,
-                             'simim': self.update_simim,
-                             'W': self.update_sat_simim_imagery,
-                             'I': self.update_sat_simim_imagery,
-                             'V': self.update_sat_simim_imagery,
-                             'blank': self.create_blank,
-                             }
         self.mslp_contour_label_dict = {}
         for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
             self.mslp_contour_label_dict[
@@ -312,19 +302,6 @@ class ForestPlot(object):
                                          norm=norm,
                                          edgecolor='face')
 
-    def update_wind_vectors(self):
-        '''Update function for wind vector plots, called by update_plot() when
-        wind vectors is the selected plot type.
-        '''
-        wind_speed_cube = self.get_data(forest.data.WIND_SPEED_NAME)
-
-        array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        wv_u_data = self.get_data(var_name='wv_U').data
-        wv_v_data = self.get_data(var_name='wv_V').data
-        self.quiver_plot.set_UVC(wv_u_data,
-                                 wv_v_data)
-
     def plot_wind_vectors(self):
         '''Function for creating wind vector plots, called by create_plot when
         wind vectors is the selected plot type.
@@ -354,28 +331,6 @@ class ForestPlot(object):
                                          r'$2 \frac{m}{s}$',
                                          labelpos='E',
                                          coordinates='figure')
-
-    def update_wind_mslp(self):
-        '''Update function for wind speed with MSLP contours plots, called by
-        update_plot() when wind speed with MSLP is the selected plot type.
-        '''
-        wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
-        array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        # to update contours, remove old elements and generate new contours
-        for c1 in self.mslp_contour.collections:
-            self.current_axes.collections.remove(c1)
-
-        ap_cube = self.get_data(var_name=forest.data.MSLP_NAME)
-        self.mslp_contour = \
-            self.current_axes.contour(self.long_grid_mslp,
-                                      self.lat_grid_mslp,
-                                      ap_cube.data,
-                                      levels=ForestPlot.PRESSURE_LEVELS_HPA,
-                                      colors='k')
-        self.current_axes.clabel(self.mslp_contour,
-                                 inline=False,
-                                 fmt=self.mslp_contour_label_dict)
 
     def plot_wind_mslp(self):
         '''Function for creating wind speed with MSLP contour plots, called by
@@ -409,33 +364,6 @@ class ForestPlot(object):
                                  inline=False,
                                  fmt=self.mslp_contour_label_dict)
 
-    def update_wind_streams(self):
-        '''Update function for wind streamline plots, called by update_plot()
-        when wind streamlines is the selected plot type.
-        '''
-        wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
-        array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-
-        # remove old plot elements if they are still present
-        self.current_axes.collections.remove(self.wind_stream_plot.lines)
-        for p1 in self.wind_stream_patches:
-            self.current_axes.patches.remove(p1)
-
-        pl1 = list(self.current_axes.patches)
-        self.wind_stream_plot = \
-            self.current_axes.streamplot(
-                self.get_data(var_name='wv_X_grid').data,
-                self.get_data(var_name='wv_Y_grid').data,
-                self.get_data(var_name='wv_U').data,
-                self.get_data(var_name='wv_V').data,
-                color='k',
-                density=[0.5, 1.0])
-        # we need to manually keep track of arrows so they can be removed when
-        # the plot is updated
-        pl2 = list(self.current_axes.patches)
-        self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
-
     def plot_wind_streams(self):
         '''Function for creating wind streamline plots, called by create_plot when
         wind streamlines is the selected plot type.
@@ -467,20 +395,6 @@ class ForestPlot(object):
         pl2 = list(self.current_axes.patches)
         self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
 
-    def update_him8(self):
-        '''Update function for himawari-8 image plots, called by update_plot()
-        when cloud fraction is the selected plot type.
-        '''
-        him8_image = self.dataset[
-            'himawari-8']['data'].get_data(self.current_var, selected_time=self.current_time)
-        self.current_axes.images.remove(self.main_plot)
-        self.main_plot = self.current_axes.imshow(him8_image,
-                                                  extent=(self.data_bounds[2],
-                                                          self.data_bounds[3],
-                                                          self.data_bounds[0],
-                                                          self.data_bounds[1]),
-                                                  origin='upper')
-
     def plot_him8(self):
         '''Function for creating himawari-8 image plots, called by create_plot()
         when cloud fraction is the selected plot type.
@@ -498,15 +412,6 @@ class ForestPlot(object):
                                       self.data_bounds[3],
                                       self.data_bounds[0],
                                       self.data_bounds[1]))
-
-    def update_simim(self):
-        '''Update function for himawari-8 image plots, called by update_plot()
-        when cloud fraction is the selected plot type.
-        '''
-        simim_cube = self.dataset['simim']['data'].get_data(
-            self.current_var, selected_time=self.current_time)
-        array_for_update = simim_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
 
     def plot_simim(self):
         '''Function for creating himawari-8 image plots, called by create_plot()
@@ -529,12 +434,6 @@ class ForestPlot(object):
                                       self.data_bounds[3],
                                       self.data_bounds[0],
                                       self.data_bounds[1]))
-
-    def update_sat_simim_imagery(self):
-        if self.current_config == 'himawari-8':
-            self.update_him8()
-        elif self.current_config == 'simim':
-            self.update_simim()
 
     def plot_sat_simim_imagery(self):
         if self.current_config == 'himawari-8':
