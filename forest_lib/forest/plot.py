@@ -132,8 +132,6 @@ class ForestPlot(object):
         self.model_run_time = model_run_time
         self.current_var = plot_var
         self.current_config = conf1
-        self.plot_description = self.dataset[
-            self.current_config]['data_type_name']
         self.current_region = reg1
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
@@ -224,7 +222,7 @@ class ForestPlot(object):
             'dw': [dw],
             'dh': [dh]
         })
-        self.bokeh_figure.title.text = self.update_title()
+        self.bokeh_figure.title.text = self.get_title()
 
     @lru_cache(maxsize=32)
     def render_image(self,
@@ -544,18 +542,18 @@ class ForestPlot(object):
         elif self.current_config == 'simim':
             self.plot_simim()
 
-    def update_title(self):
-        '''Update plot title.
-        '''
+    def get_title(self):
+        '''Generate title text related to plot state'''
         try:
             datestr1 = forest.util.get_time_str(self.current_time)
         except:
             datestr1 = self.current_time
+        plot_desc = self.dataset[self.current_config]['data_type_name']
         str1 = \
             '{plot_desc} {var_name} at {fcst_time}'.format(
                 var_name=self.current_var,
                 fcst_time=datestr1,
-                plot_desc=self.plot_description,
+                plot_desc=plot_desc,
             )
         return '\n'.join(textwrap.wrap(str1,
                                        ForestPlot.TITLE_TEXT_WIDTH))
@@ -624,8 +622,6 @@ class ForestPlot(object):
         '''
         print('setting new config {0}'.format(new_config))
         self.current_config = new_config
-        self.plot_description = self.dataset[
-            self.current_config]['data_type_name']
         self.render()
 
     def set_dataset(self, new_dataset, new_model_run_time):
