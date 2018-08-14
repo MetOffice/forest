@@ -169,7 +169,6 @@ class ForestPlot(object):
         for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
             self.mslp_contour_label_dict[
                 pressure1] = '{0:d}hPa'.format(int(pressure1))
-        self.current_title = ''
         self.colorbar_link = plot_var + '_colorbar.png'
         if bokeh_figure is None:
             cur_region = self.region_dict[self.current_region]
@@ -225,8 +224,7 @@ class ForestPlot(object):
             'dw': [dw],
             'dh': [dh]
         })
-        self.update_title()
-        self.bokeh_figure.title.text = self.current_title
+        self.bokeh_figure.title.text = self.update_title()
 
     @lru_cache(maxsize=32)
     def render_image(self,
@@ -288,7 +286,6 @@ class ForestPlot(object):
 
     def create_blank(self):
         self.main_plot = None
-        self.current_title = 'Blank plot'
 
     @forest.util.timer
     def get_data(self, var_name, selected_time=None, config_name=None):
@@ -560,9 +557,8 @@ class ForestPlot(object):
                 fcst_time=datestr1,
                 plot_desc=self.plot_description,
             )
-        self.current_title = \
-            '\n'.join(textwrap.wrap(str1,
-                                    ForestPlot.TITLE_TEXT_WIDTH))
+        return '\n'.join(textwrap.wrap(str1,
+                                       ForestPlot.TITLE_TEXT_WIDTH))
 
     def get_x_y_dw_dh(self):
         """x, y, dw, dh defined by pcolormesh or cube coordinates"""
