@@ -315,7 +315,7 @@ class ForestPlot(object):
                                          cmap=cmap,
                                          norm=norm,
                                          edgecolor='face')
-        self.update_title(cube)
+        self.update_title()
 
     def update_wind_vectors(self):
         '''Update function for wind vector plots, called by update_plot() when
@@ -325,7 +325,7 @@ class ForestPlot(object):
 
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
-        self.update_title(wind_speed_cube)
+        self.update_title()
         wv_u_data = self.get_data(var_name='wv_U').data
         wv_v_data = self.get_data(var_name='wv_V').data
         self.quiver_plot.set_UVC(wv_u_data,
@@ -360,7 +360,7 @@ class ForestPlot(object):
                                          r'$2 \frac{m}{s}$',
                                          labelpos='E',
                                          coordinates='figure')
-        self.update_title(wind_speed_cube)
+        self.update_title()
 
     def update_wind_mslp(self):
         '''Update function for wind speed with MSLP contours plots, called by
@@ -383,8 +383,7 @@ class ForestPlot(object):
         self.current_axes.clabel(self.mslp_contour,
                                  inline=False,
                                  fmt=self.mslp_contour_label_dict)
-
-        self.update_title(wind_speed_cube)
+        self.update_title()
 
     def plot_wind_mslp(self):
         '''Function for creating wind speed with MSLP contour plots, called by
@@ -417,7 +416,7 @@ class ForestPlot(object):
         self.current_axes.clabel(self.mslp_contour,
                                  inline=False,
                                  fmt=self.mslp_contour_label_dict)
-        self.update_title(wind_speed_cube)
+        self.update_title()
 
     def update_wind_streams(self):
         '''Update function for wind streamline plots, called by update_plot()
@@ -426,7 +425,7 @@ class ForestPlot(object):
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
-        self.update_title(wind_speed_cube)
+        self.update_title()
 
         # remove old plot elements if they are still present
         self.current_axes.collections.remove(self.wind_stream_plot.lines)
@@ -477,7 +476,7 @@ class ForestPlot(object):
         # the plot is updated
         pl2 = list(self.current_axes.patches)
         self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
-        self.update_title(wind_speed_cube)
+        self.update_title()
 
     def update_him8(self):
         '''Update function for himawari-8 image plots, called by update_plot()
@@ -492,7 +491,7 @@ class ForestPlot(object):
                                                           self.data_bounds[0],
                                                           self.data_bounds[1]),
                                                   origin='upper')
-        self.update_title(None)
+        self.update_title()
 
     def plot_him8(self):
         '''Function for creating himawari-8 image plots, called by create_plot()
@@ -512,7 +511,7 @@ class ForestPlot(object):
                                       self.data_bounds[0],
                                       self.data_bounds[1]))
 
-        self.update_title(None)
+        self.update_title()
 
     def update_simim(self):
         '''Update function for himawari-8 image plots, called by update_plot()
@@ -522,7 +521,7 @@ class ForestPlot(object):
             self.current_var, selected_time=self.current_time)
         array_for_update = simim_cube.data[:-1, :-1].ravel()
         self.main_plot.set_array(array_for_update)
-        self.update_title(None)
+        self.update_title()
 
     def plot_simim(self):
         '''Function for creating himawari-8 image plots, called by create_plot()
@@ -545,8 +544,7 @@ class ForestPlot(object):
                                       self.data_bounds[3],
                                       self.data_bounds[0],
                                       self.data_bounds[1]))
-
-        self.update_title(None)
+        self.update_title()
 
     def update_sat_simim_imagery(self):
         if self.current_config == 'himawari-8':
@@ -560,7 +558,7 @@ class ForestPlot(object):
         elif self.current_config == 'simim':
             self.plot_simim()
 
-    def update_title(self, current_cube):
+    def update_title(self):
         '''Update plot title.
         '''
         try:
