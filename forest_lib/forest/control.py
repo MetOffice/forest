@@ -80,7 +80,6 @@ class ForestController(object):
                  plots,
                  bokeh_imgs,
                  colorbar_widget,
-                 stats_widgets,
                  region_dict,
                  feedback_dir,
                  bokeh_id,
@@ -112,7 +111,6 @@ class ForestController(object):
         self.init_time = self.available_times[self.current_time_index]
         self.num_times = self.available_times.shape[0]
         self.colorbar_div = colorbar_widget
-        self.stats_widgets = stats_widgets
         self.bokeh_id = bokeh_id
         self.feedback_dir = feedback_dir
         self.feedback_visible = False
@@ -284,7 +282,6 @@ class ForestController(object):
                                                self.time_next_button,
                                                self.data_time_slider,
                                                self.model_run_dd,
-                                               self.stats_widgets,
                                                self.colorbar_div,
                                                self.uf_vis_toggle,
                                                self.uf_vis_layout,
@@ -301,7 +298,6 @@ class ForestController(object):
                        time_next_button,
                        time_slider,
                        model_run_drop_down,
-                       stats_widgets,
                        colorbar_div,
                        user_feedback_toggle,
                        user_feedback_layout,
@@ -326,9 +322,6 @@ class ForestController(object):
             bokeh.layouts.row(*bokeh_figures,
                               sizing_mode=sizing_mode),
             bokeh.layouts.row(colorbar_div,
-                              sizing_mode=sizing_mode),
-            bokeh.layouts.row(stats_widgets[0],
-                              stats_widgets[1],
                               sizing_mode=sizing_mode),
             user_feedback_toggle,
             user_feedback_layout

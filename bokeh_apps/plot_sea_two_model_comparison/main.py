@@ -150,11 +150,9 @@ def main(bokeh_id):
                                                [plot_obj_left, plot_obj_right],
                                                [bokeh_figure],
                                                colorbar_widget,
-                                               [stats_left, stats_right],
                                                region_dict,
                                                user_feedback_directory,
-                                               bokeh_id,
-                                               )
+                                               bokeh_id)
 
     # Attach bokeh layout to current document
     root = control1.main_layout
