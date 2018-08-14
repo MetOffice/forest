@@ -79,10 +79,9 @@ def add_borders(bokeh_figure, extent):
 
 
 @forest.util.timer
-def smooth_image(array, output_shape):
+def smooth_image(array, output_shape, use_skimage=True):
     """Smooth high resolution imagery"""
-    use_scikit_image = True
-    if use_scikit_image:
+    if use_skimage:
         resized = skimage.transform.resize(array,
                                            output_shape,
                                            mode='reflect')
