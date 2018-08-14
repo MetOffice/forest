@@ -582,27 +582,17 @@ class ForestPlot(object):
                                     ForestPlot.TITLE_TEXT_WIDTH))
 
     def get_x_y_dw_dh(self):
-        image_source = 'mappable'
-        if image_source == 'mappable':
-            # Use mappable.get_extent() to define image_rgba()
-            if hasattr(self.main_plot, 'get_extent'):
-                left, right, bottom, top = self.main_plot.get_extent()
-            else:
-                left, right = self.coords_long.min(), self.coords_long.max()
-                bottom, top = self.coords_lat.min(), self.coords_lat.max()
-            x = left
-            y = bottom
-            dw = right - left
-            dh = top - bottom
+        """x, y, dw, dh defined by pcolormesh or cube coordinates"""
+        # Use mappable.get_extent() to define image_rgba()
+        if hasattr(self.main_plot, 'get_extent'):
+            left, right, bottom, top = self.main_plot.get_extent()
         else:
-            # Use current region settings to define image_rgba()
-            cur_region = self.region_dict[self.current_region]
-            latitude_range = cur_region[1] - cur_region[0]
-            longitude_range = cur_region[3] - cur_region[2]
-            x = cur_region[2]
-            y = cur_region[0]
-            dw = longitude_range
-            dh = latitude_range
+            left, right = self.coords_long.min(), self.coords_long.max()
+            bottom, top = self.coords_lat.min(), self.coords_lat.max()
+        x = left
+        y = bottom
+        dw = right - left
+        dh = top - bottom
         return x, y, dw, dh
 
     def create_colorbar_widget(self):
