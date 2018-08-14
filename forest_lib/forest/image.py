@@ -48,15 +48,14 @@ with open(JS_FILE, "r") as stream:
 
 class CachedRGBA(object):
     """Cache alpha/shapes to maintain consistency"""
-
     def __init__(self, source):
         self._callbacks = []
         self.source = source
-        if "_alpha" not in source.data:
-            source.data["_alpha"] = get_alpha(source)
+        if "original_alpha" not in source.data:
+            source.data["original_alpha"] = get_alpha(source)
         self.shapes = get_shapes(self.source)
-        if "_shape" not in source.data:
-            source.data["_shape"] = self.shapes
+        if "shape" not in source.data:
+            source.data["shape"] = self.shapes
         self.source.on_change("data", self.on_source_change)
 
     def on_shape_change(self, callback):
@@ -67,8 +66,8 @@ class CachedRGBA(object):
         if tuple(self.shapes) != tuple(shapes):
             # Note: order important to prevent infinite recursion
             self.shapes = shapes
-            self.source.data["_shape"] = get_shapes(self.source)
-            self.source.data["_alpha"] = get_alpha(self.source)
+            self.source.data["shape"] = get_shapes(self.source)
+            self.source.data["original_alpha"] = get_alpha(self.source)
             for callback in self._callbacks:
                 callback()
 

@@ -204,13 +204,15 @@ class ForestPlot(object):
         x, y, dw, dh, image = self.render_image(self.current_config,
                                                 self.current_var,
                                                 self.current_time)
-        self.bokeh_img_ds.data.update({
+        self.bokeh_img_ds.data = {
             'image': [image],
             'x': [x],
             'y': [y],
             'dw': [dw],
-            'dh': [dh]
-        })
+            'dh': [dh],
+            'shape': [image.shape],
+            'original_alpha': [np.copy(image[:, :, -1])],
+        }
         self.bokeh_figure.title.text = self.get_title()
 
     @lru_cache(maxsize=32)
