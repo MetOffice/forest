@@ -186,9 +186,7 @@ class ForestPlot(object):
                                                  y_range=y_range,
                                                  tools=','.join(BOKEH_TOOLS_LIST),
                                                  toolbar_location='above')
-
         self.bokeh_figure = bokeh_figure
-        # IDEA:
         self.bokeh_image = self.bokeh_figure.image_rgba(image=[],
                                                         x=[],
                                                         y=[],
@@ -220,7 +218,6 @@ class ForestPlot(object):
         x, y, dw, dh, image = self.render_image(self.current_config,
                                                 self.current_var,
                                                 self.current_time)
-
         self.bokeh_img_ds.data.update({
             'image': [image],
             'x': [x],
@@ -619,18 +616,16 @@ class ForestPlot(object):
     def set_data_time(self, new_time):
         print('selected new time {0}'.format(new_time))
         self.current_time = new_time
-        if self.visible:
-            self.render()
-            if self.colorbar_widget:
-                self.update_colorbar_widget()
+        self.render()
+        if self.colorbar_widget:
+            self.update_colorbar_widget()
 
     def set_var(self, new_var):
         print('selected new var {0}'.format(new_var))
         self.current_var = new_var
-        if self.visible:
-            self.render()
-            if self.colorbar_widget:
-                self.update_colorbar_widget()
+        self.render()
+        if self.colorbar_widget:
+            self.update_colorbar_widget()
 
     def set_region(self, region):
         """Adjust bokeh figure extents"""
@@ -649,14 +644,12 @@ class ForestPlot(object):
         self.current_config = new_config
         self.plot_description = self.dataset[
             self.current_config]['data_type_name']
-        if self.visible:
-            self.render()
+        self.render()
 
     def set_dataset(self, new_dataset, new_model_run_time):
         self.dataset = new_dataset
         self.model_run_time = new_model_run_time
-        if self.visible:
-            self.render()
+        self.render()
 
     def link_axes_to_other_plot(self, other_plot):
         try:
