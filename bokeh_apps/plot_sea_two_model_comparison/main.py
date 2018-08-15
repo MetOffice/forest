@@ -13,8 +13,6 @@ import forest.data
 import forest.aws
 
 
-
-@forest.util.timer
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
 
@@ -45,7 +43,7 @@ def main(bokeh_id):
                                          'config_id': forest.data.RA1T_CONF_ID},
         forest.data.KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T',
                                          'config_id': forest.data.RA1T_CONF_ID},
-        }
+    }
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
@@ -75,24 +73,23 @@ def main(bokeh_id):
          }
 
     for var1 in forest.data.PRECIP_ACCUM_VARS:
-        plot_type_time_lookups.update({var1:var1})
+        plot_type_time_lookups.update({var1: var1})
 
-
-    #Create regions
+    # Create regions
     region_dict = forest.util.SEA_REGION_DICT
 
     # initial selected point is approximately Jakarta, Indonesia
-    selected_point = (-6,103)
+    selected_point = (-6, 103)
 
-    #Setup and display plots
+    # Setup and display plots
     plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
 
     init_data_time_index = 1
     init_var = 'precipitation'
 
-    init_region = 'se_asia'
-    init_model_left = forest.data.N1280_GA6_KEY # KM4P4_RA1T_KEY
-    init_model_right = forest.data.KM4P4_RA1T_KEY # N1280_GA6_KEY
+    south_east_asia_region = 'se_asia'
+    init_model_left = forest.data.N1280_GA6_KEY  # KM4P4_RA1T_KEY
+    init_model_right = forest.data.KM4P4_RA1T_KEY  # N1280_GA6_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
     available_times = forest.data.get_available_times(datasets[init_fcast_time],
@@ -100,10 +97,20 @@ def main(bokeh_id):
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
-    user_interface = "single-plot"
-    if user_interface == "single-plot":
-        bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
-                                             active_inspect=None)
+    bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
+                                         active_inspect=None)
+    forest.plot.add_x_axes(bokeh_figure, "above")
+    forest.plot.add_y_axes(bokeh_figure, "right")
+
+    # Add cartopy coastline to bokeh figure
+    region = region_dict[south_east_asia_region]
+    y_start = region[0]
+    y_end = region[1]
+    x_start = region[2]
+    x_end = region[3]
+    extent = (x_start, x_end, y_start, y_end)
+    forest.plot.add_coastlines(bokeh_figure, extent)
+    forest.plot.add_borders(bokeh_figure, extent)
 
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
@@ -112,16 +119,12 @@ def main(bokeh_id):
                                            'plot_left' + bokeh_id,
                                            init_var,
                                            init_model_left,
-                                           init_region,
+                                           south_east_asia_region,
                                            region_dict,
-                                           forest.data.UNIT_DICT,
-                                           forest.data.UNIT_DICT_DISPLAY,
                                            app_path,
                                            init_data_time,
                                            bokeh_figure=bokeh_figure)
-
-    bokeh_figure_left = plot_obj_left.create_plot()
-    stats_left = plot_obj_left.create_stats_widget()
+    plot_obj_left.render()
 
     plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
                                             init_fcast_time,
@@ -129,50 +132,27 @@ def main(bokeh_id):
                                             'plot_right' + bokeh_id,
                                             init_var,
                                             init_model_right,
-                                            init_region,
+                                            south_east_asia_region,
                                             region_dict,
-                                            forest.data.UNIT_DICT,
-                                            forest.data.UNIT_DICT_DISPLAY,
                                             app_path,
                                             init_data_time,
-                                            bokeh_figure=bokeh_figure)
-
-    bokeh_figure_right = plot_obj_right.create_plot()
-    stats_right = plot_obj_right.create_stats_widget()
-
-
+                                            bokeh_figure=bokeh_figure,
+                                            visible=False)
 
     colorbar_widget = plot_obj_left.create_colorbar_widget()
 
-    plot_obj_right.link_axes_to_other_plot(plot_obj_left)
-
-
-    plot_obj_ts = forest.plot.ForestTimeSeries(datasets[init_fcast_time],
-                                               init_fcast_time,
-                                               selected_point,
-                                               init_var)
-
-    bokeh_image_ts = plot_obj_ts.create_plot()
-
-
     # Set up GUI controller class
-    if user_interface == "double-plot":
-        bokeh_figures = [bokeh_figure_left, bokeh_figure_right]
-    else:
-        bokeh_figures = [bokeh_figure]
     control1 = forest.control.ForestController(init_var,
                                                init_data_time_index,
                                                datasets,
                                                init_fcast_time,
                                                plot_type_time_lookups,
                                                [plot_obj_left, plot_obj_right],
-                                               bokeh_figures,
+                                               [bokeh_figure],
                                                colorbar_widget,
-                                               [stats_left, stats_right],
                                                region_dict,
                                                user_feedback_directory,
-                                               bokeh_id,
-                                               )
+                                               bokeh_id)
 
     # Attach bokeh layout to current document
     root = control1.main_layout
@@ -187,5 +167,5 @@ def main(bokeh_id):
     bokeh.plotting.curdoc().title = 'Two model comparison'
 
 
-if (__name__ == '__main__') or (__name__.startswith("bk_script")):
+if __name__ == '__main__' or __name__.startswith("bk"):
     main(__name__)

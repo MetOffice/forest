@@ -24,8 +24,8 @@ describe("image.js", function() {
                              1, 1, 1, 255,
                              1, 1, 1, 255,
                              1, 1, 1, 255]],
-                    _alpha: [[255, 255, 255, 255]],
-                    _shape: [shape]
+                    original_alpha: [[255, 255, 255, 255]],
+                    shape: [shape]
                 },
                 change: {
                     emit: function() {}
@@ -61,8 +61,8 @@ describe("image.js", function() {
                     y: [0],
                     dw: [1],
                     dh: [1],
-                    _alpha: [[]],
-                    _shape: [[0, 0]]
+                    original_alpha: [[]],
+                    shape: [[0, 0]]
                 }
             };
             let left_images = empty_image;

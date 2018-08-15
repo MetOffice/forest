@@ -168,8 +168,6 @@ def main(bokeh_id):
                                            'simim',
                                            init_region,
                                            region_dict,
-                                           simim_sat_data.UNIT_DICT,
-                                           simim_sat_data.UNIT_DICT,
                                            app_path,
                                            init_time,
                                            )
@@ -187,8 +185,6 @@ def main(bokeh_id):
                                             simim_sat_data.HIMAWARI8_KEY,
                                             init_region,
                                             region_dict,
-                                            simim_sat_data.UNIT_DICT,
-                                            simim_sat_data.UNIT_DICT,
                                             app_path,
                                             init_time,
                                             )

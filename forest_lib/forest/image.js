@@ -12,18 +12,27 @@
 //      geometry.x - mouse x position relative to figure
 //
 let reveal_image = function(side,
-                            source,
-                            mouse_x,
-                            previous_mouse_x,
-                            use_previous_mouse_x) {
+    source,
+    mouse_x,
+    previous_mouse_x,
+    use_previous_mouse_x) {
     // RGBA image extents in mouse position space
+    if (source.data["x"].length === 0) {
+        return
+    }
     let x = source.data["x"][0];
     let y = source.data["y"][0];
     let dw = source.data["dw"][0];
     let dh = source.data["dh"][0];
-    let original_alpha = source.data["_alpha"][0];
-    let ni = source.data["_shape"][0][0];
-    let nj = source.data["_shape"][0][1];
+    if (source.data["original_alpha"].length === 0) {
+        return
+    }
+    if (source.data["shape"].length === 0) {
+        return
+    }
+    let original_alpha = source.data["original_alpha"][0];
+    let ni = source.data["shape"][0][0];
+    let nj = source.data["shape"][0][1];
 
     // Useful debug information
     let mode = "silent";
@@ -60,7 +69,7 @@ let reveal_image = function(side,
     let dy = dw / nj;
     let skip = 0;
 
-    for (let j=0; j<nj; j++) {
+    for (let j = 0; j < nj; j++) {
         pixel_x = x + (j * dy);
 
         // Optimised selection of columns between mouse events
@@ -74,7 +83,7 @@ let reveal_image = function(side,
         }
 
         // Ordinary loop logic
-        for (let i=0; i<ni; i++) {
+        for (let i = 0; i < ni; i++) {
             alpha_index = (nj * i) + j;
             original_alpha_value = original_alpha[alpha_index];
             if (original_alpha_value == 0) {
@@ -82,11 +91,11 @@ let reveal_image = function(side,
             }
             image_alpha_index = (4 * alpha_index) + 3;
             if (visible_pixel(pixel_x, mouse_x, side)) {
-               alpha = original_alpha_value;
+                alpha = original_alpha_value;
             } else {
-               alpha = 0;
+                alpha = 0;
             }
-           source.data["image"][0][image_alpha_index] = alpha;
+            source.data["image"][0][image_alpha_index] = alpha;
         }
     }
     if (skip !== nj) {
@@ -105,10 +114,10 @@ let visible_pixel = function(pixel_x, mouse_x, show_side) {
 
 // CustomJS callback main program
 let main = function(cb_data,
-                    left_images,
-                    right_images,
-                    shared,
-                    span) {
+    left_images,
+    right_images,
+    shared,
+    span) {
     // Gather data from cb_data and args
     let mouse_x = cb_data.geometry.x;
     let previous_mouse_x = shared.data.previous_mouse_x[0];
@@ -119,15 +128,15 @@ let main = function(cb_data,
 
     // Update image alpha values
     reveal_image("left",
-                 left_images,
-                 mouse_x,
-                 previous_mouse_x,
-                 use_previous_mouse_x);
+        left_images,
+        mouse_x,
+        previous_mouse_x,
+        use_previous_mouse_x);
     reveal_image("right",
-                 right_images,
-                 mouse_x,
-                 previous_mouse_x,
-                 use_previous_mouse_x);
+        right_images,
+        mouse_x,
+        previous_mouse_x,
+        use_previous_mouse_x);
 
     // Update shared data
     shared.data.previous_mouse_x[0] = mouse_x;
@@ -137,10 +146,10 @@ let main = function(cb_data,
 if (typeof module === 'undefined') {
     // Bokeh call back usage
     main(cb_data,
-         left_images,
-         right_images,
-         shared,
-         span);
+        left_images,
+        right_images,
+        shared,
+        span);
 } else {
     // NPM test usage
     module.exports = {

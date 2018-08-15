@@ -16,10 +16,32 @@ import bokeh.plotting
 
 import forest.util
 import forest.data
+import forest.geography
 
+import numpy as np
+import scipy.ndimage
 import iris.analysis
+import skimage.transform
+from functools import lru_cache
 
-BOKEH_TOOLS_LIST = ['pan','wheel_zoom','reset','save','box_zoom','hover']
+
+def rgba_from_mappable(mappable, shape2d):
+    """Convert matplotlib scalar mappable to RGBA
+
+    .. note:: 2D shape needs to be provided to reconstruct
+              image array
+
+    :param mappable: matplotlib ScalarMappable instance
+    :param shape2d: tuple describing 2D shape of image
+    :returns: array np.uint8 suitable for use with image_rgba()
+    """
+    ni, nj = shape2d
+    return mappable.to_rgba(mappable.get_array(),
+                            bytes=True).reshape((ni, nj, 4))
+
+
+BOKEH_TOOLS_LIST = ['pan', 'wheel_zoom', 'reset', 'save', 'box_zoom', 'hover']
+
 
 class MissingDataError(Exception):
     def __init__(self, config, var, time):
@@ -28,117 +50,101 @@ class MissingDataError(Exception):
         self.time = time
 
 
-class ForestPlot(object):
+def add_x_axes(figure, position='above'):
+    """Extra x-axis above figure"""
+    figure.extra_x_ranges[position] = figure.x_range
+    axis = bokeh.models.LinearAxis(x_range_name=position)
+    axis.major_label_text_font_size = '0pt'
+    figure.add_layout(axis, position)
 
+
+def add_y_axes(figure, position="right"):
+    """Extra y-axis right of figure"""
+    figure.extra_y_ranges[position] = figure.y_range
+    axis = bokeh.models.LinearAxis(y_range_name=position)
+    axis.major_label_text_font_size = '0pt'
+    figure.add_layout(axis, position)
+
+
+def add_coastlines(bokeh_figure, extent):
+    """Add coastlines to bokeh figure"""
+    xs, ys = forest.geography.coastlines(extent)
+    bokeh_figure.multi_line(xs, ys, color='black')
+
+
+def add_borders(bokeh_figure, extent):
+    """Add borders to bokeh figure"""
+    xs, ys = forest.geography.borders(extent)
+    bokeh_figure.multi_line(xs, ys, color='grey')
+
+
+@forest.util.timer
+def smooth_image(array, output_shape, use_skimage=True):
+    """Smooth high resolution imagery"""
+    if use_skimage:
+        resized = skimage.transform.resize(array,
+                                           output_shape,
+                                           mode='reflect')
+        resized = 255 * resized
+        return np.ascontiguousarray(resized, dtype=np.uint8)
+    else:
+        # My own implementation of skimage.transform.resize
+        max_ni, max_nj = output_shape
+        ni, nj, _ = array.shape
+        # scipy docs: int(round(factor * n)) = max_n
+        factor = max_ni / ni, max_nj / nj
+        output_array = np.zeros((max_ni, max_nj, 4), dtype=np.uint8)
+        for i in range(4):
+            output_array[:, :, i] = scipy.ndimage.zoom(array[:, :, i], factor)
+        return output_array
+
+
+class ForestPlot(object):
     '''
     Main plot class. The plotting function is create_plot().
     '''
     TITLE_TEXT_WIDTH = 40
     PRESSURE_LEVELS_HPA = range(980, 1030, 2)
 
-    MODE_PLOT = 'plot'
-    MODE_LOADING = 'loading'
-    MODE_MISSING_DATA = 'missing_data'
-
     def __init__(self,
                  dataset,
                  model_run_time,
-                 po1,
-                 figname,
+                 plot_options,
+                 figure_name,
                  plot_var,
                  conf1,
                  reg1,
                  rd1,
-                 unit_dict,
-                 unit_dict_display,
                  app_path,
                  init_time,
-                 bokeh_figure=None):
-
+                 bokeh_figure=None,
+                 visible=True):
         '''Initialisation function for ForestPlot class
         '''
-
+        self.current_figure = matplotlib.pyplot.figure(figure_name)
+        self.current_axes = self.current_figure.add_subplot(111)
         self.region_dict = rd1
         self.main_plot = None
         self.current_time = init_time
-        self.plot_options = po1
+        self.plot_options = plot_options
         self.dataset = dataset
         self.model_run_time = model_run_time
-        self.figure_name = figname
         self.current_var = plot_var
-        self._set_config_value(conf1)
+        self.current_config = conf1
         self.current_region = reg1
         self.app_path = app_path
         self.data_bounds = self.region_dict[self.current_region]
-        self.selected_point = None
-        self.show_colorbar = False
-        self.show_axis_ticks = False
-        self.use_mpl_title = False
-        self.setup_plot_funcs()
-        self.setup_pressure_labels()
-        self.current_title = ''
-        self.stats_string = ''
-        self.colorbar_link = plot_var + '_colorbar.png'
-        self.bokeh_figure = bokeh_figure
-        self.bokeh_image = None
-        self.bokeh_img_ds = None
-        self.async = False
-        self.unit_dict = unit_dict
-        self.unit_dict_display = unit_dict_display
-        self.stats_widget = None
-        self.colorbar_widget = None
-
-        self.current_figsize = (8.0, 6.0)
-        self.bokeh_fig_size = (800,600)
-        self.coast_res = '50m'
-        self.display_mode = ForestPlot.MODE_LOADING
-
-
-
-    def _set_config_value(self, new_config):
-
-        '''
-
-        '''
-
-        self.current_config = new_config
-        self.plot_description = self.dataset[
-            self.current_config]['data_type_name']
-
-    def setup_pressure_labels(self):
-
-        '''Create dict of pressure levels, to be used labelling MSLP contour
-        plots.
-
-        '''
-
-        self.mslp_contour_label_dict = {}
-        for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
-            self.mslp_contour_label_dict[
-                pressure1] = '{0:d}hPa'.format(int(pressure1))
-
-    def setup_plot_funcs(self):
-
-        '''Set up dictionary of plot functions. This is used by the main
-        create_plot() function to call the plotting function relevant to the
-        specific variable being plotted. There is also a second dictionary
-        which is by the update_plot() function, which does the minimum amount
-        of work to update the plot, and is used for some option changes,
-        mainly a change in the forecast time selected.
-
-        '''
-
-        self.plot_funcs = {'precipitation': self.plot_precip,
-                           'accum_precip_3hr': self.plot_precip,
-                           'accum_precip_6hr': self.plot_precip,
-                           'accum_precip_12hr': self.plot_precip,
-                           'accum_precip_24hr': self.plot_precip,
+        self.plot_funcs = {'precipitation': self.plot_pcolormesh,
+                           'accum_precip_3hr': self.plot_pcolormesh,
+                           'accum_precip_6hr': self.plot_pcolormesh,
+                           'accum_precip_12hr': self.plot_pcolormesh,
+                           'accum_precip_24hr': self.plot_pcolormesh,
                            'wind_vectors': self.plot_wind_vectors,
                            'wind_mslp': self.plot_wind_mslp,
                            'wind_streams': self.plot_wind_streams,
-                           'mslp': self.plot_mslp,
-                           'air_temperature': self.plot_air_temp,
-                           'cloud_fraction': self.plot_cloud,
+                           'mslp': self.plot_pcolormesh,
+                           'air_temperature': self.plot_pcolormesh,
+                           'cloud_fraction': self.plot_pcolormesh,
                            'himawari-8': self.plot_him8,
                            'simim': self.plot_simim,
                            'W': self.plot_sat_simim_imagery,
@@ -146,121 +152,168 @@ class ForestPlot(object):
                            'V': self.plot_sat_simim_imagery,
                            'blank': self.create_blank,
                            }
+        self.mslp_contour_label_dict = {}
+        for pressure1 in ForestPlot.PRESSURE_LEVELS_HPA:
+            self.mslp_contour_label_dict[
+                pressure1] = '{0:d}hPa'.format(int(pressure1))
+        self.colorbar_link = plot_var + '_colorbar.png'
+        if bokeh_figure is None:
+            cur_region = self.region_dict[self.current_region]
+            assert len(cur_region) == 4, "must provide y_start, y_end, x_start, x_end"
+            y_start = cur_region[0]
+            y_end = cur_region[1]
+            x_start = cur_region[2]
+            x_end = cur_region[3]
+            x_range = bokeh.models.Range1d(x_start, x_end, bounds=(x_start, x_end))
+            y_range = bokeh.models.Range1d(y_start, y_end, bounds=(y_start, y_end))
+            bokeh_figure = bokeh.plotting.figure(plot_width=800,
+                                                 plot_height=600,
+                                                 x_range=x_range,
+                                                 y_range=y_range,
+                                                 tools=','.join(BOKEH_TOOLS_LIST),
+                                                 toolbar_location='above')
+        self.bokeh_figure = bokeh_figure
+        self.bokeh_image = self.bokeh_figure.image_rgba(image=[],
+                                                        x=[],
+                                                        y=[],
+                                                        dw=[],
+                                                        dh=[],
+                                                        level="underlay")
+        self.bokeh_img_ds = self.bokeh_image.data_source
 
-        self.update_funcs = {'precipitation': self.update_precip,
-                             'accum_precip_3hr': self.update_precip,
-                             'accum_precip_6hr': self.update_precip,
-                             'accum_precip_12hr': self.update_precip,
-                             'accum_precip_24hr': self.update_precip,
-                             'wind_vectors': self.update_wind_vectors,
-                             'wind_mslp': self.update_wind_mslp,
-                             'wind_streams': self.update_wind_streams,
-                             'mslp': self.update_mslp,
-                             'air_temperature': self.update_air_temp,
-                             'cloud_fraction': self.update_cloud,
-                             'himawari-8': self.update_him8,
-                             'simim': self.update_simim,
-                             'W': self.update_sat_simim_imagery,
-                             'I': self.update_sat_simim_imagery,
-                             'V': self.update_sat_simim_imagery,
-                             'blank': self.create_blank,
-                             }
-        self.stats_data_var = dict([(k1,k1) for k1 in self.plot_funcs.keys()])
-        self.stats_data_var['wind_vectors'] = forest.data.WIND_SPEED_NAME
-        self.stats_data_var['wind_mslp'] = forest.data.WIND_SPEED_NAME
-        self.stats_data_var['wind_streams'] = forest.data.WIND_SPEED_NAME
+        self.colorbar_widget = None
+        self._visible = visible
+        self._shape2d = None
+
+    @property
+    def visible(self):
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        if getattr(self, 'bokeh_image', None) is not None:
+            self.bokeh_image.glyph.global_alpha = 1 if value else 0
+        self._visible = value
+        self.render()
+
+    @forest.util.timer
+    def render(self):
+        """Plot RGBA images"""
+        if not self.visible:
+            return
+        x, y, dw, dh, image = self.render_image(self.current_config,
+                                                self.current_var,
+                                                self.current_time)
+        self.bokeh_img_ds.data = {
+            'image': [image],
+            'x': [x],
+            'y': [y],
+            'dw': [dw],
+            'dh': [dh],
+            'shape': [image.shape],
+            'original_alpha': [np.copy(image[:, :, -1])],
+        }
+        self.bokeh_figure.title.text = self.get_title()
+
+    @lru_cache(maxsize=32)
+    def render_image(self,
+                     current_config,
+                     current_var,
+                     current_time):
+        """Plot RGBA images"""
+        if self._plot_uses_figure(current_var):
+            # Rasterize Figure instance
+            self.current_axes.cla()
+            self.plot_funcs[current_var]()
+            y_start, y_end = self.coords_lat.min(), self.coords_lat.max()
+            x_start, x_end = self.coords_lon.min(), self.coords_lon.max()
+            current_figsize = (8.0, 6.0)
+            aspect_ratio = (y_end - y_start) / (x_end - x_start)
+            self.current_figure.set_figwidth(current_figsize[0])
+            self.current_figure.set_figheight(
+                round(self.current_figure.get_figwidth() * aspect_ratio, 2)
+            )
+            self.current_axes.set_position([0, 0, 1, 1])
+            self.current_axes.set_xlim((x_start, x_end))
+            self.current_axes.set_ylim((y_start, y_end))
+            self.current_axes.xaxis.set_visible(False)
+            self.current_axes.yaxis.set_visible(False)
+            self.current_figure.canvas.draw()
+            image = forest.util.get_image_array_from_figure(self.current_figure)
+        else:
+            # Rasterize matplotlib mappable
+            self.plot_funcs[current_var]()
+            # HACK: self._shape2d is populated by self.get_data()
+            ni, nj = self._shape2d
+            shape = (ni - 1, nj - 1)
+            image = rgba_from_mappable(self.main_plot, shape)
+
+        # Smooth high resolution imagery
+        max_ni, max_nj = 800, 600
+        ni, nj, _ = image.shape
+        if (ni > max_ni) or (nj > max_nj):
+            image = smooth_image(image, (max_ni, max_nj))
+
+        # Plot bokeh image rgba
+        x, y, dw, dh = self.get_x_y_dw_dh()
+        return x, y, dw, dh, image
+
+    @staticmethod
+    def _plot_uses_figure(variable):
+        """Check variable requires Figure to be rasterized"""
+        return variable.lower() not in ['precipitation',
+                                        'accum_precip_3hr',
+                                        'accum_precip_6hr',
+                                        'accum_precip_12hr',
+                                        'accum_precip_24hr',
+                                        'mslp',
+                                        'air_temperature',
+                                        'cloud_fraction']
 
     def update_coords(self, data_cube):
-
         '''Update the latitude and longitude coordinates for the data.
-
         '''
-
         self.coords_lat = data_cube.coords('latitude')[0].points
-        self.coords_long = data_cube.coords('longitude')[0].points
+        self.coords_lon = data_cube.coords('longitude')[0].points
 
     def create_blank(self):
-
-        '''
-
-        '''
-
         self.main_plot = None
-        self.current_title = 'Blank plot'
 
-    def get_data(self, var_name=None):
-        config_data = self.dataset[self.current_config]['data']
-        if var_name:
-            data_cube = config_data.get_data(var_name=var_name,
-                                 selected_time = self.current_time)
-        else:
-            data_cube = config_data.get_data(var_name=self.current_var,
-                                             selected_time=self.current_time)
+    @forest.util.timer
+    def get_data(self, var_name, selected_time=None, config_name=None):
+        if selected_time is None:
+            selected_time = self.current_time
+        if config_name is None:
+            config_name = self.current_config
+        config_data = self.dataset[config_name]['data']
+        data_cube = config_data.get_data(var_name=var_name,
+                                         selected_time=selected_time)
+        # HACK: cache image array shape after get_data()
+        self._shape2d = data_cube.data.shape
         return data_cube
 
-    def update_precip(self):
-
-        '''Update function for precipitation plots, called by update_plot() when
-        precipitation is the selected plot type.
-
-        '''
-        data_cube = self.get_data()
-        array_for_update = data_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(data_cube)
-        self.update_stats(data_cube)
-
-    def plot_precip(self):
-
-        '''Function for creating precipitation plots, called by create_plot when
-        precipitation is the selected plot type.
-
-        '''
-        data_cube = self.get_data()
-        self.update_coords(data_cube)
-        self.current_axes.coastlines(resolution=self.coast_res)
+    @forest.util.timer
+    def plot_pcolormesh(self):
+        cube = self.get_data(self.current_var)
+        cmap = self.plot_options[self.current_var]['cmap']
+        norm = self.plot_options[self.current_var]['norm']
+        self.update_coords(cube)
         self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
+            self.current_axes.pcolormesh(self.coords_lon,
                                          self.coords_lat,
-                                         data_cube.data,
-                                         cmap=self.plot_options[
-                                             self.current_var]['cmap'],
-                                         norm=self.plot_options[
-                                             self.current_var]['norm'],
-                                         edgecolor='face',
-                                         transform=cartopy.crs.PlateCarree())
-        self.update_title(data_cube)
-        self.update_stats(data_cube)
-
-    def update_wind_vectors(self):
-
-        '''Update function for wind vector plots, called by update_plot() when
-        wind vectors is the selected plot type.
-
-        '''
-
-        wind_speed_cube = self.get_data(forest.data.WIND_SPEED_NAME)
-
-        array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
-        wv_u_data = self.get_data(var_name='wv_U').data
-        wv_v_data = self.get_data(var_name='wv_V').data
-        self.quiver_plot.set_UVC(wv_u_data,
-                                 wv_v_data)
+                                         cube.data,
+                                         cmap=cmap,
+                                         norm=norm,
+                                         edgecolor='face')
 
     def plot_wind_vectors(self):
-
         '''Function for creating wind vector plots, called by create_plot when
         wind vectors is the selected plot type.
-
         '''
-
         wind_speed_cube = self.get_data(forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
+            self.current_axes.pcolormesh(self.coords_lon,
                                          self.coords_lat,
                                          wind_speed_cube.data,
                                          cmap=self.plot_options[
@@ -268,15 +321,6 @@ class ForestPlot(object):
                                          norm=self.plot_options[
                                              self.current_var]['norm']
                                          )
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
-
         self.quiver_plot = \
             self.current_axes.quiver(
                 self.get_data('wv_X').data,
@@ -291,47 +335,16 @@ class ForestPlot(object):
                                          r'$2 \frac{m}{s}$',
                                          labelpos='E',
                                          coordinates='figure')
-        self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
-
-    def update_wind_mslp(self):
-
-        '''Update function for wind speed with MSLP contours plots, called by
-        update_plot() when wind speed with MSLP is the selected plot type.
-
-        '''
-        wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
-        array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        # to update contours, remove old elements and generate new contours
-        for c1 in self.mslp_contour.collections:
-            self.current_axes.collections.remove(c1)
-
-        ap_cube = self.get_data(var_name=forest.data.MSLP_NAME)
-        self.mslp_contour = \
-            self.current_axes.contour(self.long_grid_mslp,
-                                      self.lat_grid_mslp,
-                                      ap_cube.data,
-                                      levels=ForestPlot.PRESSURE_LEVELS_HPA,
-                                      colors='k')
-        self.current_axes.clabel(self.mslp_contour,
-                                 inline=False,
-                                 fmt=self.mslp_contour_label_dict)
-
-        self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
 
     def plot_wind_mslp(self):
-
         '''Function for creating wind speed with MSLP contour plots, called by
         create_plot when wind speed with MSLP contours is the selected plot
         type.
-
         '''
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
+            self.current_axes.pcolormesh(self.coords_lon,
                                          self.coords_lat,
                                          wind_speed_cube.data,
                                          cmap=self.plot_options[
@@ -355,60 +368,14 @@ class ForestPlot(object):
                                  inline=False,
                                  fmt=self.mslp_contour_label_dict)
 
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-
-        self.current_axes.add_feature(coastline_50m)
-        self.update_title(wind_speed_cube)
-
-    def update_wind_streams(self):
-
-        '''Update function for wind streamline plots, called by update_plot()
-        when wind streamlines is the selected plot type.
-
-        '''
-
-        wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
-        array_for_update = wind_speed_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
-
-        # remove old plot elements if they are still present
-        self.current_axes.collections.remove(self.wind_stream_plot.lines)
-        for p1 in self.wind_stream_patches:
-            self.current_axes.patches.remove(p1)
-
-        pl1 = list(self.current_axes.patches)
-        self.wind_stream_plot = \
-            self.current_axes.streamplot(
-                self.get_data(var_name='wv_X_grid').data,
-                self.get_data(var_name='wv_Y_grid').data,
-                self.get_data(var_name='wv_U').data,
-                self.get_data(var_name='wv_V').data,
-                color='k',
-                density=[0.5, 1.0])
-        # we need to manually keep track of arrows so they can be removed when
-        # the plot is updated
-        pl2 = list(self.current_axes.patches)
-        self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
-
-        self.update_stats(wind_speed_cube)
-
     def plot_wind_streams(self):
-
         '''Function for creating wind streamline plots, called by create_plot when
         wind streamlines is the selected plot type.
-
         '''
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
+            self.current_axes.pcolormesh(self.coords_lon,
                                          self.coords_lat,
                                          wind_speed_cube.data,
                                          cmap=self.plot_options[
@@ -432,166 +399,10 @@ class ForestPlot(object):
         pl2 = list(self.current_axes.patches)
         self.wind_stream_patches = [p1 for p1 in pl2 if p1 not in pl1]
 
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
-        self.update_title(wind_speed_cube)
-        self.update_stats(wind_speed_cube)
-
-
-    def update_air_temp(self):
-
-        '''Update function for air temperature plots, called by update_plot() when
-        air temperature is the selected plot type.
-
-        '''
-
-        at_cube = self.get_data()
-        array_for_update = at_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(at_cube)
-        self.update_stats(at_cube)
-
-    def plot_air_temp(self):
-
-        '''Function for creating air temperature plots, called by create_plot when
-        air temperature is the selected plot type.
-
-        '''
-
-        at_cube = self.get_data()
-        self.update_coords(at_cube)
-        self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
-                                         self.coords_lat,
-                                         at_cube.data,
-                                         cmap=self.plot_options[
-                                             self.current_var]['cmap'],
-                                         norm=self.plot_options[
-                                             self.current_var]['norm']
-                                         )
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
-        self.update_title(at_cube)
-        self.update_stats(at_cube)
-
-    def update_mslp(self):
-
-        '''Update function for MSLP plots, called by update_plot() when
-        MSLP is the selected plot type.
-
-        '''
-        ap_cube = self.get_data()
-        array_for_update = ap_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(ap_cube)
-        self.update_stats(ap_cube)
-
-    def plot_mslp(self):
-
-        '''Function for creating MSLP plots, called by create_plot when
-        MSLP is the selected plot type.
-
-        '''
-
-        ap_cube = self.get_data()
-        self.update_coords(ap_cube)
-        self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
-                                         self.coords_lat,
-                                         ap_cube.data,
-                                         cmap=self.plot_options[
-                                             self.current_var]['cmap'],
-                                         norm=self.plot_options[
-                                             self.current_var]['norm']
-                                         )
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
-        self.update_title(ap_cube)
-        self.update_stats(ap_cube)
-
-    def update_cloud(self):
-
-        '''Update function for cloud fraction plots, called by update_plot() when
-        cloud fraction is the selected plot type.
-
-        '''
-
-        cloud_cube = self.get_data()
-        array_for_update = cloud_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(cloud_cube)
-        self.update_stats(cloud_cube)
-
-    def plot_cloud(self):
-
-        '''Function for creating cloud fraction plots, called by create_plot when
-        cloud fraction is the selected plot type.
-
-        '''
-
-        cloud_cube = self.get_data()
-        self.update_coords(cloud_cube)
-        self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
-                                         self.coords_lat,
-                                         cloud_cube.data,
-                                         cmap=self.plot_options[
-                                             self.current_var]['cmap'],
-                                         norm=self.plot_options[
-                                             self.current_var]['norm']
-                                         )
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='0.5',
-                                                            facecolor='none')
-        self.current_axes.add_feature(coastline_50m)
-        self.update_title(cloud_cube)
-        self.update_stats(cloud_cube)
-
-    def update_him8(self):
-
-        '''Update function for himawari-8 image plots, called by update_plot()
-        when cloud fraction is the selected plot type.
-
-        '''
-        him8_image = self.dataset[
-            'himawari-8']['data'].get_data(self.current_var, selected_time=self.current_time)
-        self.current_axes.images.remove(self.main_plot)
-        self.main_plot = self.current_axes.imshow(him8_image,
-                                                  extent=(self.data_bounds[2],
-                                                          self.data_bounds[3],
-                                                          self.data_bounds[0],
-                                                          self.data_bounds[1]),
-                                                  origin='upper')
-        self.update_title(None)
-
     def plot_him8(self):
-
         '''Function for creating himawari-8 image plots, called by create_plot()
         when cloud fraction is the selected plot type.
-
         '''
-
         him8_data = self.dataset['himawari-8']['data']
         him8_image = him8_data.get_data(self.current_var,
                                         selected_time=self.current_time)
@@ -601,43 +412,15 @@ class ForestPlot(object):
                                                           self.data_bounds[0],
                                                           self.data_bounds[1]),
                                                   origin='upper')
-
-        # Add coastlines to the map created by contourf.
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='g',
-                                                            alpha=0.5,
-                                                            facecolor='none')
-
-        self.current_axes.add_feature(coastline_50m)
         self.current_axes.set_extent((self.data_bounds[2],
                                       self.data_bounds[3],
                                       self.data_bounds[0],
                                       self.data_bounds[1]))
 
-        self.update_title(None)
-
-    def update_simim(self):
-
-        '''Update function for himawari-8 image plots, called by update_plot()
-        when cloud fraction is the selected plot type.
-
-        '''
-
-        simim_cube = self.dataset['simim']['data'].get_data(
-            self.current_var, selected_time=self.current_time)
-        array_for_update = simim_cube.data[:-1, :-1].ravel()
-        self.main_plot.set_array(array_for_update)
-        self.update_title(None)
-
     def plot_simim(self):
-
         '''Function for creating himawari-8 image plots, called by create_plot()
         when cloud fraction is the selected plot type.
-
         '''
-
         simim_cube = self.dataset['simim']['data'].get_data(self.current_var,
                                                             selected_time=self.current_time)
         lats = simim_cube.coord('grid_latitude').points
@@ -651,355 +434,57 @@ class ForestPlot(object):
                                          norm=self.plot_options[
                                              self.current_var]['norm']
                                          )
-
-        # Add coastlines to the map created by contourf
-        coastline_50m = cartopy.feature.NaturalEarthFeature('physical',
-                                                            'coastline',
-                                                            self.coast_res,
-                                                            edgecolor='g',
-                                                            alpha=0.5,
-                                                            facecolor='none')
-
-        self.current_axes.add_feature(coastline_50m)
         self.current_axes.set_extent((self.data_bounds[2],
                                       self.data_bounds[3],
                                       self.data_bounds[0],
                                       self.data_bounds[1]))
 
-        self.update_title(None)
-
-    def update_sat_simim_imagery(self):
-
-        '''
-
-        '''
-
-        if self.current_config == 'himawari-8':
-            self.update_him8()
-        elif self.current_config == 'simim':
-            self.update_simim()
-
     def plot_sat_simim_imagery(self):
-
-        '''
-
-        '''
-
         if self.current_config == 'himawari-8':
             self.plot_him8()
         elif self.current_config == 'simim':
             self.plot_simim()
 
-    def update_stats(self, current_cube):
-
-        '''
-
-        '''
-        data_to_process = current_cube.data
-        stats_str_list = [self.current_title]
-        unit_str = self.unit_dict_display[self.current_var]
-        max_val = numpy.max(data_to_process)
-        min_val = numpy.min(data_to_process)
-        mean_val = numpy.mean(data_to_process)
-        std_val = numpy.std(data_to_process)
-        rms_val = numpy.sqrt(numpy.mean(numpy.power(data_to_process, 2.0)))
-        model_run_info = 'Current model run start time: '
-        mr_dtobj = dateutil.parser.parse(self.model_run_time)
-        model_run_info += '{dt.year:d}-{dt.month:02d}-{dt.day:02d} '
-        model_run_info += '{dt.hour:02d}{dt.minute:02d}Z'
-        model_run_info = model_run_info.format(dt=mr_dtobj)
-
-        selected_pt_info = 'No point selected'
-        if self.selected_point is not None:
-            if self.selected_point[0] > 0.0:
-                lat_str = '{0:.2f} N'.format(abs(self.selected_point[0]))
-            else:
-                lat_str = '{0:.2f} S'.format(abs(self.selected_point[0]))
-
-            if self.selected_point[1] > 0.0:
-                long_str = '{0:.2f} E'.format(abs(self.selected_point[1]))
-            else:
-                long_str = '{0:.2f} W'.format(abs(self.selected_point[1]))
-
-
-            sample_pts = [('latitude', self.selected_point[0]),
-                          ('longitude', self.selected_point[1])]
-            select_val_cube = \
-                current_cube.interpolate(sample_pts,
-                                            iris.analysis.Linear())
-
-            select_val = float(select_val_cube.data)
-
-            field_val_str = \
-                'value: {val:.2f} {unit_str}'.format(val=select_val,
-                                                     unit_str=unit_str)
-
-            selected_pt_info = 'selected point {lat},{long}<br>'
-            selected_pt_info += 'field value {fv}'
-            selected_pt_info = selected_pt_info.format(lat=lat_str,
-                                                       long=long_str,
-                                                       fv=field_val_str)
-
-
-        stats_str_list += [model_run_info,'']
-        stats_str_list += [selected_pt_info, '']
-        stats_str_list += ['Max = {0:.4f} {1}'.format(max_val, unit_str)]
-        stats_str_list += ['Min = {0:.4f} {1}'.format(min_val, unit_str)]
-        stats_str_list += ['Mean = {0:.4f} {1}'.format(mean_val, unit_str)]
-        stats_str_list += ['STD = {0:.4f} {1}'.format(std_val, unit_str)]
-        stats_str_list += ['RMS = {0:.4f} {1}'.format(rms_val, unit_str)]
-
-        self.stats_string = '</br>'.join(stats_str_list)
-
-    def update_title(self, current_cube):
-
-        '''Update plot title.
-
-        '''
-
+    def get_title(self):
+        '''Generate title text related to plot state'''
         try:
             datestr1 = forest.util.get_time_str(self.current_time)
         except:
             datestr1 = self.current_time
-
+        plot_desc = self.dataset[self.current_config]['data_type_name']
         str1 = \
             '{plot_desc} {var_name} at {fcst_time}'.format(
                 var_name=self.current_var,
                 fcst_time=datestr1,
-                plot_desc=self.plot_description,
-                )
-        self.current_title = \
-            '\n'.join(textwrap.wrap(str1,
-                                    ForestPlot.TITLE_TEXT_WIDTH))
-    @forest.util.timer
-    def create_plot(self):
+                plot_desc=plot_desc,
+            )
+        return '\n'.join(textwrap.wrap(str1,
+                                       ForestPlot.TITLE_TEXT_WIDTH))
 
-        '''Main plotting function. Generic elements of the plot are created
-        here, and then the plotting function for the specific variable is
-        called using the self.plot_funcs dictionary.
-        
-        '''
-
-        self.create_matplotlib_fig()
-        self.create_bokeh_img_plot_from_fig()
-
-        return self.bokeh_figure
-
-    @forest.util.timer
-    def create_matplotlib_fig(self):
-
-        '''
-
-        '''
-        self.current_figure = matplotlib.pyplot.figure(self.figure_name,
-                                                       figsize=self.current_figsize)
-        self.current_figure.clf()
-        self.current_axes = \
-            self.current_figure.add_subplot(
-                111,
-                projection=cartopy.crs.PlateCarree())
-        self.current_axes.set_position([0, 0, 1, 1])
-        self.plot_funcs[self.current_var]()
-        if self.main_plot:
-            if self.use_mpl_title:
-                self.current_axes.set_title(self.current_title)
-            self.current_axes.set_xlim(
-                self.data_bounds[2], self.data_bounds[3])
-            self.current_axes.set_ylim(
-                self.data_bounds[0], self.data_bounds[1])
-            self.current_axes.xaxis.set_visible(self.show_axis_ticks)
-            self.current_axes.yaxis.set_visible(self.show_axis_ticks)
-            if self.show_colorbar:
-                self.current_figure.colorbar(self.main_plot,
-                                             orientation='horizontal')
-
-            self.current_figure.canvas.draw()
-
-    def _setup_tools(self):
-        self.bokeh_tools = dict([(k1,None) for k1 in BOKEH_TOOLS_LIST])
-        if 'pan' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['pan'] = bokeh.models.PanTool()
-        if 'wheel_zoom' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['wheel_zoom'] = bokeh.models.WheelZoomTool()
-        if 'reset' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['reset'] = bokeh.models.ResetTool()
-        if 'save' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['save'] = bokeh.models.SaveTool()
-        if 'box_zoom' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['box_zoom'] = bokeh.models.BoxZoomTool()
-        if 'hover' in BOKEH_TOOLS_LIST:
-            self.bokeh_tools['hover'] = bokeh.models.HoverTool(
-                tooltips=[
-                    ("(x,y)", "($x, $y)"),
-                ])
-
-        self.active_bokeh_tools = {}
-        self.active_bokeh_tools['drag'] = self.bokeh_tools['pan']
-        self.active_bokeh_tools['inspect'] = self.bokeh_tools['hover']
-        self.active_bokeh_tools['scroll'] = self.bokeh_tools['wheel_zoom']
-        self.active_bokeh_tools['tap'] = None
-
-
-
-
-    def create_bokeh_img_plot_from_fig(self):
-
-        '''
-
-        '''
-
-        self.current_img_array = forest.util.get_image_array_from_figure(
-            self.current_figure)
-
-        cur_region = self.region_dict[self.current_region]
-
-        if self.bokeh_figure is None:
-            # Set figure navigation limits
-            x_limits = bokeh.models.Range1d(cur_region[2], cur_region[3],
-                                            bounds=(cur_region[2], cur_region[3]))
-            y_limits = bokeh.models.Range1d(cur_region[0], cur_region[1],
-                                            bounds=(cur_region[0], cur_region[1]))
-
-            # Initialize figure
-            self.bokeh_figure = \
-                bokeh.plotting.figure(plot_width=self.bokeh_fig_size[0],
-                                      plot_height=self.bokeh_fig_size[1],
-                                      x_range=x_limits,
-                                      y_range=y_limits,
-                                      tools=','.join(BOKEH_TOOLS_LIST))
-
-
-        if self.current_img_array is not None:
-            self.create_bokeh_img()
+    def get_x_y_dw_dh(self):
+        """x, y, dw, dh defined by pcolormesh or cube coordinates"""
+        # Use mappable.get_extent() to define image_rgba()
+        if hasattr(self.main_plot, 'get_extent'):
+            left, right, bottom, top = self.main_plot.get_extent()
         else:
-
-            mid_x = (cur_region[2] + cur_region[3]) * 0.5
-            mid_y = (cur_region[0] + cur_region[1]) * 0.5
-            self.bokeh_figure.text(x=[mid_x],
-                                   y=[mid_y],
-                                   text=['Plot loading'],
-                                   text_color=['#FF0000'],
-                                   text_font_size="20pt",
-                                   text_baseline="middle",
-                                   text_align="center",
-                                   )
-
-        self.bokeh_figure.title.text = self.current_title
-
-    def create_bokeh_img(self):
-
-        '''
-
-        '''
-
-        cur_region = self.region_dict[self.current_region]
-        # Add mpl image
-        latitude_range = cur_region[1] - cur_region[0]
-        longitude_range = cur_region[3] - cur_region[2]
-        self.bokeh_image = \
-            self.bokeh_figure.image_rgba(image=[self.current_img_array],
-                                         x=[cur_region[2]],
-                                         y=[cur_region[0]],
-                                         dw=[longitude_range],
-                                         dh=[latitude_range])
-        self.bokeh_img_ds = self.bokeh_image.data_source
-
-    def update_bokeh_img_plot_from_fig(self):
-
-        '''
-
-        '''
-
-        cur_region = self.region_dict[self.current_region]
-        self.current_figure.set_figwidth(self.current_figsize[0])
-        self.current_figure.set_figheight(
-            round(self.current_figure.get_figwidth() *
-                  (cur_region[1] - cur_region[0]) /
-                  (cur_region[3] - cur_region[2]), 2))
-
-        if self.bokeh_img_ds:
-            self.current_img_array = forest.util.get_image_array_from_figure(
-                self.current_figure)
-            self.bokeh_img_ds.data[u'image'] = [self.current_img_array]
-            self.bokeh_img_ds.data[u'x'] = [cur_region[2]]
-            self.bokeh_img_ds.data[u'y'] = [cur_region[0]]
-            self.bokeh_img_ds.data[u'dw'] = [cur_region[3] - cur_region[2]]
-            self.bokeh_img_ds.data[u'dh'] = [cur_region[1] - cur_region[0]]
-            self.bokeh_figure.title.text = self.current_title
-
-        else:
-            try:
-                self.current_img_array = \
-                    forest.util.get_image_array_from_figure(
-                        self.current_figure)
-                self.create_bokeh_img()
-                self.bokeh_figure.title.text = self.current_title
-            except:
-                self.current_img_array = None
-
-    def update_plot(self):
-
-        '''Main plot update function. Generic elements of the plot are
-        updated here where possible, and then the plot update function for
-        the specific variable is called using the self.plot_funcs dictionary.
-        
-        '''
-
-        self.update_funcs[self.current_var]()
-        if self.use_mpl_title:
-            self.current_axes.set_title(self.current_title)
-        self.current_figure.canvas.draw_idle()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-        if self.stats_widget:
-            self.update_stats_widget()
-
-    def create_stats_widget(self):
-
-        '''
-
-        '''
-
-        self.stats_widget = bokeh.models.widgets.Div(text=self.stats_string,
-                                                     height=200,
-                                                     width=400,
-                                                     )
-        return self.stats_widget
+            left, right = self.coords_lon.min(), self.coords_lon.max()
+            bottom, top = self.coords_lat.min(), self.coords_lat.max()
+        x = left
+        y = bottom
+        dw = right - left
+        dh = top - bottom
+        return x, y, dw, dh
 
     def create_colorbar_widget(self):
-
-        '''
-
-        '''
-
         colorbar_html = "<img src='" + self.app_path + "/static/" + \
                         self.colorbar_link + "'\>"
-            
         self.colorbar_widget = bokeh.models.widgets.Div(text=colorbar_html,
                                                         height=100,
                                                         width=800,
                                                         )
         return self.colorbar_widget
 
-    def update_stats_widget(self):
-
-        '''
-
-        '''
-
-        print('Updating stats widget')
-
-        try:
-            self.stats_widget.text = self.stats_string
-        except AttributeError as e1:
-            print('Unable to update stats as stats widget not initiated')
-
     def update_colorbar_widget(self):
-
-        '''
-
-        '''
-
         self.colorbar_link = self.current_var + '_colorbar.png'
         colorbar_html = "<img src='" + self.app_path + "/static/" + \
                         self.colorbar_link + "'\>"
@@ -1011,103 +496,49 @@ class ForestPlot(object):
         except AttributeError as e1:
             print('Unable to update colorbar as colorbar widget not initiated')
 
-    @forest.util.timer
     def set_data_time(self, new_time):
-
-        '''
-
-        '''
-
         print('selected new time {0}'.format(new_time))
-
         self.current_time = new_time
-        # self.update_plot()
-        self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
-            if self.colorbar_widget:
-                self.update_colorbar_widget()
+        self.render()
+        if self.colorbar_widget:
+            self.update_colorbar_widget()
 
     def set_var(self, new_var):
-
-        '''
-
-        '''
-
         print('selected new var {0}'.format(new_var))
-
         self.current_var = new_var
-        self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
-            if self.colorbar_widget:
-                self.update_colorbar_widget()
+        self.render()
+        if self.colorbar_widget:
+            self.update_colorbar_widget()
 
-    def set_region(self, new_region):
-
-        '''Event handler for a change in the selected plot region.
-
-        '''
-
-        print('selected new region {0}'.format(new_region))
-
-        self.current_region = new_region
-        self.data_bounds = self.region_dict[self.current_region]
-        self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
+    def set_region(self, region):
+        """Adjust bokeh figure extents"""
+        self.current_region = region
+        extents = self.region_dict[self.current_region]
+        y_start, y_end, x_start, x_end = extents
+        self.bokeh_figure.x_range.start = x_start
+        self.bokeh_figure.x_range.end = x_end
+        self.bokeh_figure.y_range.start = y_start
+        self.bokeh_figure.y_range.end = y_end
 
     def set_config(self, new_config):
-
         '''Function to set a new value of config and do an update
-
         '''
-
         print('setting new config {0}'.format(new_config))
-        self._set_config_value(new_config)
-        self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
+        self.current_config = new_config
+        self.render()
 
     def set_dataset(self, new_dataset, new_model_run_time):
         self.dataset = new_dataset
         self.model_run_time = new_model_run_time
-        self.create_matplotlib_fig()
-        if not self.async:
-            self.update_bokeh_img_plot_from_fig()
-            if self.stats_widget:
-                self.update_stats_widget()
-
-    def set_selected_point(self, latitude, longitude):
-        self.selected_point = (latitude, longitude)
-        if not self.async:
-
-            if self.stats_widget:
-                current_data = \
-                    self.get_data(self.stats_data_var[self.current_var])
-                self.update_stats(current_data)
-                self.update_stats_widget()
-
+        self.render()
 
     def link_axes_to_other_plot(self, other_plot):
-
-        '''
-
-        '''
-
         try:
             self.bokeh_figure.x_range = other_plot.bokeh_figure.x_range
             self.bokeh_figure.y_range = other_plot.bokeh_figure.y_range
         except:
             print('bokeh plot linking failed.')
+
 
 class ForestTimeSeries():
     """
@@ -1115,6 +546,7 @@ class ForestTimeSeries():
     each plot represents a single dataset, the timeseries plot plot several
     datasets together in the same plot for comparison purposes.
     """
+
     def __init__(self,
                  datasets,
                  model_run_time,
@@ -1138,9 +570,8 @@ class ForestTimeSeries():
         self.current_var = current_var
         self.cds_dict = {}
 
-        self.placeholder_data = {'x_values': [0.0,1.0],
-                                 'y_values': [0.0,0.0]}
-
+        self.placeholder_data = {'x_values': [0.0, 1.0],
+                                 'y_values': [0.0, 0.0]}
 
     def __str__(self):
         """
@@ -1212,7 +643,7 @@ class ForestTimeSeries():
                     var_values = var_cube.data
 
                     data1 = {'x_values': times1,
-                         'y_values': var_values}
+                             'y_values': var_values}
 
                     self.cds_dict[ds_name].data = data1
                 else:

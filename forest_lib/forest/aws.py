@@ -46,6 +46,7 @@ download data from AWS using urllib
 """
 import os
 import urllib.request
+import forest.util
 
 
 # expose print to be patched
@@ -73,6 +74,7 @@ class S3Bucket(object):
         self.bucket_name = bucket_name
         self.download_directory = download_directory
 
+    @forest.util.timer
     def file_exists(self, key):
         """AWS file exists or downloaded file exists
 
@@ -82,6 +84,8 @@ class S3Bucket(object):
         :param key: amazon s3 key to be queried
         :returns: logical indicating file existence
         """
+        if self.local_file_exists(key):
+            return True
         return self.remote_file_exists(key)
 
     def remote_file_exists(self, key):
@@ -130,6 +134,9 @@ class S3Bucket(object):
 
     def load_file(self, key):
         """Do download from S3 bucket if file not already on disk
+
+        .. note:: Makes download directory if it does not
+                  exist already
 
         :param key: amazon s3 key
         :returns: path_to_file
