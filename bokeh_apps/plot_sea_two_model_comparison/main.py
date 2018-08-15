@@ -148,7 +148,7 @@ def main(bokeh_id):
                                                init_fcast_time,
                                                plot_type_time_lookups,
                                                [plot_obj_left, plot_obj_right],
-                                               [bokeh_figure],
+                                               bokeh_figure,
                                                colorbar_widget,
                                                region_dict,
                                                user_feedback_directory,

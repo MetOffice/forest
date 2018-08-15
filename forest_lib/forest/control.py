@@ -78,7 +78,7 @@ class ForestController(object):
                  init_fcast_time,
                  plot_type_time_lookups,
                  plots,
-                 bokeh_imgs,
+                 bokeh_figure,
                  colorbar_widget,
                  region_dict,
                  feedback_dir,
@@ -98,7 +98,7 @@ class ForestController(object):
         self.right_model_dd = None
 
         self.plots = plots
-        self.bokeh_imgs = bokeh_imgs
+        self.bokeh_figure = bokeh_figure
         self.region_dict = region_dict
         self.plot_type_time_lookups = plot_type_time_lookups
         self.plot_names = list(self.plot_type_time_lookups.keys())
@@ -224,7 +224,7 @@ class ForestController(object):
                                       functools.partial(self.on_config_change,
                                                         1))
         # Left/Right toggle UI
-        bokeh_figure = self.bokeh_imgs[0]
+        bokeh_figure = self.bokeh_figure
         left_image = self.plots[0]
         right_image = self.plots[1]
         slider = forest.image.Slider(left_image.bokeh_img_ds, right_image.bokeh_img_ds)
@@ -255,9 +255,6 @@ class ForestController(object):
         self.left_right_toggle.js_on_change("active", custom_js)
 
         # Layout widgets
-        sizing_mode = "fixed"
-        sizing_mode = "scale_width"
-
         config_path = os.path.join(CONFIG_DIR, FEEDBACK_CONF_FILENAME)
 
         self.feedback_gui = forest.feedback.UserFeedback(config_path,
@@ -270,9 +267,8 @@ class ForestController(object):
             bokeh.models.widgets.Toggle(label='Show feedback form',
                                         active=self.feedback_visible)
         self.uf_vis_toggle.on_click(self._on_uf_vis_toggle)
-
-        self.uf_vis_layout = bokeh.layouts.column(sizing_mode=sizing_mode)
-        self.main_layout = self.layout_widgets(self.bokeh_imgs,
+        self.uf_vis_layout = bokeh.layouts.column()
+        self.main_layout = self.layout_widgets(self.bokeh_figure,
                                                self.left_right_toggle,
                                                self.left_model_dd,
                                                self.right_model_dd,
@@ -284,11 +280,10 @@ class ForestController(object):
                                                self.model_run_dd,
                                                self.colorbar_div,
                                                self.uf_vis_toggle,
-                                               self.uf_vis_layout,
-                                               sizing_mode=sizing_mode)
+                                               self.uf_vis_layout)
 
     @staticmethod
-    def layout_widgets(bokeh_figures,
+    def layout_widgets(bokeh_figure,
                        left_right_toggle,
                        left_model_drop_down,
                        right_model_drop_down,
@@ -300,33 +295,21 @@ class ForestController(object):
                        model_run_drop_down,
                        colorbar_div,
                        user_feedback_toggle,
-                       user_feedback_layout,
-                       sizing_mode="fixed"):
+                       user_feedback_layout):
         """Arrange bokeh widgets into a pleasing layout
 
         Place widgets into rows/columns with appropriate sizing_modes
         to enhance user experience of Forest
         """
-        rows = [
-            bokeh.layouts.row(model_run_drop_down,
-                              time_previous_button,
-                              time_next_button,
-                              sizing_mode=sizing_mode),
-            bokeh.layouts.row(left_model_drop_down,
-                              right_model_drop_down,
-                              model_variable_drop_down,
-                              region_drop_down,
-                              sizing_mode=sizing_mode),
-            bokeh.layouts.row(left_right_toggle,
-                              sizing_mode=sizing_mode),
-            bokeh.layouts.row(*bokeh_figures,
-                              sizing_mode=sizing_mode),
-            bokeh.layouts.row(colorbar_div,
-                              sizing_mode=sizing_mode),
-            user_feedback_toggle,
-            user_feedback_layout
-        ]
-        return bokeh.layouts.column(*rows, sizing_mode=sizing_mode)
+        return bokeh.layouts.layout([
+            [model_run_drop_down, time_previous_button, time_next_button],
+            [left_model_drop_down, right_model_drop_down, model_variable_drop_down, region_drop_down],
+            [left_right_toggle],
+            [bokeh_figure],
+            [colorbar_div],
+            [user_feedback_toggle],
+            [user_feedback_layout]
+        ])
 
     def on_time_prev(self):
         '''Event handler for changing to previous time step
