@@ -9,13 +9,13 @@ spec:
     metadata:
       labels:
         app: {{ .Values.managerdev.name }}
+        deployedAt : "{{ .Release.Time.Seconds }}"
     spec:
+      
       containers:
         - image: informaticslab/singleuser-notebook:0.3.4
           command: ["bash"]
           args: ["-c",". /github_repos/forest/forest_lib/run_forest_server.sh /s3 {{.Values.managerdev.port}} /github_repos/forest/bokeh_apps/"]
-#          command: ["python"]
-#          args: ["-c","import time; time.sleep(5000)"]
 
           name: {{ .Values.managerdev.name }}
           ports:
