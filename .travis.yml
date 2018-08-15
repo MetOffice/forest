@@ -18,8 +18,6 @@ before_deploy:
 deploy:
   skip_cleanup: true
   provider: script
-  script: 
-    - helm upgrade forest kube
-    - kubectl delete --all pods --namespace=forest 
+  script: helm upgrade forest kube & kubectl delete --all pods --namespace=forest
   on:
     branch: master
