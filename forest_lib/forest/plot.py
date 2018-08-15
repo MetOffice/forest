@@ -223,20 +223,21 @@ class ForestPlot(object):
         """Plot RGBA images"""
         if self._plot_uses_figure(current_var):
             # Rasterize Figure instance
-            y_start, y_end, x_start, x_end = self.region_dict[self.current_region]
+            self.current_axes.cla()
+            self.plot_funcs[current_var]()
+            y_start, y_end = self.coords_lat.min(), self.coords_lat.max()
+            x_start, x_end = self.coords_lon.min(), self.coords_lon.max()
             current_figsize = (8.0, 6.0)
             aspect_ratio = (y_end - y_start) / (x_end - x_start)
             self.current_figure.set_figwidth(current_figsize[0])
             self.current_figure.set_figheight(
                 round(self.current_figure.get_figwidth() * aspect_ratio, 2)
             )
-            self.current_axes.cla()
             self.current_axes.set_position([0, 0, 1, 1])
             self.current_axes.set_xlim((x_start, x_end))
             self.current_axes.set_ylim((y_start, y_end))
             self.current_axes.xaxis.set_visible(False)
             self.current_axes.yaxis.set_visible(False)
-            self.plot_funcs[current_var]()
             self.current_figure.canvas.draw()
             image = forest.util.get_image_array_from_figure(self.current_figure)
         else:
@@ -273,7 +274,7 @@ class ForestPlot(object):
         '''Update the latitude and longitude coordinates for the data.
         '''
         self.coords_lat = data_cube.coords('latitude')[0].points
-        self.coords_long = data_cube.coords('longitude')[0].points
+        self.coords_lon = data_cube.coords('longitude')[0].points
 
     def create_blank(self):
         self.main_plot = None
@@ -298,7 +299,7 @@ class ForestPlot(object):
         norm = self.plot_options[self.current_var]['norm']
         self.update_coords(cube)
         self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
+            self.current_axes.pcolormesh(self.coords_lon,
                                          self.coords_lat,
                                          cube.data,
                                          cmap=cmap,
@@ -312,7 +313,7 @@ class ForestPlot(object):
         wind_speed_cube = self.get_data(forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
+            self.current_axes.pcolormesh(self.coords_lon,
                                          self.coords_lat,
                                          wind_speed_cube.data,
                                          cmap=self.plot_options[
@@ -343,7 +344,7 @@ class ForestPlot(object):
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
+            self.current_axes.pcolormesh(self.coords_lon,
                                          self.coords_lat,
                                          wind_speed_cube.data,
                                          cmap=self.plot_options[
@@ -374,7 +375,7 @@ class ForestPlot(object):
         wind_speed_cube = self.get_data(var_name=forest.data.WIND_SPEED_NAME)
         self.update_coords(wind_speed_cube)
         self.main_plot = \
-            self.current_axes.pcolormesh(self.coords_long,
+            self.current_axes.pcolormesh(self.coords_lon,
                                          self.coords_lat,
                                          wind_speed_cube.data,
                                          cmap=self.plot_options[
@@ -466,7 +467,7 @@ class ForestPlot(object):
         if hasattr(self.main_plot, 'get_extent'):
             left, right, bottom, top = self.main_plot.get_extent()
         else:
-            left, right = self.coords_long.min(), self.coords_long.max()
+            left, right = self.coords_lon.min(), self.coords_lon.max()
             bottom, top = self.coords_lat.min(), self.coords_lat.max()
         x = left
         y = bottom
