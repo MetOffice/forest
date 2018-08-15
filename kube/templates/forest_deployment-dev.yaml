@@ -11,7 +11,7 @@ spec:
         app: {{ .Values.managerdev.name }}
     spec:
       containers:
-        - image: informaticslab/singleuser-notebook:0.3.0
+        - image: informaticslab/singleuser-notebook:0.3.4
           command: ["bash"]
           args: ["-c",". /github_repos/forest/forest_lib/run_forest_server.sh /s3 {{.Values.managerdev.port}} /github_repos/forest/bokeh_apps/"]
 #          command: ["python"]

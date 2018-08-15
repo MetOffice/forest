@@ -16,4 +16,4 @@
 export S3_ROOT=$1
 export PYTHONPATH=$PYTHONPATH:$PWD/forest_lib
 
-bokeh serve --port=$2 bokeh_apps/*
+bokeh serve --port=$2 bokeh_apps/plot_sea_two_model_comparison
