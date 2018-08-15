@@ -11,7 +11,7 @@ conda create -n forest_dev python=3.6 --yes
 
 source activate forest_dev
 
-conda install -c conda-forge iris=2.0.0 bokeh=0.12.15 cartopy=0.16.0 --yes
+conda install -c conda-forge iris=2.0.0 bokeh=0.13.0 cartopy=0.16.0 --yes
 
 
 
