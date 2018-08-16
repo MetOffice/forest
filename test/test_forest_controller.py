@@ -32,13 +32,10 @@ class TestForestController(unittest.TestCase):
         }
         plots = [FakePlot(), FakePlot()]
         bokeh_figure = bokeh.plotting.figure()
-        colorbar_widget = None
         region_dict = {
             "region": None
         }
-        feedback_dir = None
-        bokeh_id = None
-        forest.control.ForestController(
+        controller = forest.control.ForestController(
             initial_variable,
             initial_time_index,
             datasets,
@@ -46,8 +43,6 @@ class TestForestController(unittest.TestCase):
             plot_type_time_lookups,
             plots,
             bokeh_figure,
-            colorbar_widget,
-            region_dict,
-            feedback_dir,
-            bokeh_id
+            region_dict
         )
+        controller.on_time_next()
