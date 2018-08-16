@@ -99,7 +99,8 @@ def main(bokeh_id):
     num_times = available_times.shape[0]
 
     bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
-                                         active_inspect=None)
+                                         active_inspect=None,
+                                         match_aspect=True)
     forest.plot.add_x_axes(bokeh_figure, "above")
     forest.plot.add_y_axes(bokeh_figure, "right")
 
@@ -155,7 +156,7 @@ def main(bokeh_id):
                                                 region_dict)
 
     # Attach bokeh layout to current document
-    root = bokeh.layouts.layout([
+    navbar = bokeh.layouts.layout([
         [forest_controller.model_run_drop_down,
          forest_controller.time_previous_button,
          forest_controller.time_next_button],
@@ -163,19 +164,25 @@ def main(bokeh_id):
          forest_controller.right_model_drop_down,
          forest_controller.model_variable_drop_down,
          forest_controller.region_drop_down],
-        [forest_controller.left_right_toggle],
-        [bokeh_figure],
-        [colorbar_widget],
-        [feedback_controller.uf_vis_toggle],
-        [feedback_controller.uf_vis_layout]
-    ])
+        [forest_controller.left_right_toggle]])
+    footer = bokeh.layouts.column(
+        colorbar_widget,
+        feedback_controller.uf_vis_toggle,
+        feedback_controller.uf_vis_layout
+    )
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
     except:
         bokeh_mode = 'server'
     if bokeh_mode == 'server':
-        bokeh.plotting.curdoc().add_root(root)
+        document = bokeh.plotting.curdoc()
+        document.add_root(navbar)
+        document.add_root(bokeh_figure)
+        document.add_root(footer)
     elif bokeh_mode == 'cli':
+        root = bokeh.layouts.column(navbar,
+                                    bokeh_figure,
+                                    footer)
         bokeh.io.show(root)
     bokeh.plotting.curdoc().title = 'Two model comparison'
 

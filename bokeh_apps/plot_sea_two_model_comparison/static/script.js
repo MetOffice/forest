@@ -1,6 +1,7 @@
 "use strict";
+let rootIndex = 1;
 let resize = function() {
-    let figure = Bokeh.documents[0].roots()[0];
+    let figure = Bokeh.documents[0].roots()[rootIndex];
     figure.width = window.innerWidth;
     figure.height = window.innerHeight;
 };
@@ -13,7 +14,7 @@ let load = function() {
             // continue
             return;
         }
-        let figure = Bokeh.documents[0].roots()[0];
+        let figure = Bokeh.documents[0].roots()[rootIndex];
         if (figure.width === window.innerWidth) {
             clearInterval(intervalID);
         } else {
