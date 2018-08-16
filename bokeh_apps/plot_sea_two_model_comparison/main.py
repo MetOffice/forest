@@ -55,6 +55,7 @@ def main(bokeh_id):
                                            forest.data.MODEL_RUN_PERIOD,
                                            )
 
+    print("initial forecast time:", init_fcast_time)
     if init_fcast_time is None:
         layout1 = forest.util.load_error_page()
         bokeh.plotting.curdoc().add_root(layout1)
@@ -142,20 +143,32 @@ def main(bokeh_id):
     colorbar_widget = plot_obj_left.create_colorbar_widget()
 
     # Set up GUI controller class
-    control1 = forest.control.ForestController(init_var,
-                                               init_data_time_index,
-                                               datasets,
-                                               init_fcast_time,
-                                               plot_type_time_lookups,
-                                               [plot_obj_left, plot_obj_right],
-                                               bokeh_figure,
-                                               colorbar_widget,
-                                               region_dict,
-                                               user_feedback_directory,
-                                               bokeh_id)
+    feedback_controller = forest.FeedbackController(user_feedback_directory,
+                                                    bokeh_id)
+    forest_controller = forest.ForestController(init_var,
+                                                init_data_time_index,
+                                                datasets,
+                                                init_fcast_time,
+                                                plot_type_time_lookups,
+                                                [plot_obj_left, plot_obj_right],
+                                                bokeh_figure,
+                                                region_dict)
 
     # Attach bokeh layout to current document
-    root = control1.main_layout
+    root = bokeh.layouts.layout([
+        [forest_controller.model_run_drop_down,
+         forest_controller.time_previous_button,
+         forest_controller.time_next_button],
+        [forest_controller.left_model_drop_down,
+         forest_controller.right_model_drop_down,
+         forest_controller.model_variable_drop_down,
+         forest_controller.region_drop_down],
+        [forest_controller.left_right_toggle],
+        [bokeh_figure],
+        [colorbar_widget],
+        [feedback_controller.uf_vis_toggle],
+        [feedback_controller.uf_vis_layout]
+    ])
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
     except:

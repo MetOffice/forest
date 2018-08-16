@@ -130,13 +130,13 @@ class ForestController(object):
                  bokeh_figure,
                  region_dict):
         self.data_time_slider = None
-        self.model_var_dd = None
-        self.time_prev_button = None
+        self.model_variable_drop_down = None
+        self.time_previous_button = None
         self.time_next_button = None
-        self.model_run_dd = None
-        self.region_dd = None
-        self.left_model_dd = None
-        self.right_model_dd = None
+        self.model_run_drop_down = None
+        self.region_drop_down = None
+        self.left_model_drop_down = None
+        self.right_model_drop_down = None
 
         self.plots = plots
         self.bokeh_figure = bokeh_figure
@@ -163,18 +163,18 @@ class ForestController(object):
             create_dropdown_opt_list_from_dict(VARIABLE_DD_DICT,
                                                self.plot_names)
         label = Label("Variable: {}")
-        self.model_var_dd = \
+        self.model_variable_drop_down = \
             bokeh.models.widgets.Dropdown(label=label.first(variable_menu_list),
                                           menu=variable_menu_list,
                                           button_type='warning')
-        label.listen_to(self.model_var_dd)
-        self.model_var_dd.on_change('value', self.on_var_change)
+        label.listen_to(self.model_variable_drop_down)
+        self.model_variable_drop_down.on_change('value', self.on_var_change)
 
         # Create previous timestep button widget
-        self.time_prev_button = \
+        self.time_previous_button = \
             bokeh.models.widgets.Button(label='Previous validity time',
                                         button_type='warning')
-        self.time_prev_button.on_click(self.on_time_prev)
+        self.time_previous_button.on_click(self.on_time_prev)
 
         # Create time selection slider widget
         self.data_time_slider = \
@@ -195,44 +195,44 @@ class ForestController(object):
         # select model run
         label = Label("Model run: {}")
         model_run_list = create_model_run_list(self.datasets)
-        self.model_run_dd = \
+        self.model_run_drop_down = \
             bokeh.models.widgets.Dropdown(label=label.first(model_run_list),
                                           menu=model_run_list,
                                           button_type='warning')
-        label.listen_to(self.model_run_dd)
-        self.model_run_dd.on_change('value', self._on_model_run_change)
+        label.listen_to(self.model_run_drop_down)
+        self.model_run_drop_down.on_change('value', self._on_model_run_change)
 
         # Create region selection dropdown menu region
         label = Label("Region: {}")
         region_menu_list = \
             create_dropdown_opt_list_from_dict(REGION_DD_DICT,
                                                self.region_dict.keys())
-        self.region_dd = bokeh.models.widgets.Dropdown(menu=region_menu_list,
+        self.region_drop_down = bokeh.models.widgets.Dropdown(menu=region_menu_list,
                                                        label=label.first(region_menu_list),
                                                        button_type='warning')
-        label.listen_to(self.region_dd)
-        self.region_dd.on_change('value', self.on_region_change)
+        label.listen_to(self.region_drop_down)
+        self.region_drop_down.on_change('value', self.on_region_change)
 
         # Create left figure model selection dropdown menu widget
         dataset_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
                                                                self.datasets[self.current_fcast_time].keys())
         label = Label("Left image: {}")
-        self.left_model_dd = \
+        self.left_model_drop_down = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
                                           label=label.first(dataset_menu_list),
                                           button_type='warning')
-        label.listen_to(self.left_model_dd)
-        self.left_model_dd.on_change('value',
+        label.listen_to(self.left_model_drop_down)
+        self.left_model_drop_down.on_change('value',
                                      functools.partial(self.on_config_change,
                                                        0))
         # Create right figure model selection dropdown menu widget
         label = Label("Right image: {}")
-        self.right_model_dd = \
+        self.right_model_drop_down = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
                                           label=label.second(dataset_menu_list),
                                           button_type='warning')
-        label.listen_to(self.right_model_dd)
-        self.right_model_dd.on_change('value',
+        label.listen_to(self.right_model_drop_down)
+        self.right_model_drop_down.on_change('value',
                                       functools.partial(self.on_config_change,
                                                         1))
         # Left/Right toggle UI
@@ -269,14 +269,14 @@ class ForestController(object):
         # Layout widgets
         self.main_layout = self.layout_widgets(self.bokeh_figure,
                                                self.left_right_toggle,
-                                               self.left_model_dd,
-                                               self.right_model_dd,
-                                               self.model_var_dd,
-                                               self.region_dd,
-                                               self.time_prev_button,
+                                               self.left_model_drop_down,
+                                               self.right_model_drop_down,
+                                               self.model_variable_drop_down,
+                                               self.region_drop_down,
+                                               self.time_previous_button,
                                                self.time_next_button,
                                                self.data_time_slider,
-                                               self.model_run_dd)
+                                               self.model_run_drop_down)
 
     @staticmethod
     def layout_widgets(bokeh_figure,
