@@ -65,12 +65,32 @@ def create_model_run_list(model_run_str_list):
     return mr_list
 
 
+class Label(object):
+    """Show label in drop down menu"""
+    def __init__(self, template):
+        self.template = template
+        self.drop_down = None
+
+    def first(self, items):
+        return self.render(items[0][0])
+
+    def second(self, items):
+        return self.render(items[1][0])
+
+    def listen_to(self, drop_down):
+        self.drop_down = drop_down
+        self.drop_down.on_change("value", self.on_change)
+
+    def on_change(self, attr, old, new):
+        for label, value in self.drop_down.menu:
+            if value == new:
+                self.drop_down.label = self.render(label)
+
+    def render(self, label):
+        return self.template.format(label)
+
+
 class ForestController(object):
-
-    '''
-
-    '''
-
     def __init__(self,
                  init_var,
                  init_time_ix,
@@ -82,12 +102,7 @@ class ForestController(object):
                  colorbar_widget,
                  region_dict,
                  feedback_dir,
-                 bokeh_id,
-                 ):
-        '''
-
-        '''
-
+                 bokeh_id):
         self.data_time_slider = None
         self.model_var_dd = None
         self.time_prev_button = None
@@ -121,31 +136,6 @@ class ForestController(object):
     def create_widgets(self):
         '''
         '''
-        class Label(object):
-            def __init__(self, template):
-                self.template = template
-                self.drop_down = None
-
-            def first(self, items):
-                """convenient method"""
-                return self.render(items[0][0])
-
-            def second(self, items):
-                """convenient method"""
-                return self.render(items[1][0])
-
-            def listen_to(self, drop_down):
-                self.drop_down = drop_down
-                self.drop_down.on_change("value", self.on_change)
-
-            def on_change(self, attr, old, new):
-                for label, value in self.drop_down.menu:
-                    if value == new:
-                        self.drop_down.label = self.render(label)
-
-            def render(self, label):
-                return self.template.format(label)
-
         # Create variable selection dropdown widget
         variable_menu_list = \
             create_dropdown_opt_list_from_dict(VARIABLE_DD_DICT,
