@@ -100,7 +100,8 @@ def main(bokeh_id):
 
     bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
                                          active_inspect=None,
-                                         match_aspect=True)
+                                         match_aspect=True,
+                                         name="figure")
     forest.plot.add_x_axes(bokeh_figure, "above")
     forest.plot.add_y_axes(bokeh_figure, "right")
 
@@ -164,17 +165,20 @@ def main(bokeh_id):
          forest_controller.right_model_drop_down,
          forest_controller.model_variable_drop_down,
          forest_controller.region_drop_down],
-        [forest_controller.left_right_toggle]])
+        [forest_controller.left_right_toggle]],
+        name="navbar")
     footer = bokeh.layouts.column(
         colorbar_widget,
         feedback_controller.uf_vis_toggle,
-        feedback_controller.uf_vis_layout
+        feedback_controller.uf_vis_layout,
+        name="footer"
     )
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
     except:
         bokeh_mode = 'server'
     if bokeh_mode == 'server':
+        print("server mode")
         document = bokeh.plotting.curdoc()
         document.add_root(navbar)
         document.add_root(bokeh_figure)

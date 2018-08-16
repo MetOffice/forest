@@ -37,6 +37,30 @@ that accepts these same parameters.
     {% endblock %}
     <link rel="stylesheet" href="plot_sea_two_model_comparison/static/css/custom.css" type="text/css">
     <script src="plot_sea_two_model_comparison/static/script.js?t=" + new Date().getTime()></script>
+    <style>
+        body, html {
+            height: 100%;
+        }
+        body {
+            margin: 0;
+        }
+        .navbar {
+            overflow: hidden;
+            background-color: #333;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 2;
+            opacity: 0.8;
+        }
+        .main {
+            height: 100%;
+            width: 100%;
+        }
+        .figure {
+            width: 100%;
+        }
+    </style>
     </head>
   {% endblock %}
   {% block body %}
@@ -45,9 +69,15 @@ that accepts these same parameters.
       {% block contents %}
         {% for doc in docs %}
           {{ embed(doc) if doc.elementid }}
-          {% for root in doc.roots %}
-            {{ embed(root) | indent(10) }}
-          {% endfor %}
+          <div class="navbar">
+            {{ embed(doc.roots[0]) | indent(10) }}
+          </div>
+          <div class="main">
+            {{ embed(doc.roots[1]) | indent(10) }}
+          </div>
+          <div class="footer">
+            {{ embed(doc.roots[2]) | indent(10) }}
+          </div>
         {% endfor %}
       {% endblock %}
       {{ plot_script | indent(8) }}
