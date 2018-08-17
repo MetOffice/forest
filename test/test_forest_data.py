@@ -1,7 +1,12 @@
 import unittest
+import os
 import datetime as dt
 import forest.aws
 import forest.data
+
+class FakeLoader(object):
+    def file_exists(self, path):
+        return True
 
 
 class TestGetAvailableDatasets(unittest.TestCase):
@@ -16,7 +21,31 @@ class TestGetAvailableDatasets(unittest.TestCase):
                                                     days_since_period_start,
                                                     num_days,
                                                     model_period)
-        expect = ('20180817T0000Z', {'20180817T0000Z': {}})
+        expect = {'20180817T0000Z': {}}
+        self.assertEqual(result, expect)
+
+    def test_get_available_datasets_given_template(self):
+        file_loader = FakeLoader()
+        dataset_template = {
+            "key": {
+                "var_lookup": None
+            }
+        }
+        days_since_period_start = 0
+        num_days = 1
+        model_period = 24
+        result = forest.data.get_available_datasets(file_loader,
+                                                    dataset_template,
+                                                    days_since_period_start,
+                                                    num_days,
+                                                    model_period)
+        expect = {'20180817T0000Z': {
+                "key": {
+                    "data": None,
+                    "var_lookup": None
+                }
+            }
+        }
         self.assertEqual(result, expect)
 
     def test_get_model_run_times(self):
@@ -34,6 +63,29 @@ class TestGetAvailableDatasets(unittest.TestCase):
         result = forest.data.format_model_run_time(model_run_time)
         expect = '20180817T0000Z'
         self.assertEqual(result, expect)
+
+    def test_get_var_lookup_ga6_keys(self):
+        config = "ga6"
+        lookup = forest.data.get_var_lookup(config)
+        result = sorted(lookup.keys())
+        expect = [
+            'air_temperature',
+            'cloud_fraction',
+            'mslp',
+            'precipitation',
+            'relative_humidity',
+            'wet_bulb_potential_temp',
+            'x_wind',
+            'x_winds_upper',
+            'y_wind',
+            'y_winds_upper'
+        ]
+        self.assertEqual(result, expect)
+
+    def test_config_file_given_ga6_returns_existing_file(self):
+        config = "ga6"
+        result = forest.data.config_file(config)
+        self.assertTrue(os.path.exists(result))
 
 
 class TestForestDataset(unittest.TestCase):

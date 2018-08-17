@@ -22,6 +22,7 @@ import configparser
 import functools
 import numpy
 import copy
+from collections import OrderedDict
 
 import iris
 import iris.coord_categorisation
@@ -145,13 +146,12 @@ def get_var_lookup(config):
     - config -- Str; set config type to read file for.
 
     """
-    var_list_path = os.path.join(VAR_LIST_DIR,
-                                 VAR_LIST_FNAME_BASE.format(config=config))
-    parser1 = configparser.RawConfigParser()
-    parser1.read(var_list_path)
+    var_list_path = config_file(config)
+    parser = configparser.RawConfigParser()
+    parser.read(var_list_path)
     field_dict = {}
-    for sect1 in parser1.sections():
-        field_dict[sect1] = dict(parser1.items(sect1))
+    for sect1 in parser.sections():
+        field_dict[sect1] = dict(parser.items(sect1))
         try:
             field_dict[sect1]['stash_section'] = \
                 int(field_dict[sect1]['stash_section'])
@@ -162,6 +162,11 @@ def get_var_lookup(config):
         except:
             print('warning: stash values not converted to numbers.')
     return field_dict
+
+
+def config_file(config):
+    return os.path.join(VAR_LIST_DIR,
+                        VAR_LIST_FNAME_BASE.format(config=config))
 
 
 def get_available_datasets(file_loader,
@@ -188,8 +193,8 @@ def get_available_datasets(file_loader,
     fcast_dt_list = get_model_run_times(period_start,
                                         num_days,
                                         model_period)
-    fcast_time_list = []
-    datasets = {}
+    # Above should be moved up the call stack
+    datasets = OrderedDict()
     for fct in fcast_dt_list:
         fct_str = format_model_run_time(fct)
         fct_data_dict = copy.deepcopy(dict(dataset_template))
@@ -205,14 +210,7 @@ def get_available_datasets(file_loader,
         # TODO: reconsider data structure to allow for some model configs at different times to be present
         if model_run_data_present:
             datasets[fct_str] = fct_data_dict
-            fcast_time_list += [fct_str]
-
-    # select most recent available forecast
-    try:
-        fcast_time = fcast_time_list[-1]
-    except IndexError:
-        fcast_time = None
-    return fcast_time, datasets
+    return datasets
 
 
 def get_model_run_times(period_start, num_days, model_run_period):

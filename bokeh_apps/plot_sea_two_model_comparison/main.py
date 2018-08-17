@@ -47,13 +47,15 @@ def main(bokeh_id):
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
-    init_fcast_time, datasets = \
-        forest.data.get_available_datasets(file_loader,
-                                           dataset_template,
-                                           forest.data.NUM_DATA_DAYS,
-                                           forest.data.NUM_DATA_DAYS,
-                                           forest.data.MODEL_RUN_PERIOD,
-                                           )
+    datasets = forest.data.get_available_datasets(file_loader,
+                                                  dataset_template,
+                                                  forest.data.NUM_DATA_DAYS,
+                                                  forest.data.NUM_DATA_DAYS,
+                                                  forest.data.MODEL_RUN_PERIOD)
+    try:
+        init_fcast_time = datasets.keys()[-1]
+    except IndexError:
+        init_fcast_time = None
     print("initial forecast time:", init_fcast_time)
     print(datasets)
 
