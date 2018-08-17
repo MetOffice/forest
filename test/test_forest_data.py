@@ -1,6 +1,32 @@
 import unittest
+import datetime as dt
 import forest.aws
 import forest.data
+
+
+class TestGetAvailableDatasets(unittest.TestCase):
+    @unittest.skip("going down the rabbit hole")
+    def test_get_available_datasets(self):
+        file_loader = None
+        dataset_template = None
+        days_since_period_start = None
+        num_days = None
+        model_period = None
+        forest.data.get_available_datasets(file_loader,
+                                           dataset_template,
+                                           days_since_period_start,
+                                           num_days,
+                                           model_period)
+
+    def test_get_model_run_times(self):
+        days_since_period_start = 0
+        num_days = 1
+        model_period = 24
+        result = forest.data.get_model_run_times(days_since_period_start,
+                                                 num_days,
+                                                 model_period)
+        expect = [dt.datetime(2018, 8, 17, tzinfo=dt.timezone.utc)], ['20180817T0000Z']
+        self.assertEqual(result, expect)
 
 
 class TestForestDataset(unittest.TestCase):

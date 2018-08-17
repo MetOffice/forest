@@ -54,8 +54,9 @@ def main(bokeh_id):
                                            forest.data.NUM_DATA_DAYS,
                                            forest.data.MODEL_RUN_PERIOD,
                                            )
-
     print("initial forecast time:", init_fcast_time)
+    print(datasets)
+
     if init_fcast_time is None:
         layout1 = forest.util.load_error_page()
         bokeh.plotting.curdoc().add_root(layout1)
