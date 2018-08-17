@@ -100,7 +100,8 @@ def main(bokeh_id):
 
     bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
                                          active_inspect=None,
-                                         match_aspect=True)
+                                         match_aspect=True,
+                                         title_location="below")
     forest.plot.add_x_axes(bokeh_figure, "above")
     forest.plot.add_y_axes(bokeh_figure, "right")
     bokeh_figure.toolbar.logo = None
@@ -158,15 +159,15 @@ def main(bokeh_id):
                                                 region_dict)
 
     # Attach bokeh layout to current document
-    navbar = bokeh.layouts.layout([
-        [forest_controller.model_run_drop_down,
-         forest_controller.time_previous_button,
-         forest_controller.time_next_button],
-        [forest_controller.left_model_drop_down,
-         forest_controller.right_model_drop_down,
-         forest_controller.model_variable_drop_down,
-         forest_controller.region_drop_down],
-        [forest_controller.left_right_toggle]],
+    navbar = bokeh.layouts.column(
+        forest_controller.model_run_drop_down,
+        forest_controller.time_previous_button,
+        forest_controller.time_next_button,
+        forest_controller.left_model_drop_down,
+        forest_controller.right_model_drop_down,
+        forest_controller.model_variable_drop_down,
+        forest_controller.region_drop_down,
+        forest_controller.left_right_toggle,
         css_classes=["forest-nav"])
     footer = bokeh.layouts.column(
         colorbar_widget,
