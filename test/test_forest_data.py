@@ -19,10 +19,10 @@ class TestGetAvailableDatasets(unittest.TestCase):
                                            model_period)
 
     def test_get_model_run_times(self):
-        days_since_period_start = 0
+        period_start = dt.datetime(2018, 8, 17)
         num_days = 1
         model_period = 24
-        result = forest.data.get_model_run_times(days_since_period_start,
+        result = forest.data.get_model_run_times(period_start,
                                                  num_days,
                                                  model_period)
         expect = [dt.datetime(2018, 8, 17, tzinfo=dt.timezone.utc)]

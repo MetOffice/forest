@@ -168,7 +168,7 @@ def get_var_lookup(config):
     return field_dict
 
 
-def get_model_run_times(days_since_period_start, num_days, model_run_period):
+def get_model_run_times(period_start, num_days, model_run_period):
     """Create a list of model times from the last num_days days.
 
     Arguments
@@ -178,7 +178,6 @@ def get_model_run_times(days_since_period_start, num_days, model_run_period):
     - model_run_period -- Int; period of model runs in hours i.e. their is a model run every model_run_period hours.
 
     """
-    period_start = datetime.datetime.now() + datetime.timedelta(days=-days_since_period_start)
     ps_mn_str = '{dt.year:04}{dt.month:02}{dt.day:02}T0000Z'.format(
         dt=period_start)
     ps_midnight = dateutil.parser.parse(str(ps_mn_str))
@@ -215,7 +214,8 @@ def get_available_datasets(file_loader,
     :return: A tuple containing a list of available model runs and a list of
              datasets for each available model run
     """
-    fcast_dt_list = get_model_run_times(days_since_period_start,
+    period_start = datetime.datetime.now() + datetime.timedelta(days=-days_since_period_start)
+    fcast_dt_list = get_model_run_times(period_start,
                                         num_days,
                                         model_period)
     fcast_time_list = []
