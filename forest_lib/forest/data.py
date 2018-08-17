@@ -185,7 +185,7 @@ def get_model_run_times(days_since_period_start, num_days, model_run_period):
     forecast_datetimes = [
         ps_midnight + datetime.timedelta(hours=step1)
         for step1 in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
-    return forecast_datetimes, format_model_run_times(forecast_datetimes)
+    return forecast_datetimes
 
 
 def format_model_run_times(forecast_datetimes):
@@ -215,11 +215,10 @@ def get_available_datasets(file_loader,
     :return: A tuple containing a list of available model runs and a list of
              datasets for each available model run
     """
-    fcast_dt_list, fcast_dt_str_list = \
-        get_model_run_times(days_since_period_start,
+    fcast_dt_list = get_model_run_times(days_since_period_start,
                                         num_days,
                                         model_period)
-
+    fcast_dt_str_list = format_model_run_times(fcast_dt_list)
     fcast_time_list = []
     datasets = {}
     for fct, fct_str in zip(fcast_dt_list, fcast_dt_str_list):
