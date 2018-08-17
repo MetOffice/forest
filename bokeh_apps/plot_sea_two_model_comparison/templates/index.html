@@ -45,8 +45,7 @@ that accepts these same parameters.
             margin: 0;
         }
         .navbar {
-            overflow: hidden;
-            background-color: #333;
+            background-color: none;
             position: fixed;
             top: 0;
             width: 100%;
@@ -59,6 +58,19 @@ that accepts these same parameters.
         }
         .figure {
             width: 100%;
+        }
+
+        /* Bokeh CSS reset */
+        .bk-root .bk-widget-box {
+            padding: 0;
+        }
+        .bk-root .bk-widget {
+            margin-top: 5px;
+            margin-left: 5px;
+        }
+        .bk-root .bk-bs-btn {
+            padding: 0;
+            border-radius: 0;
         }
     </style>
     </head>

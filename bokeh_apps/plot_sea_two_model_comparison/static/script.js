@@ -27,3 +27,27 @@ let load = function() {
 };
 window.addEventListener('load', load);
 
+// CSS reset to control BokehJS defaults
+let ready = function(callback, opts) {
+    // setInterval/clearInterval
+    let intervalID;
+    let setUp = function() {
+        if (Bokeh.documents[0].roots().length === opts.roots) {
+            // Bokeh not loaded continue
+            return;
+        }
+        callback();
+        clearInterval(intervalID);
+    };
+    intervalID = setInterval(setUp, 50);
+};
+let resetCSS = function() {
+    let els = document.getElementsByClassName("forest-nav");
+    for (let i=0; i<els.length; i++) {
+        let el = els[i];
+        el.style.height = "auto";
+    }
+};
+window.addEventListener('load',
+    ready(resetCSS, {roots: 3})
+);

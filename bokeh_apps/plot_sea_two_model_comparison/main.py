@@ -100,10 +100,11 @@ def main(bokeh_id):
 
     bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
                                          active_inspect=None,
-                                         match_aspect=True,
-                                         name="figure")
+                                         match_aspect=True)
     forest.plot.add_x_axes(bokeh_figure, "above")
     forest.plot.add_y_axes(bokeh_figure, "right")
+    bokeh_figure.toolbar.logo = None
+    bokeh_figure.toolbar_location = None
 
     # Add cartopy coastline to bokeh figure
     region = region_dict[south_east_asia_region]
@@ -166,12 +167,11 @@ def main(bokeh_id):
          forest_controller.model_variable_drop_down,
          forest_controller.region_drop_down],
         [forest_controller.left_right_toggle]],
-        name="navbar")
+        css_classes=["forest-nav"])
     footer = bokeh.layouts.column(
         colorbar_widget,
         feedback_controller.uf_vis_toggle,
-        feedback_controller.uf_vis_layout,
-        name="footer"
+        feedback_controller.uf_vis_layout
     )
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
