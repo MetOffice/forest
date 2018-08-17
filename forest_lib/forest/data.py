@@ -17,11 +17,11 @@ Classes
 
 import os
 import datetime
+import datetime as dt
 import configparser
 import functools
 import numpy
 import copy
-import dateutil.parser
 
 import iris
 import iris.coord_categorisation
@@ -178,19 +178,16 @@ def get_model_run_times(period_start, num_days, model_run_period):
     - model_run_period -- Int; period of model runs in hours i.e. their is a model run every model_run_period hours.
 
     """
-    ps_mn_str = '{dt.year:04}{dt.month:02}{dt.day:02}T0000Z'.format(
-        dt=period_start)
-    ps_midnight = dateutil.parser.parse(str(ps_mn_str))
-    forecast_datetimes = [
-        ps_midnight + datetime.timedelta(hours=step1)
-        for step1 in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
-    return forecast_datetimes
+    midnight = dt.datetime(period_start.year,
+                           period_start.month,
+                           period_start.day,
+                           tzinfo=dt.timezone.utc)
+    return [midnight + dt.timedelta(hours=hours)
+            for hours in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
 
 
-def format_model_run_time(forecast_datetime):
-    fmt_str = '{dt.year:04}{dt.month:02}{dt.day:02}' + \
-              'T{dt.hour:02}{dt.minute:02}Z'
-    return fmt_str.format(dt=forecast_datetime)
+def format_model_run_time(time):
+    return '{:%Y%m%dT%H%MZ}'.format(time)
 
 
 def get_available_datasets(file_loader,
