@@ -182,16 +182,16 @@ def get_model_run_times(days_since_period_start, num_days, model_run_period):
     ps_mn_str = '{dt.year:04}{dt.month:02}{dt.day:02}T0000Z'.format(
         dt=period_start)
     ps_midnight = dateutil.parser.parse(str(ps_mn_str))
-    fmt_str = '{dt.year:04}{dt.month:02}{dt.day:02}' + \
-              'T{dt.hour:02}{dt.minute:02}Z'
-
     forecast_datetimes = [
         ps_midnight + datetime.timedelta(hours=step1)
         for step1 in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
-    forecast_dt_str_list = [
-        fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
+    return forecast_datetimes, format_model_run_times(forecast_datetimes)
 
-    return forecast_datetimes, forecast_dt_str_list
+
+def format_model_run_times(forecast_datetimes):
+    fmt_str = '{dt.year:04}{dt.month:02}{dt.day:02}' + \
+              'T{dt.hour:02}{dt.minute:02}Z'
+    return [fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
 
 
 def get_available_datasets(file_loader,
