@@ -138,16 +138,13 @@ VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
 
 
 def get_var_lookup(config):
-
     """Read config files into dictionary.
-    
+
     Arguments
     ---------
-    
     - config -- Str; set config type to read file for.
-    
+
     """
-    
     var_list_path = os.path.join(VAR_LIST_DIR,
                                  VAR_LIST_FNAME_BASE.format(config=config))
     parser1 = configparser.RawConfigParser()
@@ -164,38 +161,14 @@ def get_var_lookup(config):
                 field_dict[sect1]['accumulate'] == 'True'
         except:
             print('warning: stash values not converted to numbers.')
-            
     return field_dict
-
-
-def get_model_run_times(period_start, num_days, model_run_period):
-    """Create a list of model times from the last num_days days.
-
-    Arguments
-    ---------
-
-    - num_days -- Int; Set number of days to go back and get dates for.
-    - model_run_period -- Int; period of model runs in hours i.e. their is a model run every model_run_period hours.
-
-    """
-    midnight = dt.datetime(period_start.year,
-                           period_start.month,
-                           period_start.day,
-                           tzinfo=dt.timezone.utc)
-    return [midnight + dt.timedelta(hours=hours)
-            for hours in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
-
-
-def format_model_run_time(time):
-    return '{:%Y%m%dT%H%MZ}'.format(time)
 
 
 def get_available_datasets(file_loader,
                            dataset_template,
                            days_since_period_start,
                            num_days,
-                           model_period,
-                           ):
+                           model_period):
     """
     Get a list of model runs times for which there is model output data
     available, and list of dictionaries with a dataset for each model run time.
@@ -240,6 +213,27 @@ def get_available_datasets(file_loader,
     except IndexError:
         fcast_time = None
     return fcast_time, datasets
+
+
+def get_model_run_times(period_start, num_days, model_run_period):
+    """Create a list of model times from the last num_days days.
+
+    Arguments
+    ---------
+    - num_days -- Int; Set number of days to go back and get dates for.
+    - model_run_period -- Int; period of model runs in hours i.e. there
+                          is a model run every model_run_period hours.
+    """
+    midnight = dt.datetime(period_start.year,
+                           period_start.month,
+                           period_start.day,
+                           tzinfo=dt.timezone.utc)
+    return [midnight + dt.timedelta(hours=hours)
+            for hours in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
+
+
+def format_model_run_time(time):
+    return '{:%Y%m%dT%H%MZ}'.format(time)
 
 
 def get_available_times(datasets, var1):
