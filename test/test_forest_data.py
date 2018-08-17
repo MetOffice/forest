@@ -28,10 +28,10 @@ class TestGetAvailableDatasets(unittest.TestCase):
         expect = [dt.datetime(2018, 8, 17, tzinfo=dt.timezone.utc)]
         self.assertEqual(result, expect)
 
-    def test_format_model_run_times(self):
-        model_run_times = [dt.datetime(2018, 8, 17, tzinfo=dt.timezone.utc)]
-        result = forest.data.format_model_run_times(model_run_times)
-        expect = ['20180817T0000Z']
+    def test_format_model_run_time(self):
+        model_run_time = dt.datetime(2018, 8, 17, tzinfo=dt.timezone.utc)
+        result = forest.data.format_model_run_time(model_run_time)
+        expect = '20180817T0000Z'
         self.assertEqual(result, expect)
 
 

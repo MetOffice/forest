@@ -188,10 +188,10 @@ def get_model_run_times(days_since_period_start, num_days, model_run_period):
     return forecast_datetimes
 
 
-def format_model_run_times(forecast_datetimes):
+def format_model_run_time(forecast_datetime):
     fmt_str = '{dt.year:04}{dt.month:02}{dt.day:02}' + \
               'T{dt.hour:02}{dt.minute:02}Z'
-    return [fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
+    return fmt_str.format(dt=forecast_datetime)
 
 
 def get_available_datasets(file_loader,
@@ -218,11 +218,10 @@ def get_available_datasets(file_loader,
     fcast_dt_list = get_model_run_times(days_since_period_start,
                                         num_days,
                                         model_period)
-    fcast_dt_str_list = format_model_run_times(fcast_dt_list)
     fcast_time_list = []
     datasets = {}
-    for fct, fct_str in zip(fcast_dt_list, fcast_dt_str_list):
-
+    for fct in fcast_dt_list:
+        fct_str = format_model_run_time(fct)
         fct_data_dict = copy.deepcopy(dict(dataset_template))
         model_run_data_present = True
         for ds_name in dataset_template.keys():
