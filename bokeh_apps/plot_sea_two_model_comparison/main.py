@@ -53,7 +53,7 @@ def main(bokeh_id):
                                                   forest.data.NUM_DATA_DAYS,
                                                   forest.data.MODEL_RUN_PERIOD)
     try:
-        init_fcast_time = datasets.keys()[-1]
+        init_fcast_time = list(datasets.keys())[-1]
     except IndexError:
         init_fcast_time = None
     print("initial forecast time:", init_fcast_time)
