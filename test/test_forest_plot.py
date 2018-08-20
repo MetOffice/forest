@@ -46,6 +46,25 @@ class TestForestPlotSetRegion(unittest.TestCase):
         self.assertEqual(self.bokeh_figure.y_range.end, self.y_end)
 
 
+class TestForestPlotSetDataset(unittest.TestCase):
+    def test_set_dataset(self):
+        new_dataset = {
+            "config": {
+                "data": "ForestDataset",
+                "data_type_name": "Plot description"
+            }
+        }
+        new_model_run_time = None
+        forest_plot = forest.plot.ForestPlot(*forest_plot_args())
+        forest_plot.set_dataset(new_dataset,
+                                new_model_run_time,
+                                render=False)
+        self.assertEqual(forest_plot.forest_datasets,
+                         {"config": "ForestDataset"})
+        self.assertEqual(forest_plot.plot_descriptions,
+                         {"config": "Plot description"})
+
+
 class TestForestPlotSetConfig(unittest.TestCase):
     def test_can_be_constructed(self):
         """the minimal information needed to construct a ForestPlot"""

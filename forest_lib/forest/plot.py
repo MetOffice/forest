@@ -106,6 +106,11 @@ class ForestPlot(object):
     TITLE_TEXT_WIDTH = 40
     PRESSURE_LEVELS_HPA = range(980, 1030, 2)
 
+    @property
+    def dataset(self):
+        # read-only property
+        pass
+
     def __init__(self,
                  dataset,
                  model_run_time,
@@ -127,7 +132,8 @@ class ForestPlot(object):
         self.main_plot = None
         self.current_time = init_time
         self.plot_options = plot_options
-        self.dataset = dataset
+        self.forest_datasets = pluck(dataset, 'data')
+        self.plot_descriptions = pluck(dataset, 'data_type_name')
         self.model_run_time = model_run_time
         self.current_var = plot_var
         self.current_config = conf1
@@ -185,12 +191,6 @@ class ForestPlot(object):
         self._visible = visible
         self._shape2d = None
 
-        # REFACTOR: flatten nested dictionary structure
-        self.forest_datasets = {}
-        for config in dataset.keys():
-            if 'data' not in self.dataset[config]:
-                continue
-            self.forest_datasets[config] = self.dataset[config]['data']
 
     @property
     def visible(self):
@@ -458,7 +458,7 @@ class ForestPlot(object):
             datestr1 = forest.util.get_time_str(self.current_time)
         except:
             datestr1 = self.current_time
-        plot_desc = self.dataset[self.current_config]['data_type_name']
+        plot_desc = self.plot_descriptions[self.current_config]
         str1 = \
             '{plot_desc} {var_name} at {fcst_time}'.format(
                 var_name=self.current_var,
@@ -534,10 +534,13 @@ class ForestPlot(object):
         self.current_config = new_config
         self.render()
 
-    def set_dataset(self, new_dataset, new_model_run_time):
-        self.dataset = new_dataset
+    def set_dataset(self, new_dataset, new_model_run_time,
+                    render=True):
+        self.forest_datasets = pluck(new_dataset, 'data')
+        self.plot_descriptions = pluck(new_dataset, 'data_type_name')
         self.model_run_time = new_model_run_time
-        self.render()
+        if render:
+            self.render()
 
     def link_axes_to_other_plot(self, other_plot):
         try:
@@ -545,6 +548,12 @@ class ForestPlot(object):
             self.bokeh_figure.y_range = other_plot.bokeh_figure.y_range
         except:
             print('bokeh plot linking failed.')
+
+
+def pluck(nested_dict, attr):
+    """pluck values from nested dictionary"""
+    return {key: value[attr] for key, value in nested_dict.items()
+            if attr in value}
 
 
 class ForestTimeSeries():
