@@ -185,6 +185,13 @@ class ForestPlot(object):
         self._visible = visible
         self._shape2d = None
 
+        # REFACTOR: flatten nested dictionary structure
+        self.forest_datasets = {}
+        for config in dataset.keys():
+            if 'data' not in self.dataset[config]:
+                continue
+            self.forest_datasets[config] = self.dataset[config]['data']
+
     @property
     def visible(self):
         return self._visible
@@ -285,7 +292,7 @@ class ForestPlot(object):
             selected_time = self.current_time
         if config_name is None:
             config_name = self.current_config
-        config_data = self.dataset[config_name]['data']
+        config_data = self.forest_datasets[config_name]
         data_cube = config_data.get_data(var_name=var_name,
                                          selected_time=selected_time)
         # HACK: cache image array shape after get_data()
@@ -403,7 +410,7 @@ class ForestPlot(object):
         '''Function for creating himawari-8 image plots, called by create_plot()
         when cloud fraction is the selected plot type.
         '''
-        him8_data = self.dataset['himawari-8']['data']
+        him8_data = self.forest_datasets['himawari-8']
         him8_image = him8_data.get_data(self.current_var,
                                         selected_time=self.current_time)
         self.main_plot = self.current_axes.imshow(him8_image,
@@ -421,7 +428,7 @@ class ForestPlot(object):
         '''Function for creating himawari-8 image plots, called by create_plot()
         when cloud fraction is the selected plot type.
         '''
-        simim_cube = self.dataset['simim']['data'].get_data(self.current_var,
+        simim_cube = self.forest_datasets['simim'].get_data(self.current_var,
                                                             selected_time=self.current_time)
         lats = simim_cube.coord('grid_latitude').points
         lons = simim_cube.coord('grid_longitude').points
