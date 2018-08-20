@@ -50,7 +50,7 @@ class TestForestPlotSetDataset(unittest.TestCase):
     def test_set_dataset(self):
         new_dataset = {
             "config": {
-                "data": "ForestDataset",
+                "data": "Forest dataset",
                 "data_type_name": "Plot description"
             }
         }
@@ -60,7 +60,7 @@ class TestForestPlotSetDataset(unittest.TestCase):
                                 new_model_run_time,
                                 render=False)
         self.assertEqual(forest_plot.forest_datasets,
-                         {"config": "ForestDataset"})
+                         {"config": "Forest dataset"})
         self.assertEqual(forest_plot.plot_descriptions,
                          {"config": "Plot description"})
 
