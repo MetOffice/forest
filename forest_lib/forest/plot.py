@@ -291,9 +291,9 @@ class ForestPlot(object):
             selected_time = self.current_time
         if config_name is None:
             config_name = self.current_config
-        config_data = self.forest_datasets[config_name]
-        data_cube = config_data.get_data(var_name=var_name,
-                                         selected_time=selected_time)
+        forest_dataset = self.forest_datasets[config_name]
+        data_cube = forest_dataset.get_data(var_name=var_name,
+                                            selected_time=selected_time)
         # HACK: cache image array shape after get_data()
         self._shape2d = data_cube.data.shape
         return data_cube
