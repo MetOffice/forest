@@ -171,9 +171,7 @@ def config_file(config):
 
 def get_available_datasets(file_loader,
                            dataset_template,
-                           days_since_period_start,
-                           num_days,
-                           model_period):
+                           model_run_times):
     """
     Get a list of model runs times for which there is model output data
     available, and list of dictionaries with a dataset for each model run time.
@@ -182,20 +180,12 @@ def get_available_datasets(file_loader,
     :param dataset_template: A dictionary of dataset configs, which will be
                              used a template for each model run that is
                              available.
-    :param days_since_period_start: Number of days in the past to start
-                                    looking for model runs
-    :param num_days: number of days of model runs to look for
-    :param model_period: The period between model runs.
+    :param model_run_times: times when the model was run
     :return: A tuple containing a list of available model runs and a list of
              datasets for each available model run
     """
-    period_start = datetime.datetime.now() + datetime.timedelta(days=-days_since_period_start)
-    fcast_dt_list = get_model_run_times(period_start,
-                                        num_days,
-                                        model_period)
-    # Above should be moved up the call stack
     datasets = OrderedDict()
-    for fct in fcast_dt_list:
+    for fct in model_run_times:
         fct_str = format_model_run_time(fct)
         fct_data_dict = copy.deepcopy(dict(dataset_template))
         model_run_data_present = True

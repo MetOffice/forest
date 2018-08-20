@@ -8,6 +8,7 @@ sys.path.insert(0, APP_DIR)
 import main
 
 
+@unittest.skip("deprecated main program")
 class TestMain(unittest.TestCase):
     def setUp(self):
         self.init_fcast_time = "20180101"

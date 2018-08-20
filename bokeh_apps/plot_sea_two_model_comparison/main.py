@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 import warnings
 warnings.filterwarnings('ignore')
@@ -47,11 +48,13 @@ def main(bokeh_id):
     for ds_name in dataset_template.keys():
         dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
 
+    period_start = dt.datetime.now() - dt.timedelta(days=forest.data.NUM_DATA_DAYS)
+    model_run_times = forest.data.get_model_run_times(period_start,
+                                                      forest.data.NUM_DATA_DAYS,
+                                                      forest.data.MODEL_RUN_PERIOD)
     datasets = forest.data.get_available_datasets(file_loader,
                                                   dataset_template,
-                                                  forest.data.NUM_DATA_DAYS,
-                                                  forest.data.NUM_DATA_DAYS,
-                                                  forest.data.MODEL_RUN_PERIOD)
+                                                  model_run_times)
     try:
         init_fcast_time = list(datasets.keys())[-1]
     except IndexError:
