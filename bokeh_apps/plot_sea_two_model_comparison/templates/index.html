@@ -82,13 +82,25 @@ that accepts these same parameters.
         {% for doc in docs %}
           {{ embed(doc) if doc.elementid }}
           <div class="navbar">
-            {{ embed(doc.roots[0]) | indent(10) }}
+            {% for root in doc.roots %}
+                {% if root.name == "navbar" %}
+                    {{ embed(root) | indent(10) }}
+                {% endif %}
+            {% endfor %}
           </div>
           <div class="main">
-            {{ embed(doc.roots[1]) | indent(10) }}
+            {% for root in doc.roots %}
+                {% if root.name == "figure" %}
+                    {{ embed(root) | indent(10) }}
+                {% endif %}
+            {% endfor %}
           </div>
           <div class="footer">
-            {{ embed(doc.roots[2]) | indent(10) }}
+            {% for root in doc.roots %}
+                {% if root.name == "footer" %}
+                    {{ embed(root) | indent(10) }}
+                {% endif %}
+            {% endfor %}
           </div>
         {% endfor %}
       {% endblock %}

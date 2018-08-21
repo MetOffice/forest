@@ -165,7 +165,7 @@ def main(bokeh_id):
                                                 region_dict)
 
     # Attach bokeh layout to current document
-    navbar = bokeh.layouts.column(
+    nav_widgets = [
         forest_controller.model_run_drop_down,
         forest_controller.time_previous_button,
         forest_controller.time_next_button,
@@ -173,27 +173,29 @@ def main(bokeh_id):
         forest_controller.right_model_drop_down,
         forest_controller.model_variable_drop_down,
         forest_controller.region_drop_down,
-        forest_controller.left_right_toggle,
-        css_classes=["forest-nav"])
-    footer = bokeh.layouts.column(
+        forest_controller.left_right_toggle
+    ]
+    for widget in nav_widgets:
+        widget.name = "navbar"
+    bokeh_figure.name = "figure"
+    footer_widgets = [
         colorbar_widget,
         feedback_controller.uf_vis_toggle,
         feedback_controller.uf_vis_layout
-    )
+    ]
+    for widget in footer_widgets:
+        widget.name = "footer"
+    roots = nav_widgets + [bokeh_figure] + footer_widgets
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
     except:
         bokeh_mode = 'server'
     if bokeh_mode == 'server':
-        print("server mode")
         document = bokeh.plotting.curdoc()
-        document.add_root(navbar)
-        document.add_root(bokeh_figure)
-        document.add_root(footer)
+        for root in roots:
+            document.add_root(root)
     elif bokeh_mode == 'cli':
-        root = bokeh.layouts.column(navbar,
-                                    bokeh_figure,
-                                    footer)
+        root = bokeh.layouts.column(*roots)
         bokeh.io.show(root)
     bokeh.plotting.curdoc().title = 'Two model comparison'
 
