@@ -1,111 +1,13 @@
-{#
-Renders Bokeh models into a basic .html file.
-
-:param title: value for ``<title>`` tags
-:type title: str
-
-:param plot_resources: typically the output of RESOURCES
-:type plot_resources: str
-
-:param plot_script: typically the output of PLOT_SCRIPT
-:type plot_script: str
-
-Users can customize the file output by providing their own Jinja2 template
-that accepts these same parameters.
-
-#}
-
-{% from macros import embed %}
-
-<!DOCTYPE html>
-<html lang="en">
-  {% block head %}
-    <head>
-    {% block inner_head %}
-      <meta charset="utf-8">
-      <title>{% block title %}{{ title | e if title else "Bokeh Plot" }}{% endblock %}</title>
-      {% block preamble %}{% endblock %}
-      {% block resources %}
-        {% block js_resources %}
-          {{ bokeh_css | indent(8) if bokeh_css }}
-        {% endblock %}
-        {% block css_resources %}
-          {{ bokeh_js | indent(8) if bokeh_js }}
-        {% endblock %}
-      {% endblock %}
-      {% block postamble %}{% endblock %}
-    {% endblock %}
-    <link rel="stylesheet" href="plot_sea_two_model_comparison/static/css/custom.css" type="text/css">
-    <script src="plot_sea_two_model_comparison/static/script.js?t=" + new Date().getTime()></script>
-    <style>
-        body, html {
-            height: 100%;
-        }
-        body {
-            margin: 0;
-        }
-        .navbar {
-            background-color: none;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 2;
-            opacity: 0.8;
-        }
-        .main {
-            height: 100%;
-            width: 100%;
-        }
-        .figure {
-            width: 100%;
-        }
-
-        /* Bokeh CSS reset */
-        .bk-root .bk-widget-box {
-            padding: 0;
-        }
-        .bk-root .bk-widget {
-            margin-top: 5px;
-            margin-left: 5px;
-        }
-        .bk-root .bk-bs-btn {
-            padding: 0;
-            border-radius: 0;
-        }
-    </style>
-    </head>
-  {% endblock %}
-  {% block body %}
-  <body>
-    {% block inner_body %}
-      {% block contents %}
-        {% for doc in docs %}
-          {{ embed(doc) if doc.elementid }}
-          <div class="navbar">
-            {% for root in doc.roots %}
-                {% if root.name == "navbar" %}
-                    {{ embed(root) | indent(10) }}
-                {% endif %}
-            {% endfor %}
-          </div>
-          <div class="main">
-            {% for root in doc.roots %}
-                {% if root.name == "figure" %}
-                    {{ embed(root) | indent(10) }}
-                {% endif %}
-            {% endfor %}
-          </div>
-          <div class="footer">
-            {% for root in doc.roots %}
-                {% if root.name == "footer" %}
-                    {{ embed(root) | indent(10) }}
-                {% endif %}
-            {% endfor %}
-          </div>
-        {% endfor %}
-      {% endblock %}
-      {{ plot_script | indent(8) }}
-    {% endblock %}
-  </body>
-  {% endblock %}
-</html>
+{% extends base %}
+{% block js_resources %}
+    <!-- Bug in bokeh 0.13.0 js_resources means css_resources -->
+    <!-- replace bokeh.min.css and bokeh-widgets.min.css -->
+    <link rel="stylesheet" href="static/css/bokeh.css" type="text/css">
+    <link rel="stylesheet" href="static/css/bokeh-widgets.css" type="text/css">
+    <link rel="stylesheet" href="plot_sea_two_model_comparison/static/css/forest.css" type="text/css">
+{% endblock %}
+{% block css_resources %}
+    <!-- Bug in bokeh 0.13.0 css_resources means js_resources -->
+    {{ super() }}
+    <script src="plot_sea_two_model_comparison/static/js/forest.js"></script>
+{% endblock %}
