@@ -34,19 +34,21 @@ def main(bokeh_id):
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
-        forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model',
-                                    'config_id': forest.data.GA6_CONF_ID},
-        forest.data.KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T ',
-                                     'config_id': forest.data.RA1T_CONF_ID},
-        forest.data.KM1P5_INDO_RA1T_KEY: {'data_type_name': 'Indonesia 1.5KM RA1-T',
-                                          'config_id': forest.data.RA1T_CONF_ID},
-        forest.data.KM1P5_MAL_RA1T_KEY: {'data_type_name': 'Malaysia 1.5KM RA1-T',
-                                         'config_id': forest.data.RA1T_CONF_ID},
-        forest.data.KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T',
-                                         'config_id': forest.data.RA1T_CONF_ID},
+        forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model'},
+        forest.data.KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T '},
+        forest.data.KM1P5_INDO_RA1T_KEY: {'data_type_name': 'Indonesia 1.5KM RA1-T'},
+        forest.data.KM1P5_MAL_RA1T_KEY: {'data_type_name': 'Malaysia 1.5KM RA1-T'},
+        forest.data.KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T'},
     }
-    for ds_name in dataset_template.keys():
-        dataset_template[ds_name]['var_lookup'] = forest.data.get_var_lookup(dataset_template[ds_name]['config_id'])
+    config_ids = {
+        forest.data.N1280_GA6_KEY: forest.data.GA6_CONF_ID,
+        forest.data.KM4P4_RA1T_KEY: forest.data.RA1T_CONF_ID,
+        forest.data.KM1P5_INDO_RA1T_KEY: forest.data.RA1T_CONF_ID,
+        forest.data.KM1P5_MAL_RA1T_KEY: forest.data.RA1T_CONF_ID,
+        forest.data.KM1P5_PHI_RA1T_KEY: forest.data.RA1T_CONF_ID,
+    }
+    for config, config_id in config_ids.items():
+        dataset_template[config]['var_lookup'] = forest.data.get_var_lookup(config_id)
 
     period_start = dt.datetime.now() - dt.timedelta(days=forest.data.NUM_DATA_DAYS)
     model_run_times = forest.data.get_model_run_times(period_start,
