@@ -548,7 +548,6 @@ class ForestPlot(object):
     def set_dataset(self, new_dataset, new_model_run_time,
                     render=True):
         self.forest_datasets = pluck(new_dataset, 'data')
-        self.plot_descriptions = pluck(new_dataset, 'data_type_name')
         self.model_run_time = new_model_run_time
         if render:
             self.render()
