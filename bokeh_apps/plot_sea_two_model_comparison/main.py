@@ -104,14 +104,13 @@ def main(bokeh_id):
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
-    bokeh_figure = bokeh.plotting.figure(toolbar_location="above",
-                                         active_inspect=None,
+    bokeh_figure = bokeh.plotting.figure(active_inspect=None,
                                          match_aspect=True,
                                          title_location="below")
     forest.plot.add_x_axes(bokeh_figure, "above")
     forest.plot.add_y_axes(bokeh_figure, "right")
     bokeh_figure.toolbar.logo = None
-    bokeh_figure.toolbar_location = None
+    bokeh_figure.toolbar_location = "below"
 
     # Add cartopy coastline to bokeh figure
     region = region_dict[south_east_asia_region]
@@ -165,27 +164,26 @@ def main(bokeh_id):
                                                 region_dict)
 
     # Attach bokeh layout to current document
-    nav_widgets = [
-        forest_controller.model_run_drop_down,
-        forest_controller.time_previous_button,
-        forest_controller.time_next_button,
-        forest_controller.left_model_drop_down,
-        forest_controller.right_model_drop_down,
-        forest_controller.model_variable_drop_down,
-        forest_controller.region_drop_down,
-        forest_controller.left_right_toggle
-    ]
-    for widget in nav_widgets:
-        widget.name = "navbar"
+    header = bokeh.layouts.column(
+             bokeh.layouts.row(forest_controller.model_run_drop_down,
+                               forest_controller.time_previous_button,
+                               forest_controller.time_next_button),
+             bokeh.layouts.row(forest_controller.left_model_drop_down,
+                               forest_controller.right_model_drop_down,
+                               forest_controller.left_right_toggle),
+             bokeh.layouts.row(forest_controller.model_variable_drop_down,
+                               forest_controller.region_drop_down),
+             css_classes=["fst-head"])
     bokeh_figure.name = "figure"
-    footer_widgets = [
-        colorbar_widget,
+    colorbar_widget.name = "colorbar"
+    footer = bokeh.layouts.column(
         feedback_controller.uf_vis_toggle,
-        feedback_controller.uf_vis_layout
-    ]
-    for widget in footer_widgets:
-        widget.name = "footer"
-    roots = nav_widgets + [bokeh_figure] + footer_widgets
+        feedback_controller.uf_vis_layout,
+        css_classes=["fst-foot"])
+    roots = [header,
+             bokeh_figure,
+             colorbar_widget,
+             footer]
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
     except:
