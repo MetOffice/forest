@@ -266,41 +266,6 @@ class ForestController(object):
         """)
         self.left_right_toggle.js_on_change("active", custom_js)
 
-        # Layout widgets
-        self.main_layout = self.layout_widgets(self.bokeh_figure,
-                                               self.left_right_toggle,
-                                               self.left_model_drop_down,
-                                               self.right_model_drop_down,
-                                               self.model_variable_drop_down,
-                                               self.region_drop_down,
-                                               self.time_previous_button,
-                                               self.time_next_button,
-                                               self.data_time_slider,
-                                               self.model_run_drop_down)
-
-    @staticmethod
-    def layout_widgets(bokeh_figure,
-                       left_right_toggle,
-                       left_model_drop_down,
-                       right_model_drop_down,
-                       model_variable_drop_down,
-                       region_drop_down,
-                       time_previous_button,
-                       time_next_button,
-                       time_slider,
-                       model_run_drop_down):
-        """Arrange bokeh widgets into a pleasing layout
-
-        Place widgets into rows/columns with appropriate sizing_modes
-        to enhance user experience of Forest
-        """
-        return bokeh.layouts.layout([
-            [model_run_drop_down, time_previous_button, time_next_button],
-            [left_model_drop_down, right_model_drop_down, model_variable_drop_down, region_drop_down],
-            [left_right_toggle],
-            [bokeh_figure]
-        ])
-
     def on_time_prev(self):
         '''Event handler for changing to previous time step
 
