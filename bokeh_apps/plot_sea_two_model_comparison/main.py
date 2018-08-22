@@ -33,13 +33,6 @@ def main(bokeh_id):
         user_feedback_directory = os.path.join(mount_directory, 'user_feedback')
 
     # Setup datasets. Data is not loaded until requested for plotting.
-    dataset_template = {
-        forest.data.N1280_GA6_KEY: {},
-        forest.data.KM4P4_RA1T_KEY: {},
-        forest.data.KM1P5_INDO_RA1T_KEY: {},
-        forest.data.KM1P5_MAL_RA1T_KEY: {},
-        forest.data.KM1P5_PHI_RA1T_KEY: {},
-    }
     plot_descriptions = {
         forest.data.N1280_GA6_KEY: 'N1280 GA6 LAM Model',
         forest.data.KM4P4_RA1T_KEY: 'SE Asia 4.4KM RA1-T ',
@@ -54,16 +47,17 @@ def main(bokeh_id):
         forest.data.KM1P5_MAL_RA1T_KEY: forest.data.RA1T_CONF_ID,
         forest.data.KM1P5_PHI_RA1T_KEY: forest.data.RA1T_CONF_ID,
     }
+    var_lookups = {}
     for config, config_id in config_ids.items():
-        dataset_template[config]['var_lookup'] = forest.data.get_var_lookup(config_id)
+        var_lookups[config] = forest.data.get_var_lookup(config_id)
 
     period_start = dt.datetime.now() - dt.timedelta(days=forest.data.NUM_DATA_DAYS)
     model_run_times = forest.data.get_model_run_times(period_start,
                                                       forest.data.NUM_DATA_DAYS,
                                                       forest.data.MODEL_RUN_PERIOD)
     datasets = forest.data.get_available_datasets(file_loader,
-                                                  dataset_template,
-                                                  model_run_times)
+                                                  model_run_times,
+                                                  var_lookups)
     try:
         init_fcast_time = list(datasets.keys())[-1]
     except IndexError:
@@ -132,7 +126,7 @@ def main(bokeh_id):
     forest.plot.add_borders(bokeh_figure, extent)
 
     # Set up plots
-    forest_datasets = {k: v['data'] for k, v in datasets[init_fcast_time].items()}
+    forest_datasets = datasets[init_fcast_time]
     plot_obj_left = forest.plot.ForestPlot(forest_datasets,
                                            plot_descriptions,
                                            init_fcast_time,

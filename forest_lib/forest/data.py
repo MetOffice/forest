@@ -170,30 +170,25 @@ def config_file(config):
 
 
 def get_available_datasets(file_loader,
-                           dataset_template,
-                           model_run_times):
+                           model_run_times,
+                           var_lookups):
     """
     Get a list of model runs times for which there is model output data
     available, and list of dictionaries with a dataset for each model run time.
 
     :param file_loader: class responsible for loading remote or local files
-    :param dataset_template: A dictionary of dataset configs, which will be
-                             used a template for each model run that is
-                             available.
     :param model_run_times: times when the model was run
-    :return: A tuple containing a list of available model runs and a list of
-             datasets for each available model run
     """
     datasets = OrderedDict()
     for fct in model_run_times:
         fct_str = format_model_run_time(fct)
-        fct_data_dict = copy.deepcopy(dict(dataset_template))
+        fct_data_dict = {}
         model_run_data_present = True
-        for ds_name in dataset_template.keys():
+        for ds_name in var_lookups.keys():
             file_name = 'model_data/SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
-            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(file_name,
-                                                                       file_loader,
-                                                                       dataset_template[ds_name]['var_lookup'])
+            fct_data_dict[ds_name] = forest.data.ForestDataset(file_name,
+                                                               file_loader,
+                                                               var_lookups[ds_name])
 
             model_run_data_present = model_run_data_present and file_loader.file_exists(file_name)
         # include forecast if all configs are present
@@ -226,9 +221,9 @@ def format_model_run_time(time):
 
 def get_available_times(datasets, var1):
     key0 = list(datasets.keys())[0]
-    available_times = datasets[key0]['data'].get_times(var1)
+    available_times = datasets[key0].get_times(var1)
     for ds_name in datasets:
-        times1 = datasets[ds_name]['data'].get_times(var1)
+        times1 = datasets[ds_name].get_times(var1)
         available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
     return available_times
 

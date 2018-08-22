@@ -376,8 +376,7 @@ class ForestController(object):
         print('selected new model run {0}'.format(new_val))
         self.current_fcast_time = new_val
         new_time = self._refresh_times()
-        forest_datasets = {k: v['data'] for k, v in
-                           self.datasets[self.current_fcast_time].items()}
+        forest_datasets = self.datasets[self.current_fcast_time]
         for p1 in self.plots:
             # different variables have different times available, so need to
             # set time when selecting a variable
