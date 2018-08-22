@@ -111,8 +111,20 @@ class ForestPlot(object):
         # read-only property
         pass
 
+    @classmethod
+    def from_dataset(cls, dataset, *args, **kwargs):
+        """Support old ForestPlot interface
+
+        .. warn:: This method will be deprecated soon
+        """
+        forest_datasets = pluck(dataset, 'data')
+        plot_descriptions = pluck(dataset, 'data_type_name')
+        return cls(forest_datasets, plot_descriptions,
+                   *args, **kwargs)
+
     def __init__(self,
-                 dataset,
+                 forest_datasets,
+                 plot_descriptions,
                  model_run_time,
                  plot_options,
                  figure_name,
@@ -126,14 +138,14 @@ class ForestPlot(object):
                  visible=True):
         '''Initialisation function for ForestPlot class
         '''
+        self.forest_datasets = forest_datasets
+        self.plot_descriptions = plot_descriptions
         self.current_figure = matplotlib.pyplot.figure(figure_name)
         self.current_axes = self.current_figure.add_subplot(111)
         self.region_dict = rd1
         self.main_plot = None
         self.current_time = init_time
         self.plot_options = plot_options
-        self.forest_datasets = pluck(dataset, 'data')
-        self.plot_descriptions = pluck(dataset, 'data_type_name')
         self.model_run_time = model_run_time
         self.current_var = plot_var
         self.current_config = conf1

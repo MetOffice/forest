@@ -48,21 +48,48 @@ class TestForestPlotSetRegion(unittest.TestCase):
 
 class TestForestPlotSetDataset(unittest.TestCase):
     def test_set_dataset(self):
+        config = "config"
+        forest_datasets = {
+            config: "Forest dataset"
+        }
+        plot_descriptions = {
+            config: "Plot description"
+        }
+        plot_options = None
+        plot_variable = "precipitation"
+        figure_name = None
+        old_model_run_time = None
+        region = "region"
+        region_dict = {
+            region: [0, 1, 0, 1]
+        }
+        app_path = "/some/path"
+        initial_time = None
+        forest_plot = forest.plot.ForestPlot(forest_datasets,
+                                             plot_descriptions,
+                                             old_model_run_time,
+                                             plot_options,
+                                             figure_name,
+                                             plot_variable,
+                                             config,
+                                             region,
+                                             region_dict,
+                                             app_path,
+                                             initial_time)
         new_dataset = {
-            "config": {
-                "data": "Forest dataset",
-                "data_type_name": "Plot description"
+            config: {
+                "data": "New dataset",
+                "data_type_name": "New description"
             }
         }
         new_model_run_time = None
-        forest_plot = forest.plot.ForestPlot(*forest_plot_args())
         forest_plot.set_dataset(new_dataset,
                                 new_model_run_time,
                                 render=False)
         self.assertEqual(forest_plot.forest_datasets,
-                         {"config": "Forest dataset"})
+                         {"config": "New dataset"})
         self.assertEqual(forest_plot.plot_descriptions,
-                         {"config": "Plot description"})
+                         {"config": "New description"})
 
 
 class TestForestPlotSetConfig(unittest.TestCase):
@@ -151,7 +178,7 @@ class TestForestPlot(unittest.TestCase):
             region: [0, 1, 0, 1]
         }
         app_path = None
-        forest_plot = forest.plot.ForestPlot(
+        forest_plot = forest.plot.ForestPlot.from_dataset(
             dataset,
             model_run_time,
             plot_options,
@@ -226,7 +253,7 @@ def make_forest_plot():
     }
     app_path = None
     init_time = None
-    forest_plot = forest.plot.ForestPlot(dataset,
+    forest_plot = forest.plot.ForestPlot.from_dataset(dataset,
                                          model_run_time,
                                          plot_options,
                                          figname,
@@ -241,19 +268,18 @@ def make_forest_plot():
 
 def forest_plot_args(plot_var='plot_var',
                      conf1='current_config',
-                     dataset=None,
                      plot_options=None,
                      init_time=None,
                      model_run_time=None,
                      region_dict=None,
                      region="region"):
     """Helper to construct ForestPlot"""
-    if dataset is None:
-        dataset = {
-            conf1: {
-                'data_type_name': None
-            }
-        }
+    forest_datasets = {
+        conf1: None
+    }
+    plot_descriptions = {
+        conf1: None
+    }
     figname = None
     if region_dict is None:
         region_dict = {
@@ -261,7 +287,8 @@ def forest_plot_args(plot_var='plot_var',
         }
     app_path = None
     init_time = None
-    return (dataset,
+    return (forest_datasets,
+            plot_descriptions,
             model_run_time,
             plot_options,
             figname,

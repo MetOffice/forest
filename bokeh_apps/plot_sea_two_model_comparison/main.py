@@ -34,11 +34,18 @@ def main(bokeh_id):
 
     # Setup datasets. Data is not loaded until requested for plotting.
     dataset_template = {
-        forest.data.N1280_GA6_KEY: {'data_type_name': 'N1280 GA6 LAM Model'},
-        forest.data.KM4P4_RA1T_KEY: {'data_type_name': 'SE Asia 4.4KM RA1-T '},
-        forest.data.KM1P5_INDO_RA1T_KEY: {'data_type_name': 'Indonesia 1.5KM RA1-T'},
-        forest.data.KM1P5_MAL_RA1T_KEY: {'data_type_name': 'Malaysia 1.5KM RA1-T'},
-        forest.data.KM1P5_PHI_RA1T_KEY: {'data_type_name': 'Philipines 1.5KM RA1-T'},
+        forest.data.N1280_GA6_KEY: {},
+        forest.data.KM4P4_RA1T_KEY: {},
+        forest.data.KM1P5_INDO_RA1T_KEY: {},
+        forest.data.KM1P5_MAL_RA1T_KEY: {},
+        forest.data.KM1P5_PHI_RA1T_KEY: {},
+    }
+    plot_descriptions = {
+        forest.data.N1280_GA6_KEY: 'N1280 GA6 LAM Model',
+        forest.data.KM4P4_RA1T_KEY: 'SE Asia 4.4KM RA1-T ',
+        forest.data.KM1P5_INDO_RA1T_KEY: 'Indonesia 1.5KM RA1-T',
+        forest.data.KM1P5_MAL_RA1T_KEY: 'Malaysia 1.5KM RA1-T',
+        forest.data.KM1P5_PHI_RA1T_KEY: 'Philipines 1.5KM RA1-T',
     }
     config_ids = {
         forest.data.N1280_GA6_KEY: forest.data.GA6_CONF_ID,
@@ -125,7 +132,9 @@ def main(bokeh_id):
     forest.plot.add_borders(bokeh_figure, extent)
 
     # Set up plots
-    plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
+    forest_datasets = {k: v['data'] for k, v in datasets[init_fcast_time].items()}
+    plot_obj_left = forest.plot.ForestPlot(forest_datasets,
+                                           plot_descriptions,
                                            init_fcast_time,
                                            plot_opts,
                                            'plot_left' + bokeh_id,
@@ -138,7 +147,8 @@ def main(bokeh_id):
                                            bokeh_figure=bokeh_figure)
     plot_obj_left.render()
 
-    plot_obj_right = forest.plot.ForestPlot(datasets[init_fcast_time],
+    plot_obj_right = forest.plot.ForestPlot(forest_datasets,
+                                            plot_descriptions,
                                             init_fcast_time,
                                             plot_opts,
                                             'plot_right' + bokeh_id,
