@@ -57,7 +57,7 @@ def create_dropdown_opt_list_from_dict(dict1, iterable1):
 
 def create_model_run_list(model_run_str_list):
     mr_list = []
-    for d1 in model_run_str_list.keys():
+    for d1 in model_run_str_list:
         dtobj = dateutil.parser.parse(d1)
         dt_str = ('{dt.year}-{dt.month}-{dt.day} '
                   + '{dt.hour:02d}:{dt.minute:02d}').format(dt=dtobj)
@@ -194,7 +194,7 @@ class ForestController(object):
 
         # select model run
         label = Label("Model run: {}")
-        model_run_list = create_model_run_list(self.datasets)
+        model_run_list = create_model_run_list(self.datasets.keys())
         self.model_run_drop_down = \
             bokeh.models.widgets.Dropdown(label=label.first(model_run_list),
                                           menu=model_run_list,
