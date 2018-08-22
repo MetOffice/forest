@@ -376,11 +376,13 @@ class ForestController(object):
         print('selected new model run {0}'.format(new_val))
         self.current_fcast_time = new_val
         new_time = self._refresh_times()
+        forest_datasets = {k: v['data'] for k, v in
+                           self.datasets[self.current_fcast_time].items()}
         for p1 in self.plots:
             # different variables have different times available, so need to
             # set time when selecting a variable
             p1.current_time = new_time
-            p1.set_dataset(self.datasets[self.current_fcast_time],
+            p1.set_dataset(forest_datasets,
                            self.current_fcast_time)
 
     def _on_tap(self, tap_event):

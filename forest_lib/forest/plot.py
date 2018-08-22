@@ -545,10 +545,12 @@ class ForestPlot(object):
         self.current_config = new_config
         self.render()
 
-    def set_dataset(self, new_dataset, new_model_run_time,
+    def set_dataset(self,
+                    forest_datasets,
+                    model_run_time,
                     render=True):
-        self.forest_datasets = pluck(new_dataset, 'data')
-        self.model_run_time = new_model_run_time
+        self.forest_datasets = forest_datasets
+        self.model_run_time = model_run_time
         if render:
             self.render()
 

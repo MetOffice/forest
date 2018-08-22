@@ -49,8 +49,8 @@ class TestForestPlotSetRegion(unittest.TestCase):
 class TestForestPlotSetDataset(unittest.TestCase):
     def test_set_dataset(self):
         config = "config"
-        forest_datasets = {
-            config: "Forest dataset"
+        old_forest_datasets = {
+            config: "Old dataset"
         }
         plot_descriptions = {
             config: "Plot description"
@@ -65,7 +65,7 @@ class TestForestPlotSetDataset(unittest.TestCase):
         }
         app_path = "/some/path"
         initial_time = None
-        forest_plot = forest.plot.ForestPlot(forest_datasets,
+        forest_plot = forest.plot.ForestPlot(old_forest_datasets,
                                              plot_descriptions,
                                              old_model_run_time,
                                              plot_options,
@@ -76,20 +76,15 @@ class TestForestPlotSetDataset(unittest.TestCase):
                                              region_dict,
                                              app_path,
                                              initial_time)
-        new_dataset = {
-            config: {
-                "data": "New dataset",
-                "data_type_name": "New description"
-            }
+        new_forest_datasets = {
+            config: "New dataset"
         }
         new_model_run_time = None
-        forest_plot.set_dataset(new_dataset,
+        forest_plot.set_dataset(new_forest_datasets,
                                 new_model_run_time,
                                 render=False)
         self.assertEqual(forest_plot.forest_datasets,
                          {"config": "New dataset"})
-        self.assertEqual(forest_plot.plot_descriptions,
-                         {"config": "New description"})
 
 
 class TestForestPlotSetConfig(unittest.TestCase):
