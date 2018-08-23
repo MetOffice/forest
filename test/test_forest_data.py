@@ -3,6 +3,7 @@ import os
 import datetime as dt
 import forest.aws
 import forest.data
+import iris
 
 
 class FakeLoader(object):
@@ -73,7 +74,6 @@ class TestGetAvailableDatasets(unittest.TestCase):
 class TestForestDataset(unittest.TestCase):
     def setUp(self):
         self.test_directory = os.path.dirname(os.path.realpath(__file__))
-        self.file_name = "SEA_phi2km1p5_ra1t_20180821T0000Z.nc"
         self.bucket = forest.aws.S3Mount(self.test_directory)
 
     def test_get_var_lookup_mslp(self):
@@ -90,11 +90,18 @@ class TestForestDataset(unittest.TestCase):
         self.assertEqual(result, expect)
 
     def test_get_data_should_support_model_run_time(self):
+        """Uses actual file to understand ForestDataset
+
+        ..note:: Think about how best to unit test
+                 ForestDataset.get_data()
+        """
         var_lookup = forest.data.get_var_lookup("ra1t")
-        dataset = forest.data.ForestDataset(self.file_name,
+        file_name = "SEA_phi2km1p5_ra1t_20180821T0000Z.nc"
+        dataset = forest.data.ForestDataset(file_name,
                                             self.bucket,
                                             var_lookup)
         variable = "precipitation"
-        selected_time = dt.datetime(2018, 1, 1)
-        dataset.get_data(variable, selected_time)
-        self.assertTrue(False)
+        selected_time = 426337.5
+        cube = dataset.get_data(variable, selected_time)
+        self.assertIsInstance(cube, iris.cube.Cube)
+        self.assertEqual(cube.shape, (1350, 1200))
