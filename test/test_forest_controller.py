@@ -27,12 +27,8 @@ class TestForestController(unittest.TestCase):
                  final_forecast_time]
         datasets = {
             initial_forecast_time: {
-                "key1": {
-                    "data": FakeDataset(times)
-                },
-                "key2": {
-                    "data": FakeDataset(times)
-                }
+                "key1": FakeDataset(times),
+                "key2": FakeDataset(times)
             }
         }
         plot_type_time_lookups = {

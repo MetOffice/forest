@@ -32,7 +32,6 @@ def main(bokeh_id):
         file_loader = forest.aws.S3Mount(mount_directory)
         user_feedback_directory = os.path.join(mount_directory, 'user_feedback')
 
-    # Setup datasets. Data is not loaded until requested for plotting.
     plot_descriptions = {
         forest.data.N1280_GA6_KEY: 'N1280 GA6 LAM Model',
         forest.data.KM4P4_RA1T_KEY: 'SE Asia 4.4KM RA1-T ',

@@ -417,11 +417,8 @@ class ForestDataset(object):
         return 'FOREST dataset'
 
     def get_times(self, var_name):
-        self.load_times(var_name)
-        return self.times[var_name]
-
-    def load_times(self, var_name):
         self.time_loaders[var_name](var_name)
+        return self.times[var_name]
 
     def _basic_time_load(self, var_name):
         """
@@ -432,6 +429,9 @@ class ForestDataset(object):
         * Populates self.times[var_name] = [t0, t1, ...]
         * Populates self.data[var_name] = {t0: None, t1: None, ...}
         """
+        message = "'{}' must be one of {}".format(var_name, self.var_lookup.keys())
+        assert var_name in self.var_lookup, message
+
         path_to_load = self.file_loader.load_file(self.file_name)
         field_dict = self.var_lookup[var_name]
         cf1 = lambda cube1: \
@@ -471,6 +471,10 @@ class ForestDataset(object):
         ---------
         - var_name -- Str; Redundant: used to match other loaders.
         """
+        variables = list(self.times.keys())
+        message = "'{}' must be one of {}".format(var_name, variables)
+        assert var_name in variables, message
+
         time_ix = selected_time
         if time_ix is None:
             time_ix = ForestDataset.TIME_INDEX_ALL
@@ -478,8 +482,10 @@ class ForestDataset(object):
             print('loading data for time {0}'.format(time_ix))
 
         if self.times[var_name] is None:
-            self.load_times(var_name)
+            self.time_loaders[var_name](var_name)
 
+        message = "{} not in {}".format(selected_time, self.data[var_name].keys())
+        assert selected_time in self.data[var_name], message
         if self.data[var_name][selected_time] is None:
             if self.file_loader.file_exists(self.file_name):
                 # Load the data into memory from file (will only load

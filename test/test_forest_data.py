@@ -10,6 +10,14 @@ class FakeLoader(object):
         return True
 
 
+class TestFormat(unittest.TestCase):
+    def test_format(self):
+        config = "config"
+        result = "{}_{{:%Y%m%d}}.nc".format(config)
+        expect = "config_{:%Y%m%d}.nc"
+        self.assertEqual(result, expect)
+
+
 class TestGetAvailableDatasets(unittest.TestCase):
     @unittest.skip("too complicated to test")
     def test_get_available_datasets(self):
@@ -64,24 +72,9 @@ class TestGetAvailableDatasets(unittest.TestCase):
 
 class TestForestDataset(unittest.TestCase):
     def setUp(self):
-        self.file_name = "file.nc"
-        self.bucket = forest.aws.S3Mount("directory")
-        self.var_name = "var_name"
-        self.var_lookup = {
-            self.var_name: {
-                "stash_section": None,
-                "stash_item": None
-            }
-        }
-        self.dataset = forest.data.ForestDataset(self.file_name,
-                                                 self.bucket,
-                                                 self.var_lookup)
-
-    def test_can_be_constructed(self):
-        var_lookup = None
-        forest.data.ForestDataset(self.file_name,
-                                  self.bucket,
-                                  var_lookup)
+        self.test_directory = os.path.dirname(os.path.realpath(__file__))
+        self.file_name = "SEA_phi2km1p5_ra1t_20180821T0000Z.nc"
+        self.bucket = forest.aws.S3Mount(self.test_directory)
 
     def test_get_var_lookup_mslp(self):
         config = forest.data.GA6_CONF_ID
@@ -95,3 +88,13 @@ class TestForestDataset(unittest.TestCase):
             "stash_section": 16
         }
         self.assertEqual(result, expect)
+
+    def test_get_data_should_support_model_run_time(self):
+        var_lookup = forest.data.get_var_lookup("ra1t")
+        dataset = forest.data.ForestDataset(self.file_name,
+                                            self.bucket,
+                                            var_lookup)
+        variable = "precipitation"
+        selected_time = dt.datetime(2018, 1, 1)
+        dataset.get_data(variable, selected_time)
+        self.assertTrue(False)
