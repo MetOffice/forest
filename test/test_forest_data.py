@@ -159,13 +159,13 @@ class TestForestDataset(unittest.TestCase):
             dataset.variables["forecast_period_2"][:] = forecast_period_2
             dataset.variables["forecast_period_2_bnds"][:] = forecast_period_2_bnds
             dataset.variables["height"][:] = 0.
+            dataset.variables["stratiform_rainfall_rate"][:] = 1.
         dataset = forest.data.ForestDataset(file_name,
                                             self.bucket,
                                             self.ra1t_var_lookup)
-        variable = "precipitation"
-        selected_time = 1.
-        cube = dataset.get_data(variable, selected_time)
-        print(cube)
+        cube = dataset.get_data("precipitation", selected_time=1.)
+        self.assertEqual(cube.units, 'kg m-2 hour-1')
+        np.testing.assert_array_equal(cube.data, np.full((1200, 1600), 3600.))
         self.assertTrue(False)
 
     def test_to_bounds(self):
