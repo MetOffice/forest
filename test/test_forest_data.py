@@ -121,13 +121,13 @@ class TestForestDataset(unittest.TestCase):
         loaded correctly
         """
         file_name = "test-forest-dataset-given-minimal-file.nc"
-        time_length = 4 + 1
+        time_length = 40 + 1
         time_0_length = time_length
         time_1_length = time_length - 1
         time_2_length = time_length - 1
-        longitude_length = 16
+        longitude_length = 1600
         longitude_0_length = longitude_length
-        latitude_length = 12 + 1
+        latitude_length = 1200 + 1
         latitude_0_length = latitude_length - 1
         time = np.arange(time_length)
         time_0 = np.arange(time_0_length)
@@ -194,6 +194,9 @@ class TestForestDataset(unittest.TestCase):
                                              expect_longitude_0)
         np.testing.assert_array_almost_equal(cube.coord('latitude').points,
                                              expect_latitude_0)
+        self.assertEqual(cube.attributes['STASH'].section, 4)
+        self.assertEqual(cube.attributes['STASH'].item, 203)
+        self.assertTrue(False)
 
     def test_to_bounds(self):
         """Helper method to generate coordinate bounds"""

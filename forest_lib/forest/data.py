@@ -287,22 +287,17 @@ def do_cube_load(path_to_load,
             def time_comp(time_index, eps1, cell1):
                 return abs(cell1.point - time_index) < eps1
 
-
             if time_ix != ForestDataset.TIME_INDEX_ALL:
                 coord_constraint_dict['time'] = \
                     functools.partial(time_comp, time_ix, 1e-5)
 
         elif int(iris.__version__.split('.')[0]) == 2:
-            def time_comp(selected_time, eps1, cell1):
-
-                return abs(cell1.point - selected_time).total_seconds() < eps1
-
+            def time_comp(selected_time, eps, cell):
+                return abs(cell.point - selected_time).total_seconds() < eps
 
             if time_ix != ForestDataset.TIME_INDEX_ALL:
                 coord_constraint_dict['time'] = \
                     functools.partial(time_comp, time_obj, 1)
-
-
     else:
         time_desc = time_ix
 
@@ -327,8 +322,6 @@ def do_cube_load(path_to_load,
             )
     else:
         loc_desc = 'loading all locations'
-
-
 
     ic1 = iris.Constraint(cube_func=cf1,
                           coord_values=coord_constraint_dict)
@@ -464,6 +457,7 @@ class ForestDataset(object):
             numpy.unique(numpy.floor(self.times[PRECIP_VAR_NAME] / window_size1) * window_size1) + (window_size1/2.0)
         self.data[var_name] = dict([(t1, None) for t1 in self.times[var_name]] + [('all',None)])
 
+    @forest.util.timer
     def get_data(self, var_name, selected_time, convert_units=True):
         """Calls functions to retrieve and load data.
 
