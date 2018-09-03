@@ -184,17 +184,19 @@ def get_available_datasets(file_loader,
         fct_str = format_model_run_time(fct)
         fct_data_dict = {}
         model_run_data_present = True
-        for ds_name in var_lookups.keys():
+        for ds_name, var_lookup in var_lookups.items():
             file_name = 'model_data/SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
             fct_data_dict[ds_name] = forest.data.ForestDataset(file_name,
                                                                file_loader,
-                                                               var_lookups[ds_name])
+                                                               var_lookup)
 
             model_run_data_present = model_run_data_present and file_loader.file_exists(file_name)
         # include forecast if all configs are present
         # TODO: reconsider data structure to allow for some model configs at different times to be present
         if model_run_data_present:
             datasets[fct_str] = fct_data_dict
+        else:
+            print("WARNING: '{}' has missing files".format(fct_str))
     return datasets
 
 

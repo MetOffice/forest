@@ -129,7 +129,6 @@ class ForestController(object):
                  plots,
                  bokeh_figure,
                  region_dict):
-        self.data_time_slider = None
         self.model_variable_drop_down = None
         self.time_previous_button = None
         self.time_next_button = None
@@ -175,16 +174,6 @@ class ForestController(object):
             bokeh.models.widgets.Button(label='Previous validity time',
                                         button_type='warning')
         self.time_previous_button.on_click(self.on_time_prev)
-
-        # Create time selection slider widget
-        self.data_time_slider = \
-            bokeh.models.widgets.Slider(start=0,
-                                        end=self.num_times,
-                                        value=self.current_time_index,
-                                        step=1,
-                                        title="Data time",
-                                        width=400)
-        self.data_time_slider.on_change('value', self.on_data_time_change)
 
         # Create next timestep button widget
         self.time_next_button = \
@@ -267,50 +256,24 @@ class ForestController(object):
         self.left_right_toggle.js_on_change("active", custom_js)
 
     def on_time_prev(self):
-        '''Event handler for changing to previous time step
-
-        '''
-        if not self.process_events:
-            return
-        print('selected previous time step')
-
-        new_time = int(self.data_time_slider.value - 1)
-        if new_time >= 0:
-            self.current_time_index = new_time
-            self.data_time_slider.value = self.current_time_index
+        index = int(self.current_time_index - 1)
+        if index >= 0:
+            self.set_current_time_index(index)
         else:
             print('Cannot select time < 0')
 
     def on_time_next(self):
-        '''
-
-        '''
-
-        if not self.process_events:
-            return
-        print('selected next time step')
-
-        new_time = int(self.data_time_slider.value + 1)
-        if new_time < self.num_times:
-            self.current_time_index = new_time
-            self.data_time_slider.value = self.current_time_index
+        index = self.current_time_index + 1
+        if index < self.num_times:
+            self.set_current_time_index(index)
         else:
             print('Cannot select time > num_times')
 
-    def on_data_time_change(self, attr1, old_val, new_val):
-        '''Event handler for a change in the selected forecast data time.
-
-        '''
-
-        if not self.process_events:
-            return
-        print('data time handler')
-        self.current_time_index = new_val
-
-        for p1 in self.plots:
-            new_time1 = self.available_times[self.current_time_index]
-            # self.data_time_slider.label = 'Data time {0}'.format(new_time1)
-            p1.set_data_time(new_time1)
+    def set_current_time_index(self, value):
+        self.current_time_index = value
+        for plot in self.plots:
+            time = self.available_times[self.current_time_index]
+            plot.set_data_time(time)
 
     def _refresh_times(self, update_gui=True):
         self.available_times = \
@@ -318,18 +281,10 @@ class ForestController(object):
                 self.datasets[self.current_fcast_time],
                 self.plot_type_time_lookups[self.current_var])
         try:
-            new_time = self.available_times[self.current_time_index]
+            return self.available_times[self.current_time_index]
         except IndexError:
-            self.process_events = False
-            self.current_time_index = 0
-            new_time = self.available_times[self.current_time_index]
-            if update_gui and self.data_time_slider:
-                self.data_time_slider.value = self.current_time_index
-            self.process_events = True
-
-        if update_gui and self.data_time_slider:
-            self.data_time_slider.end = self.available_times.shape[0]
-        return new_time
+            self.set_current_time_index(0)
+            return self.available_times[self.current_time_index]
 
     def on_var_change(self, attr1, old_val, new_val):
         '''Event handler for a change in the selected plot type.
