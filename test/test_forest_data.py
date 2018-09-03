@@ -115,14 +115,6 @@ class TestForestDataset(unittest.TestCase):
         self.assertIsInstance(cube, iris.cube.Cube)
         self.assertEqual(cube.shape, (1350, 1200))
 
-    @unittest.skip("implementing to_bounds method")
-    def test_sea_phi2km1p5_time_2_bnds(self):
-        file_name = "SEA_phi2km1p5_ra1t_20180821T0000Z.nc"
-        with netCDF4.Dataset(file_name) as dataset:
-            print(dataset.variables["time_2"][:])
-            print(dataset.variables["time_2_bnds"][:])
-        self.assertTrue(False)
-
     def test_forest_dataset_given_minimal_file(self):
         """
         A minimal model grid and time domain to assert cube
