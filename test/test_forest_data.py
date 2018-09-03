@@ -140,6 +140,10 @@ class TestForestDataset(unittest.TestCase):
         forecast_period_1 = forecast_period[1:]
         forecast_period_2 = np.array([1.5 + i * 3. for i in range(40)])
         forecast_period_2_bnds = to_bounds(forecast_period_2, width=1.5)
+        longitude = np.linspace(0, 90, 1600)
+        longitude_0 = np.linspace(0, 90, 1600)
+        latitude = np.linspace(0, 90, 1201)
+        latitude_0 = np.linspace(0, 90, 1200)
         with netCDF4.Dataset(file_name, "w") as dataset:
             define_ra1t_file(dataset)
             dataset.variables["time"][:] = time
@@ -147,10 +151,10 @@ class TestForestDataset(unittest.TestCase):
             dataset.variables["time_1"][:] = time_1
             dataset.variables["time_2"][:] = time_2
             dataset.variables["time_2_bnds"][:] = time_2_bnds
-            dataset.variables["longitude"][:] = np.linspace(0, 90, 1600)
-            dataset.variables["longitude_0"][:] = np.linspace(0, 90, 1600)
-            dataset.variables["latitude"][:] = np.linspace(0, 90, 1201)
-            dataset.variables["latitude_0"][:] = np.linspace(0, 90, 1200)
+            dataset.variables["longitude"][:] = longitude
+            dataset.variables["longitude_0"][:] = longitude_0
+            dataset.variables["latitude"][:] = latitude
+            dataset.variables["latitude_0"][:] = latitude_0
             dataset.variables["pressure"][:] = np.array([1000, 500, 250, 50])
             dataset.variables["forecast_reference_time"][:] = forecast_reference_time
             dataset.variables["forecast_period"][:] = forecast_period
@@ -160,13 +164,24 @@ class TestForestDataset(unittest.TestCase):
             dataset.variables["forecast_period_2_bnds"][:] = forecast_period_2_bnds
             dataset.variables["height"][:] = 0.
             dataset.variables["stratiform_rainfall_rate"][:] = 1.
+
+        # System under test
         dataset = forest.data.ForestDataset(file_name,
                                             self.bucket,
                                             self.ra1t_var_lookup)
         cube = dataset.get_data("precipitation", selected_time=1.)
-        self.assertEqual(cube.units, 'kg m-2 hour-1')
+
+        # Assertions
+        with netCDF4.Dataset(file_name, "r") as dataset:
+            expect_longitude_0 = dataset.variables["longitude_0"][:]
+            expect_latitude_0 = dataset.variables["latitude_0"][:]
+        self.assertEqual(cube.units, 'kg m-2 hour-1') # rainfall rate in hours
         np.testing.assert_array_equal(cube.data, np.full((1200, 1600), 3600.))
-        self.assertTrue(False)
+        np.testing.assert_array_equal(cube.coord('time').points, [1.])
+        np.testing.assert_array_almost_equal(cube.coord('longitude').points,
+                                             expect_longitude_0)
+        np.testing.assert_array_almost_equal(cube.coord('latitude').points,
+                                             expect_latitude_0)
 
     def test_to_bounds(self):
         """Helper method to generate coordinate bounds"""
