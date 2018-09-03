@@ -121,28 +121,38 @@ class TestForestDataset(unittest.TestCase):
         loaded correctly
         """
         file_name = "test-forest-dataset-given-minimal-file.nc"
+        time_length = 4 + 1
+        time_0_length = time_length
+        time_1_length = time_length - 1
+        time_2_length = time_length - 1
         longitude_length = 16
         longitude_0_length = longitude_length
         latitude_length = 12 + 1
         latitude_0_length = latitude_length - 1
-        time = np.arange(41)
-        time_0 = np.arange(41)
-        time_1 = 1 + np.arange(40)
-        time_2 = 1 + np.arange(40)
+        time = np.arange(time_length)
+        time_0 = np.arange(time_0_length)
+        time_1 = 1 + np.arange(time_1_length)
+        time_2 = 1 + np.arange(time_2_length)
         time_2_bnds = to_bounds(time_2, 0.5)
         forecast_reference_time = 0.
-        forecast_period = 3 * np.arange(41)
+        forecast_period = 3 * np.arange(time_length)
         forecast_period_0 = forecast_period
         forecast_period_1 = forecast_period[1:]
-        forecast_period_2 = np.array([1.5 + i * 3. for i in range(40)])
+        forecast_period_2 = np.array([1.5 + i * 3. for i in range(time_2_length)])
         forecast_period_2_bnds = to_bounds(forecast_period_2, width=1.5)
         longitude = np.linspace(0, 90, longitude_length)
         longitude_0 = np.linspace(0, 90, longitude_0_length)
         latitude = np.linspace(0, 90, latitude_length)
         latitude_0 = np.linspace(0, 90, latitude_0_length)
-        rainfall_rate = np.ones((40, latitude_0_length, longitude_0_length))
+        rainfall_rate = np.ones((time_2_length,
+                                 latitude_0_length,
+                                 longitude_0_length))
         with netCDF4.Dataset(file_name, "w") as dataset:
             define_ra1t_file(dataset, dimensions={
+                                 "time": time_length,
+                                 "time_0": time_0_length,
+                                 "time_1": time_1_length,
+                                 "time_2": time_2_length,
                                  "longitude": longitude_length,
                                  "longitude_0": longitude_0_length,
                                  "latitude": latitude_length,
