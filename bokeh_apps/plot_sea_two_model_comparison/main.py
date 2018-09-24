@@ -14,23 +14,37 @@ import forest.data
 import forest.aws
 
 
+class NameSpace():
+    """Simple namespace turns attrs into properties"""
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
+def parse_environment(env):
+    """Load settings from environment variables"""
+    download_data = env.get("FOREST_DOWNLOAD_DATA",
+                            "False").upper() == "TRUE"
+    download_directory = env.get("LOCAL_ROOT",
+                                 os.path.expanduser("~/SEA_data/"))
+    s3_root = env.get("S3_ROOT", os.path.expanduser("~/s3/"))
+    mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
+    return NameSpace(download_data=download_data,
+                     download_directory=download_directory,
+                     mount_directory=mount_directory)
+
+
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
-
-    download_data = os.getenv("FOREST_DOWNLOAD_DATA", default="False").upper() == "TRUE"
-
-    if download_data:
-        download_directory = os.environ.get('LOCAL_ROOT', os.path.expanduser("~/SEA_data/"))
+    env = parse_environment(os.environ)
+    if env.download_data:
         file_loader = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
                                           bucket_name='stephen-sea-public-london',
-                                          download_directory=download_directory)
+                                          download_directory=env.download_directory)
         user_feedback_directory = os.path.join(download_directory, 'user_feedback')
     else:
         # FUSE mounted file system
-        s3_root = os.getenv("S3_ROOT", os.path.expanduser("~/s3/"))
-        mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
-        file_loader = forest.aws.S3Mount(mount_directory)
-        user_feedback_directory = os.path.join(mount_directory, 'user_feedback')
+        file_loader = forest.aws.S3Mount(env.mount_directory)
+        user_feedback_directory = os.path.join(env.mount_directory, 'user_feedback')
 
     plot_descriptions = {
         forest.data.N1280_GA6_KEY: 'N1280 GA6 LAM Model',
@@ -57,6 +71,8 @@ def main(bokeh_id):
     datasets = forest.data.get_available_datasets(file_loader,
                                                   model_run_times,
                                                   var_lookups)
+    return
+
     try:
         init_fcast_time = list(datasets.keys())[-1]
     except IndexError:
