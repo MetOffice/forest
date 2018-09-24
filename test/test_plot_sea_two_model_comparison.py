@@ -17,7 +17,8 @@ class TestPlotSeaTwoModelComparison(unittest.TestCase):
         self.bokeh_id = "bk-id"
 
     def test_plot_sea_two_model_comparison(self):
-        with unittest.mock.patch("plot_sea_two_model_comparison.main.forest.data.get_available_datasets"):
+        module = "plot_sea_two_model_comparison.main.forest.data.get_available_datasets"
+        with unittest.mock.patch(module):
             plot_sea_two_model_comparison.main.main(self.bokeh_id)
 
 

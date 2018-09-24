@@ -122,7 +122,6 @@ UNIT_DICT_DISPLAY = {PRECIP_VAR_NAME: PRECIP_UNIT_RATE_DISPLAY,
                      WIND_VECTOR_NAME: WIND_UNIT_MPH_DISPLAY,
                      WIND_STREAM_NAME: WIND_UNIT_MPH_DISPLAY,
                      }
-
 UNIT_DICT_DISPLAY.update(dict([(var1,WIND_UNIT_MPH_DISPLAY) for var1 in WIND_VECTOR_VARS]))
 UNIT_DICT_DISPLAY.update(dict([(var1,PRECIP_UNIT_ACCUM_DISPLAY) for var1 in PRECIP_ACCUM_VARS]))
 
@@ -138,17 +137,13 @@ VAR_LIST_DIR = os.path.dirname(__file__)
 VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
 
 
-def get_var_lookup(config):
-    """Read config files into dictionary.
+def get_var_lookup(path):
+    """Read config file into dictionary
 
-    Arguments
-    ---------
-    - config -- Str; set config type to read file for.
-
+    :param path: location on disk of config file
     """
-    var_list_path = config_file(config)
     parser = configparser.RawConfigParser()
-    parser.read(var_list_path)
+    parser.read(path)
     field_dict = {}
     for sect1 in parser.sections():
         field_dict[sect1] = dict(parser.items(sect1))

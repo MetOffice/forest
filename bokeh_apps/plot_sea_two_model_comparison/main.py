@@ -62,7 +62,8 @@ def main(bokeh_id):
     }
     var_lookups = {}
     for config, config_id in config_ids.items():
-        var_lookups[config] = forest.data.get_var_lookup(config_id)
+        path = forest.data.config_file(config_id)
+        var_lookups[config] = forest.data.get_var_lookup(path)
 
     period_start = dt.datetime.now() - dt.timedelta(days=forest.data.NUM_DATA_DAYS)
     model_run_times = forest.data.get_model_run_times(period_start,
@@ -87,18 +88,17 @@ def main(bokeh_id):
 
     print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
 
-    plot_type_time_lookups = \
-        {'precipitation': 'precipitation',
-         'air_temperature': 'air_temperature',
-         'wind_vectors': 'x_wind',
-         'wind_mslp': 'x_wind',
-         'wind_streams': 'x_wind',
-         'mslp': 'mslp',
-         'cloud_fraction': 'cloud_fraction',
-         }
-
-    for var1 in forest.data.PRECIP_ACCUM_VARS:
-        plot_type_time_lookups.update({var1: var1})
+    plot_type_time_lookups = {
+        'precipitation': 'precipitation',
+        'air_temperature': 'air_temperature',
+        'wind_vectors': 'x_wind',
+        'wind_mslp': 'x_wind',
+        'wind_streams': 'x_wind',
+        'mslp': 'mslp',
+        'cloud_fraction': 'cloud_fraction',
+    }
+    for var in forest.data.PRECIP_ACCUM_VARS:
+        plot_type_time_lookups[var] = var
 
     # Create regions
     region_dict = forest.util.SEA_REGION_DICT
@@ -113,8 +113,8 @@ def main(bokeh_id):
     init_var = 'precipitation'
 
     south_east_asia_region = 'se_asia'
-    init_model_left = forest.data.N1280_GA6_KEY  # KM4P4_RA1T_KEY
-    init_model_right = forest.data.KM4P4_RA1T_KEY  # N1280_GA6_KEY
+    init_model_left = forest.data.N1280_GA6_KEY
+    init_model_right = forest.data.KM4P4_RA1T_KEY
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
     available_times = forest.data.get_available_times(datasets[init_fcast_time],
