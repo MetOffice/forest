@@ -46,6 +46,7 @@ def days_ago(days):
     return (dt.datetime.now() - dt.timedelta(days=days)).replace(second=0, microsecond=0)
 
 
+@forest.util.timer
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
     env = parse_environment(os.environ)
@@ -184,8 +185,8 @@ def main(bokeh_id):
     colorbar_widget = plot_obj_left.create_colorbar_widget()
 
     # Set up GUI controller class
-    feedback_controller = forest.FeedbackController(user_feedback_directory,
-                                                    bokeh_id)
+    # feedback_controller = forest.FeedbackController(user_feedback_directory,
+    #                                                 bokeh_id)
     forest_controller = forest.ForestController(init_var,
                                                 init_data_time_index,
                                                 datasets,
@@ -208,14 +209,14 @@ def main(bokeh_id):
              css_classes=["fst-head"])
     bokeh_figure.name = "figure"
     colorbar_widget.name = "colorbar"
-    footer = bokeh.layouts.column(
-        feedback_controller.uf_vis_toggle,
-        feedback_controller.uf_vis_layout,
-        css_classes=["fst-foot"])
+    # footer = bokeh.layouts.column(
+    #     feedback_controller.uf_vis_toggle,
+    #     feedback_controller.uf_vis_layout,
+    #     css_classes=["fst-foot"])
     roots = [header,
              bokeh_figure,
-             colorbar_widget,
-             footer]
+             colorbar_widget]
+    #         footer]
     try:
         bokeh_mode = os.environ['BOKEH_MODE']
     except:

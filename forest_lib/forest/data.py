@@ -216,6 +216,7 @@ def format_model_run_time(time):
     return '{:%Y%m%dT%H%MZ}'.format(time)
 
 
+@forest.util.timer
 def get_available_times(datasets, var1):
     key0 = list(datasets.keys())[0]
     available_times = datasets[key0].get_times(var1)
@@ -422,16 +423,15 @@ class ForestDataset(object):
         message = "'{}' must be one of {}".format(var_name, self.var_lookup.keys())
         assert var_name in self.var_lookup, message
 
-        path_to_load = self.file_loader.load_file(self.file_name)
-        field_dict = self.var_lookup[var_name]
-        cf1 = lambda cube1: \
-            cube1.attributes['STASH'].section == \
-            field_dict['stash_section'] and \
-            cube1.attributes['STASH'].item == \
-            field_dict['stash_item']
-        ic1 = iris.Constraint(cube_func=cf1)
-        cube1 = iris.load_cube(path_to_load, ic1)
-        self.times[var_name] = cube1.coord('time').points
+        path = self.file_loader.load_file(self.file_name)
+        stash_section = self.var_lookup[var_name]['stash_section']
+        stash_item = self.var_lookup[var_name]['stash_item']
+        def cube_func(cube):
+            return (cube.attributes['STASH'].section == stash_section and
+                    cube.attributes['STASH'].item == stash_item)
+        constraint = iris.Constraint(cube_func=cube_func)
+        cube = iris.load_cube(path, constraint)
+        self.times[var_name] = cube.coord('time').points
         self.data[var_name] =  dict([(t1,None) for t1 in self.times[var_name]] + [('all',None)])
 
     def _wind_time_load(self, var_name):

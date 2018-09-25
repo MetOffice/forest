@@ -74,6 +74,74 @@ class TestGetAvailableDatasets(unittest.TestCase):
         self.assertTrue(os.path.exists(result))
 
 
+class FakeDataset(object):
+    def __init__(self, times):
+        self.times = times
+
+    def get_times(self, variable):
+        return self.times
+
+
+class TestGetAvailableTimes(unittest.TestCase):
+    """
+    .. note:: This approach to defining the time axis
+              requires a rethink
+    """
+    def test_get_available_times(self):
+        result = forest.data.get_available_times({"key": FakeDataset([])}, "variable")
+        expect = []
+        np.testing.assert_array_equal(expect, result)
+
+    def test_get_available_times_gets_overlapping_times(self):
+        t1 = [1, 2, 3]
+        t2 = [2, 3, 4]
+        datasets = {
+            "k1": FakeDataset(t1),
+            "k2": FakeDataset(t2)
+        }
+        result = forest.data.get_available_times(datasets, "variable")
+        expect = [2, 3]
+        np.testing.assert_array_equal(expect, result)
+
+
+class FakeLoader(object):
+    def load_file(self, file_name):
+        return file_name
+
+
+def make_forest_file(dataset):
+    """Helper method to make a Forest diagnostic file"""
+    define_ra1t_file(dataset, dimensions={
+                         "time": 1,
+                         "time_0": 1,
+                         "time_1": 1,
+                         "time_2": 1,
+                         "longitude": 1,
+                         "longitude_0": 1,
+                         "latitude": 1,
+                         "latitude_0": 1,
+                         "pressure": 1
+                     })
+    dataset.variables["time"][:] = 0
+    dataset.variables["time_0"][:] = 0
+    dataset.variables["time_1"][:] = 0
+    dataset.variables["time_2"][:] = 0
+    dataset.variables["time_2_bnds"][:] = 0
+    dataset.variables["longitude"][:] = 0
+    dataset.variables["longitude_0"][:] = 0
+    dataset.variables["latitude"][:] = 0
+    dataset.variables["latitude_0"][:] = 0
+    dataset.variables["pressure"][:] = 0
+    dataset.variables["forecast_reference_time"][:] = 0
+    dataset.variables["forecast_period"][:] = 0
+    dataset.variables["forecast_period_0"][:] = 0
+    dataset.variables["forecast_period_1"][:] = 0
+    dataset.variables["forecast_period_2"][:] = 0
+    dataset.variables["forecast_period_2_bnds"][:] = 0
+    dataset.variables["height"][:] = 0
+    dataset.variables["stratiform_rainfall_rate"][:] = 0
+
+
 class TestForestDataset(unittest.TestCase):
     def setUp(self):
         self.test_directory = os.path.dirname(os.path.realpath(__file__))
@@ -197,6 +265,26 @@ class TestForestDataset(unittest.TestCase):
                                              expect_latitude_0)
         self.assertEqual(cube.attributes['STASH'].section, 4)
         self.assertEqual(cube.attributes['STASH'].item, 203)
+
+    def test_get_times(self):
+        """Minimal usage of ForestDataset().get_times()"""
+        file_name = "fake-file.nc"
+        with netCDF4.Dataset(file_name, "w") as dataset:
+            make_forest_file(dataset)
+        fake_file_loader = FakeLoader()
+        variable = "precipitation"
+        var_lookup = {
+            variable: {
+                "stash_section": 4,
+                "stash_item": 203
+            }
+        }
+        dataset = forest.data.ForestDataset(file_name,
+                                            fake_file_loader,
+                                            var_lookup)
+        result = dataset.get_times(variable)
+        expect = [0.]
+        np.testing.assert_array_equal(expect, result)
 
     def test_to_bounds(self):
         """Helper method to generate coordinate bounds"""

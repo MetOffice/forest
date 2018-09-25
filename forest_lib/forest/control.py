@@ -275,6 +275,7 @@ class ForestController(object):
             time = self.available_times[self.current_time_index]
             plot.set_data_time(time)
 
+    @forest.util.timer
     def _refresh_times(self, update_gui=True):
         self.available_times = \
             forest.data.get_available_times(
