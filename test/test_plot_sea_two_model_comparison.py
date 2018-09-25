@@ -1,5 +1,6 @@
 import unittest
 import unittest.mock
+import datetime as dt
 import os
 import sys
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -58,6 +59,17 @@ class TestParseEnvironment(unittest.TestCase):
         env = {"FOREST_MOUNT_DIR": "/mount/dir"}
         expect = os.path.expanduser("/mount/dir")
         self.check_parse_environment(env, "mount_directory", expect)
+
+    def test_parse_environment_start_date_default(self):
+        env = {}
+        expect = (dt.datetime.now() - dt.timedelta(days=7)).replace(second=0,
+                                                                    microsecond=0)
+        self.check_parse_environment(env, "start_date", expect)
+
+    def test_parse_environment_start_date_given_forest_start(self):
+        env = {"FOREST_START": "20180101"}
+        expect = dt.datetime(2018, 1, 1)
+        self.check_parse_environment(env, "start_date", expect)
 
     def check_parse_environment(self, env, attr, expect):
         args = plot_sea_two_model_comparison.main.parse_environment(env)

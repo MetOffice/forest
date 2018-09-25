@@ -22,6 +22,10 @@ class NameSpace():
 
 def parse_environment(env):
     """Load settings from environment variables"""
+    if "FOREST_START" in env:
+        start_date = dt.datetime.strptime(env["FOREST_START"], "%Y%m%d")
+    else:
+        start_date = days_ago(forest.data.NUM_DATA_DAYS)
     download_data = env.get("FOREST_DOWNLOAD_DATA",
                             "False").upper() == "TRUE"
     download_directory = env.get("LOCAL_ROOT",
@@ -31,9 +35,15 @@ def parse_environment(env):
     else:
         s3_root = env.get("S3_ROOT", os.path.expanduser("~/s3/"))
         mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
-    return NameSpace(download_data=download_data,
+    return NameSpace(start_date=start_date,
+                     download_data=download_data,
                      download_directory=download_directory,
                      mount_directory=mount_directory)
+
+
+def days_ago(days):
+    """Helper method to select time N days ago"""
+    return (dt.datetime.now() - dt.timedelta(days=days)).replace(second=0, microsecond=0)
 
 
 def main(bokeh_id):
@@ -69,9 +79,7 @@ def main(bokeh_id):
         forest.data.KM1P5_MAL_RA1T_KEY: ra1t_var_lookup,
         forest.data.KM1P5_PHI_RA1T_KEY: ra1t_var_lookup
     }
-
-    period_start = dt.datetime.now() - dt.timedelta(days=forest.data.NUM_DATA_DAYS)
-    model_run_times = forest.data.get_model_run_times(period_start,
+    model_run_times = forest.data.get_model_run_times(env.start_date,
                                                       forest.data.NUM_DATA_DAYS,
                                                       forest.data.MODEL_RUN_PERIOD)
     datasets = forest.data.get_available_datasets(file_loader,
