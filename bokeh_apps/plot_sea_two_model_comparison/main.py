@@ -53,27 +53,29 @@ def main(bokeh_id):
         forest.data.KM1P5_MAL_RA1T_KEY: 'Malaysia 1.5KM RA1-T',
         forest.data.KM1P5_PHI_RA1T_KEY: 'Philipines 1.5KM RA1-T',
     }
-    config_ids = {
-        forest.data.N1280_GA6_KEY: forest.data.GA6_CONF_ID,
-        forest.data.KM4P4_RA1T_KEY: forest.data.RA1T_CONF_ID,
-        forest.data.KM1P5_INDO_RA1T_KEY: forest.data.RA1T_CONF_ID,
-        forest.data.KM1P5_MAL_RA1T_KEY: forest.data.RA1T_CONF_ID,
-        forest.data.KM1P5_PHI_RA1T_KEY: forest.data.RA1T_CONF_ID,
+
+    # Stash section and items for each variable
+    ga6_config_file = forest.data.config_file(forest.data.GA6_CONF_ID)
+    ga6_var_lookup = forest.data.get_var_lookup(ga6_config_file)
+    ra1t_config_file = forest.data.config_file(forest.data.RA1T_CONF_ID)
+    ra1t_var_lookup = forest.data.get_var_lookup(ra1t_config_file)
+    var_lookups = {
+        forest.data.N1280_GA6_KEY: ga6_var_lookup,
+        forest.data.KM4P4_RA1T_KEY: ra1t_var_lookup,
+        forest.data.KM1P5_INDO_RA1T_KEY: ra1t_var_lookup,
+        forest.data.KM1P5_MAL_RA1T_KEY: ra1t_var_lookup,
+        forest.data.KM1P5_PHI_RA1T_KEY: ra1t_var_lookup
     }
-    var_lookups = {}
-    for config, config_id in config_ids.items():
-        path = forest.data.config_file(config_id)
-        var_lookups[config] = forest.data.get_var_lookup(path)
 
     period_start = dt.datetime.now() - dt.timedelta(days=forest.data.NUM_DATA_DAYS)
     model_run_times = forest.data.get_model_run_times(period_start,
                                                       forest.data.NUM_DATA_DAYS,
                                                       forest.data.MODEL_RUN_PERIOD)
+    return
+
     datasets = forest.data.get_available_datasets(file_loader,
                                                   model_run_times,
                                                   var_lookups)
-    return
-
     try:
         init_fcast_time = list(datasets.keys())[-1]
     except IndexError:
