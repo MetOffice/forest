@@ -26,8 +26,11 @@ def parse_environment(env):
                             "False").upper() == "TRUE"
     download_directory = env.get("LOCAL_ROOT",
                                  os.path.expanduser("~/SEA_data/"))
-    s3_root = env.get("S3_ROOT", os.path.expanduser("~/s3/"))
-    mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
+    if "FOREST_MOUNT_DIR" in env:
+        mount_directory = os.path.expanduser(env["FOREST_MOUNT_DIR"])
+    else:
+        s3_root = env.get("S3_ROOT", os.path.expanduser("~/s3/"))
+        mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
     return NameSpace(download_data=download_data,
                      download_directory=download_directory,
                      mount_directory=mount_directory)
@@ -71,8 +74,6 @@ def main(bokeh_id):
     model_run_times = forest.data.get_model_run_times(period_start,
                                                       forest.data.NUM_DATA_DAYS,
                                                       forest.data.MODEL_RUN_PERIOD)
-    return
-
     datasets = forest.data.get_available_datasets(file_loader,
                                                   model_run_times,
                                                   var_lookups)
