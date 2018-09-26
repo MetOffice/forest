@@ -420,16 +420,16 @@ class ForestDataset(object):
         if var_name in WIND_VARS:
             return self._wind_time_load()
         elif var_name in PRECIP_ACCUM_VARS:
-            window_size = PRECIP_ACCUM_WINDOW_SIZES_DICT[var_name]
-            return self._accum_precip_time_load(window_size, var_name)
+            return self._accum_precip_time_load(var_name)
         else:
             return self._basic_time_load(var_name)
 
     def _wind_time_load(self):
         return self._basic_time_load('x_wind')
 
-    def _accum_precip_time_load(self, window_size, var_name):
+    def _accum_precip_time_load(self, var_name):
         precip_times = self._basic_time_load(PRECIP_VAR_NAME)
+        window_size = PRECIP_ACCUM_WINDOW_SIZES_DICT[var_name]
         return numpy.unique(numpy.floor(precip_times / window_size) * window_size) + (window_size/2.0)
 
     def _basic_time_load(self, var_name):
