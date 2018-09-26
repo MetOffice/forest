@@ -111,6 +111,7 @@ class FakeLoader(object):
 
 class TestForestDataset(unittest.TestCase):
     def setUp(self):
+        self.file_fixtures = []
         self.test_directory = os.path.dirname(os.path.realpath(__file__))
         self.bucket = forest.aws.S3Mount(self.test_directory)
         path = forest.data.config_file("ra1t")
@@ -121,6 +122,13 @@ class TestForestDataset(unittest.TestCase):
 
     def tearDown(self):
         warnings.resetwarnings()
+        for path in self.file_fixtures:
+            if os.path.exists(path):
+                os.remove(path)
+
+    def file_fixture(self, path):
+        self.file_fixtures.append(path)
+        return path
 
     def test_get_var_lookup_mslp(self):
         path = forest.data.config_file(forest.data.GA6_CONF_ID)
@@ -236,7 +244,7 @@ class TestForestDataset(unittest.TestCase):
         self.assertEqual(cube.attributes['STASH'].item, 203)
 
     def test_get_times(self):
-        file_name = "fake-file.nc"
+        file_name = self.file_fixture("fake-file.nc")
         value = 5.
         dimensions = {
             "time": 1,
@@ -268,6 +276,32 @@ class TestForestDataset(unittest.TestCase):
                                             var_lookup)
         result = dataset.get_times(variable)
         expect = [value]
+        np.testing.assert_array_equal(expect, result)
+
+    def test_times_using_stash_code(self):
+        file_name = "test-forest-data-times.nc"
+        values = [1, 2, 3]
+        dimensions = {
+            "time": 1,
+            "time_0": 1,
+            "time_1": 1,
+            "time_2": len(values),
+            "longitude": 1,
+            "longitude_0": 1,
+            "latitude": 1,
+            "latitude_0": 1,
+            "pressure": 1
+        }
+        variables = {
+            "time_2": values,
+        }
+        with netCDF4.Dataset(file_name, "w") as dataset:
+            define_ra1t(dataset, dimensions)
+            assign_ra1t(dataset, variables)
+        section = 4
+        item = 203
+        result = forest.data.times(file_name, section, item)
+        expect = values
         np.testing.assert_array_equal(expect, result)
 
     def test_to_bounds(self):

@@ -137,6 +137,28 @@ VAR_LIST_DIR = os.path.dirname(__file__)
 VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
 
 
+def times(path, section, item):
+    """Read time axis from NetCDF file using stash codes
+
+    Simple way to read the time axis related to a particular
+    variable
+
+    .. note:: The stash section and item are encoded in the
+              netcdf attribute um_stash_source
+
+    :param path: path to netcdf file
+    :param section: stash code section
+    :param item: stash code item
+    :returns: time axis points
+    """
+    def cube_func(cube):
+        return (cube.attributes['STASH'].section == section and
+                cube.attributes['STASH'].item == item)
+    constraint = iris.Constraint(cube_func=cube_func)
+    cube = iris.load_cube(path, constraint)
+    return cube.coord('time').points
+
+
 def get_var_lookup(path):
     """Read config file into dictionary
 
