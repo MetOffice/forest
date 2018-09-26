@@ -304,11 +304,11 @@ class ForestPlot(object):
         if config_name is None:
             config_name = self.current_config
         forest_dataset = self.forest_datasets[config_name]
-        data_cube = forest_dataset.get_data(var_name=var_name,
-                                            selected_time=selected_time)
+        cube = forest_dataset.get_data(var_name=var_name,
+                                       selected_time=selected_time)
         # HACK: cache image array shape after get_data()
-        self._shape2d = data_cube.data.shape
-        return data_cube
+        self._shape2d = cube.data.shape
+        return cube
 
     @forest.util.timer
     def plot_pcolormesh(self):
