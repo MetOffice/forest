@@ -14,7 +14,6 @@ Classes
 - ForestDataset -- Main class for containing Forest data.
 
 """
-
 import os
 import datetime
 import datetime as dt
@@ -270,8 +269,8 @@ def check_bounds(cube1, selected_pt):
         return False
     if selected_pt[1] > max_lon:
         return False
-
     return True
+
 
 def do_cube_load(path_to_load,
                  field_dict,
@@ -519,12 +518,7 @@ class ForestDataset(object):
         return cube
 
     def wind_vector_loader(self, var_name, time_ix):
-        """Gets wind data and calculates wind vectors.
-
-        Arguments
-        ---------
-        - var_name -- Str; Redundant: used to match other loaders.
-        """
+        """Gets wind data and calculates wind vectors"""
         cube_x_wind = self.get_data('x_wind', time_ix)
         cube_y_wind = self.get_data('y_wind', time_ix)
         vectors = forest.util.calc_wind_vectors(cube_x_wind,
@@ -538,14 +532,13 @@ class ForestDataset(object):
         Arguments
         ---------
         - var_name -- Str; Precip accum variable name.
-
         """
         field_dict = self.var_lookup['precipitation']
-        cf1 = lambda cube1: \
-            cube1.attributes['STASH'].section == \
-            field_dict['stash_section'] and \
-            cube1.attributes['STASH'].item == \
-            field_dict['stash_item']
+        section = field_dict['stash_section']
+        item = field_dict['stash_item']
+        cf1 = lambda cube: \
+            cube.attributes['STASH'].section == section and \
+            cube.attributes['STASH'].item == item
         coord_constraint_dict = {}
         if time_ix != ForestDataset.TIME_INDEX_ALL:
             period_start_ix = time_ix - (window_size/2.0) - TIME_EPSILON_HRS
