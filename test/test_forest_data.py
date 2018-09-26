@@ -85,7 +85,7 @@ class FakeDataset(object):
 class TestGetAvailableTimes(unittest.TestCase):
     """
     .. note:: This approach to defining the time axis
-              requires a rethink
+              needs a rethink
     """
     def test_get_available_times(self):
         result = forest.data.get_available_times({"key": FakeDataset([])}, "variable")
@@ -107,39 +107,6 @@ class TestGetAvailableTimes(unittest.TestCase):
 class FakeLoader(object):
     def load_file(self, file_name):
         return file_name
-
-
-def make_forest_file(dataset):
-    """Helper method to make a Forest diagnostic file"""
-    define_ra1t_file(dataset, dimensions={
-                         "time": 1,
-                         "time_0": 1,
-                         "time_1": 1,
-                         "time_2": 1,
-                         "longitude": 1,
-                         "longitude_0": 1,
-                         "latitude": 1,
-                         "latitude_0": 1,
-                         "pressure": 1
-                     })
-    dataset.variables["time"][:] = 0
-    dataset.variables["time_0"][:] = 0
-    dataset.variables["time_1"][:] = 0
-    dataset.variables["time_2"][:] = 0
-    dataset.variables["time_2_bnds"][:] = 0
-    dataset.variables["longitude"][:] = 0
-    dataset.variables["longitude_0"][:] = 0
-    dataset.variables["latitude"][:] = 0
-    dataset.variables["latitude_0"][:] = 0
-    dataset.variables["pressure"][:] = 0
-    dataset.variables["forecast_reference_time"][:] = 0
-    dataset.variables["forecast_period"][:] = 0
-    dataset.variables["forecast_period_0"][:] = 0
-    dataset.variables["forecast_period_1"][:] = 0
-    dataset.variables["forecast_period_2"][:] = 0
-    dataset.variables["forecast_period_2_bnds"][:] = 0
-    dataset.variables["height"][:] = 0
-    dataset.variables["stratiform_rainfall_rate"][:] = 0
 
 
 class TestForestDataset(unittest.TestCase):
@@ -217,16 +184,18 @@ class TestForestDataset(unittest.TestCase):
                                  latitude_0_length,
                                  longitude_0_length))
         with netCDF4.Dataset(file_name, "w") as dataset:
-            define_ra1t_file(dataset, dimensions={
-                                 "time": time_length,
-                                 "time_0": time_0_length,
-                                 "time_1": time_1_length,
-                                 "time_2": time_2_length,
-                                 "longitude": longitude_length,
-                                 "longitude_0": longitude_0_length,
-                                 "latitude": latitude_length,
-                                 "latitude_0": latitude_0_length,
-                             })
+            dimensions = {
+                "time": time_length,
+                "time_0": time_0_length,
+                "time_1": time_1_length,
+                "time_2": time_2_length,
+                "longitude": longitude_length,
+                "longitude_0": longitude_0_length,
+                "latitude": latitude_length,
+                "latitude_0": latitude_0_length,
+                "pressure": 4
+            }
+            define_ra1t(dataset, dimensions=dimensions)
             dataset.variables["time"][:] = time
             dataset.variables["time_0"][:] = time_0
             dataset.variables["time_1"][:] = time_1
@@ -267,14 +236,29 @@ class TestForestDataset(unittest.TestCase):
         self.assertEqual(cube.attributes['STASH'].item, 203)
 
     def test_get_times(self):
-        """Minimal usage of ForestDataset().get_times()"""
         file_name = "fake-file.nc"
+        value = 5.
+        dimensions = {
+            "time": 1,
+            "time_0": 1,
+            "time_1": 1,
+            "time_2": 1,
+            "longitude": 1,
+            "longitude_0": 1,
+            "latitude": 1,
+            "latitude_0": 1,
+            "pressure": 1
+        }
+        variables = {
+            "time_2": [value],
+        }
         with netCDF4.Dataset(file_name, "w") as dataset:
-            make_forest_file(dataset)
+            define_ra1t(dataset, dimensions)
+            assign_ra1t(dataset, variables)
         fake_file_loader = FakeLoader()
         variable = "precipitation"
         var_lookup = {
-            variable: {
+            "precipitation": {
                 "stash_section": 4,
                 "stash_item": 203
             }
@@ -283,7 +267,7 @@ class TestForestDataset(unittest.TestCase):
                                             fake_file_loader,
                                             var_lookup)
         result = dataset.get_times(variable)
-        expect = [0.]
+        expect = [value]
         np.testing.assert_array_equal(expect, result)
 
     def test_to_bounds(self):
@@ -305,7 +289,33 @@ def to_bounds(points, width):
     return bounds
 
 
-def define_ra1t_file(dataset, dimensions=None):
+def assign_ra1t(dataset, variables):
+    """Helper method to make a Forest diagnostic file"""
+    names = [
+        "time",
+        "time_0",
+        "time_1",
+        "time_2",
+        "time_2_bnds",
+        "longitude",
+        "longitude_0",
+        "latitude",
+        "latitude_0",
+        "pressure",
+        "forecast_reference_time",
+        "forecast_period",
+        "forecast_period_0",
+        "forecast_period_1",
+        "forecast_period_2",
+        "forecast_period_2_bnds",
+        "height",
+        "stratiform_rainfall_rate"
+    ]
+    for name in names:
+        dataset.variables[name][:] = variables.get(name, 0)
+
+
+def define_ra1t(dataset, dimensions=None):
     """Define RA1T dimensions, variables and attributes"""
     defaults = dict([('time', 41),
                      ('latitude', 1201),
