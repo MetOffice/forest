@@ -392,14 +392,6 @@ class ForestDataset(object):
         self.file_name = file_name
         self.file_loader = file_loader
 
-        # set up time loaders
-        self.time_loaders = dict([(v1, self._basic_time_load) for v1 in VAR_NAMES])
-        for wv_var in WIND_VARS:
-            self.time_loaders[wv_var] = self._wind_time_load
-        for accum_precip_var in PRECIP_ACCUM_VARS:
-            ws1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[accum_precip_var]
-            self.time_loaders[accum_precip_var] = functools.partial(self._accum_precip_time_load, ws1)
-
         # set up data loader functions
         self.cube_loaders = dict([(v1, self.basic_cube_load) for v1 in VAR_NAMES])
         self.cube_loaders[WIND_SPEED_NAME] = self.wind_speed_loader
@@ -425,35 +417,28 @@ class ForestDataset(object):
         return 'FOREST dataset'
 
     def get_times(self, var_name):
-        return self.time_loaders[var_name](var_name)
+        if var_name in WIND_VARS:
+            return self._wind_time_load()
+        elif var_name in PRECIP_ACCUM_VARS:
+            window_size = PRECIP_ACCUM_WINDOW_SIZES_DICT[var_name]
+            return self._accum_precip_time_load(window_size, var_name)
+        else:
+            return self._basic_time_load(var_name)
 
-    def _basic_time_load(self, var_name):
-        """
-        Has several responsibilities:
-
-        * Constrains cube to be only variables with correct
-          stash section and item codes
-        * Populates self.times[var_name] = [t0, t1, ...]
-        * Populates self.data[var_name] = {t0: None, t1: None, ...}
-        """
-        message = "'{}' must be one of {}".format(var_name, self.var_lookup.keys())
-        assert var_name in self.var_lookup, message
-        path = self.file_loader.load_file(self.file_name)
-        stash_section = self.var_lookup[var_name]['stash_section']
-        stash_item = self.var_lookup[var_name]['stash_item']
-        def cube_func(cube):
-            return (cube.attributes['STASH'].section == stash_section and
-                    cube.attributes['STASH'].item == stash_item)
-        constraint = iris.Constraint(cube_func=cube_func)
-        cube = iris.load_cube(path, constraint)
-        return cube.coord('time').points
-
-    def _wind_time_load(self, var_name):
+    def _wind_time_load(self):
         return self._basic_time_load('x_wind')
 
     def _accum_precip_time_load(self, window_size, var_name):
         precip_times = self._basic_time_load(PRECIP_VAR_NAME)
         return numpy.unique(numpy.floor(precip_times / window_size) * window_size) + (window_size/2.0)
+
+    def _basic_time_load(self, var_name):
+        message = "'{}' must be one of {}".format(var_name, self.var_lookup.keys())
+        assert var_name in self.var_lookup, message
+        path = self.file_loader.load_file(self.file_name)
+        section = self.var_lookup[var_name]['stash_section']
+        item = self.var_lookup[var_name]['stash_item']
+        return times(path, section, item)
 
     @forest.util.timer
     def get_data(self, var_name, selected_time, convert_units=True):
@@ -463,10 +448,6 @@ class ForestDataset(object):
         ---------
         - var_name -- Str; Redundant: used to match other loaders.
         """
-        variables = list(self.time_loaders.keys())
-        message = "'{}' must be one of {}".format(var_name, variables)
-        assert var_name in variables, message
-
         time_ix = selected_time
         if time_ix is None:
             time_ix = ForestDataset.TIME_INDEX_ALL
@@ -640,8 +621,7 @@ class ForestDataset(object):
                                                             selected_point[1]))
         # extract the relevant timeseries
         dc1 = self.ts_loaders[var_name](var_name,
-                                        selected_point,
-                                        )
+                                        selected_point)
         if not dc1:
             return None
         if not check_bounds(dc1,
