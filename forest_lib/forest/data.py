@@ -416,6 +416,7 @@ class ForestDataset(object):
         """Return string"""
         return 'FOREST dataset'
 
+    @forest.util.timer
     def get_times(self, var_name):
         if var_name in WIND_VARS:
             return self._wind_time_load()

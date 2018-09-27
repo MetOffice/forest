@@ -415,29 +415,21 @@ def get_image_array_from_figure(fig):
 
 
 def timer(func):
-
     """Timer function.
-    
+
         Arguments
     ---------
-    
     - func -- Function; Function to test.
-    
     """
-    
     def timed_func(*args, **kwargs):
-    
         """Times other functions."""
-        
         start_time = time.time()
         ret_val = func(*args, **kwargs)
         end_time = time.time()
         duration_in_seconds = end_time - start_time
-        print('function {0} ran for a duration of {1}.seconds'.format(str(func), 
+        print('function {0} ran for a duration of {1}.seconds'.format(str(func),
                                                                       duration_in_seconds))
-        
         return ret_val
-
     return timed_func
 
 
