@@ -125,7 +125,6 @@ class ForestPlot(object):
     def __init__(self,
                  forest_datasets,
                  plot_descriptions,
-                 model_run_time,
                  plot_options,
                  figure_name,
                  plot_var,
@@ -146,7 +145,6 @@ class ForestPlot(object):
         self.main_plot = None
         self.current_time = init_time
         self.plot_options = plot_options
-        self.model_run_time = model_run_time
         self.current_var = plot_var
         self.current_config = conf1
         self.current_region = reg1
@@ -304,8 +302,7 @@ class ForestPlot(object):
         if config_name is None:
             config_name = self.current_config
         forest_dataset = self.forest_datasets[config_name]
-        cube = forest_dataset.get_data(var_name=var_name,
-                                       selected_time=selected_time)
+        cube = forest_dataset.get_data(var_name, selected_time)
         # HACK: cache image array shape after get_data()
         self._shape2d = cube.data.shape
         return cube
@@ -545,14 +542,9 @@ class ForestPlot(object):
         self.current_config = new_config
         self.render()
 
-    def set_dataset(self,
-                    forest_datasets,
-                    model_run_time,
-                    render=True):
+    def set_dataset(self, forest_datasets):
         self.forest_datasets = forest_datasets
-        self.model_run_time = model_run_time
-        if render:
-            self.render()
+        self.render()
 
     def link_axes_to_other_plot(self, other_plot):
         try:

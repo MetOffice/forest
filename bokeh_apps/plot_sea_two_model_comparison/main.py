@@ -156,7 +156,6 @@ def main(bokeh_id):
     forest_datasets = datasets[init_fcast_time]
     plot_obj_left = forest.plot.ForestPlot(forest_datasets,
                                            plot_descriptions,
-                                           init_fcast_time,
                                            plot_opts,
                                            'plot_left' + bokeh_id,
                                            init_var,
@@ -170,7 +169,6 @@ def main(bokeh_id):
 
     plot_obj_right = forest.plot.ForestPlot(forest_datasets,
                                             plot_descriptions,
-                                            init_fcast_time,
                                             plot_opts,
                                             'plot_right' + bokeh_id,
                                             init_var,

@@ -215,12 +215,16 @@ class ForestController(object):
                                      functools.partial(self.on_config_change,
                                                        0))
         # Create right figure model selection dropdown menu widget
-        label = Label("Right image: {}")
+        labels = Label("Right image: {}")
+        if len(dataset_menu_list) == 1:
+            label = labels.first(dataset_menu_list)
+        else:
+            label = labels.second(dataset_menu_list)
         self.right_model_drop_down = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label=label.second(dataset_menu_list),
+                                          label=label,
                                           button_type='warning')
-        label.listen_to(self.right_model_drop_down)
+        labels.listen_to(self.right_model_drop_down)
         self.right_model_drop_down.on_change('value',
                                       functools.partial(self.on_config_change,
                                                         1))
@@ -337,8 +341,7 @@ class ForestController(object):
             # different variables have different times available, so need to
             # set time when selecting a variable
             p1.current_time = new_time
-            p1.set_dataset(forest_datasets,
-                           self.current_fcast_time)
+            p1.set_dataset(forest_datasets)
 
     def _on_tap(self, tap_event):
         print('tap event occured at ({0:.2f},{1:.2f})'.format(tap_event.x,

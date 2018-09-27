@@ -58,7 +58,6 @@ class TestForestPlotSetDataset(unittest.TestCase):
         plot_options = None
         plot_variable = "precipitation"
         figure_name = None
-        old_model_run_time = None
         region = "region"
         region_dict = {
             region: [0, 1, 0, 1]
@@ -67,7 +66,6 @@ class TestForestPlotSetDataset(unittest.TestCase):
         initial_time = None
         forest_plot = forest.plot.ForestPlot(old_forest_datasets,
                                              plot_descriptions,
-                                             old_model_run_time,
                                              plot_options,
                                              figure_name,
                                              plot_variable,
@@ -79,10 +77,8 @@ class TestForestPlotSetDataset(unittest.TestCase):
         new_forest_datasets = {
             config: "New dataset"
         }
-        new_model_run_time = None
-        forest_plot.set_dataset(new_forest_datasets,
-                                new_model_run_time,
-                                render=False)
+        forest_plot.render = unittest.mock.Mock()
+        forest_plot.set_dataset(new_forest_datasets)
         self.assertEqual(forest_plot.forest_datasets,
                          {"config": "New dataset"})
 
@@ -165,7 +161,6 @@ class TestForestPlot(unittest.TestCase):
                 "norm": None
             }
         }
-        model_run_time = "2018-01-01 00:00:00"
         init_time = None
         figure_name = None
         region = "region"
@@ -175,7 +170,6 @@ class TestForestPlot(unittest.TestCase):
         app_path = None
         forest_plot = forest.plot.ForestPlot.from_dataset(
             dataset,
-            model_run_time,
             plot_options,
             figure_name,
             plot_var,
@@ -232,7 +226,6 @@ def make_forest_plot():
             "data": fake_dataset
         }
     }
-    model_run_time = None
     plot_options = {
         "precipitation": {
             "cmap": None,
@@ -249,7 +242,6 @@ def make_forest_plot():
     app_path = None
     init_time = None
     forest_plot = forest.plot.ForestPlot.from_dataset(dataset,
-                                         model_run_time,
                                          plot_options,
                                          figname,
                                          plot_var,
@@ -265,7 +257,6 @@ def forest_plot_args(plot_var='plot_var',
                      conf1='current_config',
                      plot_options=None,
                      init_time=None,
-                     model_run_time=None,
                      region_dict=None,
                      region="region"):
     """Helper to construct ForestPlot"""
@@ -284,7 +275,6 @@ def forest_plot_args(plot_var='plot_var',
     init_time = None
     return (forest_datasets,
             plot_descriptions,
-            model_run_time,
             plot_options,
             figname,
             plot_var,
