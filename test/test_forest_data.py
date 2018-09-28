@@ -111,7 +111,7 @@ class FakeLoader(object):
 
 class TestForestDataset(unittest.TestCase):
     def setUp(self):
-        self.file_fixtures = []
+        self.remove_paths = []
         self.test_directory = os.path.dirname(os.path.realpath(__file__))
         self.bucket = forest.aws.S3Mount(self.test_directory)
         path = forest.data.config_file("ra1t")
@@ -122,12 +122,12 @@ class TestForestDataset(unittest.TestCase):
 
     def tearDown(self):
         warnings.resetwarnings()
-        for path in self.file_fixtures:
+        for path in self.remove_paths:
             if os.path.exists(path):
                 os.remove(path)
 
-    def file_fixture(self, path):
-        self.file_fixtures.append(path)
+    def remove_after(self, path):
+        self.remove_paths.append(path)
         return path
 
     def test_get_var_lookup_mslp(self):
@@ -164,7 +164,7 @@ class TestForestDataset(unittest.TestCase):
         A minimal model grid and time domain to assert cube
         loaded correctly
         """
-        file_name = "test-forest-dataset-given-minimal-file.nc"
+        file_name = self.remove_after("test-forest-dataset-given-minimal-file.nc")
         time_length = 4 + 1
         time_0_length = time_length
         time_1_length = time_length - 1
@@ -249,7 +249,7 @@ class TestForestDataset(unittest.TestCase):
         self.assertEqual(cube.attributes['STASH'].item, 203)
 
     def test_get_times(self):
-        file_name = self.file_fixture("fake-file.nc")
+        file_name = self.remove_after("fake-file.nc")
         value = 5.
         dimensions = {
             "time": 1,

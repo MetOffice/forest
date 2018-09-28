@@ -141,48 +141,31 @@ class FakeDataset(object):
 
 
 class TestForestPlot(unittest.TestCase):
+    def setUp(self):
+        self.data = np.arange(4).reshape((2, 2))
+        self.lons = [0, 1]
+        self.lats = [0, 1]
+        self.dataset = FakeDataset(self.data, self.lons, self.lats)
+
+    def test_render_cache(self):
+        """Should distinguish between different model runs"""
+        old_dataset = FakeDataset(self.data, self.lons, self.lats)
+        new_dataset = FakeDataset(np.zeros((2, 2)), self.lons, self.lats)
+        plot = make_forest_plot(old_dataset)
+        plot.render()
+        plot.set_dataset(new_dataset)
+        plot.render()
+
+        result = plot.bokeh_img_ds.data["image"][0]
+        expect = [[[0, 0, 0, 255]]]
+        np.testing.assert_array_equal(result, expect)
+
     def test_render(self):
-        fake_data = np.arange(4).reshape((2, 2))
-        fake_lons = [0, 1]
-        fake_lats = [0, 1]
-        config = "config"
-        dataset = {
-            config: {
-                "data": FakeDataset(fake_data,
-                                    fake_lons,
-                                    fake_lats),
-                "data_type_name": None
-            }
-        }
-        plot_var = 'mslp'
-        plot_options = {
-            "mslp": {
-                "cmap": None,
-                "norm": None
-            }
-        }
-        init_time = None
-        figure_name = None
-        region = "region"
-        region_dict = {
-            region: [0, 1, 0, 1]
-        }
-        app_path = None
-        forest_plot = forest.plot.ForestPlot.from_dataset(
-            dataset,
-            plot_options,
-            figure_name,
-            plot_var,
-            config,
-            region,
-            region_dict,
-            app_path,
-            init_time
-        )
-        forest_plot.render()
+        plot = make_forest_plot(self.dataset)
+        plot.render()
 
         # Assert bokeh ColumnDataSource correctly populated
-        result = forest_plot.bokeh_img_ds.data["image"][0]
+        result = plot.bokeh_img_ds.data["image"][0]
         expect = [[[68, 1, 84, 255]]]
         np.testing.assert_array_equal(result, expect)
 
@@ -212,19 +195,13 @@ class TestForestPlot(unittest.TestCase):
         return forest_plot_args(*args, **kwargs)
 
 
-def make_forest_plot():
+def make_forest_plot(dataset):
     """minimal data needed to call set_config"""
-    data = np.arange(9).reshape((3, 3))
-    longitudes = np.linspace(0, 10, 3)
-    latitudes = np.linspace(0, 10, 3)
-    fake_dataset = FakeDataset(data=data,
-                               longitudes=longitudes,
-                               latitudes=latitudes)
-    dataset = {
-        "current_config": {
-            "data_type_name": "Label",
-            "data": fake_dataset
-        }
+    datasets = {
+        "current_config": dataset
+    }
+    plot_descriptions = {
+        "current_config": "Label"
     }
     plot_options = {
         "precipitation": {
@@ -241,16 +218,16 @@ def make_forest_plot():
     }
     app_path = None
     init_time = None
-    forest_plot = forest.plot.ForestPlot.from_dataset(dataset,
-                                         plot_options,
-                                         figname,
-                                         plot_var,
-                                         conf1,
-                                         reg1,
-                                         rd1,
-                                         app_path,
-                                         init_time)
-    return forest_plot
+    return forest.plot.ForestPlot(datasets,
+                                  plot_descriptions,
+                                  plot_options,
+                                  figname,
+                                  plot_var,
+                                  conf1,
+                                  reg1,
+                                  rd1,
+                                  app_path,
+                                  init_time)
 
 
 def forest_plot_args(plot_var='plot_var',
@@ -318,19 +295,25 @@ class TestSmoothImage(unittest.TestCase):
 
 
 class TestVisability(unittest.TestCase):
+    def setUp(self):
+        self.data = np.arange(9).reshape((3, 3))
+        self.lons = np.linspace(0, 10, 3)
+        self.lats = np.linspace(0, 10, 3)
+        self.dataset = FakeDataset(self.data, self.lons, self.lats)
+
     def test_when_visible_is_set_false_alpha_is_0(self):
-        fplot = make_forest_plot()
+        fplot = make_forest_plot(self.dataset)
         fplot.render()
         fplot.visible = False
         self.assertEqual(fplot.bokeh_image.glyph.global_alpha, 0)
 
     def test_when_visible_is_set_true_alpha_is_0(self):
-        fplot = make_forest_plot()
+        fplot = make_forest_plot(self.dataset)
         fplot.render()
         fplot.visible = True
         self.assertEqual(fplot.bokeh_image.glyph.global_alpha, 1)
 
     def test_bokeh_img_is_created_if_visible(self):
-        fplot = make_forest_plot()
+        fplot = make_forest_plot(self.dataset)
         fplot.visible = True
         self.assertIsNotNone(fplot.bokeh_image)
