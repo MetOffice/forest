@@ -173,55 +173,60 @@ class TestForestDataset(unittest.TestCase):
         longitude_0_length = longitude_length
         latitude_length = 12 + 1
         latitude_0_length = latitude_length - 1
-        time = np.arange(time_length)
-        time_0 = np.arange(time_0_length)
-        time_1 = 1 + np.arange(time_1_length)
-        time_2 = 1 + np.arange(time_2_length)
+        pressure_length = 4
+        dimensions = {
+            "time": time_length,
+            "time_0": time_0_length,
+            "time_1": time_1_length,
+            "time_2": time_2_length,
+            "longitude": longitude_length,
+            "longitude_0": longitude_0_length,
+            "latitude": latitude_length,
+            "latitude_0": latitude_0_length,
+            "pressure": pressure_length
+        }
+        time = np.arange(dimensions["time"])
+        time_0 = np.arange(dimensions["time_0"])
+        time_1 = 1 + np.arange(dimensions["time_1"])
+        time_2 = 1 + np.arange(dimensions["time_2"])
         time_2_bnds = to_bounds(time_2, 0.5)
+        longitude = np.linspace(0, 90, dimensions["longitude"])
+        longitude_0 = np.linspace(0, 90, dimensions["longitude_0"])
+        latitude = np.linspace(0, 90, dimensions["latitude"])
+        latitude_0 = np.linspace(0, 90, dimensions["latitude_0"])
+        pressure = np.array([1000, 500, 250, 50])
+        height = 0.
         forecast_reference_time = 0.
-        forecast_period = 3 * np.arange(time_length)
-        forecast_period_0 = forecast_period
+        forecast_period = 3 * np.arange(dimensions["time"])
         forecast_period_1 = forecast_period[1:]
-        forecast_period_2 = np.array([1.5 + i * 3. for i in range(time_2_length)])
+        forecast_period_2 = 1.5 + 3 * np.arange(dimensions["time_2"])
         forecast_period_2_bnds = to_bounds(forecast_period_2, width=1.5)
-        longitude = np.linspace(0, 90, longitude_length)
-        longitude_0 = np.linspace(0, 90, longitude_0_length)
-        latitude = np.linspace(0, 90, latitude_length)
-        latitude_0 = np.linspace(0, 90, latitude_0_length)
-        rainfall_rate = np.ones((time_2_length,
-                                 latitude_0_length,
-                                 longitude_0_length))
+        stratiform_rainfall_rate = np.ones((time_2_length,
+                                            latitude_0_length,
+                                            longitude_0_length))
+        variables = {
+            "time": time,
+            "time_0": time_0,
+            "time_1": time_1,
+            "time_2": time_2,
+            "time_2_bnds": time_2_bnds,
+            "longitude": longitude,
+            "longitude_0": longitude_0,
+            "latitude": latitude,
+            "latitude_0": latitude_0,
+            "pressure": pressure,
+            "height": height,
+            "forecast_reference_time": forecast_reference_time,
+            "forecast_period": forecast_period,
+            "forecast_period_0": forecast_period,
+            "forecast_period_1": forecast_period_1,
+            "forecast_period_2": forecast_period_2,
+            "forecast_period_2_bnds": forecast_period_2_bnds,
+            "stratiform_rainfall_rate": stratiform_rainfall_rate,
+        }
         with netCDF4.Dataset(file_name, "w") as dataset:
-            dimensions = {
-                "time": time_length,
-                "time_0": time_0_length,
-                "time_1": time_1_length,
-                "time_2": time_2_length,
-                "longitude": longitude_length,
-                "longitude_0": longitude_0_length,
-                "latitude": latitude_length,
-                "latitude_0": latitude_0_length,
-                "pressure": 4
-            }
-            define_ra1t(dataset, dimensions=dimensions)
-            dataset.variables["time"][:] = time
-            dataset.variables["time_0"][:] = time_0
-            dataset.variables["time_1"][:] = time_1
-            dataset.variables["time_2"][:] = time_2
-            dataset.variables["time_2_bnds"][:] = time_2_bnds
-            dataset.variables["longitude"][:] = longitude
-            dataset.variables["longitude_0"][:] = longitude_0
-            dataset.variables["latitude"][:] = latitude
-            dataset.variables["latitude_0"][:] = latitude_0
-            dataset.variables["pressure"][:] = np.array([1000, 500, 250, 50])
-            dataset.variables["forecast_reference_time"][:] = forecast_reference_time
-            dataset.variables["forecast_period"][:] = forecast_period
-            dataset.variables["forecast_period_0"][:] = forecast_period_0
-            dataset.variables["forecast_period_1"][:] = forecast_period_1
-            dataset.variables["forecast_period_2"][:] = forecast_period_2
-            dataset.variables["forecast_period_2_bnds"][:] = forecast_period_2_bnds
-            dataset.variables["height"][:] = 0.
-            dataset.variables["stratiform_rainfall_rate"][:] = rainfall_rate
+            define_ra1t(dataset, dimensions)
+            assign_ra1t(dataset, variables)
 
         # System under test
         dataset = forest.data.ForestDataset(file_name,
@@ -234,7 +239,7 @@ class TestForestDataset(unittest.TestCase):
             expect_longitude_0 = dataset.variables["longitude_0"][:]
             expect_latitude_0 = dataset.variables["latitude_0"][:]
         self.assertEqual(cube.units, 'kg m-2 hour-1') # rainfall rate in hours
-        np.testing.assert_array_equal(cube.data, 3600. * rainfall_rate[1])
+        np.testing.assert_array_equal(cube.data, 3600. * stratiform_rainfall_rate[1])
         np.testing.assert_array_equal(cube.coord('time').points, [1.])
         np.testing.assert_array_almost_equal(cube.coord('longitude').points,
                                              expect_longitude_0)
