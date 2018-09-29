@@ -133,11 +133,12 @@ class FakeDataset(object):
         latitude = iris.coords.DimCoord(self.latitudes,
                                         standard_name="latitude",
                                         units="degrees")
-        return iris.cube.Cube(self.data,
+        cube = iris.cube.Cube(self.data,
                               dim_coords_and_dims=[
-                                  (longitude, 0),
-                                  (latitude, 1)
+                                  (latitude, 0),
+                                  (longitude, 1)
                               ])
+        return cube
 
 
 class TestForestPlot(unittest.TestCase):
@@ -149,16 +150,18 @@ class TestForestPlot(unittest.TestCase):
 
     def test_render_cache(self):
         """Should distinguish between different model runs"""
-        old_dataset = FakeDataset(self.data, self.lons, self.lats)
-        new_dataset = FakeDataset(np.zeros((2, 2)), self.lons, self.lats)
-        plot = make_forest_plot(old_dataset)
+        lats = [0, 1]
+        lons = [0, 1, 2]
+        data_1 = [[0, 1, 2],
+                  [0, 1, 2]]
+        data_2 = [[2, 1, 0],
+                  [2, 1, 0]]
+        dataset = FakeDataset(data_1, lons, lats)
+        plot = make_forest_plot(dataset)
         plot.render()
-        plot.set_dataset(new_dataset)
-        plot.render()
-
-        result = plot.bokeh_img_ds.data["image"][0]
-        expect = [[[0, 0, 0, 255]]]
-        np.testing.assert_array_equal(result, expect)
+        # plot.set_dataset(FakeDataset(data_2, lons, lats))
+        # plot.render()
+        self.assertTrue(False)
 
     def test_render(self):
         plot = make_forest_plot(self.dataset)
