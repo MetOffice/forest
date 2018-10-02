@@ -316,19 +316,18 @@ def check_bounds(cube1, selected_pt):
     return True
 
 
-def do_cube_load(path_to_load,
-                 field_dict,
-                 time_ix,
-                 lat_long_coord):
+def do_cube_load(
+        path_to_load,
+        stash_section,
+        stash_item,
+        time_ix,
+        lat_long_coord):
     """
     Load a cube from the given path using the specified constraints. The field
     dict argument is required, but the time_ix and lat_long_coord arguments are
     optional. The cube loaded will be constrained by one or both of time and
     lat/lon if specified.
     :param path_to_load: The file path to load
-    :param field_dict: A dictionary containing keys stash_section and
-                      stash_item for selecting a variable from the data in the
-                      file.
     :param time_ix: A float representing the time in hours since 1970. Only
                     this time coordinate will be loaded if specified, otherwise
                     all times for the specified variable will be loaded.
@@ -337,10 +336,8 @@ def do_cube_load(path_to_load,
     :return: The iris cube of the data at the path with given constraints.
     """
     cf1 = lambda cube1: \
-        cube1.attributes['STASH'].section == \
-        field_dict['stash_section'] and \
-        cube1.attributes['STASH'].item == \
-        field_dict['stash_item']
+        cube1.attributes['STASH'].section == stash_section and \
+        cube1.attributes['STASH'].item == stash_item
     coord_constraint_dict = {}
 
     if time_ix != ForestDataset.TIME_INDEX_ALL:
@@ -392,8 +389,8 @@ def do_cube_load(path_to_load,
     print('path to load {0}'.format(path_to_load))
     print('time to load {0}'.format(time_desc))
     print(loc_desc)
-    print('stash to load section {0} item {1}'.format(field_dict['stash_section'],
-                                                      field_dict['stash_item']))
+    print('stash to load section {0} item {1}'.format(stash_section,
+                                                      stash_item))
 
     try:
         dc1 = iris.load_cube(path_to_load, ic1)
@@ -521,9 +518,12 @@ class ForestDataset(object):
         - time_ix -- Index of the time to load
         """
         field_dict = self.var_lookup[var_name]
+        stash_item = field_dict['stash_item']
+        stash_section = field_dict['stash_section']
         path_to_load = self.file_loader.load_file(self.file_name)
-        return do_cube_load(path_to_load=path_to_load,
-                            field_dict=field_dict,
+        return do_cube_load(path_to_load,
+                            stash_section,
+                            stash_item,
                             time_ix=time_ix,
                             lat_long_coord=None)
 
@@ -601,8 +601,11 @@ class ForestDataset(object):
 
         if self.data[var_name][time_ix] is None:
             path_to_load = self.file_loader.load_file(self.file_name)
-            dc1 = do_cube_load(path_to_load=path_to_load,
-                               field_dict=field_dict,
+            stash_item = field_dict['stash_item']
+            stash_section = field_dict['stash_section']
+            dc1 = do_cube_load(path_to_load,
+                               stash_section,
+                               stash_item,
                                time_ix=time_ix,
                                lat_long_coord=selected_point)
         return dc1
