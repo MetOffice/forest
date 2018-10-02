@@ -136,6 +136,39 @@ VAR_LIST_DIR = os.path.dirname(__file__)
 VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
 
 
+__all__ = [
+    'stash_item',
+    'stash_section',
+    'stash_codes',
+]
+
+
+def stash_item(variable, convention='ga6'):
+    """Stash item related to variable
+
+    :param convention: either 'ra1t' or 'ga6'
+    :returns: stash code
+    """
+    table = stash_codes(convention)
+    return table[variable]['stash_item']
+
+
+def stash_section(variable, convention='ga6'):
+    """Stash section related to variable
+
+    :param convention: either 'ra1t' or 'ga6'
+    :returns: stash code
+    """
+    table = stash_codes(convention)
+    return table[variable]['stash_section']
+
+
+def stash_codes(convention):
+    """Stash code references related to UM systems"""
+    path = config_file(convention.lower())
+    return get_var_lookup(path)
+
+
 def times(path, section, item):
     """Read time axis from NetCDF file using stash codes
 

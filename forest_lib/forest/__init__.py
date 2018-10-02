@@ -17,3 +17,4 @@ import forest.plot as plot
 
 from forest.stats import ForestStats
 from forest.control import ForestController, FeedbackController
+from forest.data import *

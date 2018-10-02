@@ -111,17 +111,6 @@ class ForestPlot(object):
         # read-only property
         pass
 
-    @classmethod
-    def from_dataset(cls, dataset, *args, **kwargs):
-        """Support old ForestPlot interface
-
-        .. warn:: This method will be deprecated soon
-        """
-        forest_datasets = pluck(dataset, 'data')
-        plot_descriptions = pluck(dataset, 'data_type_name')
-        return cls(forest_datasets, plot_descriptions,
-                   *args, **kwargs)
-
     def __init__(self,
                  forest_datasets,
                  plot_descriptions,

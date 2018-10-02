@@ -1,6 +1,7 @@
 import unittest
 import unittest.mock
 import datetime as dt
+import yaml
 import os
 import sys
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -84,7 +85,6 @@ class TestParseEnvironment(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
-import yaml
 class TestLoadConfig(unittest.TestCase):
     def test_load_config(self):
         file_name = "test-load-environment.yaml"
