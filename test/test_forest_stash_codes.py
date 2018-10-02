@@ -102,6 +102,10 @@ class TestForestStashCodes(unittest.TestCase):
         result = forest.stash_item('mslp', convention='ra1t')
         self.assertEqual(self.ra1t_dict['mslp']['stash_item'], result)
 
+    def test_ra1t_stash_name_given_variable(self):
+        result = forest.stash_name('mslp', convention='ra1t')
+        self.assertEqual(self.ra1t_dict['mslp']['stash_name'], result)
+
     def assert_dict_equal(self, expect, result):
         self.maxDiff = None
         self.assertEqual(expect.keys(), result.keys())

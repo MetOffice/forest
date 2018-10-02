@@ -139,8 +139,19 @@ VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
 __all__ = [
     'stash_item',
     'stash_section',
+    'stash_name',
     'stash_codes',
 ]
+
+
+def stash_name(variable, convention='ga6'):
+    """Stash name related to variable
+
+    :param convention: either 'ra1t' or 'ga6'
+    :returns: stash code
+    """
+    table = stash_codes(convention)
+    return table[variable]['stash_name']
 
 
 def stash_item(variable, convention='ga6'):
