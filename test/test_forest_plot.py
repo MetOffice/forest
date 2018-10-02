@@ -148,20 +148,46 @@ class TestForestPlot(unittest.TestCase):
         self.lats = [0, 1]
         self.dataset = FakeDataset(self.data, self.lons, self.lats)
 
-    def test_render_cache(self):
-        """Should distinguish between different model runs"""
-        lats = [0, 1]
-        lons = [0, 1, 2]
-        data_1 = [[0, 1, 2],
-                  [0, 1, 2]]
-        data_2 = [[2, 1, 0],
-                  [2, 1, 0]]
-        dataset = FakeDataset(data_1, lons, lats)
-        plot = make_forest_plot(dataset)
+    def test_render_distinguishes_model_run_times(self):
+        first_dataset = FakeDataset([[1, 2, 3], [4, 5, 6]], [0, 1, 2], [0, 1])
+        second_dataset = FakeDataset([[4, 2, 3], [4, 5, 6]], [0, 1, 2], [0, 1])
+        config = "config"
+        datasets = {
+            "config": first_dataset
+        }
+        options = {
+            "precipitation": {
+                "cmap": None,
+                "norm": None
+            }
+        }
+        descriptions = {
+            "config": "Title"
+        }
+        variable = "precipitation"
+        region = "region"
+        regions = {
+            "region": (0, 1, 0, 1)
+        }
+        plot = forest.plot.ForestPlot(datasets,
+                                      descriptions,
+                                      options,
+                                      None,
+                                      variable,
+                                      config,
+                                      region,
+                                      regions,
+                                      None,
+                                      None)
         plot.render()
-        # plot.set_dataset(FakeDataset(data_2, lons, lats))
-        # plot.render()
-        self.assertTrue(False)
+        before = plot.bokeh_img_ds.data["image"][0][:]
+        plot.set_dataset({
+            "config": second_dataset
+        })
+        plot.set_model_run_time("2018-01-01 12:00")
+        plot.render()
+        after = plot.bokeh_img_ds.data["image"][0][:]
+        self.assertTrue(np.not_equal(before[:, :, :2], after[:, :, :2]).all())
 
     def test_render(self):
         plot = make_forest_plot(self.dataset)

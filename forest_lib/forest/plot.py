@@ -134,7 +134,8 @@ class ForestPlot(object):
                  app_path,
                  init_time,
                  bokeh_figure=None,
-                 visible=True):
+                 visible=True,
+                 model_run_time=None):
         '''Initialisation function for ForestPlot class
         '''
         self.forest_datasets = forest_datasets
@@ -144,6 +145,7 @@ class ForestPlot(object):
         self.region_dict = rd1
         self.main_plot = None
         self.current_time = init_time
+        self.current_model_run_time = model_run_time
         self.plot_options = plot_options
         self.current_var = plot_var
         self.current_config = conf1
@@ -201,6 +203,9 @@ class ForestPlot(object):
         self._visible = visible
         self._shape2d = None
 
+    def set_model_run_time(self, value):
+        self.current_model_run_time = value
+
     @property
     def visible(self):
         return self._visible
@@ -219,7 +224,8 @@ class ForestPlot(object):
             return
         x, y, dw, dh, image = self.render_image(self.current_config,
                                                 self.current_var,
-                                                self.current_time)
+                                                self.current_time,
+                                                self.current_model_run_time)
         self.bokeh_img_ds.data = {
             'image': [image],
             'x': [x],
@@ -235,7 +241,8 @@ class ForestPlot(object):
     def render_image(self,
                      current_config,
                      current_var,
-                     current_time):
+                     current_time,
+                     current_model_run_time):
         """Plot RGBA images"""
         if self._plot_uses_figure(current_var):
             # Rasterize Figure instance
