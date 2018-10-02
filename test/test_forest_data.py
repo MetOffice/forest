@@ -164,7 +164,10 @@ class TestForestDataset(unittest.TestCase):
         A minimal model grid and time domain to assert cube
         loaded correctly
         """
-        file_name = self.remove_after("test-forest-dataset-given-minimal-file.nc")
+        file_name = self.remove_after(os.path.join(
+            self.test_directory,
+            "test-forest-dataset-given-minimal-file.nc"
+        ))
         time_length = 4 + 1
         time_0_length = time_length
         time_1_length = time_length - 1

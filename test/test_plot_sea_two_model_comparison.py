@@ -71,7 +71,62 @@ class TestParseEnvironment(unittest.TestCase):
         expect = dt.datetime(2018, 1, 1)
         self.check_parse_environment(env, "start_date", expect)
 
+    def test_parse_config_file(self):
+        self.check_parse_environment({}, "config_file", None)
+
+    def test_parse_config_file_given_forest_config_file(self):
+        given = {"FOREST_CONFIG_FILE": "file.cfg"}
+        self.check_parse_environment(given, "config_file", "file.cfg")
+
     def check_parse_environment(self, env, attr, expect):
         args = plot_sea_two_model_comparison.main.parse_environment(env)
         result = getattr(args, attr)
         self.assertEqual(expect, result)
+
+
+import yaml
+class TestLoadConfig(unittest.TestCase):
+    def test_load_config(self):
+        file_name = "test-load-environment.yaml"
+        settings = {
+            "models": [
+                {
+                    "name": "East Africa 4.4km",
+                    "file_pattern": "eakm4p4_{run_date:%Y%m%dT%H%MZ}.nc"
+                }
+            ]
+        }
+        with open(file_name, "w") as stream:
+            yaml.dump(settings, stream)
+        result = plot_sea_two_model_comparison.main.load_config(file_name)
+        expect = settings
+        self.assertEqual(result, expect)
+
+    def test_south_east_asia_config(self):
+        result = plot_sea_two_model_comparison.main.south_east_asia_config()
+        expect = {
+            "models": [
+                {
+                    "name": "N1280 GA6 LAM Model",
+                    "file_pattern": "SEA_n1280_ga6_{%Y%m%dT%H%MZ}.nc"
+                },
+                {
+                    "name": "SE Asia 4.4KM RA1-T ",
+                    "file_pattern": "SEA_km4p4_ra1t_{%Y%m%dT%H%MZ}.nc"
+                },
+                {
+                    "name": "Indonesia 1.5KM RA1-T",
+                    "file_pattern": "SEA_indon2km1p5_{%Y%m%dT%H%MZ}.nc"
+                },
+                {
+                    "name": "Malaysia 1.5KM RA1-T",
+                    "file_pattern": "SEA_mal2km1p5_{%Y%m%dT%H%MZ}.nc"
+                },
+                {
+                    "name": "Philipines 1.5KM RA1-T",
+                    "file_pattern": "SEA_phi2km1p5_{%Y%m%dT%H%MZ}.nc"
+                }
+            ]
+        }
+        self.maxDiff = None
+        self.assertEqual(result, expect)

@@ -1,3 +1,4 @@
+import yaml
 import datetime as dt
 import os
 import warnings
@@ -35,10 +36,48 @@ def parse_environment(env):
     else:
         s3_root = env.get("S3_ROOT", os.path.expanduser("~/s3/"))
         mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
+    if "FOREST_CONFIG_FILE" in env:
+        config_file = env["FOREST_CONFIG_FILE" ]
+    else:
+        config_file = None
     return NameSpace(start_date=start_date,
                      download_data=download_data,
                      download_directory=download_directory,
-                     mount_directory=mount_directory)
+                     mount_directory=mount_directory,
+                     config_file=config_file)
+
+
+def load_config(path):
+    """Load Forest configuration from file"""
+    with open(path) as stream:
+        return yaml.load(stream)
+
+
+def south_east_asia_config():
+    return {
+        "models": [
+            {
+                "name": "N1280 GA6 LAM Model",
+                "file_pattern": "SEA_n1280_ga6_{%Y%m%dT%H%MZ}.nc"
+            },
+            {
+                "name": "SE Asia 4.4KM RA1-T ",
+                "file_pattern": "SEA_km4p4_ra1t_{%Y%m%dT%H%MZ}.nc"
+            },
+            {
+                "name": "Indonesia 1.5KM RA1-T",
+                "file_pattern": "SEA_indon2km1p5_{%Y%m%dT%H%MZ}.nc"
+            },
+            {
+                "name": "Malaysia 1.5KM RA1-T",
+                "file_pattern": "SEA_mal2km1p5_{%Y%m%dT%H%MZ}.nc"
+            },
+            {
+                "name": "Philipines 1.5KM RA1-T",
+                "file_pattern": "SEA_phi2km1p5_{%Y%m%dT%H%MZ}.nc"
+            }
+        ]
+    }
 
 
 def days_ago(days):
