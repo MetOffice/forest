@@ -124,14 +124,6 @@ UNIT_DICT_DISPLAY = {PRECIP_VAR_NAME: PRECIP_UNIT_RATE_DISPLAY,
 UNIT_DICT_DISPLAY.update(dict([(var1,WIND_UNIT_MPH_DISPLAY) for var1 in WIND_VECTOR_VARS]))
 UNIT_DICT_DISPLAY.update(dict([(var1,PRECIP_UNIT_ACCUM_DISPLAY) for var1 in PRECIP_ACCUM_VARS]))
 
-N1280_GA6_KEY = 'n1280_ga6'
-KM4P4_RA1T_KEY = 'km4p4_ra1t'
-KM1P5_INDO_RA1T_KEY = 'indon2km1p5_ra1t'
-KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
-KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
-
-VAR_LIST_DIR = os.path.dirname(__file__)
-VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
 
 
 __all__ = [
@@ -228,8 +220,8 @@ def get_var_lookup(path):
 
 
 def config_file(config):
-    return os.path.join(VAR_LIST_DIR,
-                        VAR_LIST_FNAME_BASE.format(config=config))
+    return os.path.join(os.path.dirname(__file__),
+                        'var_list_{config}.conf'.format(config=config))
 
 
 def get_available_datasets(file_patterns,
