@@ -29,8 +29,10 @@ def parse_environment(env):
         start_date = days_ago(forest.data.NUM_DATA_DAYS)
     download_data = env.get("FOREST_DOWNLOAD_DATA",
                             "False").upper() == "TRUE"
-    download_directory = env.get("LOCAL_ROOT",
-                                 os.path.expanduser("~/SEA_data/"))
+    download_directory = parse_variable(env,
+                                        ["FOREST_DOWNLOAD_DIR",
+                                         "LOCAL_ROOT"],
+                                        os.path.expanduser("~/SEA_data/"))
     if "FOREST_MOUNT_DIR" in env:
         mount_directory = os.path.expanduser(env["FOREST_MOUNT_DIR"])
     else:
@@ -47,6 +49,15 @@ def parse_environment(env):
                      config_file=config_file)
 
 
+def parse_variable(env, names, default):
+    if isinstance(names, str):
+        names = [names]
+    for name in names:
+        if name in env:
+            return env[name]
+    return default
+
+
 def load_config(path):
     """Load Forest configuration from file"""
     with open(path) as stream:
@@ -55,6 +66,24 @@ def load_config(path):
 
 def south_east_asia_config():
     return {
+        "regions": [
+            {
+                "name": "South east Asia",
+                "extent": [-18.0, 29.96, 90.0, 153.96]
+            },
+            {
+                "name": "Indonesia",
+                "extent": [-15.1, 1.0865, 99.875, 120.111]
+            },
+            {
+                "name": "Malaysia",
+                "extent": [-2.75, 10.7365, 95.25, 108.737]
+            },
+            {
+                "name": "Philippines",
+                "extent": [3.1375, 21.349, 115.8, 131.987]
+            },
+        ],
         "models": [
             {
                 "name": "N1280 GA6 LAM Model",
@@ -104,17 +133,22 @@ def days_ago(days):
 def main(bokeh_id):
     '''Two-model bokeh application main program'''
     env = parse_environment(os.environ)
+    if env.config_file is None:
+        settings = south_east_asia_config()
+    else:
+        print("Loading: {}".format(env.config_file))
+        settings = load_config(env.config_file)
+
     if env.download_data:
         file_loader = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
                                           bucket_name='stephen-sea-public-london',
                                           download_directory=env.download_directory)
-        user_feedback_directory = os.path.join(download_directory, 'user_feedback')
+        user_feedback_directory = os.path.join(env.download_directory, 'user_feedback')
     else:
         # FUSE mounted file system
         file_loader = forest.aws.S3Mount(env.mount_directory)
         user_feedback_directory = os.path.join(env.mount_directory, 'user_feedback')
 
-    settings = south_east_asia_config()
     models = settings['models']
     plot_descriptions = {
         model['name']: model['name']
@@ -157,9 +191,6 @@ def main(bokeh_id):
     for var in forest.data.PRECIP_ACCUM_VARS:
         plot_type_time_lookups[var] = var
 
-    # Create regions
-    region_dict = forest.util.SEA_REGION_DICT
-
     # initial selected point is approximately Jakarta, Indonesia
     selected_point = (-6, 103)
 
@@ -169,9 +200,11 @@ def main(bokeh_id):
     init_data_time_index = 1
     init_var = 'precipitation'
 
-    south_east_asia_region = 'se_asia'
     init_model_left = models[0]['name']
-    init_model_right = models[1]['name']
+    if len(models) == 1:
+        init_model_right = models[0]['name']
+    else:
+        init_model_right = models[1]['name']
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
     available_times = forest.data.get_available_times(datasets[init_fcast_time],
@@ -180,7 +213,7 @@ def main(bokeh_id):
     num_times = available_times.shape[0]
 
     bokeh_figure = bokeh.plotting.figure(active_inspect=None,
-                                         match_aspect=True,
+                                         match_aspect=False,
                                          title_location="below")
     forest.plot.add_x_axes(bokeh_figure, "above")
     forest.plot.add_y_axes(bokeh_figure, "right")
@@ -188,11 +221,14 @@ def main(bokeh_id):
     bokeh_figure.toolbar_location = "below"
 
     # Add cartopy coastline to bokeh figure
-    region = region_dict[south_east_asia_region]
-    y_start = region[0]
-    y_end = region[1]
-    x_start = region[2]
-    x_end = region[3]
+    region_names = [region['name'] for region in settings["regions"]]
+    region_dict = {region['name']: region['name'] for region in settings["regions"]}
+    region_extents = {region['name']: region['extent'] for region in settings["regions"]}
+    coords = region_extents[region_names[0]]
+    y_start = coords[0]
+    y_end = coords[1]
+    x_start = coords[2]
+    x_end = coords[3]
     extent = (x_start, x_end, y_start, y_end)
     forest.plot.add_coastlines(bokeh_figure, extent)
     forest.plot.add_borders(bokeh_figure, extent)
@@ -205,8 +241,8 @@ def main(bokeh_id):
                                            'plot_left' + bokeh_id,
                                            init_var,
                                            init_model_left,
-                                           south_east_asia_region,
-                                           region_dict,
+                                           region_names[0],
+                                           region_extents,
                                            app_path,
                                            init_data_time,
                                            bokeh_figure=bokeh_figure)
@@ -218,8 +254,8 @@ def main(bokeh_id):
                                             'plot_right' + bokeh_id,
                                             init_var,
                                             init_model_right,
-                                            south_east_asia_region,
-                                            region_dict,
+                                            region_names[0],
+                                            region_extents,
                                             app_path,
                                             init_data_time,
                                             bokeh_figure=bokeh_figure,

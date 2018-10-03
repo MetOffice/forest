@@ -28,11 +28,6 @@ VARIABLE_DD_DICT = {'precipitation': 'Precipitation',
                     'mslp': 'MSLP',
                     'cloud_fraction': 'Cloud fraction'}
 
-REGION_DD_DICT = {'indonesia': 'Indonesia',
-                  'malaysia': 'Malaysia',
-                  'phillipines': 'Philippines',
-                  'se_asia': 'SE Asia'}
-
 
 def create_dropdown_opt_list(iterable1):
     '''Create list of 2-tuples with matching values from list for
@@ -193,9 +188,7 @@ class ForestController(object):
 
         # Create region selection dropdown menu region
         label = Label("Region: {}")
-        region_menu_list = \
-            create_dropdown_opt_list_from_dict(REGION_DD_DICT,
-                                               self.region_dict.keys())
+        region_menu_list = list(self.region_dict.items())
         self.region_drop_down = bokeh.models.widgets.Dropdown(menu=region_menu_list,
                                                        label=label.first(region_menu_list),
                                                        button_type='warning')

@@ -51,6 +51,11 @@ class TestParseEnvironment(unittest.TestCase):
         self.check_parse_environment(env, "download_directory",
                                      os.path.expanduser("/dir"))
 
+    def test_parse_environment_download_directory_given_download_dir(self):
+        env = {"FOREST_DOWNLOAD_DIR": "/dir"}
+        self.check_parse_environment(env, "download_directory",
+                                     os.path.expanduser("/dir"))
+
     def test_parse_environment_mount_directory(self):
         env = {"S3_ROOT": "/dir"}
         expect = os.path.expanduser("/dir/stephen-sea-public-london")
@@ -102,46 +107,63 @@ class TestLoadConfig(unittest.TestCase):
         expect = settings
         self.assertEqual(result, expect)
 
+
+class TestSouthEastAsiaConfig(unittest.TestCase):
+    def setUp(self):
+        self.models = [
+            {
+                "name": "N1280 GA6 LAM Model",
+                "file": {
+                    "pattern": "SEA_n1280_ga6_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ga6"
+                }
+            },
+            {
+                "name": "SE Asia 4.4KM RA1-T ",
+                "file": {
+                    "pattern": "SEA_km4p4_ra1t_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ra1t"
+                }
+            },
+            {
+                "name": "Indonesia 1.5KM RA1-T",
+                "file": {
+                    "pattern": "SEA_indon2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ra1t"
+                }
+            },
+            {
+                "name": "Malaysia 1.5KM RA1-T",
+                "file": {
+                    "pattern": "SEA_mal2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ra1t"
+                }
+            },
+            {
+                "name": "Philipines 1.5KM RA1-T",
+                "file": {
+                    "pattern": "SEA_phi2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ra1t"
+                }
+            }
+        ]
+        self.regions = [
+            {"name": "South east Asia", "extent": [-18.0, 29.96, 90.0, 153.96]},
+            {"name": "Indonesia", "extent": [-15.1, 1.0865, 99.875, 120.111]},
+            {"name": "Malaysia", "extent": [-2.75, 10.7365, 95.25, 108.737]},
+            {"name": "Philippines", "extent": [3.1375, 21.349, 115.8, 131.987]},
+        ]
+        self.maxDiff = None
+
+    def test_south_east_asia_regions(self):
+        result = plot_sea_two_model_comparison.main.south_east_asia_config()["regions"]
+        expect = self.regions
+        self.assertEqual(result, expect)
+
     def test_south_east_asia_config(self):
         result = plot_sea_two_model_comparison.main.south_east_asia_config()
         expect = {
-            "models": [
-                {
-                    "name": "N1280 GA6 LAM Model",
-                    "file": {
-                        "pattern": "SEA_n1280_ga6_{:%Y%m%dT%H%MZ}.nc",
-                        "format": "ga6"
-                    }
-                },
-                {
-                    "name": "SE Asia 4.4KM RA1-T ",
-                    "file": {
-                        "pattern": "SEA_km4p4_ra1t_{:%Y%m%dT%H%MZ}.nc",
-                        "format": "ra1t"
-                    }
-                },
-                {
-                    "name": "Indonesia 1.5KM RA1-T",
-                    "file": {
-                        "pattern": "SEA_indon2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
-                        "format": "ra1t"
-                    }
-                },
-                {
-                    "name": "Malaysia 1.5KM RA1-T",
-                    "file": {
-                        "pattern": "SEA_mal2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
-                        "format": "ra1t"
-                    }
-                },
-                {
-                    "name": "Philipines 1.5KM RA1-T",
-                    "file": {
-                        "pattern": "SEA_phi2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
-                        "format": "ra1t"
-                    }
-                }
-            ]
+            "models": self.models,
+            "regions": self.regions
         }
-        self.maxDiff = None
         self.assertEqual(result, expect)
