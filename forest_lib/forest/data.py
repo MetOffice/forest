@@ -232,7 +232,8 @@ def config_file(config):
                         VAR_LIST_FNAME_BASE.format(config=config))
 
 
-def get_available_datasets(file_loader,
+def get_available_datasets(file_patterns,
+                           file_loader,
                            model_run_times,
                            var_lookups):
     """
@@ -243,15 +244,17 @@ def get_available_datasets(file_loader,
     :param model_run_times: times when the model was run
     """
     datasets = OrderedDict()
-    for fct in model_run_times:
-        fct_str = format_model_run_time(fct)
+    for model_run_time in model_run_times:
+        fct_str = format_model_run_time(model_run_time)
         fct_data_dict = {}
         model_run_data_present = True
-        for ds_name, var_lookup in var_lookups.items():
-            file_name = 'model_data/SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
-            fct_data_dict[ds_name] = forest.data.ForestDataset(file_name,
-                                                               file_loader,
-                                                               var_lookup)
+        for name, pattern in file_patterns.items():
+            var_lookup = var_lookups[name]
+            file_name = os.path.join('model_data', pattern.format(model_run_time))
+            print(file_name, file_loader.file_exists(file_name))
+            fct_data_dict[name] = forest.data.ForestDataset(file_name,
+                                                            file_loader,
+                                                            var_lookup)
 
             model_run_data_present = model_run_data_present and file_loader.file_exists(file_name)
         # include forecast if all configs are present

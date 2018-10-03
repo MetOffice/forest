@@ -59,35 +59,35 @@ def south_east_asia_config():
             {
                 "name": "N1280 GA6 LAM Model",
                 "file": {
-                    "pattern": "SEA_n1280_ga6_{%Y%m%dT%H%MZ}.nc",
+                    "pattern": "SEA_n1280_ga6_{:%Y%m%dT%H%MZ}.nc",
                     "format": "ga6"
                 }
             },
             {
                 "name": "SE Asia 4.4KM RA1-T ",
                 "file": {
-                    "pattern": "SEA_km4p4_ra1t_{%Y%m%dT%H%MZ}.nc",
+                    "pattern": "SEA_km4p4_ra1t_{:%Y%m%dT%H%MZ}.nc",
                     "format": "ra1t"
                 }
             },
             {
                 "name": "Indonesia 1.5KM RA1-T",
                 "file": {
-                    "pattern": "SEA_indon2km1p5_{%Y%m%dT%H%MZ}.nc",
+                    "pattern": "SEA_indon2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
                     "format": "ra1t"
                 }
             },
             {
                 "name": "Malaysia 1.5KM RA1-T",
                 "file": {
-                    "pattern": "SEA_mal2km1p5_{%Y%m%dT%H%MZ}.nc",
+                    "pattern": "SEA_mal2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
                     "format": "ra1t"
                 }
             },
             {
                 "name": "Philipines 1.5KM RA1-T",
                 "file": {
-                    "pattern": "SEA_phi2km1p5_{%Y%m%dT%H%MZ}.nc",
+                    "pattern": "SEA_phi2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
                     "format": "ra1t"
                 }
             }
@@ -114,36 +114,31 @@ def main(bokeh_id):
         file_loader = forest.aws.S3Mount(env.mount_directory)
         user_feedback_directory = os.path.join(env.mount_directory, 'user_feedback')
 
+    settings = south_east_asia_config()
+    models = settings['models']
     plot_descriptions = {
-        forest.data.N1280_GA6_KEY: 'N1280 GA6 LAM Model',
-        forest.data.KM4P4_RA1T_KEY: 'SE Asia 4.4KM RA1-T ',
-        forest.data.KM1P5_INDO_RA1T_KEY: 'Indonesia 1.5KM RA1-T',
-        forest.data.KM1P5_MAL_RA1T_KEY: 'Malaysia 1.5KM RA1-T',
-        forest.data.KM1P5_PHI_RA1T_KEY: 'Philipines 1.5KM RA1-T',
+        model['name']: model['name']
+            for model in models
     }
-
-    # Stash section and items for each variable
+    file_patterns = {
+        model['name']: model['file']['pattern']
+            for model in models
+    }
     var_lookups = {
-        forest.data.N1280_GA6_KEY: forest.stash_codes("ga6"),
-        forest.data.KM4P4_RA1T_KEY: forest.stash_codes("ra1t"),
-        forest.data.KM1P5_INDO_RA1T_KEY: forest.stash_codes("ra1t"),
-        forest.data.KM1P5_MAL_RA1T_KEY: forest.stash_codes("ra1t"),
-        forest.data.KM1P5_PHI_RA1T_KEY: forest.stash_codes("ra1t")
+        model['name']: forest.stash_codes(model['file']['format'])
+            for model in models
     }
     model_run_times = forest.data.get_model_run_times(env.start_date,
                                                       forest.data.NUM_DATA_DAYS,
                                                       forest.data.MODEL_RUN_PERIOD)
-    datasets = forest.data.get_available_datasets(file_loader,
+    datasets = forest.data.get_available_datasets(file_patterns,
+                                                  file_loader,
                                                   model_run_times,
                                                   var_lookups)
     try:
         init_fcast_time = list(datasets.keys())[-1]
     except IndexError:
-        init_fcast_time = None
-    print("initial forecast time:", init_fcast_time)
-    print(datasets)
-
-    if init_fcast_time is None:
+        print("[WARNING] No forecast times found")
         layout1 = forest.util.load_error_page()
         bokeh.plotting.curdoc().add_root(layout1)
         return
@@ -175,8 +170,8 @@ def main(bokeh_id):
     init_var = 'precipitation'
 
     south_east_asia_region = 'se_asia'
-    init_model_left = forest.data.N1280_GA6_KEY
-    init_model_right = forest.data.KM4P4_RA1T_KEY
+    init_model_left = models[0]['name']
+    init_model_right = models[1]['name']
     app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
 
     available_times = forest.data.get_available_times(datasets[init_fcast_time],
