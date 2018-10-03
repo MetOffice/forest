@@ -108,16 +108,12 @@ def main(bokeh_id):
     }
 
     # Stash section and items for each variable
-    ga6_config_file = forest.data.config_file(forest.data.GA6_CONF_ID)
-    ga6_var_lookup = forest.data.get_var_lookup(ga6_config_file)
-    ra1t_config_file = forest.data.config_file(forest.data.RA1T_CONF_ID)
-    ra1t_var_lookup = forest.data.get_var_lookup(ra1t_config_file)
     var_lookups = {
-        forest.data.N1280_GA6_KEY: ga6_var_lookup,
-        forest.data.KM4P4_RA1T_KEY: ra1t_var_lookup,
-        forest.data.KM1P5_INDO_RA1T_KEY: ra1t_var_lookup,
-        forest.data.KM1P5_MAL_RA1T_KEY: ra1t_var_lookup,
-        forest.data.KM1P5_PHI_RA1T_KEY: ra1t_var_lookup
+        forest.data.N1280_GA6_KEY: forest.stash_codes("ga6"),
+        forest.data.KM4P4_RA1T_KEY: forest.stash_codes("ra1t"),
+        forest.data.KM1P5_INDO_RA1T_KEY: forest.stash_codes("ra1t"),
+        forest.data.KM1P5_MAL_RA1T_KEY: forest.stash_codes("ra1t"),
+        forest.data.KM1P5_PHI_RA1T_KEY: forest.stash_codes("ra1t")
     }
     model_run_times = forest.data.get_model_run_times(env.start_date,
                                                       forest.data.NUM_DATA_DAYS,

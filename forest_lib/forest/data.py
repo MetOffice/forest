@@ -141,6 +141,7 @@ __all__ = [
     'stash_section',
     'stash_name',
     'stash_codes',
+    'times'
 ]
 
 
@@ -175,7 +176,11 @@ def stash_section(variable, convention='ga6'):
 
 
 def stash_codes(convention):
-    """Stash code references related to UM systems"""
+    """Stash code reference related to UM systems
+
+    :param convention: either 'ra1t' or 'ga6'
+    :returns: nested dict of stash codes related to variables
+    """
     path = config_file(convention.lower())
     return get_var_lookup(path)
 
