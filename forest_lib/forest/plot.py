@@ -526,18 +526,14 @@ class ForestPlot(object):
         self.current_region = region
         extents = self.region_dict[self.current_region]
         y_start, y_end, x_start, x_end = extents
-        y_range = bokeh.models.Range1d(y_start, y_end)
-        print("setting region extents: '{}'".format(region))
-        print("   x_start: {}".format(x_start))
-        print("   x_end: {}".format(x_end))
-        print("   x_start before: {}".format(self.bokeh_figure.x_range.start))
-        print("   x_end before: {}".format(self.bokeh_figure.x_range.end))
+        x_start, y_start, x_end, y_end = forest.bounding_square(x_start, y_start,
+                                                                x_end, y_end)
         self.bokeh_figure.x_range.start = x_start
         self.bokeh_figure.x_range.end = x_end
+        self.bokeh_figure.x_range.bounds = [x_start, x_end]
         self.bokeh_figure.y_range.start = y_start
         self.bokeh_figure.y_range.end = y_end
-        print("   x_start after: {}".format(self.bokeh_figure.x_range.start))
-        print("   x_end after: {}".format(self.bokeh_figure.x_range.end))
+        self.bokeh_figure.y_range.bounds = [y_start, y_end]
 
     def set_config(self, new_config):
         '''Function to set a new value of config and do an update
