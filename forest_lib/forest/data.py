@@ -22,6 +22,7 @@ import functools
 import numpy
 import copy
 from collections import OrderedDict
+from functools import lru_cache
 
 import iris
 import iris.coord_categorisation
@@ -165,6 +166,7 @@ def stash_section(variable, convention='ga6'):
     return table[variable]['stash_section']
 
 
+@lru_cache(maxsize=2)
 def stash_codes(convention):
     """Stash code reference related to UM systems
 
