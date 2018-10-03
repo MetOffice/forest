@@ -427,6 +427,11 @@ class ForestDataset(object):
     """
     TIME_INDEX_ALL = 'all'
 
+    @classmethod
+    def convention(cls, file_name, file_loader, convention):
+        """Helper to construct dataset"""
+        return cls(file_name, file_loader, stash_codes(convention))
+
     def __init__(self,
                  file_name,
                  file_loader,
