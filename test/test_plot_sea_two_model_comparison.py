@@ -108,23 +108,38 @@ class TestLoadConfig(unittest.TestCase):
             "models": [
                 {
                     "name": "N1280 GA6 LAM Model",
-                    "file_pattern": "SEA_n1280_ga6_{%Y%m%dT%H%MZ}.nc"
+                    "file": {
+                        "pattern": "SEA_n1280_ga6_{%Y%m%dT%H%MZ}.nc",
+                        "format": "ga6"
+                    }
                 },
                 {
                     "name": "SE Asia 4.4KM RA1-T ",
-                    "file_pattern": "SEA_km4p4_ra1t_{%Y%m%dT%H%MZ}.nc"
+                    "file": {
+                        "pattern": "SEA_km4p4_ra1t_{%Y%m%dT%H%MZ}.nc",
+                        "format": "ra1t"
+                    }
                 },
                 {
                     "name": "Indonesia 1.5KM RA1-T",
-                    "file_pattern": "SEA_indon2km1p5_{%Y%m%dT%H%MZ}.nc"
+                    "file": {
+                        "pattern": "SEA_indon2km1p5_{%Y%m%dT%H%MZ}.nc",
+                        "format": "ra1t"
+                    }
                 },
                 {
                     "name": "Malaysia 1.5KM RA1-T",
-                    "file_pattern": "SEA_mal2km1p5_{%Y%m%dT%H%MZ}.nc"
+                    "file": {
+                        "pattern": "SEA_mal2km1p5_{%Y%m%dT%H%MZ}.nc",
+                        "format": "ra1t"
+                    }
                 },
                 {
                     "name": "Philipines 1.5KM RA1-T",
-                    "file_pattern": "SEA_phi2km1p5_{%Y%m%dT%H%MZ}.nc"
+                    "file": {
+                        "pattern": "SEA_phi2km1p5_{%Y%m%dT%H%MZ}.nc",
+                        "format": "ra1t"
+                    }
                 }
             ]
         }
