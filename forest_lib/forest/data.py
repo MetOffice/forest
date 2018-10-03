@@ -224,10 +224,10 @@ def config_file(config):
                         'var_list_{config}.conf'.format(config=config))
 
 
-def get_available_datasets(file_patterns,
-                           file_loader,
-                           model_run_times,
-                           var_lookups):
+def get_available_datasets(model_run_times,
+                           file_patterns,
+                           file_formats,
+                           file_loader):
     """
     Get a list of model runs times for which there is model output data
     available, and list of dictionaries with a dataset for each model run time.
@@ -241,12 +241,12 @@ def get_available_datasets(file_patterns,
         fct_data_dict = {}
         model_run_data_present = True
         for name, pattern in file_patterns.items():
-            var_lookup = var_lookups[name]
+            file_format = file_formats[name]
             file_name = os.path.join('model_data', pattern.format(model_run_time))
             print(file_name, file_loader.file_exists(file_name))
-            fct_data_dict[name] = forest.data.ForestDataset(file_name,
-                                                            file_loader,
-                                                            var_lookup)
+            fct_data_dict[name] = forest.data.ForestDataset.convention(file_name,
+                                                                       file_loader,
+                                                                       file_format)
 
             model_run_data_present = model_run_data_present and file_loader.file_exists(file_name)
         # include forecast if all configs are present

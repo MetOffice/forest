@@ -124,17 +124,17 @@ def main(bokeh_id):
         model['name']: model['file']['pattern']
             for model in models
     }
-    var_lookups = {
-        model['name']: forest.stash_codes(model['file']['format'])
+    file_formats = {
+        model['name']: model['file']['format']
             for model in models
     }
     model_run_times = forest.data.get_model_run_times(env.start_date,
                                                       forest.data.NUM_DATA_DAYS,
                                                       forest.data.MODEL_RUN_PERIOD)
-    datasets = forest.data.get_available_datasets(file_patterns,
-                                                  file_loader,
-                                                  model_run_times,
-                                                  var_lookups)
+    datasets = forest.data.get_available_datasets(model_run_times,
+                                                  file_patterns,
+                                                  file_formats,
+                                                  file_loader)
     try:
         init_fcast_time = list(datasets.keys())[-1]
     except IndexError:
