@@ -130,10 +130,9 @@ class TestForestDataset(unittest.TestCase):
         self.remove_paths.append(path)
         return path
 
-    def test_get_var_lookup_mslp(self):
-        path = forest.data.config_file(forest.data.GA6_CONF_ID)
-        var_lookup = forest.data.get_var_lookup(path)
-        result = var_lookup['mslp']
+    def test_stash_codes_ga6_mslp(self):
+        codes = forest.data.stash_codes("ga6")
+        result = codes['mslp']
         expect = {
             "accumulate": False,
             "filename": "umnsaa_pverb",

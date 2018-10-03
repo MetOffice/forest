@@ -129,8 +129,6 @@ KM4P4_RA1T_KEY = 'km4p4_ra1t'
 KM1P5_INDO_RA1T_KEY = 'indon2km1p5_ra1t'
 KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
 KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
-GA6_CONF_ID = 'ga6'
-RA1T_CONF_ID = 'ra1t'
 
 VAR_LIST_DIR = os.path.dirname(__file__)
 VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
