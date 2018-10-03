@@ -148,10 +148,26 @@ class TestSouthEastAsiaConfig(unittest.TestCase):
             }
         ]
         self.regions = [
-            {"name": "South east Asia", "extent": [-18.0, 29.96, 90.0, 153.96]},
-            {"name": "Indonesia", "extent": [-15.1, 1.0865, 99.875, 120.111]},
-            {"name": "Malaysia", "extent": [-2.75, 10.7365, 95.25, 108.737]},
-            {"name": "Philippines", "extent": [3.1375, 21.349, 115.8, 131.987]},
+            {
+                "name": "South east Asia",
+                "longitude_range": [90.0, 153.96],
+                "latitude_range": [-18.0, 29.96],
+            },
+            {
+                "name": "Indonesia",
+                "longitude_range": [99.875, 120.111],
+                "latitude_range": [-15.1, 1.0865]
+            },
+            {
+                "name": "Malaysia",
+                "longitude_range": [95.25, 108.737],
+                "latitude_range": [-2.75, 10.7365]
+            },
+            {
+                "name": "Philippines",
+                "longitude_range": [115.8, 131.987],
+                "latitude_range": [3.1375, 21.349]
+            },
         ]
         self.maxDiff = None
 

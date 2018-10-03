@@ -69,19 +69,23 @@ def south_east_asia_config():
         "regions": [
             {
                 "name": "South east Asia",
-                "extent": [-18.0, 29.96, 90.0, 153.96]
+                "longitude_range": [90.0, 153.96],
+                "latitude_range": [-18.0, 29.96]
             },
             {
                 "name": "Indonesia",
-                "extent": [-15.1, 1.0865, 99.875, 120.111]
+                "longitude_range": [99.875, 120.111],
+                "latitude_range": [-15.1, 1.0865]
             },
             {
                 "name": "Malaysia",
-                "extent": [-2.75, 10.7365, 95.25, 108.737]
+                "longitude_range": [95.25, 108.737],
+                "latitude_range": [-2.75, 10.7365]
             },
             {
                 "name": "Philippines",
-                "extent": [3.1375, 21.349, 115.8, 131.987]
+                "longitude_range": [115.8, 131.987],
+                "latitude_range": [3.1375, 21.349]
             },
         ],
         "models": [
@@ -221,9 +225,15 @@ def main(bokeh_id):
     bokeh_figure.toolbar_location = "below"
 
     # Add cartopy coastline to bokeh figure
+    def _extent(region):
+        x_start, x_end = region["longitude_range"]
+        y_start, y_end = region["latitude_range"]
+        # Note: this ordering should be removed from code base
+        #       it is too confusing
+        return y_start, y_end, x_start, x_end
     region_names = [region['name'] for region in settings["regions"]]
     region_dict = {region['name']: region['name'] for region in settings["regions"]}
-    region_extents = {region['name']: region['extent'] for region in settings["regions"]}
+    region_extents = {region['name']: _extent(region) for region in settings["regions"]}
     coords = region_extents[region_names[0]]
     y_start = coords[0]
     y_end = coords[1]
