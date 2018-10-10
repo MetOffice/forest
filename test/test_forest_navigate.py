@@ -1,10 +1,28 @@
 import unittest
 import datetime as dt
+import bokeh.models
 import forest
 
 
 def date_range(start, periods, interval):
     return [start + i * interval for i in range(periods)]
+
+
+class TestPlusMinusUI(unittest.TestCase):
+    def test_on_plus_click(self):
+        ui.plus_button.click()
+
+    def test_button_plus(self):
+        button = bokeh.models.Button(label="+")
+        result = button.label
+        expect = "+"
+        self.assertEqual(result, expect)
+
+    def test_button_minus(self):
+        button = bokeh.models.Button(label="-")
+        result = button.label
+        expect = "-"
+        self.assertEqual(result, expect)
 
 
 class TestTimeControl(unittest.TestCase):
