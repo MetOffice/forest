@@ -8,21 +8,42 @@ def date_range(start, periods, interval):
     return [start + i * interval for i in range(periods)]
 
 
-class TestPlusMinusUI(unittest.TestCase):
-    def test_on_plus_click(self):
-        ui.plus_button.click()
+class TestStream(unittest.TestCase):
+    def setUp(self):
+        self.stream = forest.rx.Stream()
+        self.subscriber = unittest.mock.Mock()
 
-    def test_button_plus(self):
-        button = bokeh.models.Button(label="+")
-        result = button.label
-        expect = "+"
-        self.assertEqual(result, expect)
+    def test_emit_notifies_subscribers(self):
+        value = 0
+        self.stream.register(self.subscriber)
+        self.stream.emit(value)
+        self.subscriber.notify.assert_called_once_with(value)
 
-    def test_button_minus(self):
-        button = bokeh.models.Button(label="-")
-        result = button.label
-        expect = "-"
-        self.assertEqual(result, expect)
+    def test_map(self):
+        mapped = self.stream.map(lambda x: x + 1)
+        mapped.register(self.subscriber)
+        self.stream.emit(2)
+        self.subscriber.notify.assert_called_once_with(3)
+
+    def test_filter(self):
+        filtered = self.stream.filter(lambda x: x > 5)
+        filtered.register(self.subscriber)
+        self.stream.emit(7)
+        self.stream.emit(2)
+        self.stream.emit(6)
+        self.subscriber.notify.assert_called_once_with(2)
+
+    def test_log(self):
+        self.stream.log()
+
+    def test_scan(self):
+        scanned = self.stream.scan(0, lambda a, i: a + i)
+        scanned.register(self.subscriber)
+        self.stream.emit(7)
+        self.stream.emit(2)
+        self.stream.emit(6)
+        expect = [unittest.mock.call(n) for n in [7, 9, 15]]
+        self.subscriber.notify.assert_has_calls(expect)
 
 
 class TestTimeControl(unittest.TestCase):
