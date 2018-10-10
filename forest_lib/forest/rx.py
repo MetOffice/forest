@@ -35,6 +35,7 @@ class Log(Stream):
 
     def notify(self, value):
         print(value)
+        self.emit(value)
 
 
 class Map(Stream):

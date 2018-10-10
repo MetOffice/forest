@@ -33,8 +33,11 @@ class TestStream(unittest.TestCase):
         self.stream.emit(6)
         self.subscriber.notify.assert_called_once_with(2)
 
-    def test_log(self):
-        self.stream.log()
+    def test_log_is_chainable(self):
+        mapped = self.stream.log().map(lambda x: x * 2)
+        mapped.register(self.subscriber)
+        self.stream.emit(2)
+        self.subscriber.notify.assert_called_once_with(4)
 
     def test_scan(self):
         scanned = self.stream.scan(0, lambda a, i: a + i)
