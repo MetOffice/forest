@@ -2,6 +2,7 @@ import unittest
 import datetime as dt
 import bokeh.models
 import forest
+from functools import partial
 
 
 def date_range(start, periods, interval):
@@ -18,15 +19,36 @@ def bounded_add(minimum, maximum):
     return add
 
 
+def pluck(index_stream, items):
+    return index_stream.map(partial(list.__getitem__, items))
+
+
+def bounded_index(stream, n):
+    return stream.scan(0, bounded_add(0, n - 1)).unique()
+
+
 class TestNextTime(unittest.TestCase):
-    def test_next_time(self):
+    def test_io(self):
+        def load_times(state):
+            return [1, 2, 3]
         stream = forest.Stream()
-        scanned = stream.scan(0, bounded_add(0, 2))
+        times = stream.map(load_times).scan([], lambda a, i: a + [i])
+        stream.emit(None)
+        stream.emit(None)
+        self.assertEqual([[1, 2, 3], [1, 2, 3]], times.state)
+
+    def test_step_through_values(self):
+        items = ["a", "b", "c"]
+        stream = forest.Stream()
+        listener = unittest.mock.Mock()
+        item_stream = pluck(bounded_index(stream, len(items)), items)
+        item_stream.register(listener)
         stream.emit(+1)
         stream.emit(+1)
         stream.emit(+1)
-        stream.emit(+1)
-        self.assertEqual(scanned.state, 2)
+        stream.emit(-1)
+        expect = [unittest.mock.call(v) for v in ["b", "c", "b"]]
+        listener.notify.assert_has_calls(expect)
 
     def test_bounded_add_exceeding_maximum_returns_maximum(self):
         add = bounded_add(0, 3)
