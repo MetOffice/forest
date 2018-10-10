@@ -8,6 +8,39 @@ def date_range(start, periods, interval):
     return [start + i * interval for i in range(periods)]
 
 
+def bounded_add(minimum, maximum):
+    def add(a, b):
+        if (a + b) > maximum:
+            return maximum
+        if (a + b) < minimum:
+            return minimum
+        return a + b
+    return add
+
+
+class TestNextTime(unittest.TestCase):
+    def test_next_time(self):
+        stream = forest.Stream()
+        scanned = stream.scan(0, bounded_add(0, 2))
+        stream.emit(+1)
+        stream.emit(+1)
+        stream.emit(+1)
+        stream.emit(+1)
+        self.assertEqual(scanned.state, 2)
+
+    def test_bounded_add_exceeding_maximum_returns_maximum(self):
+        add = bounded_add(0, 3)
+        result = add(2, 2)
+        expect = 3
+        self.assertEqual(expect, result)
+
+    def test_bounded_add_exceeding_minimum_returns_minimum(self):
+        add = bounded_add(0, 3)
+        result = add(1, -2)
+        expect = 0
+        self.assertEqual(expect, result)
+
+
 class TestStream(unittest.TestCase):
     def setUp(self):
         self.stream = forest.rx.Stream()
@@ -46,6 +79,18 @@ class TestStream(unittest.TestCase):
         self.stream.emit(2)
         self.stream.emit(6)
         expect = [unittest.mock.call(n) for n in [7, 9, 15]]
+        self.subscriber.notify.assert_has_calls(expect)
+
+    def test_unique(self):
+        altered = self.stream.unique()
+        altered.register(self.subscriber)
+        self.stream.emit(1)
+        self.stream.emit(2)
+        self.stream.emit(2)
+        self.stream.emit(2)
+        self.stream.emit(3)
+        self.stream.emit(3)
+        expect = [unittest.mock.call(i) for i in [1, 2, 3]]
         self.subscriber.notify.assert_has_calls(expect)
 
 

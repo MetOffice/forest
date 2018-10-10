@@ -27,6 +27,20 @@ class Stream(object):
     def filter(self, criteria):
         return Filter(self, criteria)
 
+    def unique(self):
+        return Unique(self)
+
+
+class Unique(Stream):
+    def __init__(self, stream):
+        stream.register(self)
+        super().__init__()
+
+    def notify(self, value):
+        if (not hasattr(self, 'last')) or (self.last != value):
+            self.last = value
+            self.emit(value)
+
 
 class Log(Stream):
     def __init__(self, stream):
