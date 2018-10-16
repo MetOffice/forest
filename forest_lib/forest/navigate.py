@@ -1,5 +1,13 @@
-"""Navigation tools for Forest"""
-import forest
+"""Navigation tools for Forest
+
+Streams of +1 and -1 can be accumulated and processed to
+index arrays of times, hours and model run times
+
+Streams can be merged and combined to update the application state
+
+I/O can be triggered when appropriate to detect available times
+
+"""
 import bokeh.layouts
 import numpy as np
 import datetime as dt
@@ -9,10 +17,15 @@ __all__ = [
 ]
 
 
-def forecast_view():
-    """Returns WidgetBox for controlling forecasts"""
-    stream = forest.Stream()
-    return bokeh.layouts.WidgetBox(plus_button(stream),
+def forecast_view(stream):
+    """Controls to navigate forecasts
+
+    :returns: WidgetBox
+    """
+    p = bokeh.models.Paragraph()
+    text_stream = stream.map(str).map(text(p))
+    return bokeh.layouts.WidgetBox(p,
+                                   plus_button(stream),
                                    minus_button(stream))
 
 
@@ -29,9 +42,16 @@ def minus_button(stream):
 
 
 def emit(stream, value):
-    """Creates an closure useful for on_click"""
+    """Creates a closure for on_click"""
     def closure():
         stream.emit(value)
+    return closure
+
+
+def text(widget):
+    """A widget .text assignment closure suitable for notify"""
+    def closure(value):
+        widget.text = value
     return closure
 
 

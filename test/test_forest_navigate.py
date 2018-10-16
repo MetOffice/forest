@@ -7,8 +7,18 @@ import forest
 
 class TestNavigate(unittest.TestCase):
     def test_forecast_view(self):
-        widget = forest.navigate.forecast_view()
+        stream = forest.Stream()
+        widget = forest.navigate.forecast_view(stream)
         self.assertIsInstance(widget, bokeh.layouts.WidgetBox)
+
+    def test_paragraph_updated_by_stream(self):
+        stream = forest.Stream()
+        p = bokeh.models.Paragraph()
+        stream.map(forest.navigate.text(p))
+        stream.emit("Hello, world!")
+        result = p.text
+        expect = "Hello, world!"
+        self.assertEqual(expect, result)
 
     def test_emit_stream_closure(self):
         stream = forest.Stream()
