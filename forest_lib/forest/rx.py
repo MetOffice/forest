@@ -1,7 +1,11 @@
 """Functional reactive programming utilities"""
+from functools import partial
+
+
 __all__ = [
     "Stream"
 ]
+
 
 class Observable(object):
     def __init__(self, on_value):
@@ -19,7 +23,11 @@ class Stream(object):
         self.subscribers.append(subscriber)
 
     def subscribe(self, on_value):
-        self.register(Observable(on_value))
+        observable = Observable(on_value)
+        self.register(observable)
+        def unsubscribe():
+            self.subscribers.remove(observable)
+        return unsubscribe
 
     def emit(self, value):
         for subscriber in self.subscribers:
@@ -94,14 +102,19 @@ class Scan(Stream):
         self.state = self.combinator(self.state, value)
         self.emit(self.state)
 
-from functools import partial
+
+class CombineLatest(Stream):
+    def __init__(self, *streams):
+        self.streams = streams
+        self.state = [None for _ in streams]
+        for i, stream in enumerate(streams):
+            stream.subscribe(partial(self.notify, i))
+        super().__init__()
+
+    def notify(self, index, value):
+        self.state[index] = value
+        self.emit(tuple(self.state))
+
+
 def combine_latest(*streams):
-    combined = Stream()
-    state = [None for _ in streams]
-    def observer(i, value):
-        nonlocal state
-        state[i] = value
-        combined.emit(tuple(state))
-    for i, stream in enumerate(streams):
-        stream.subscribe(partial(observer, i))
-    return combined
+    return CombineLatest(*streams)
