@@ -3,7 +3,8 @@ from functools import partial
 
 
 __all__ = [
-    "Stream"
+    "Stream",
+    "merge"
 ]
 
 
@@ -116,5 +117,20 @@ class CombineLatest(Stream):
         self.emit(tuple(self.state))
 
 
+class Merge(Stream):
+    def __init__(self, *streams):
+        self.streams = streams
+        for i, stream in enumerate(streams):
+            stream.subscribe(self.notify)
+        super().__init__()
+
+    def notify(self, value):
+        self.emit(value)
+
+
 def combine_latest(*streams):
     return CombineLatest(*streams)
+
+
+def merge(*streams):
+    return Merge(*streams)

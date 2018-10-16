@@ -37,7 +37,25 @@ class TestReactiveControls(unittest.TestCase):
         stream.emit(None)
         self.assertEqual([[1, 2, 3], [1, 2, 3]], times.state)
 
-    def test_step_through_values(self):
+    def test_bokeh_button(self):
+        click = unittest.mock.Mock()
+        button = bokeh.models.Button()
+        button.on_click(click)
+        button._callbacks["clicks"][0](None, None, None)
+        click.assert_called_once_with()
+
+    def test_plus_minus_click_stream(self):
+        observer = unittest.mock.Mock()
+        plus = forest.Stream()
+        minus = forest.Stream()
+        click = forest.merge(plus, minus)
+        click.subscribe(observer)
+        plus.emit(1)
+        minus.emit(-1)
+        expect = [1, -1]
+        observer.assert_has_calls([unittest.mock.call(args) for args in expect])
+
+    def test_click_through_values_in_list(self):
         items = ["a", "b", "c"]
         stream = forest.Stream()
         listener = unittest.mock.Mock()
