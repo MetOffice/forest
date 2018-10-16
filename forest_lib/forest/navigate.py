@@ -1,3 +1,4 @@
+"""Navigation tools for Forest"""
 import forest
 import bokeh.layouts
 import numpy as np
@@ -5,35 +6,46 @@ import datetime as dt
 
 
 __all__ = [
-    "TimeControl"
 ]
 
 
 def forecast_view():
+    """Returns WidgetBox for controlling forecasts"""
     stream = forest.Stream()
-    btns = []
+    return bokeh.layouts.WidgetBox(plus_button(stream),
+                                   minus_button(stream))
+
+
+def plus_button(stream):
     btn = bokeh.models.Button(label="+")
     btn.on_click(emit(stream, +1))
-    btns.append(btn)
+    return btn
+
+
+def minus_button(stream):
     btn = bokeh.models.Button(label="-")
     btn.on_click(emit(stream, -1))
-    btns.append(btn)
-    return bokeh.layouts.Row(*btns)
+    return btn
 
 
 def emit(stream, value):
-    """Creates an on_click handler for a stream"""
-    def wrapper():
+    """Creates an closure useful for on_click"""
+    def closure():
         stream.emit(value)
-    return wrapper
+    return closure
 
 
 def forecast_label(initial_time, forecast_length):
     """Forecast naming convention"""
     if isinstance(forecast_length, dt.timedelta):
-        forecast_length = forecast_length.hours
+        forecast_length = int(hours(forecast_length))
     return "{:%Y-%m-%d %H:%M} T{:+}".format(initial_time,
                                             forecast_length)
+
+
+def hours(delta):
+    """Estimate hours from timedelta object"""
+    return delta.total_seconds() / (60. * 60.)
 
 
 def forecast_lengths(times):
@@ -44,50 +56,3 @@ def forecast_lengths(times):
 def initial_time(times):
     """Estimate forecast initialisation time from valid times"""
     return times[0]
-
-
-class TimeControl(object):
-    """Forecast/time navigation controller
-
-    Navigates through forecast/time space, by
-    either keeping time fixed, forecast length fixed
-    or model run fixed
-    """
-    def __init__(self, forecast_times):
-        self.forecast_times = np.asarray(forecast_times, dtype=object)
-        self.run_index = 0
-        self.forecast_index = 0
-
-    @property
-    def forecast_length(self):
-        return self.valid_time - self.model_start_time
-
-    @property
-    def model_start_time(self):
-        return self.forecast_times[self.run_index, 0]
-
-    @property
-    def valid_time(self):
-        return self.forecast_times[self.run_index, self.forecast_index]
-
-    def next_forecast(self):
-        self.forecast_index += 1
-
-    def previous_forecast(self):
-        self.forecast_index -= 1
-
-    def next_run(self):
-        if self.run_index == len(self.forecast_times) - 1:
-            raise IndexError("already at final run")
-        self.run_index += 1
-
-    def next_lead_time(self):
-        if self.run_index == 0:
-            raise IndexError("already at earliest run")
-        valid_time = self.valid_time
-        forecasts = self.forecast_times[self.run_index - 1].tolist()
-        self.forecast_index = forecasts.index(valid_time)
-        self.run_index -= 1
-
-    def most_recent_run(self):
-        self.run_index = len(self.forecast_times) - 1

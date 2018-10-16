@@ -8,13 +8,13 @@ import forest
 class TestNavigate(unittest.TestCase):
     def test_forecast_view(self):
         widget = forest.navigate.forecast_view()
-        self.assertIsInstance(widget, bokeh.layouts.Row)
+        self.assertIsInstance(widget, bokeh.layouts.WidgetBox)
 
-    def test_on_click_stream_closure(self):
+    def test_emit_stream_closure(self):
         stream = forest.Stream()
         stream.emit = unittest.mock.Mock()
-        on_click = forest.navigate.on_click(stream, +1)
-        on_click()
+        emit = forest.navigate.emit(stream, +1)
+        emit()
         stream.emit.assert_called_once_with(+1)
 
     def test_forecast_lengths(self):
@@ -33,7 +33,7 @@ class TestNavigate(unittest.TestCase):
         np.testing.assert_array_equal(expect, result)
 
     def test_forecast_label(self):
-        time, hour = dt.datetime(2018, 1, 1), 12
+        time, hour = dt.datetime(2018, 1, 1), dt.timedelta(hours=12)
         result = forest.navigate.forecast_label(time, hour)
         expect = "2018-01-01 00:00 T+12"
         self.assertEqual(expect, result)
