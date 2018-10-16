@@ -1,10 +1,49 @@
+import forest
+import bokeh.layouts
 import numpy as np
+import datetime as dt
 
 
 __all__ = [
     "TimeControl"
 ]
 
+
+def forecast_view():
+    stream = forest.Stream()
+    btns = []
+    btn = bokeh.models.Button(label="+")
+    btn.on_click(emit(stream, +1))
+    btns.append(btn)
+    btn = bokeh.models.Button(label="-")
+    btn.on_click(emit(stream, -1))
+    btns.append(btn)
+    return bokeh.layouts.Row(*btns)
+
+
+def emit(stream, value):
+    """Creates an on_click handler for a stream"""
+    def wrapper():
+        stream.emit(value)
+    return wrapper
+
+
+def forecast_label(initial_time, forecast_length):
+    """Forecast naming convention"""
+    if isinstance(forecast_length, dt.timedelta):
+        forecast_length = forecast_length.hours
+    return "{:%Y-%m-%d %H:%M} T{:+}".format(initial_time,
+                                            forecast_length)
+
+
+def forecast_lengths(times):
+    """Estimate forecast lengths from valid times"""
+    return np.asarray(times, dtype=object) - times[0]
+
+
+def initial_time(times):
+    """Estimate forecast initialisation time from valid times"""
+    return times[0]
 
 
 class TimeControl(object):

@@ -2,6 +2,59 @@ import unittest
 from forest import rx
 
 
+class TestStream(unittest.TestCase):
+    def setUp(self):
+        self.stream = rx.Stream()
+        self.subscriber = unittest.mock.Mock()
+
+    def test_emit_notifies_subscribers(self):
+        value = 0
+        self.stream.register(self.subscriber)
+        self.stream.emit(value)
+        self.subscriber.notify.assert_called_once_with(value)
+
+    def test_map(self):
+        mapped = self.stream.map(lambda x: x + 1)
+        mapped.register(self.subscriber)
+        self.stream.emit(2)
+        self.subscriber.notify.assert_called_once_with(3)
+
+    def test_filter(self):
+        filtered = self.stream.filter(lambda x: x > 5)
+        filtered.register(self.subscriber)
+        self.stream.emit(7)
+        self.stream.emit(2)
+        self.stream.emit(6)
+        self.subscriber.notify.assert_called_once_with(2)
+
+    def test_log_is_chainable(self):
+        mapped = self.stream.log().map(lambda x: x * 2)
+        mapped.register(self.subscriber)
+        self.stream.emit(2)
+        self.subscriber.notify.assert_called_once_with(4)
+
+    def test_scan(self):
+        scanned = self.stream.scan(0, lambda a, i: a + i)
+        scanned.register(self.subscriber)
+        self.stream.emit(7)
+        self.stream.emit(2)
+        self.stream.emit(6)
+        expect = [unittest.mock.call(n) for n in [7, 9, 15]]
+        self.subscriber.notify.assert_has_calls(expect)
+
+    def test_unique(self):
+        altered = self.stream.unique()
+        altered.register(self.subscriber)
+        self.stream.emit(1)
+        self.stream.emit(2)
+        self.stream.emit(2)
+        self.stream.emit(2)
+        self.stream.emit(3)
+        self.stream.emit(3)
+        expect = [unittest.mock.call(i) for i in [1, 2, 3]]
+        self.subscriber.notify.assert_has_calls(expect)
+
+
 class TestCombineLatest(unittest.TestCase):
     def test_combine_latest(self):
         stream_1 = rx.Stream()
