@@ -144,14 +144,17 @@ def main(bokeh_id):
         settings = load_config(env.config_file)
 
     if env.download_data:
-        file_loader = forest.aws.S3Bucket(server_address='https://s3.eu-west-2.amazonaws.com',
-                                          bucket_name='stephen-sea-public-london',
-                                          download_directory=env.download_directory)
-        user_feedback_directory = os.path.join(env.download_directory, 'user_feedback')
+        file_loader = forest.aws.S3Bucket(
+                server_address='https://s3.eu-west-2.amazonaws.com',
+                bucket_name='stephen-sea-public-london',
+                download_directory=env.download_directory)
+        user_feedback_directory = os.path.join(env.download_directory,
+                'user_feedback')
     else:
         # FUSE mounted file system
         file_loader = forest.aws.S3Mount(env.mount_directory)
-        user_feedback_directory = os.path.join(env.mount_directory, 'user_feedback')
+        user_feedback_directory = os.path.join(env.mount_directory,
+                'user_feedback')
 
     models = settings['models']
     plot_descriptions = {
