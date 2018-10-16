@@ -3,6 +3,13 @@ __all__ = [
     "Stream"
 ]
 
+class Observable(object):
+    def __init__(self, on_value):
+        self.on_value = on_value
+
+    def notify(self, value):
+        self.on_value(value)
+
 
 class Stream(object):
     def __init__(self):
@@ -10,6 +17,9 @@ class Stream(object):
 
     def register(self, subscriber):
         self.subscribers.append(subscriber)
+
+    def subscribe(self, on_value):
+        self.register(Observable(on_value))
 
     def emit(self, value):
         for subscriber in self.subscribers:
@@ -83,3 +93,15 @@ class Scan(Stream):
     def notify(self, value):
         self.state = self.combinator(self.state, value)
         self.emit(self.state)
+
+from functools import partial
+def combine_latest(*streams):
+    combined = Stream()
+    state = [None for _ in streams]
+    def observer(i, value):
+        nonlocal state
+        state[i] = value
+        combined.emit(tuple(state))
+    for i, stream in enumerate(streams):
+        stream.subscribe(partial(observer, i))
+    return combined
