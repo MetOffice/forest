@@ -27,8 +27,8 @@ def bounded_index(stream, n):
     return stream.scan(0, bounded_add(0, n - 1)).unique()
 
 
-class TestNextTime(unittest.TestCase):
-    def test_io(self):
+class TestReactiveControls(unittest.TestCase):
+    def test_simulate_io_async_load_times(self):
         def load_times(state):
             return [1, 2, 3]
         stream = forest.Stream()
