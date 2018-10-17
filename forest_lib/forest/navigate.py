@@ -11,10 +11,49 @@ I/O can be triggered when appropriate to detect available times
 import bokeh.layouts
 import numpy as np
 import datetime as dt
+from collections import namedtuple
 
 
 __all__ = [
+    "Forecast"
 ]
+
+
+
+class Forecast(object):
+    """Point in forecast/real time space"""
+    __slots__ = ("start", "length")
+    def __init__(self, start, length):
+        self.start = start
+        self.length = length
+
+    @classmethod
+    def stamp(cls, text, hours, fmt="%Y-%m-%d %H:%M"):
+        """create from formatted string and int"""
+        return cls(dt.datetime.strptime(text, fmt),
+                   dt.timedelta(hours=hours))
+
+    @property
+    def valid_time(self):
+        return self.start + self.length
+
+    def label(self, fmt="{:%Y-%m-%d %H:%M} T{:+}"):
+        """string format of object"""
+        return fmt.format(self.start, int(self.hours))
+
+    @property
+    def hours(self):
+        return self.length.total_seconds() / (60. * 60.)
+
+    def __repr__(self):
+        pattern = "{}(start='{}', length='{}')"
+        return pattern.format(self.__class__.__name__,
+                              self.start,
+                              self.length)
+
+    def __eq__(self, other):
+        return ((self.start == other.start) &
+                (self.length == other.length))
 
 
 def forecast_view(stream):
@@ -66,6 +105,13 @@ def forecast_label(initial_time, forecast_length):
 def hours(delta):
     """Estimate hours from timedelta object"""
     return delta.total_seconds() / (60. * 60.)
+
+
+def forecasts(times):
+    """Convert datetimes to Forecast tuples"""
+    start = initial_time(times)
+    hours = forecast_lengths(times)
+    return [Forecast(start, hour) for hour in hours]
 
 
 def forecast_lengths(times):

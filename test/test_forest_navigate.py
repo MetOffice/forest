@@ -5,7 +5,38 @@ import bokeh.models
 import forest
 
 
+def date_range(initial, hours, n):
+    if not isinstance(hours, dt.timedelta):
+        hours = dt.timedelta(hours=hours)
+    return [initial + i * hours for i in range(n)]
+
+
+class TestForecast(unittest.TestCase):
+    def setUp(self):
+        self.forecast = forest.Forecast.stamp("2018-01-01 12:00", 1)
+
+    def test_valid_time(self):
+        result = self.forecast.valid_time
+        expect = dt.datetime(2018, 1, 1, 13)
+        self.assertEqual(expect, result)
+
+    def test_label(self):
+        result = self.forecast.label()
+        expect = "2018-01-01 12:00 T+1"
+        self.assertEqual(expect, result)
+
+
 class TestNavigate(unittest.TestCase):
+    def test_forecasts_given_times(self):
+        initial = dt.datetime(2018, 1, 1)
+        hours = dt.timedelta(hours=3)
+        n = 2
+        times = date_range(initial, hours, n)
+        result = forest.navigate.forecasts(times)
+        expect = [forest.Forecast(initial, dt.timedelta(hours=0)),
+                  forest.Forecast(initial, dt.timedelta(hours=3))]
+        self.assertEqual(expect, result)
+
     def test_forecast_view(self):
         stream = forest.Stream()
         widget = forest.navigate.forecast_view(stream)
