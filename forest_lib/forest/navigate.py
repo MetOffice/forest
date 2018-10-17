@@ -8,16 +8,15 @@ Streams can be merged and combined to update the application state
 I/O can be triggered when appropriate to detect available times
 
 """
-import bokeh.layouts
+import bokeh.models
 import numpy as np
 import datetime as dt
-from collections import namedtuple
 
 
 __all__ = [
-    "Forecast"
+    "Forecast",
+    "Period"
 ]
-
 
 
 class Forecast(object):
@@ -56,16 +55,35 @@ class Forecast(object):
                 (self.length == other.length))
 
 
-def forecast_view(stream):
-    """Controls to navigate forecasts
+class Period(object):
+    """Period in time"""
+    __slots__ = ("start", "end")
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
 
-    :returns: WidgetBox
-    """
-    p = bokeh.models.Paragraph()
-    text_stream = stream.map(str).map(text(p))
-    return bokeh.layouts.WidgetBox(p,
-                                   plus_button(stream),
-                                   minus_button(stream))
+    def __repr__(self):
+        pattern = "{}(start='{}', end='{}')"
+        return pattern.format(self.__class__.__name__,
+                              self.start,
+                              self.end)
+
+    def __eq__(self, other):
+        return ((self.start == other.start) &
+                (self.end == other.end))
+
+    @classmethod
+    def stamps(cls, start, end, fmt="%Y-%m-%d %H:%M"):
+        """create from formatted strings"""
+        return cls(dt.datetime.strptime(start, fmt),
+                   dt.datetime.strptime(end, fmt))
+
+    @property
+    def duration(self):
+        return self.end - self.start
+
+    def label(self, template):
+        return template.format(self.start, self.end)
 
 
 def plus_button(stream):
@@ -92,19 +110,6 @@ def text(widget):
     def closure(value):
         widget.text = value
     return closure
-
-
-def forecast_label(initial_time, forecast_length):
-    """Forecast naming convention"""
-    if isinstance(forecast_length, dt.timedelta):
-        forecast_length = int(hours(forecast_length))
-    return "{:%Y-%m-%d %H:%M} T{:+}".format(initial_time,
-                                            forecast_length)
-
-
-def hours(delta):
-    """Estimate hours from timedelta object"""
-    return delta.total_seconds() / (60. * 60.)
 
 
 def forecasts(times):
