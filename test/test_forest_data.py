@@ -277,7 +277,7 @@ class TestForestDataset(unittest.TestCase):
         np.testing.assert_array_equal(expect, result)
 
     def test_times_using_stash_code(self):
-        file_name = "test-forest-data-times.nc"
+        file_name = self.remove_after("test-forest-data-times.nc")
         values = [1, 2, 3]
         dimensions = {
             "time": 1,
@@ -300,6 +300,35 @@ class TestForestDataset(unittest.TestCase):
         item = 203
         result = forest.data.times(file_name, section, item)
         expect = values
+        np.testing.assert_array_equal(expect, result)
+
+    def test_times_using_stash_code(self):
+        file_name = self.remove_after("test-forest-data-times.nc")
+        values = [0, 3, 6]
+        dimensions = {
+            "time": 1,
+            "time_0": 1,
+            "time_1": 1,
+            "time_2": len(values),
+            "longitude": 1,
+            "longitude_0": 1,
+            "latitude": 1,
+            "latitude_0": 1,
+            "pressure": 1
+        }
+        variables = {
+            "time_2": values,
+        }
+        with netCDF4.Dataset(file_name, "w") as dataset:
+            define_ra1t(dataset, dimensions)
+            assign_ra1t(dataset, variables)
+        section = 4
+        item = 203
+        cube = forest.data.load_cube(file_name, section, item)
+        result = forest.data.load_times(cube)
+        expect = [dt.datetime(1970, 1, 1),
+                  dt.datetime(1970, 1, 1, 3),
+                  dt.datetime(1970, 1, 1, 6)]
         np.testing.assert_array_equal(expect, result)
 
     def test_to_bounds(self):

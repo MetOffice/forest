@@ -132,11 +132,13 @@ __all__ = [
     'stash_section',
     'stash_name',
     'stash_codes',
+    'load_times',
+    'load_cube',
     'times'
 ]
 
 
-def stash_name(variable, convention='ga6'):
+def stash_name(variable, convention):
     """Stash name related to variable
 
     :param convention: either 'ra1t' or 'ga6'
@@ -146,7 +148,7 @@ def stash_name(variable, convention='ga6'):
     return table[variable]['stash_name']
 
 
-def stash_item(variable, convention='ga6'):
+def stash_item(variable, convention):
     """Stash item related to variable
 
     :param convention: either 'ra1t' or 'ga6'
@@ -156,7 +158,7 @@ def stash_item(variable, convention='ga6'):
     return table[variable]['stash_item']
 
 
-def stash_section(variable, convention='ga6'):
+def stash_section(variable, convention):
     """Stash section related to variable
 
     :param convention: either 'ra1t' or 'ga6'
@@ -177,26 +179,9 @@ def stash_codes(convention):
     return get_var_lookup(path)
 
 
-def times(path, section, item):
-    """Read time axis from NetCDF file using stash codes
-
-    Simple way to read the time axis related to a particular
-    variable
-
-    .. note:: The stash section and item are encoded in the
-              netcdf attribute um_stash_source
-
-    :param path: path to netcdf file
-    :param section: stash code section
-    :param item: stash code item
-    :returns: time axis points
-    """
-    def cube_func(cube):
-        return (cube.attributes['STASH'].section == section and
-                cube.attributes['STASH'].item == item)
-    constraint = iris.Constraint(cube_func=cube_func)
-    cube = iris.load_cube(path, constraint)
-    return cube.coord('time').points
+def config_file(config):
+    return os.path.join(os.path.dirname(__file__),
+                        'var_list_{config}.conf'.format(config=config))
 
 
 def get_var_lookup(path):
@@ -221,9 +206,45 @@ def get_var_lookup(path):
     return field_dict
 
 
-def config_file(config):
-    return os.path.join(os.path.dirname(__file__),
-                        'var_list_{config}.conf'.format(config=config))
+def load_times(cube):
+    """Read datetime objects from iris cube
+
+    :param cube: iris.Cube instance
+    :returns: time axis points
+    """
+    coord = cube.coord('time')
+    return [cell.point for cell in coord.cells()]
+
+
+def times(path, section, item):
+    """Read time axis from NetCDF file using stash codes
+
+    Simple way to read the time axis related to a particular
+    variable
+
+    .. note:: The stash section and item are encoded in the
+              netcdf attribute um_stash_source
+
+    :param path: path to netcdf file
+    :param section: stash code section
+    :param item: stash code item
+    :returns: time axis points
+    """
+    return load_cube(path, section, item).coord('time').points
+
+
+def load_cube(path, section, item):
+    """Load cube from stash codes"""
+    constraint = iris.Constraint(cube_func=cube_func(section, item))
+    return iris.load_cube(path, constraint)
+
+
+def cube_func(section, item):
+    """Create a cube function to filter stash codes"""
+    def func(cube):
+        return (cube.attributes['STASH'].section == section and
+                cube.attributes['STASH'].item == item)
+    return func
 
 
 def get_available_datasets(model_run_times,
