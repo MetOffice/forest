@@ -4,6 +4,7 @@ import datetime as dt
 import yaml
 import os
 import sys
+from .util import remove_after
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(script_dir, "../bokeh_apps"))
 import plot_sea_two_model_comparison.main
@@ -92,7 +93,7 @@ class TestParseEnvironment(unittest.TestCase):
 
 class TestLoadConfig(unittest.TestCase):
     def test_load_config(self):
-        file_name = "test-load-environment.yaml"
+        file_name = remove_after(self, "test-load-environment.yaml")
         settings = {
             "models": [
                 {

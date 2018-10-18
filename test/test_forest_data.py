@@ -7,6 +7,7 @@ import iris
 import netCDF4
 import numpy as np
 import warnings
+from . import util
 
 
 class FakeLoader(object):
@@ -110,7 +111,6 @@ class FakeLoader(object):
 
 class TestForestDataset(unittest.TestCase):
     def setUp(self):
-        self.remove_paths = []
         self.test_directory = os.path.dirname(os.path.realpath(__file__))
         self.bucket = forest.aws.S3Mount(self.test_directory)
 
@@ -119,13 +119,9 @@ class TestForestDataset(unittest.TestCase):
 
     def tearDown(self):
         warnings.resetwarnings()
-        for path in self.remove_paths:
-            if os.path.exists(path):
-                os.remove(path)
 
     def remove_after(self, path):
-        self.remove_paths.append(path)
-        return path
+        return util.remove_after(self, path)
 
     def test_stash_codes_ga6_mslp(self):
         codes = forest.stash_codes("ga6")
