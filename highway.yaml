@@ -1,0 +1,23 @@
+title: HIGHWAY comparison project
+regions:
+   - name: East Africa
+     longitude_range: [20, 54]
+     latitude_range: [-20, 20]
+   - name: Tropical Africa
+     longitude_range: [-20, 54]
+     latitude_range: [-20, 20]
+models:
+   - name: East Africa 4.4km
+     file:
+         format: ra1t
+         pattern: highway_eakm4p4_{:%Y%m%dT%H%MZ}.nc
+   - name: Tropical Africa 4.4km
+     file:
+         format: ra1t
+         pattern: highway_takm4p4_{:%Y%m%dT%H%MZ}.nc
+         longitude_offset: -360
+   - name: Global East Africa
+     file:
+         format: ga6
+         pattern: highway_ga6_{:%Y%m%dT%H%MZ}.nc
+         longitude_offset: -360

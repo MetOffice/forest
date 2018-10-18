@@ -171,16 +171,19 @@ class TestSouthEastAsiaConfig(unittest.TestCase):
             },
         ]
         self.maxDiff = None
+        self.config = plot_sea_two_model_comparison.main.south_east_asia_config()
 
     def test_south_east_asia_regions(self):
-        result = plot_sea_two_model_comparison.main.south_east_asia_config()["regions"]
+        result = self.config["regions"]
         expect = self.regions
         self.assertEqual(result, expect)
 
-    def test_south_east_asia_config(self):
-        result = plot_sea_two_model_comparison.main.south_east_asia_config()
-        expect = {
-            "models": self.models,
-            "regions": self.regions
-        }
+    def test_south_east_asia_config_models(self):
+        result = self.config["models"]
+        expect = self.models
+        self.assertEqual(result, expect)
+
+    def test_south_east_asia_config_title(self):
+        result = self.config["title"]
+        expect = "Two model comparison"
         self.assertEqual(result, expect)

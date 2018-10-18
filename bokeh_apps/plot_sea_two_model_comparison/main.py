@@ -66,6 +66,7 @@ def load_config(path):
 
 def south_east_asia_config():
     return {
+        "title": "Two model comparison",
         "regions": [
             {
                 "name": "South east Asia",
@@ -198,9 +199,6 @@ def main(bokeh_id):
     for var in forest.data.PRECIP_ACCUM_VARS:
         plot_type_time_lookups[var] = var
 
-    # initial selected point is approximately Jakarta, Indonesia
-    selected_point = (-6, 103)
-
     # Setup and display plots
     plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
 
@@ -320,7 +318,7 @@ def main(bokeh_id):
     elif bokeh_mode == 'cli':
         root = bokeh.layouts.column(*roots)
         bokeh.io.show(root)
-    bokeh.plotting.curdoc().title = 'Two model comparison'
+    bokeh.plotting.curdoc().title = settings["title"]
 
 
 if __name__ == '__main__' or __name__.startswith("bk"):
