@@ -136,7 +136,12 @@ def days_ago(days):
 
 @forest.util.timer
 def main(bokeh_id):
+    app(bokeh.plotting.curdoc())
+
+
+def app(document):
     '''Two-model bokeh application main program'''
+    bokeh_id = ""
     env = parse_environment(os.environ)
     if env.config_file is None:
         settings = south_east_asia_config()
@@ -182,7 +187,7 @@ def main(bokeh_id):
     except IndexError:
         print("[WARNING] No forecast times found")
         layout1 = forest.util.load_error_page()
-        bokeh.plotting.curdoc().add_root(layout1)
+        document.add_root(layout1)
         return
 
     print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
@@ -312,13 +317,12 @@ def main(bokeh_id):
     except:
         bokeh_mode = 'server'
     if bokeh_mode == 'server':
-        document = bokeh.plotting.curdoc()
         for root in roots:
             document.add_root(root)
     elif bokeh_mode == 'cli':
         root = bokeh.layouts.column(*roots)
         bokeh.io.show(root)
-    bokeh.plotting.curdoc().title = settings["title"]
+    document.title = settings["title"]
 
 
 if __name__ == '__main__' or __name__.startswith("bk"):
