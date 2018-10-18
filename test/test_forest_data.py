@@ -7,7 +7,7 @@ import iris
 import netCDF4
 import numpy as np
 import warnings
-from . import util
+from forest.test import util
 
 
 class FakeLoader(object):

@@ -4,24 +4,10 @@ import datetime as dt
 import yaml
 import os
 import sys
-from .util import remove_after
+from forest.test.util import remove_after
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(script_dir, "../bokeh_apps"))
-import plot_sea_two_model_comparison.main
-
-
-class TestPlotSeaTwoModelComparison(unittest.TestCase):
-    """Need to develop appropriate testing strategy
-
-    I would like to be able to run the main program with
-    a minimal set of sub-systems mocked
-    """
-    def setUp(self):
-        self.bokeh_id = "bk-id"
-
-    @unittest.skip("too difficult to test")
-    def test_plot_sea_two_model_comparison(self):
-        plot_sea_two_model_comparison.main.main(self.bokeh_id)
+import wcssp.main
 
 
 class TestParseEnvironment(unittest.TestCase):
@@ -86,7 +72,7 @@ class TestParseEnvironment(unittest.TestCase):
         self.check_parse_environment(given, "config_file", "file.cfg")
 
     def check_parse_environment(self, env, attr, expect):
-        args = plot_sea_two_model_comparison.main.parse_environment(env)
+        args = wcssp.main.parse_environment(env)
         result = getattr(args, attr)
         self.assertEqual(expect, result)
 
@@ -104,7 +90,7 @@ class TestLoadConfig(unittest.TestCase):
         }
         with open(file_name, "w") as stream:
             yaml.dump(settings, stream)
-        result = plot_sea_two_model_comparison.main.load_config(file_name)
+        result = wcssp.main.load_config(file_name)
         expect = settings
         self.assertEqual(result, expect)
 
@@ -171,7 +157,7 @@ class TestSouthEastAsiaConfig(unittest.TestCase):
             },
         ]
         self.maxDiff = None
-        self.config = plot_sea_two_model_comparison.main.south_east_asia_config()
+        self.config = wcssp.main.south_east_asia_config()
 
     def test_south_east_asia_regions(self):
         result = self.config["regions"]
