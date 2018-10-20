@@ -13,12 +13,8 @@ env = Environment(loader=FileSystemLoader('_templates'))
 
 class IndexHandler(RequestHandler):
     def get(self):
-        template = env.get_template("app_index.html")
-        apps = [
-                {"name": "WCSSP", "href": "wcssp"},
-                {"name": "HIGHWAY", "href": "highway"}
-        ]
-        self.write(template.render(apps=apps))
+        template = env.get_template("index.html")
+        self.write(template.render())
 
 server = Server(
         {'/highway': highway.main.app,
@@ -26,7 +22,9 @@ server = Server(
         num_procs=1,
         extra_patterns=[
             (r'/', IndexHandler),
-            (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': '_static'})
+            (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': '_static'}),
+            (r'/css/(.*)', tornado.web.StaticFileHandler, {'path': '_static/css'}),
+            (r'/images/(.*)', tornado.web.StaticFileHandler, {'path': '_static/images'})
         ])
 server.start()
 
