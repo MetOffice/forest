@@ -1,10 +1,7 @@
 """Custom Tornado server to run bokeh apps"""
 from jinja2 import Environment, FileSystemLoader
-import tornado.web
-from tornado.web import RequestHandler
-from bokeh.embed import server_document
+from tornado.web import RequestHandler, StaticFileHandler
 from bokeh.server.server import Server
-import bokeh.plotting
 
 import highway.main
 import wcssp.main
@@ -19,12 +16,12 @@ class IndexHandler(RequestHandler):
 server = Server(
         {'/highway': highway.main.app,
          '/wcssp': wcssp.main.app},
-        num_procs=1,
+        num_procs=4,
         extra_patterns=[
             (r'/', IndexHandler),
-            (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': '_static'}),
-            (r'/css/(.*)', tornado.web.StaticFileHandler, {'path': '_static/css'}),
-            (r'/images/(.*)', tornado.web.StaticFileHandler, {'path': '_static/images'})
+            (r'/static/(.*)', StaticFileHandler, {'path': '_static'}),
+            (r'/css/(.*)', StaticFileHandler, {'path': '_static/css'}),
+            (r'/images/(.*)', StaticFileHandler, {'path': '_static/images'})
         ])
 server.start()
 
