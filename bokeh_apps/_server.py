@@ -1,12 +1,13 @@
 """Custom Tornado server to run bokeh apps"""
+import os
 from jinja2 import Environment, FileSystemLoader
 from tornado.web import RequestHandler, StaticFileHandler
 from bokeh.server.server import Server
 
 import highway.main
-import wcssp.main
+import wcssp_south_east_asia.main
 
-env = Environment(loader=FileSystemLoader('_templates'))
+env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
 
 class IndexHandler(RequestHandler):
     def get(self):
@@ -15,8 +16,8 @@ class IndexHandler(RequestHandler):
 
 server = Server(
         {'/highway': highway.main.app,
-         '/wcssp': wcssp.main.app},
-        num_procs=4,
+         '/wcssp_south_east_asia': wcssp_south_east_asia.main.app},
+        num_procs=1,
         extra_patterns=[
             (r'/', IndexHandler),
             (r'/static/(.*)', StaticFileHandler, {'path': '_static'}),
@@ -27,6 +28,7 @@ server.start()
 
 if __name__ == '__main__':
     from bokeh.util.browser import view
-    print('Opening Tornado app')
-    server.io_loop.add_callback(view, 'http://localhost:5006')
+    url = 'http://localhost:5006'
+    print('Opening Tornado app: {}'.format(url))
+    server.io_loop.add_callback(view, url)
     server.io_loop.start()
