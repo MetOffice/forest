@@ -57,25 +57,36 @@ def controls(source, models, regions):
         else:
             size = size + 5
         source.data["size"] = size
+    width = 40
     btn1 = bokeh.models.Button(
-        label="Circle size")
+        label="+",
+        width=width)
     btn1.on_click(on_click)
     btn2 = bokeh.models.Button(
-        label="Circle size")
+        label="-",
+        width=width)
     btn2.on_click(on_click)
-    column = bokeh.layouts.column(
-            btn1, btn2,
+    left_child = bokeh.layouts.column(
+            bokeh.layouts.row(btn1, btn2),
             drop_down(models),
-            drop_down(regions),
-            name="btn")
-    return column
+            drop_down(regions))
+    checkbox = bokeh.models.CheckboxGroup(labels=["Link plots", "Activate slider"], active=[0])
+    p = bokeh.models.Paragraph(text="Placeholder")
+    right_child = bokeh.layouts.column(p)
+    panels = [
+     bokeh.models.Panel(child=left_child, title="Left"),
+     bokeh.models.Panel(child=right_child, title="Right")
+    ]
+    tabs = bokeh.models.Tabs(tabs=panels)
+    return bokeh.layouts.column(checkbox, tabs, name="btn")
+
+
+def encode(name):
+    return name.lower().replace(" ", "").replace(".", "")
 
 
 def drop_down(items):
     names = [item["name"] for item in items]
-    def encode(name):
-        return name.lower().replace(" ", "").replace(".", "")
-    menu = [
+    return bokeh.models.Dropdown(menu=[
         (name, encode(name)) for name in names
-    ]
-    return bokeh.models.Dropdown(menu=menu)
+    ])
