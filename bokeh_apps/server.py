@@ -17,7 +17,7 @@ class IndexHandler(RequestHandler):
         self.write(template.render())
 
 
-def bokeh_server(port):
+def bokeh_server(**kwargs):
     highway = app.main.load_app("highway.yaml")
     wcssp_south_east_asia = app.main.load_app("wcssp_south_east_asia.yaml")
     routes = {
@@ -28,23 +28,23 @@ def bokeh_server(port):
         (r'/', IndexHandler),
         (r'/_static/(.*)', StaticFileHandler, {'path': '_static'}),
     ]
-    return Server(
-            routes,
-            num_procs=1,
-            extra_patterns=extra_patterns,
-            port=port)
+    return Server(routes,
+                  num_procs=1,
+                  extra_patterns=extra_patterns,
+                  **kwargs)
 
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--show", action="store_true",
-                        help="launch browser on startup")
-    parser.add_argument("--port", default=5006, type=int,
-                        help="port to listen on")
+    parser.add_argument(
+        "--show", action="store_true",
+        help="launch browser on startup")
+    parser.add_argument(
+        "--port", default=5006, type=int,
+        help="port to listen on")
     parser.add_argument(
         "--allow-websocket-origin",
-        metavar="HOST[:PORT]",
-        action="append",
+        metavar="HOST[:PORT]", action="append",
         help=("public hostnames which may connect "
               "to the bokeh websocket"))
     return parser.parse_args(args=argv)
@@ -54,7 +54,10 @@ def main():
     args = parse_args()
     url = 'http://localhost:{}'.format(args.port)
     print('Opening Tornado app: {}'.format(url))
-    server = bokeh_server(args.port)
+    server = bokeh_server(
+        port=args.port,
+        allow_websocket_origin=args.allow_websocket_origin
+    )
     if args.show:
         from bokeh.util.browser import view
         server.io_loop.add_callback(view, url)
