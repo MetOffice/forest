@@ -17,7 +17,7 @@ class IndexHandler(RequestHandler):
         self.write(template.render())
 
 
-def bokeh_server():
+def bokeh_server(port):
     highway = app.main.load_app("highway.yaml")
     wcssp_south_east_asia = app.main.load_app("wcssp_south_east_asia.yaml")
     routes = {
@@ -28,21 +28,27 @@ def bokeh_server():
         (r'/', IndexHandler),
         (r'/_static/(.*)', StaticFileHandler, {'path': '_static'}),
     ]
-    return Server(routes, num_procs=1, extra_patterns=extra_patterns, port=5006)
+    return Server(
+            routes,
+            num_procs=1,
+            extra_patterns=extra_patterns,
+            port=port)
 
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--show", action="store_true",
                         help="launch browser on startup")
+    parser.add_argument("--port", default=5006, type=int,
+                        help="port to listen on")
     return parser.parse_args(args=argv)
 
 
 def main():
     args = parse_args()
-    url = 'http://localhost:5006'
+    url = 'http://localhost:{}'.format(args.port)
     print('Opening Tornado app: {}'.format(url))
-    server = bokeh_server()
+    server = bokeh_server(args.port)
     if args.show:
         from bokeh.util.browser import view
         server.io_loop.add_callback(view, url)

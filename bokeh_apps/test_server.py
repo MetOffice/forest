@@ -8,3 +8,15 @@ class TestParseArgs(unittest.TestCase):
         result = args.show
         expect = False
         self.assertEqual(expect, result)
+
+    def test_port(self):
+        args = server.parse_args([])
+        result = args.port
+        expect = 5006
+        self.assertEqual(expect, result)
+
+    def test_port_given_flag(self):
+        args = server.parse_args(["--port", "8888"])
+        result = args.port
+        expect = 8888
+        self.assertEqual(expect, result)
