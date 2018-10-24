@@ -40,7 +40,7 @@ def app(document, title=None, regions=None, models=None):
         size=[5, 5, 5]
     ))
     figure.circle(x="x", y="y", size="size", source=source)
-    document.add_root(controls(source, models))
+    document.add_root(controls(source, models, regions))
     document.add_root(figure)
 
     filename = os.path.join(script_dir, "theme.yaml")
@@ -49,7 +49,7 @@ def app(document, title=None, regions=None, models=None):
     document.template = env.get_template("templates/index.html")
 
 
-def controls(source, models):
+def controls(source, models, regions):
     def on_click():
         size = np.asarray(source.data["size"])
         if max(size) > 20:
@@ -63,14 +63,19 @@ def controls(source, models):
     btn2 = bokeh.models.Button(
         label="Circle size")
     btn2.on_click(on_click)
-    model_names = [model["name"] for model in models]
+    column = bokeh.layouts.column(
+            btn1, btn2,
+            drop_down(models),
+            drop_down(regions),
+            name="btn")
+    return column
+
+
+def drop_down(items):
+    names = [item["name"] for item in items]
     def encode(name):
         return name.lower().replace(" ", "").replace(".", "")
     menu = [
-        (name, encode(name)) for name in model_names
+        (name, encode(name)) for name in names
     ]
-    dd = bokeh.models.Dropdown(menu=menu)
-    column = bokeh.layouts.column(
-            btn1, btn2, dd,
-            name="btn")
-    return column
+    return bokeh.models.Dropdown(menu=menu)
