@@ -20,3 +20,11 @@ class TestParseArgs(unittest.TestCase):
         result = args.port
         expect = 8888
         self.assertEqual(expect, result)
+
+    def test_allow_web_socket_origin(self):
+        args = server.parse_args([
+            "--allow-websocket-origin",
+            "site.com"])
+        result = args.allow_websocket_origin
+        expect = ["site.com"]
+        self.assertEqual(expect, result)

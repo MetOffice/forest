@@ -41,6 +41,12 @@ def parse_args(argv=None):
                         help="launch browser on startup")
     parser.add_argument("--port", default=5006, type=int,
                         help="port to listen on")
+    parser.add_argument(
+        "--allow-websocket-origin",
+        metavar="HOST[:PORT]",
+        action="append",
+        help=("public hostnames which may connect "
+              "to the bokeh websocket"))
     return parser.parse_args(args=argv)
 
 
