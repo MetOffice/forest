@@ -27,6 +27,8 @@ def bokeh_server(**kwargs):
     extra_patterns = [
         (r'/', IndexHandler),
         (r'/_static/(.*)', StaticFileHandler, {'path': '_static'}),
+        (r'/app/static/(.*)', StaticFileHandler, {'path': 'app/static'}),
+        (r'/app/static/css/(.*)', StaticFileHandler, {'path': 'app/static/css'}),
     ]
     return Server(routes,
                   num_procs=1,

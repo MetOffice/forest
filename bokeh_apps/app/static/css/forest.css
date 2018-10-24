@@ -1,59 +1,12 @@
 body {
-    background-color: white;
-    margin: 0;
+    font-family: sans-serif;
+    font-weight: 100;
 }
 
-.bk-root .bk-widget-box {
-    padding: 2px;
+h1 {
+    font-weight: 100;
 }
 
-.bk-root .bk-widget {
-    margin-top: 0;
-}
-
-.bk-root .bk-grid-row {
-    height: auto !important;
-}
-
-.bk-widget .bk-bs-btn {
-    color: black;
-    background-color: white;
-    border: 1px solid black;
-    padding: 1px 12px;
-    border-radius: 2px;
-}
-
-.bk-widget .bk-bs-btn:hover {
-    background-color: whitesmoke;
-    color: black;
-    border: 1px solid black;
-}
-
-.bk-widget .bk-bs-btn-default.bk-bs-active {
-    border: 1px solid black;
-    background-color: whitesmoke;
-}
-
-.fst-head {
-    position: absolute !important;
-    top: 12px;
-    left: 34px;
-    overflow: visible;
-    z-index: 1;
-}
-
-.fst-left {
-    position: absolute !important;
-    top: 100px;
-    left: 30px;
-    overflow: visible;
-    z-index: 1;
-}
-
-.fst-foot {
-    position: absolute !important;
-    top: 0;
-    left: 0;
-    z-index: 1;
-    overflow: visible;
+a {
+    color: white;
 }
