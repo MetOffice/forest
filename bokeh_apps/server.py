@@ -6,28 +6,29 @@ from jinja2 import Environment, FileSystemLoader
 from tornado.web import RequestHandler, StaticFileHandler
 from bokeh.server.server import Server
 
-import highway.main
-import wcssp_south_east_asia.main
+import app.main
 
 env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
+
 
 class IndexHandler(RequestHandler):
     def get(self):
         template = env.get_template("index.html")
         self.write(template.render())
 
-server = Server(
-        {'/highway': highway.main.app,
-         '/wcssp_south_east_asia': wcssp_south_east_asia.main.app},
-        num_procs=1,
-        extra_patterns=[
-            (r'/', IndexHandler),
-            (r'/static/(.*)', StaticFileHandler, {'path': 'static'}),
-            (r'/css/(.*)', StaticFileHandler, {'path': 'static/css'}),
-            (r'/images/(.*)', StaticFileHandler, {'path': 'static/images'})
-        ],
-        port=5006)
-server.start()
+
+def bokeh_server():
+    routes = {
+        '/highway': app.main.app,
+        '/wcssp_south_east_asia': app.main.app
+    }
+    extra_patterns = [
+        (r'/', IndexHandler),
+        (r'/static/(.*)', StaticFileHandler, {'path': 'static'}),
+        (r'/css/(.*)', StaticFileHandler, {'path': 'static/css'}),
+        (r'/images/(.*)', StaticFileHandler, {'path': 'static/images'})
+    ]
+    return Server(routes, num_procs=1, extra_patterns=extra_patterns, port=5006)
 
 
 def parse_args(argv=None):
@@ -41,6 +42,7 @@ def main():
     args = parse_args()
     url = 'http://localhost:5006'
     print('Opening Tornado app: {}'.format(url))
+    server = bokeh_server()
     if args.show:
         from bokeh.util.browser import view
         server.io_loop.add_callback(view, url)
