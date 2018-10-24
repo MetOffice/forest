@@ -18,17 +18,15 @@ class IndexHandler(RequestHandler):
 
 
 def bokeh_server():
-    highway = app.main.App("Highway")
-    wcssp_south_east_asia = app.main.App("WCSSP - South East Asia")
+    highway = app.main.load_app("highway.yaml")
+    wcssp_south_east_asia = app.main.load_app("wcssp_south_east_asia.yaml")
     routes = {
         '/highway': highway,
         '/wcssp_south_east_asia': wcssp_south_east_asia
     }
     extra_patterns = [
         (r'/', IndexHandler),
-        (r'/static/(.*)', StaticFileHandler, {'path': 'static'}),
-        (r'/css/(.*)', StaticFileHandler, {'path': 'static/css'}),
-        (r'/images/(.*)', StaticFileHandler, {'path': 'static/images'})
+        (r'/_static/(.*)', StaticFileHandler, {'path': '_static'}),
     ]
     return Server(routes, num_procs=1, extra_patterns=extra_patterns, port=5006)
 
