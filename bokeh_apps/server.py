@@ -18,9 +18,11 @@ class IndexHandler(RequestHandler):
 
 
 def bokeh_server():
+    highway = app.main.App("Highway")
+    wcssp_south_east_asia = app.main.App("WCSSP - South East Asia")
     routes = {
-        '/highway': app.main.app,
-        '/wcssp_south_east_asia': app.main.app
+        '/highway': highway,
+        '/wcssp_south_east_asia': wcssp_south_east_asia
     }
     extra_patterns = [
         (r'/', IndexHandler),
