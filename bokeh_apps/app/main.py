@@ -57,28 +57,30 @@ def controls(source, models, regions):
         else:
             size = size + 5
         source.data["size"] = size
-    width = 40
-    btn1 = bokeh.models.Button(
-        label="+",
-        width=width)
-    btn1.on_click(on_click)
-    btn2 = bokeh.models.Button(
-        label="-",
-        width=width)
-    btn2.on_click(on_click)
     left_child = bokeh.layouts.column(
-            bokeh.layouts.row(btn1, btn2),
+            bokeh.layouts.row(p("Time"), button("+", on_click), button("-", on_click)),
+            bokeh.layouts.row(p("Forecast"), button("+", on_click), button("-", on_click)),
+            bokeh.layouts.row(p("Model run"), button("+", on_click), button("-", on_click)),
             drop_down(models),
             drop_down(regions))
     checkbox = bokeh.models.CheckboxGroup(labels=["Link plots", "Activate slider"], active=[0])
-    p = bokeh.models.Paragraph(text="Placeholder")
-    right_child = bokeh.layouts.column(p)
+    right_child = bokeh.layouts.column(p("Placeholder"))
     panels = [
      bokeh.models.Panel(child=left_child, title="Left"),
      bokeh.models.Panel(child=right_child, title="Right")
     ]
     tabs = bokeh.models.Tabs(tabs=panels)
     return bokeh.layouts.column(checkbox, tabs, name="btn")
+
+def p(text):
+    return bokeh.models.Paragraph(text=text, width=80)
+
+def button(label, on_click, width=40):
+    btn = bokeh.models.Button(
+        label=label,
+        width=width)
+    btn.on_click(on_click)
+    return btn
 
 
 def encode(name):
