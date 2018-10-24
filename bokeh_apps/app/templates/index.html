@@ -29,26 +29,27 @@
         -webkit-transition: width 0.5s;
     }
     .controls:hover {
-        width: 20%;
+        width: auto;
+        transition: width 0.5s;
     }
     .controls-max {
-        transition: opacity 1s ease-out;
         opacity: 0;
         height: 0;
         overflow: hidden;
     }
     .controls:hover .controls-max {
-        transition: opacity 1s ease-in;
+        transition: opacity 0.5s ease-in;
         opacity: 1;
         height: auto;
+        overflow: visible;
     }
     .controls-min {
-        transition: opacity 1s ease-in;
+        transition: opacity 0.5s ease-in;
         opacity: 1;
         height: auto;
     }
     .controls:hover .controls-min {
-        transition: opacity 1s ease-out;
+        transition: opacity 0.5s ease-out;
         opacity: 0;
         height: 0;
         overflow: hidden;

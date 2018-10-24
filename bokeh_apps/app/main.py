@@ -12,20 +12,24 @@ env = jinja2.Environment(loader=jinja2.FileSystemLoader(script_dir))
 
 
 def load_app(config_file):
-    with open(config_file) as stream:
-        settings = yaml.load(stream)
-    return App(title=settings["title"])
+    return App.load(config_file)
 
 
 class App(object):
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
+    @classmethod
+    def load(cls, config_file):
+        with open(config_file) as stream:
+            settings = yaml.load(stream)
+        return cls(**settings)
+
     def __call__(self, document):
         app(document, **self.kwargs)
 
 
-def app(document, title=None):
+def app(document, title=None, regions=None, models=None):
     figure = bokeh.plotting.figure(
         sizing_mode="stretch_both",
         name="map",
@@ -45,12 +49,24 @@ def app(document, title=None):
             size = size + 5
         source.data["size"] = size
 
-    button = bokeh.models.Button(
-        label="Circle size",
-        name="btn")
-    button.on_click(on_click)
-
-    document.add_root(button)
+    btn1 = bokeh.models.Button(
+        label="Circle size")
+    btn1.on_click(on_click)
+    btn2 = bokeh.models.Button(
+        label="Circle size")
+    btn2.on_click(on_click)
+    model_names = [model["name"] for model in models]
+    def encode(name):
+        return name.lower().replace(" ", "").replace(".", "")
+    menu = [
+        (name, encode(name)) for name in model_names
+    ]
+    print(menu)
+    dd = bokeh.models.Dropdown(menu=menu)
+    column = bokeh.layouts.column(
+            btn1, btn2, dd,
+            name="btn")
+    document.add_root(column)
     document.add_root(figure)
 
     filename = os.path.join(script_dir, "theme.yaml")
