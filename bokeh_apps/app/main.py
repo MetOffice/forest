@@ -78,10 +78,27 @@ def app(document, title=None, regions=None, models=None):
     left_model_stream = forest.Stream()
     right_model_stream = forest.Stream()
     parameter_stream = forest.Stream()
+
+    def join(state):
+        parameter_state, model = state
+        parameter = name(parameter_state).lower()
+        convention = model["format"]
+        section = forest.stash_section(
+                parameter,
+                convention)
+        item = forest.stash_item(
+                parameter,
+                convention)
+        return {
+            "parameter": parameter,
+            "pattern": model["pattern"],
+            "section": section,
+            "item": item,
+        }
     plot_stream = forest.rx.CombineLatest(
             parameter_stream,
             left_model_stream)
-    plot_stream.filter(any_none).log()
+    plot_stream.filter(any_none).map(join).log()
 
     # Reactive figure title
     left_model_stream.map(name).map(edit_title(figure))
