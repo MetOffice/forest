@@ -72,14 +72,6 @@ def app(document, title=None, regions=None, models=None):
     figure.multi_line(xs="xs", ys="ys", source=borders,
                       color="grey")
 
-    # Example plot
-    source = bokeh.models.ColumnDataSource(dict(
-        x=[1, 2, 3],
-        y=[1, 2, 3],
-        size=[5, 5, 5]
-    ))
-    figure.circle(x="x", y="y", size="size", source=source)
-
     # Models
     names = [name(m) for m in models]
     left_model_drop = drop_down(names)
@@ -121,7 +113,12 @@ def name(item):
     return item["name"]
 
 
-def on_change_region(x_range, y_range, coastlines, borders, regions):
+def on_change_region(
+        x_range,
+        y_range,
+        coastlines,
+        borders,
+        regions):
     names = [name(region) for region in regions]
     x_ranges = {name(region): lon_range(region)
             for region in regions}
@@ -131,8 +128,8 @@ def on_change_region(x_range, y_range, coastlines, borders, regions):
         name = decode(names, new)
         x_start, x_end = x_ranges[name]
         y_start, y_end = y_ranges[name]
-        extent = x_start, x_end, y_start, y_end
         print(name, x_start, x_end, y_start, y_end)
+        extent = x_start, x_end, y_start, y_end
         xs, ys = forest.geography.coastlines(extent)
         coastlines.data = {
             "xs": xs,
