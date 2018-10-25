@@ -4,6 +4,9 @@ import datetime as dt
 import yaml
 import bokeh.plotting
 import bokeh.themes
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 import numpy as np
 import jinja2
 import forest.plot
@@ -47,7 +50,6 @@ class App(object):
         app(document, **self.kwargs)
 
 
-@forest.util.timer
 def cubes(state):
     parameter_state, model_state = state
     parameter = name(parameter_state).lower()
@@ -73,6 +75,46 @@ def file_name(start_date, pattern, directory):
     return os.path.join(directory, basename)
 
 
+def forest_plot(source):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    def wrapper(cube):
+        longitudes = cube.coords('longitude')[0].points
+        latitudes = cube.coords('latitude')[0].points
+        values = cube.data[0]
+        mappable = ax.pcolormesh(
+                longitudes,
+                latitudes,
+                values)
+        ni, nj = values.shape
+        shape = (ni - 1, nj -1)
+        left, right = longitudes.min(), longitudes.max()
+        bottom, top = latitudes.min(), latitudes.max()
+        x = left
+        y = bottom
+        dw = right - left
+        dh = top - bottom
+        image = forest.plot.rgba_from_mappable(
+                mappable,
+                shape)
+
+        # Smooth high resolution imagery
+        max_ni, max_nj = 800, 600
+        ni, nj, _ = image.shape
+        if (ni > max_ni) or (nj > max_nj):
+            image = forest.plot.smooth_image(
+                    image, (max_ni, max_nj))
+
+        source.data = {
+            "x": [x],
+            "y": [y],
+            "dw": [dw],
+            "dh": [dh],
+            "image": [image]
+        }
+    return wrapper
+
+
 def app(document, title=None, regions=None, models=None):
     x_range = bokeh.models.Range1d(0, 1, bounds="auto")
     y_range = bokeh.models.Range1d(0, 1, bounds="auto")
@@ -84,6 +126,23 @@ def app(document, title=None, regions=None, models=None):
         y_range=y_range)
     forest.plot.add_x_axes(figure, "above")
     forest.plot.add_y_axes(figure, "right")
+
+    # Left/right RGBA
+    left_rgba = bokeh.models.ColumnDataSource({
+        "x": [],
+        "y": [],
+        "dw": [],
+        "dh": [],
+        "image": []
+    })
+    figure.image_rgba(
+            x="x",
+            y="y",
+            dw="dw",
+            dh="dh",
+            image="image",
+            source=left_rgba)
+    plot_cube = forest_plot(left_rgba)
 
     # Coastlines/Borders
     coastlines = bokeh.models.ColumnDataSource({
@@ -109,6 +168,7 @@ def app(document, title=None, regions=None, models=None):
             parameter_stream,
             left_model_stream)
     cube_stream = stream.filter(any_none).map(cubes)
+    cube_stream.map(plot_cube)
 
     # Reactive figure title
     left_model_stream.map(name).map(edit_title(figure))
