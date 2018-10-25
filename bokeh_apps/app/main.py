@@ -74,9 +74,15 @@ def app(document, title=None, regions=None, models=None):
 
     # Models
     names = [name(m) for m in models]
+
     left_model_drop = drop_down(names)
+    on_change = on_change_model(models, "left")
+    left_model_drop.on_change("value", on_change)
     left_model_drop.value = encode(name(models[0]))
+
     right_model_drop = drop_down(names)
+    on_change = on_change_model(models, "right")
+    right_model_drop.on_change("value", on_change)
     right_model_drop.value = encode(name(models[1]))
 
     # Regions
@@ -111,6 +117,14 @@ def app(document, title=None, regions=None, models=None):
 
 def name(item):
     return item["name"]
+
+
+def on_change_model(models, label=None):
+    names = [name(model) for model in models]
+    def on_change(attr, old, new):
+        name = decode(names, new)
+        print(label, name)
+    return on_change
 
 
 def on_change_region(
