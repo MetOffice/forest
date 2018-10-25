@@ -1,5 +1,6 @@
 """Minimal Forest implementation"""
 import os
+import datetime as dt
 import yaml
 import bokeh.plotting
 import bokeh.themes
@@ -46,6 +47,34 @@ class App(object):
         app(document, **self.kwargs)
 
 
+def times(state):
+    parameter_state, model_state = state
+    parameter = name(parameter_state).lower()
+    convention = model_state["format"]
+    pattern = model_state["pattern"]
+    date = dt.datetime(2018, 10, 21)
+    basename = pattern.format(date)
+    directory = os.path.expanduser(
+            "~/s3/stephen-sea-public-london/model_data/")
+    section = forest.stash_section(
+            parameter,
+            convention)
+    item = forest.stash_item(
+            parameter,
+            convention)
+    path = os.path.join(directory, basename)
+    cube = forest.load_cube(path, section, item)
+    times = forest.load_times(cube)
+    return {
+        "path": path,
+        "parameter": parameter,
+        "pattern": pattern,
+        "section": section,
+        "item": item,
+        "times": times
+    }
+
+
 def app(document, title=None, regions=None, models=None):
     x_range = bokeh.models.Range1d(0, 1, bounds="auto")
     y_range = bokeh.models.Range1d(0, 1, bounds="auto")
@@ -78,27 +107,10 @@ def app(document, title=None, regions=None, models=None):
     left_model_stream = forest.Stream()
     right_model_stream = forest.Stream()
     parameter_stream = forest.Stream()
-
-    def join(state):
-        parameter_state, model = state
-        parameter = name(parameter_state).lower()
-        convention = model["format"]
-        section = forest.stash_section(
-                parameter,
-                convention)
-        item = forest.stash_item(
-                parameter,
-                convention)
-        return {
-            "parameter": parameter,
-            "pattern": model["pattern"],
-            "section": section,
-            "item": item,
-        }
-    plot_stream = forest.rx.CombineLatest(
+    time_stream = forest.rx.CombineLatest(
             parameter_stream,
             left_model_stream)
-    plot_stream.filter(any_none).map(join).log()
+    time_stream.filter(any_none).map(times).log()
 
     # Reactive figure title
     left_model_stream.map(name).map(edit_title(figure))
