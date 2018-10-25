@@ -47,14 +47,16 @@ class App(object):
         app(document, **self.kwargs)
 
 
-def times(state):
+@forest.util.timer
+def cubes(state):
     parameter_state, model_state = state
     parameter = name(parameter_state).lower()
     convention = model_state["format"]
     pattern = model_state["pattern"]
     date = dt.datetime(2018, 10, 21)
-    basename = pattern.format(date)
-    directory = os.path.expanduser(
+    path = file_name(
+            date,
+            pattern,
             "~/s3/stephen-sea-public-london/model_data/")
     section = forest.stash_section(
             parameter,
@@ -62,17 +64,13 @@ def times(state):
     item = forest.stash_item(
             parameter,
             convention)
-    path = os.path.join(directory, basename)
-    cube = forest.load_cube(path, section, item)
-    times = forest.load_times(cube)
-    return {
-        "path": path,
-        "parameter": parameter,
-        "pattern": pattern,
-        "section": section,
-        "item": item,
-        "times": times
-    }
+    return forest.load_cube(path, section, item)
+
+
+def file_name(start_date, pattern, directory):
+    directory = os.path.expanduser(directory)
+    basename = pattern.format(start_date)
+    return os.path.join(directory, basename)
 
 
 def app(document, title=None, regions=None, models=None):
@@ -107,10 +105,10 @@ def app(document, title=None, regions=None, models=None):
     left_model_stream = forest.Stream()
     right_model_stream = forest.Stream()
     parameter_stream = forest.Stream()
-    time_stream = forest.rx.CombineLatest(
+    stream = forest.rx.CombineLatest(
             parameter_stream,
             left_model_stream)
-    time_stream.filter(any_none).map(times).log()
+    cube_stream = stream.filter(any_none).map(cubes)
 
     # Reactive figure title
     left_model_stream.map(name).map(edit_title(figure))
