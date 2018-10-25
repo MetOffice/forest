@@ -5,6 +5,8 @@ import bokeh.plotting
 import bokeh.themes
 import numpy as np
 import jinja2
+import forest.plot
+import forest.geography
 
 
 script_dir = os.path.dirname(__file__)
@@ -45,10 +47,30 @@ class App(object):
 
 
 def app(document, title=None, regions=None, models=None):
+    x_range = bokeh.models.Range1d(0, 1, bounds="auto")
+    y_range = bokeh.models.Range1d(0, 1, bounds="auto")
     figure = bokeh.plotting.figure(
         sizing_mode="stretch_both",
         name="map",
-        title=title)
+        title=title,
+        x_range=x_range,
+        y_range=y_range)
+    forest.plot.add_x_axes(figure, "above")
+    forest.plot.add_y_axes(figure, "right")
+
+    # Coastlines/Borders
+    coastlines = bokeh.models.ColumnDataSource({
+        "xs": [],
+        "ys": []
+    })
+    figure.multi_line(xs="xs", ys="ys", source=coastlines,
+                      color="black")
+    borders = bokeh.models.ColumnDataSource({
+        "xs": [],
+        "ys": []
+    })
+    figure.multi_line(xs="xs", ys="ys", source=borders,
+                      color="grey")
 
     # Example plot
     source = bokeh.models.ColumnDataSource(dict(
@@ -68,7 +90,12 @@ def app(document, title=None, regions=None, models=None):
     # Regions
     region_names = [name(region) for region in regions]
     region_drop = drop_down(region_names)
-    on_change = on_change_region(figure, regions)
+    on_change = on_change_region(
+            x_range,
+            y_range,
+            coastlines,
+            borders,
+            regions)
     region_drop.on_change("value", on_change)
     region_drop.value = encode(name(regions[0]))
 
@@ -94,37 +121,43 @@ def name(item):
     return item["name"]
 
 
-def on_change_region(figure, regions):
+def on_change_region(x_range, y_range, coastlines, borders, regions):
     names = [name(region) for region in regions]
-    x_ranges = {name(region): x_range(region)
+    x_ranges = {name(region): lon_range(region)
             for region in regions}
-    y_ranges = {name(region): y_range(region)
+    y_ranges = {name(region): lat_range(region)
             for region in regions}
     def on_change(attr, old, new):
         name = decode(names, new)
-        adjust_x_range(figure, *x_ranges[name])
-        adjust_y_range(figure, *y_ranges[name])
+        x_start, x_end = x_ranges[name]
+        y_start, y_end = y_ranges[name]
+        extent = x_start, x_end, y_start, y_end
+        print(name, x_start, x_end, y_start, y_end)
+        xs, ys = forest.geography.coastlines(extent)
+        coastlines.data = {
+            "xs": xs,
+            "ys": ys
+        }
+        xs, ys = forest.geography.borders(extent)
+        borders.data = {
+            "xs": xs,
+            "ys": ys
+        }
+        x_range.start = x_start
+        x_range.end = x_end
+        y_range.start = y_start
+        y_range.end = y_end
     return on_change
 
 
-def x_range(region):
-    return tuple(region["longitude_range"])
+def lon_range(region):
+    start, end = region["longitude_range"]
+    return float(start), float(end)
 
 
-def y_range(region):
-    return tuple(region["latitude_range"])
-
-
-def adjust_x_range(figure, x_start, x_end):
-    figure.x_range.start = x_start
-    figure.x_range.end = x_end
-    figure.x_range.bounds = "auto"
-
-
-def adjust_y_range(figure, y_start, y_end):
-    figure.y_range.start = y_start
-    figure.y_range.end = y_end
-    figure.y_range.bounds = "auto"
+def lat_range(region):
+    start, end = region["latitude_range"]
+    return float(start), float(end)
 
 
 def controls(
