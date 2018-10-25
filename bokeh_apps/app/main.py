@@ -78,6 +78,9 @@ def file_name(start_date, pattern, directory):
 def forest_plot(source):
     fig = plt.figure()
     ax = fig.add_subplot(111)
+    radar = forest.util.get_radar_colours()
+    cmap = radar["cmap"]
+    norm = radar["norm"]
     def wrapper(cube):
         longitudes = cube.coords('longitude')[0].points
         latitudes = cube.coords('latitude')[0].points
@@ -85,7 +88,9 @@ def forest_plot(source):
         mappable = ax.pcolormesh(
                 longitudes,
                 latitudes,
-                values)
+                values,
+                cmap=cmap,
+                norm=norm)
         ni, nj = values.shape
         shape = (ni - 1, nj -1)
         left, right = longitudes.min(), longitudes.max()
