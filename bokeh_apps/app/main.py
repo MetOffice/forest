@@ -64,15 +64,22 @@ def app(document, title=None, regions=None, models=None):
         source.data["size"] = size
     models = [name(model) for model in models]
 
-    # Region functionality
+    # Regions
     region_names = [name(region) for region in regions]
-    region_drop_down = drop_down(region_names)
-    on_change = on_change_regions(regions, figure)
-    region_drop_down.on_change("value", on_change)
-    region_drop_down.value = encode(region_names[0])
+    region_drop = drop_down(region_names)
+    on_change = on_change_region(figure, regions)
+    region_drop.on_change("value", on_change)
+    region_drop.value = encode(name(regions[0]))
 
+    # Parameters
     parameters = PARAMETERS
-    document.add_root(controls(models, region_drop_down, parameters))
+    parameter_drop = drop_down(parameters)
+    parameter_drop.value = encode(parameters[0])
+
+    document.add_root(controls(
+        models,
+        region_drop,
+        parameter_drop))
     document.add_root(figure)
 
     filename = os.path.join(script_dir, "theme.yaml")
@@ -85,14 +92,14 @@ def name(item):
     return item["name"]
 
 
-def on_change_regions(regions, figure):
-    region_names = [name(region) for region in regions]
+def on_change_region(figure, regions):
+    names = [name(region) for region in regions]
     x_ranges = {name(region): x_range(region)
             for region in regions}
     y_ranges = {name(region): y_range(region)
             for region in regions}
     def on_change(attr, old, new):
-        name = decode(region_names, new)
+        name = decode(names, new)
         adjust_x_range(figure, *x_ranges[name])
         adjust_y_range(figure, *y_ranges[name])
     return on_change
@@ -118,7 +125,7 @@ def adjust_y_range(figure, y_start, y_end):
     figure.y_range.bounds = "auto"
 
 
-def controls(models, region_drop_down, parameters):
+def controls(models, *drop_downs):
     checkbox = bokeh.models.CheckboxGroup(labels=["Link plots", "Activate slider"], active=[0])
     left_child = bokeh.layouts.column(
             plus_minus_row("Time"),
@@ -137,8 +144,7 @@ def controls(models, region_drop_down, parameters):
     tabs = bokeh.models.Tabs(tabs=panels)
     return bokeh.layouts.column(
             checkbox,
-            region_drop_down,
-            drop_down(parameters, parameters[0]),
+            *drop_downs,
             tabs,
             name="btn")
 
