@@ -72,16 +72,25 @@ def app(document, title=None, regions=None, models=None):
     figure.multi_line(xs="xs", ys="ys", source=borders,
                       color="grey")
 
+    # Streams
+    def any_none(items):
+        return any([item is None for item in items])
+    left_model_stream = forest.Stream()
+    right_model_stream = forest.Stream()
+    parameter_stream = forest.Stream()
+    plot_stream = forest.rx.CombineLatest(
+            parameter_stream,
+            left_model_stream)
+    plot_stream.filter(any_none).log()
+
     # Models
     names = [name(m) for m in models]
 
-    left_model_stream = forest.Stream()
     left_model_drop = drop_down(names)
     on_change = on_change_model(models, left_model_stream)
     left_model_drop.on_change("value", on_change)
     left_model_drop.value = encode(name(models[0]))
 
-    right_model_stream = forest.Stream()
     right_model_drop = drop_down(names)
     on_change = on_change_model(models, right_model_stream)
     right_model_drop.on_change("value", on_change)
@@ -101,12 +110,10 @@ def app(document, title=None, regions=None, models=None):
 
     # Parameters
     parameters = PARAMETERS
-    parameter_stream = forest.Stream()
     parameter_drop = drop_down(parameters)
     on_change = on_change_parameter(parameters, parameter_stream)
     parameter_drop.on_change("value", on_change)
     parameter_drop.value = encode(parameters[0])
-    parameter_stream.log()
 
     document.add_root(controls(
         left_model_drop,
