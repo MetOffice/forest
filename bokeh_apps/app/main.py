@@ -80,14 +80,12 @@ def app(document, title=None, regions=None, models=None):
     on_change = on_change_model(models, left_model_stream)
     left_model_drop.on_change("value", on_change)
     left_model_drop.value = encode(name(models[0]))
-    left_model_stream.log()
 
     right_model_stream = forest.Stream()
     right_model_drop = drop_down(names)
     on_change = on_change_model(models, right_model_stream)
     right_model_drop.on_change("value", on_change)
     right_model_drop.value = encode(name(models[1]))
-    right_model_stream.log()
 
     # Regions
     region_names = [name(region) for region in regions]
@@ -103,8 +101,12 @@ def app(document, title=None, regions=None, models=None):
 
     # Parameters
     parameters = PARAMETERS
+    parameter_stream = forest.Stream()
     parameter_drop = drop_down(parameters)
+    on_change = on_change_parameter(parameters, parameter_stream)
+    parameter_drop.on_change("value", on_change)
     parameter_drop.value = encode(parameters[0])
+    parameter_stream.log()
 
     document.add_root(controls(
         left_model_drop,
@@ -135,6 +137,15 @@ def on_change_model(models, stream):
             "name": name,
             "format": formats[name],
             "pattern": patterns[name],
+        })
+    return on_change
+
+
+def on_change_parameter(names, stream):
+    def on_change(attr, old, new):
+        name = decode(names, new)
+        stream.emit({
+            "name": name
         })
     return on_change
 
