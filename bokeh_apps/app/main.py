@@ -83,6 +83,9 @@ def app(document, title=None, regions=None, models=None):
             left_model_stream)
     plot_stream.filter(any_none).log()
 
+    # Reactive figure title
+    left_model_stream.map(name).map(edit_title(figure))
+
     # Models
     names = [name(m) for m in models]
 
@@ -130,6 +133,12 @@ def app(document, title=None, regions=None, models=None):
 
 def name(item):
     return item["name"]
+
+
+def edit_title(figure):
+    def wrapper(text):
+        figure.title.text = text
+    return wrapper
 
 
 def on_change_model(models, stream):
