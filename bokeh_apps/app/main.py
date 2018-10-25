@@ -44,10 +44,6 @@ class App(object):
         app(document, **self.kwargs)
 
 
-def on_change(attr, old, new):
-    print("change: {} {} {}".format(attr, old, new))
-
-
 def app(document, title=None, regions=None, models=None):
     figure = bokeh.plotting.figure(
         sizing_mode="stretch_both",
@@ -68,7 +64,11 @@ def app(document, title=None, regions=None, models=None):
         source.data["size"] = size
     models = [item["name"] for item in models]
     regions = [item["name"] for item in regions]
-    region_drop_down = drop_down(regions, regions[0])
+    region_drop_down = drop_down(regions)
+    region_drop_down.value = encode(regions[0])
+    def on_change(attr, old, new):
+        print("change: {} {} {}".format(attr, old, new))
+        print(decode(regions, new))
     region_drop_down.on_change("value", on_change)
     parameters = PARAMETERS
     document.add_root(controls(models, region_drop_down, parameters))
@@ -120,11 +120,27 @@ def button(label, width=40):
     return btn
 
 
+def drop_down(names, label=None):
+    dd = bokeh.models.Dropdown(menu=[
+        (name, encode(name)) for name in names
+    ], label=label)
+    autolabel(dd)
+    return dd
+
+
 def encode(name):
     return name.lower().replace(" ", "").replace(".", "")
 
 
-def drop_down(names, label=None):
-    return bokeh.models.Dropdown(menu=[
-        (name, encode(name)) for name in names
-    ], label=label)
+def decode(names, encoded_name):
+    for name in names:
+        if encode(name) == encoded_name:
+            return name
+
+
+def autolabel(drop_down):
+    def on_change(attr, old, new):
+        for label, key in drop_down.menu:
+            if key == new:
+                drop_down.label = label
+    drop_down.on_change("value", on_change)
