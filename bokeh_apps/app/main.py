@@ -44,10 +44,6 @@ class App(object):
         app(document, **self.kwargs)
 
 
-def name(item):
-    return item["name"]
-
-
 def app(document, title=None, regions=None, models=None):
     figure = bokeh.plotting.figure(
         sizing_mode="stretch_both",
@@ -69,32 +65,9 @@ def app(document, title=None, regions=None, models=None):
     models = [name(model) for model in models]
 
     # Region functionality
-    def adjust_x_range(figure, x_start, x_end):
-        figure.x_range.start = x_start
-        figure.x_range.end = x_end
-        figure.x_range.bounds = "auto"
-
-    def adjust_y_range(figure, y_start, y_end):
-        figure.y_range.start = y_start
-        figure.y_range.end = y_end
-        figure.y_range.bounds = "auto"
-
-    def x_range(region):
-        return tuple(region["longitude_range"])
-
-    def y_range(region):
-        return tuple(region["latitude_range"])
-
     region_names = [name(region) for region in regions]
-    x_ranges = {name(region): x_range(region)
-            for region in regions}
-    y_ranges = {name(region): y_range(region)
-            for region in regions}
     region_drop_down = drop_down(region_names)
-    def on_change(attr, old, new):
-        name = decode(region_names, new)
-        adjust_x_range(figure, *x_ranges[name])
-        adjust_y_range(figure, *y_ranges[name])
+    on_change = on_change_regions(regions, figure)
     region_drop_down.on_change("value", on_change)
     region_drop_down.value = encode(region_names[0])
 
@@ -106,6 +79,43 @@ def app(document, title=None, regions=None, models=None):
     document.theme = bokeh.themes.Theme(filename=filename)
     document.title = title
     document.template = env.get_template("templates/index.html")
+
+
+def name(item):
+    return item["name"]
+
+
+def on_change_regions(regions, figure):
+    region_names = [name(region) for region in regions]
+    x_ranges = {name(region): x_range(region)
+            for region in regions}
+    y_ranges = {name(region): y_range(region)
+            for region in regions}
+    def on_change(attr, old, new):
+        name = decode(region_names, new)
+        adjust_x_range(figure, *x_ranges[name])
+        adjust_y_range(figure, *y_ranges[name])
+    return on_change
+
+
+def x_range(region):
+    return tuple(region["longitude_range"])
+
+
+def y_range(region):
+    return tuple(region["latitude_range"])
+
+
+def adjust_x_range(figure, x_start, x_end):
+    figure.x_range.start = x_start
+    figure.x_range.end = x_end
+    figure.x_range.bounds = "auto"
+
+
+def adjust_y_range(figure, y_start, y_end):
+    figure.y_range.start = y_start
+    figure.y_range.end = y_end
+    figure.y_range.bounds = "auto"
 
 
 def controls(models, region_drop_down, parameters):
