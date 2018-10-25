@@ -49,20 +49,21 @@ def app(document, title=None, regions=None, models=None):
         sizing_mode="stretch_both",
         name="map",
         title=title)
+
+    # Example plot
     source = bokeh.models.ColumnDataSource(dict(
         x=[1, 2, 3],
         y=[1, 2, 3],
         size=[5, 5, 5]
     ))
     figure.circle(x="x", y="y", size="size", source=source)
-    def on_click():
-        size = np.asarray(source.data["size"])
-        if max(size) > 20:
-            size = size - 10
-        else:
-            size = size + 5
-        source.data["size"] = size
-    models = [name(model) for model in models]
+
+    # Models
+    names = [name(m) for m in models]
+    left_model_drop = drop_down(names)
+    left_model_drop.value = encode(name(models[0]))
+    right_model_drop = drop_down(names)
+    right_model_drop.value = encode(name(models[1]))
 
     # Regions
     region_names = [name(region) for region in regions]
@@ -77,7 +78,8 @@ def app(document, title=None, regions=None, models=None):
     parameter_drop.value = encode(parameters[0])
 
     document.add_root(controls(
-        models,
+        left_model_drop,
+        right_model_drop,
         region_drop,
         parameter_drop))
     document.add_root(figure)
@@ -125,18 +127,21 @@ def adjust_y_range(figure, y_start, y_end):
     figure.y_range.bounds = "auto"
 
 
-def controls(models, *drop_downs):
+def controls(
+        left_model_drop,
+        right_model_drop,
+        *extra_drops):
     checkbox = bokeh.models.CheckboxGroup(labels=["Link plots", "Activate slider"], active=[0])
     left_child = bokeh.layouts.column(
             plus_minus_row("Time"),
             plus_minus_row("Forecast"),
             plus_minus_row("Model run"),
-            drop_down(models, models[0]))
+            left_model_drop)
     right_child = bokeh.layouts.column(
             plus_minus_row("Time"),
             plus_minus_row("Forecast"),
             plus_minus_row("Model run"),
-            drop_down(models, models[1]))
+            right_model_drop)
     panels = [
      bokeh.models.Panel(child=left_child, title="Left"),
      bokeh.models.Panel(child=right_child, title="Right")
@@ -144,7 +149,7 @@ def controls(models, *drop_downs):
     tabs = bokeh.models.Tabs(tabs=panels)
     return bokeh.layouts.column(
             checkbox,
-            *drop_downs,
+            *extra_drops,
             tabs,
             name="btn")
 
