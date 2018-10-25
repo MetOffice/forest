@@ -75,15 +75,19 @@ def app(document, title=None, regions=None, models=None):
     # Models
     names = [name(m) for m in models]
 
+    left_model_stream = forest.Stream()
     left_model_drop = drop_down(names)
-    on_change = on_change_model(models, "left")
+    on_change = on_change_model(models, left_model_stream)
     left_model_drop.on_change("value", on_change)
     left_model_drop.value = encode(name(models[0]))
+    left_model_stream.log()
 
+    right_model_stream = forest.Stream()
     right_model_drop = drop_down(names)
-    on_change = on_change_model(models, "right")
+    on_change = on_change_model(models, right_model_stream)
     right_model_drop.on_change("value", on_change)
     right_model_drop.value = encode(name(models[1]))
+    right_model_stream.log()
 
     # Regions
     region_names = [name(region) for region in regions]
@@ -119,11 +123,19 @@ def name(item):
     return item["name"]
 
 
-def on_change_model(models, label=None):
+def on_change_model(models, stream):
     names = [name(model) for model in models]
+    formats = {name(model): model["file"]["format"]
+               for model in models}
+    patterns = {name(model): model["file"]["pattern"]
+               for model in models}
     def on_change(attr, old, new):
         name = decode(names, new)
-        print(label, name)
+        stream.emit({
+            "name": name,
+            "format": formats[name],
+            "pattern": patterns[name],
+        })
     return on_change
 
 
