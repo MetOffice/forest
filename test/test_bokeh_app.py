@@ -7,7 +7,7 @@ import sys
 from forest.test.util import remove_after
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(script_dir, "../bokeh_apps"))
-import wcssp.main
+import app.main
 
 
 class TestParseEnvironment(unittest.TestCase):
@@ -72,7 +72,7 @@ class TestParseEnvironment(unittest.TestCase):
         self.check_parse_environment(given, "config_file", "file.cfg")
 
     def check_parse_environment(self, env, attr, expect):
-        args = wcssp.main.parse_environment(env)
+        args = app.main.parse_environment(env)
         result = getattr(args, attr)
         self.assertEqual(expect, result)
 
@@ -90,7 +90,7 @@ class TestLoadConfig(unittest.TestCase):
         }
         with open(file_name, "w") as stream:
             yaml.dump(settings, stream)
-        result = wcssp.main.load_config(file_name)
+        result = app.main.load_config(file_name)
         expect = settings
         self.assertEqual(result, expect)
 
@@ -157,7 +157,7 @@ class TestSouthEastAsiaConfig(unittest.TestCase):
             },
         ]
         self.maxDiff = None
-        self.config = wcssp.main.south_east_asia_config()
+        self.config = app.main.south_east_asia_config()
 
     def test_south_east_asia_regions(self):
         result = self.config["regions"]

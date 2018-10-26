@@ -233,14 +233,10 @@ def app(env, settings, document, custom_server=False):
     init_data_time = available_times[init_data_time_index]
     num_times = available_times.shape[0]
 
-    x_range = bokeh.models.Range1d(0, 1, bounds="auto")
-    y_range = bokeh.models.Range1d(0, 1, bounds="auto")
     bokeh_figure = bokeh.plotting.figure(
         active_inspect=None,
         sizing_mode="stretch_both",
-        name="map",
-        x_range=x_range,
-        y_range=y_range)
+        name="map")
     forest.plot.add_x_axes(bokeh_figure, "above")
     forest.plot.add_y_axes(bokeh_figure, "right")
 
