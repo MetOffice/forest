@@ -18,22 +18,22 @@ class IndexHandler(RequestHandler):
         self.write(template.render())
 
 
-def load_app(config_file):
-    return app.main.load_app(os.path.join(script_dir, config_file))
+def full_path(file_name):
+    return os.path.join(script_dir, file_name)
 
 
 def bokeh_server(**kwargs):
-    highway = load_app("highway.yaml")
-    wcssp_south_east_asia = load_app("wcssp_south_east_asia.yaml")
+    highway = app.main.load_app(full_path("highway.yaml"))
+    wcssp_south_east_asia = app.main.load_app(full_path("wcssp_south_east_asia.yaml"))
     routes = {
         '/highway': highway,
         '/wcssp_south_east_asia': wcssp_south_east_asia
     }
     extra_patterns = [
         (r'/', IndexHandler),
-        (r'/_static/(.*)', StaticFileHandler, {'path': '_static'}),
-        (r'/app/static/(.*)', StaticFileHandler, {'path': 'app/static'}),
-        (r'/app/static/css/(.*)', StaticFileHandler, {'path': 'app/static/css'}),
+        (r'/_static/(.*)', StaticFileHandler, {'path': full_path('_static')}),
+        (r'/app/static/(.*)', StaticFileHandler, {'path': full_path('app/static')}),
+        (r'/app/static/css/(.*)', StaticFileHandler, {'path': full_path('app/static/css')}),
     ]
     return Server(routes,
                   num_procs=1,
