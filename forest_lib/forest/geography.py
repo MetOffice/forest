@@ -2,6 +2,28 @@
 import numpy as np
 import cartopy
 
+__all__ = [
+    "bounding_square",
+    "coastlines"
+]
+
+
+def bounding_square(x0, y0, x1, y1):
+    """Estimate bounding square given rectangle"""
+    dx = x1 - x0
+    dy = y1 - y0
+    if dx > dy:
+        side = dx
+    else:
+        side = dy
+    cx = (x0 + x1) / 2
+    cy = (y0 + y1) / 2
+    rx0 = cx - (side / 2)
+    ry0 = cy - (side / 2)
+    rx1 = cx + (side / 2)
+    ry1 = cy + (side / 2)
+    return rx0, ry0, rx1, ry1
+
 
 def coastlines(extent, scale="50m"):
     """Add cartopy coastline to a figure

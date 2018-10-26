@@ -190,23 +190,18 @@ def convert_vector_to_mag_angle(U, V):
 
 
 def calc_wind_vectors(wind_x, wind_y, wind_grid_size):
-
     """Return wind vector dict calculated from wind components.
-    
+
     Given cubes of x-wind and y-wind, subsample grid based on a scale
     factor (sf) and calculate the magnitude and angle of the vectors at each
     point on the grid.
-    
+
     Arguments
     ---------
-    
     - wind_x -- Zonal wind component cube.
     - wind_y -- Meridional wind component cube.
-    
     """
-
     wv_dict = {}
-
     wv_dict['wv_U'] = do_regrid(wind_grid_size, wind_x)
     wv_dict['wv_V'] = do_regrid(wind_grid_size, wind_y)
 
@@ -226,7 +221,6 @@ def calc_wind_vectors(wind_x, wind_y, wind_grid_size):
     wind_angle.data[numpy.isnan(wind_angle.data)] = 0.0
     wv_dict['wv_mag'] = wind_mag
     wv_dict['wv_angle'] = wind_angle
-
     return wv_dict
 
 
@@ -421,29 +415,21 @@ def get_image_array_from_figure(fig):
 
 
 def timer(func):
-
     """Timer function.
-    
+
         Arguments
     ---------
-    
     - func -- Function; Function to test.
-    
     """
-    
     def timed_func(*args, **kwargs):
-    
         """Times other functions."""
-        
         start_time = time.time()
         ret_val = func(*args, **kwargs)
         end_time = time.time()
         duration_in_seconds = end_time - start_time
-        print('function {0} ran for a duration of {1}.seconds'.format(str(func), 
+        print('function {0} ran for a duration of {1}.seconds'.format(str(func),
                                                                       duration_in_seconds))
-        
         return ret_val
-
     return timed_func
 
 

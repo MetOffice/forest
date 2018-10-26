@@ -14,14 +14,15 @@ Classes
 - ForestDataset -- Main class for containing Forest data.
 
 """
-
 import os
 import datetime
+import datetime as dt
 import configparser
 import functools
 import numpy
 import copy
-import dateutil.parser
+from collections import OrderedDict
+from functools import lru_cache
 
 import iris
 import iris.coord_categorisation
@@ -121,40 +122,78 @@ UNIT_DICT_DISPLAY = {PRECIP_VAR_NAME: PRECIP_UNIT_RATE_DISPLAY,
                      WIND_VECTOR_NAME: WIND_UNIT_MPH_DISPLAY,
                      WIND_STREAM_NAME: WIND_UNIT_MPH_DISPLAY,
                      }
-
 UNIT_DICT_DISPLAY.update(dict([(var1,WIND_UNIT_MPH_DISPLAY) for var1 in WIND_VECTOR_VARS]))
 UNIT_DICT_DISPLAY.update(dict([(var1,PRECIP_UNIT_ACCUM_DISPLAY) for var1 in PRECIP_ACCUM_VARS]))
 
-N1280_GA6_KEY = 'n1280_ga6'
-KM4P4_RA1T_KEY = 'km4p4_ra1t'
-KM1P5_INDO_RA1T_KEY = 'indon2km1p5_ra1t'
-KM1P5_MAL_RA1T_KEY = 'mal2km1p5_ra1t'
-KM1P5_PHI_RA1T_KEY = 'phi2km1p5_ra1t'
-GA6_CONF_ID = 'ga6'
-RA1T_CONF_ID = 'ra1t'
-
-VAR_LIST_DIR = os.path.dirname(__file__)
-VAR_LIST_FNAME_BASE = 'var_list_{config}.conf'
 
 
-def get_var_lookup(config):
+__all__ = [
+    'stash_item',
+    'stash_section',
+    'stash_name',
+    'stash_codes',
+    'load_times',
+    'load_cube',
+    'times'
+]
 
-    """Read config files into dictionary.
-    
-    Arguments
-    ---------
-    
-    - config -- Str; set config type to read file for.
-    
+
+def stash_name(variable, convention):
+    """Stash name related to variable
+
+    :param convention: either 'ra1t' or 'ga6'
+    :returns: stash code
     """
-    
-    var_list_path = os.path.join(VAR_LIST_DIR,
-                                 VAR_LIST_FNAME_BASE.format(config=config))
-    parser1 = configparser.RawConfigParser()
-    parser1.read(var_list_path)
+    table = stash_codes(convention)
+    return table[variable]['stash_name']
+
+
+def stash_item(variable, convention):
+    """Stash item related to variable
+
+    :param convention: either 'ra1t' or 'ga6'
+    :returns: stash code
+    """
+    table = stash_codes(convention)
+    return table[variable]['stash_item']
+
+
+def stash_section(variable, convention):
+    """Stash section related to variable
+
+    :param convention: either 'ra1t' or 'ga6'
+    :returns: stash code
+    """
+    table = stash_codes(convention)
+    return table[variable]['stash_section']
+
+
+@lru_cache(maxsize=2)
+def stash_codes(convention):
+    """Stash code reference related to UM systems
+
+    :param convention: either 'ra1t' or 'ga6'
+    :returns: nested dict of stash codes related to variables
+    """
+    path = config_file(convention.lower())
+    return get_var_lookup(path)
+
+
+def config_file(config):
+    return os.path.join(os.path.dirname(__file__),
+                        'var_list_{config}.conf'.format(config=config))
+
+
+def get_var_lookup(path):
+    """Read config file into dictionary
+
+    :param path: location on disk of config file
+    """
+    parser = configparser.RawConfigParser()
+    parser.read(path)
     field_dict = {}
-    for sect1 in parser1.sections():
-        field_dict[sect1] = dict(parser1.items(sect1))
+    for sect1 in parser.sections():
+        field_dict[sect1] = dict(parser.items(sect1))
         try:
             field_dict[sect1]['stash_section'] = \
                 int(field_dict[sect1]['stash_section'])
@@ -164,94 +203,111 @@ def get_var_lookup(config):
                 field_dict[sect1]['accumulate'] == 'True'
         except:
             print('warning: stash values not converted to numbers.')
-            
     return field_dict
 
 
-def get_model_run_times(days_since_period_start, num_days, model_run_period):
-    """Create a list of model times from the last num_days days.
+def load_times(cube):
+    """Read datetime objects from iris cube
 
-    Arguments
-    ---------
-
-    - num_days -- Int; Set number of days to go back and get dates for.
-    - model_run_period -- Int; period of model runs in hours i.e. their is a model run every model_run_period hours.
-
+    :param cube: iris.Cube instance
+    :returns: time axis points
     """
-    period_start = datetime.datetime.now() + datetime.timedelta(days=-days_since_period_start)
-    ps_mn_str = '{dt.year:04}{dt.month:02}{dt.day:02}T0000Z'.format(
-        dt=period_start)
-    ps_midnight = dateutil.parser.parse(str(ps_mn_str))
-    fmt_str = '{dt.year:04}{dt.month:02}{dt.day:02}' + \
-              'T{dt.hour:02}{dt.minute:02}Z'
-
-    forecast_datetimes = [
-        ps_midnight + datetime.timedelta(hours=step1)
-        for step1 in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
-    forecast_dt_str_list = [
-        fmt_str.format(dt=dt1) for dt1 in forecast_datetimes]
-
-    return forecast_datetimes, forecast_dt_str_list
+    coord = cube.coord('time')
+    return [cell.point for cell in coord.cells()]
 
 
-def get_available_datasets(file_loader,
-                           dataset_template,
-                           days_since_period_start,
-                           num_days,
-                           model_period,
-                           ):
+def times(path, section, item):
+    """Read time axis from NetCDF file using stash codes
+
+    Simple way to read the time axis related to a particular
+    variable
+
+    .. note:: The stash section and item are encoded in the
+              netcdf attribute um_stash_source
+
+    :param path: path to netcdf file
+    :param section: stash code section
+    :param item: stash code item
+    :returns: time axis points
+    """
+    return load_cube(path, section, item).coord('time').points
+
+
+def load_cube(path, section, item):
+    """Load cube from stash codes"""
+    constraint = iris.Constraint(cube_func=cube_func(section, item))
+    return iris.load_cube(path, constraint)
+
+
+def cube_func(section, item):
+    """Create a cube function to filter stash codes"""
+    def func(cube):
+        return (cube.attributes['STASH'].section == section and
+                cube.attributes['STASH'].item == item)
+    return func
+
+
+def get_available_datasets(model_run_times,
+                           file_patterns,
+                           file_formats,
+                           file_loader):
     """
     Get a list of model runs times for which there is model output data
     available, and list of dictionaries with a dataset for each model run time.
 
     :param file_loader: class responsible for loading remote or local files
-    :param dataset_template: A dictionary of dataset configs, which will be
-                             used a template for each model run that is
-                             available.
-    :param days_since_period_start: Number of days in the past to start
-                                    looking for model runs
-    :param num_days: number of days of model runs to look for
-    :param model_period: The period between model runs.
-    :return: A tuple containing a list of available model runs and a list of
-             datasets for each available model run
+    :param model_run_times: times when the model was run
     """
-    fcast_dt_list, fcast_dt_str_list = \
-        get_model_run_times(days_since_period_start,
-                                        num_days,
-                                        model_period)
-
-    fcast_time_list = []
-    datasets = {}
-    for fct, fct_str in zip(fcast_dt_list, fcast_dt_str_list):
-
-        fct_data_dict = copy.deepcopy(dict(dataset_template))
+    datasets = OrderedDict()
+    for model_run_time in model_run_times:
+        fct_str = format_model_run_time(model_run_time)
+        fct_data_dict = {}
         model_run_data_present = True
-        for ds_name in dataset_template.keys():
-            file_name = 'model_data/SEA_{conf}_{fct}.nc'.format(conf=ds_name, fct=fct_str)
-            fct_data_dict[ds_name]['data'] = forest.data.ForestDataset(file_name,
+        for name, pattern in file_patterns.items():
+            file_format = file_formats[name]
+            file_name = os.path.join('model_data', pattern.format(model_run_time))
+            print(file_name, file_loader.file_exists(file_name))
+            fct_data_dict[name] = forest.data.ForestDataset.convention(file_name,
                                                                        file_loader,
-                                                                       dataset_template[ds_name]['var_lookup'])
+                                                                       file_format)
 
             model_run_data_present = model_run_data_present and file_loader.file_exists(file_name)
         # include forecast if all configs are present
         # TODO: reconsider data structure to allow for some model configs at different times to be present
         if model_run_data_present:
             datasets[fct_str] = fct_data_dict
-            fcast_time_list += [fct_str]
-
-    # select most recent available forecast
-    try:
-        fcast_time = fcast_time_list[-1]
-    except IndexError:
-        fcast_time = None
-    return fcast_time, datasets
+        else:
+            print("WARNING: '{}' has missing files".format(fct_str))
+    return datasets
 
 
+def get_model_run_times(period_start, num_days, model_run_period):
+    """Create a list of model times from the last num_days days.
+
+    Arguments
+    ---------
+    - num_days -- Int; Set number of days to go back and get dates for.
+    - model_run_period -- Int; period of model runs in hours i.e. there
+                          is a model run every model_run_period hours.
+    """
+    midnight = dt.datetime(period_start.year,
+                           period_start.month,
+                           period_start.day,
+                           tzinfo=dt.timezone.utc)
+    return [midnight + dt.timedelta(hours=hours)
+            for hours in range(0, num_days * NUM_HOURS_IN_DAY, model_run_period)]
+
+
+def format_model_run_time(time):
+    return '{:%Y%m%dT%H%MZ}'.format(time)
+
+
+@forest.util.timer
 def get_available_times(datasets, var1):
     key0 = list(datasets.keys())[0]
-    available_times = datasets[key0]['data'].get_times(var1)
+    available_times = datasets[key0].get_times(var1)
     for ds_name in datasets:
-        times1 = datasets[ds_name]['data'].get_times(var1)
+        times1 = datasets[ds_name].get_times(var1)
         available_times = numpy.array([t1 for t1 in available_times if t1 in times1])
     return available_times
 
@@ -278,22 +334,21 @@ def check_bounds(cube1, selected_pt):
         return False
     if selected_pt[1] > max_lon:
         return False
-
     return True
 
-def do_cube_load(path_to_load,
-                 field_dict,
-                 time_ix,
-                 lat_long_coord):
+
+def do_cube_load(
+        path_to_load,
+        stash_section,
+        stash_item,
+        time_ix,
+        lat_long_coord):
     """
     Load a cube from the given path using the specified constraints. The field
     dict argument is required, but the time_ix and lat_long_coord arguments are
     optional. The cube loaded will be constrained by one or both of time and
     lat/lon if specified.
     :param path_to_load: The file path to load
-    :param field_dict: A dictionary containing keys stash_section and
-                      stash_item for selecting a variable from the data in the
-                      file.
     :param time_ix: A float representing the time in hours since 1970. Only
                     this time coordinate will be loaded if specified, otherwise
                     all times for the specified variable will be loaded.
@@ -302,10 +357,8 @@ def do_cube_load(path_to_load,
     :return: The iris cube of the data at the path with given constraints.
     """
     cf1 = lambda cube1: \
-        cube1.attributes['STASH'].section == \
-        field_dict['stash_section'] and \
-        cube1.attributes['STASH'].item == \
-        field_dict['stash_item']
+        cube1.attributes['STASH'].section == stash_section and \
+        cube1.attributes['STASH'].item == stash_item
     coord_constraint_dict = {}
 
     if time_ix != ForestDataset.TIME_INDEX_ALL:
@@ -315,22 +368,17 @@ def do_cube_load(path_to_load,
             def time_comp(time_index, eps1, cell1):
                 return abs(cell1.point - time_index) < eps1
 
-
             if time_ix != ForestDataset.TIME_INDEX_ALL:
                 coord_constraint_dict['time'] = \
                     functools.partial(time_comp, time_ix, 1e-5)
 
         elif int(iris.__version__.split('.')[0]) == 2:
-            def time_comp(selected_time, eps1, cell1):
-
-                return abs(cell1.point - selected_time).total_seconds() < eps1
-
+            def time_comp(selected_time, eps, cell):
+                return abs(cell.point - selected_time).total_seconds() < eps
 
             if time_ix != ForestDataset.TIME_INDEX_ALL:
                 coord_constraint_dict['time'] = \
                     functools.partial(time_comp, time_obj, 1)
-
-
     else:
         time_desc = time_ix
 
@@ -356,16 +404,14 @@ def do_cube_load(path_to_load,
     else:
         loc_desc = 'loading all locations'
 
-
-
     ic1 = iris.Constraint(cube_func=cf1,
                           coord_values=coord_constraint_dict)
 
     print('path to load {0}'.format(path_to_load))
     print('time to load {0}'.format(time_desc))
     print(loc_desc)
-    print('stash to load section {0} item {1}'.format(field_dict['stash_section'],
-                                                      field_dict['stash_item']))
+    print('stash to load section {0} item {1}'.format(stash_section,
+                                                      stash_item))
 
     try:
         dc1 = iris.load_cube(path_to_load, ic1)
@@ -399,6 +445,11 @@ class ForestDataset(object):
     """
     TIME_INDEX_ALL = 'all'
 
+    @classmethod
+    def convention(cls, file_name, file_loader, convention):
+        """Helper to construct dataset"""
+        return cls(file_name, file_loader, stash_codes(convention))
+
     def __init__(self,
                  file_name,
                  file_loader,
@@ -407,16 +458,6 @@ class ForestDataset(object):
         self.var_lookup = var_lookup
         self.file_name = file_name
         self.file_loader = file_loader
-
-        # set up time loaders
-        self.time_loaders = dict([(v1, self._basic_time_load) for v1 in VAR_NAMES])
-        for wv_var in WIND_VARS:
-            self.time_loaders[wv_var] = self._wind_time_load
-        for accum_precip_var in PRECIP_ACCUM_VARS:
-            ws1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[accum_precip_var]
-            self.time_loaders[accum_precip_var] = functools.partial(self._accum_precip_time_load, ws1)
-        self.times = dict([(v1, None) for v1 in self.time_loaders.keys()])
-
 
         # set up data loader functions
         self.cube_loaders = dict([(v1, self.basic_cube_load) for v1 in VAR_NAMES])
@@ -428,8 +469,6 @@ class ForestDataset(object):
         for accum_precip_var in PRECIP_ACCUM_VARS:
             ws1 = PRECIP_ACCUM_WINDOW_SIZES_DICT[accum_precip_var]
             self.cube_loaders[accum_precip_var] = functools.partial(self.accum_precip_loader, ws1)
-
-        self.data = dict([(v1, None) for v1 in self.cube_loaders.keys()])
 
         self.ts_var_names = dict([(v1, v1) for v1 in VAR_NAMES])
         self.ts_loaders = dict([(v1, self._basic_ts_load) for v1 in VAR_NAMES])
@@ -444,54 +483,32 @@ class ForestDataset(object):
         """Return string"""
         return 'FOREST dataset'
 
+    @forest.util.timer
     def get_times(self, var_name):
-        self.load_times(var_name)
-        return self.times[var_name]
+        if var_name in WIND_VARS:
+            return self._wind_time_load()
+        elif var_name in PRECIP_ACCUM_VARS:
+            return self._accum_precip_time_load(var_name)
+        else:
+            return self._basic_time_load(var_name)
 
-    def load_times(self, var_name):
-        self.time_loaders[var_name](var_name)
+    def _wind_time_load(self):
+        return self._basic_time_load('x_wind')
+
+    def _accum_precip_time_load(self, var_name):
+        precip_times = self._basic_time_load(PRECIP_VAR_NAME)
+        window_size = PRECIP_ACCUM_WINDOW_SIZES_DICT[var_name]
+        return numpy.unique(numpy.floor(precip_times / window_size) * window_size) + (window_size/2.0)
 
     def _basic_time_load(self, var_name):
-        """
-        Has several responsibilities:
+        message = "'{}' must be one of {}".format(var_name, self.var_lookup.keys())
+        assert var_name in self.var_lookup, message
+        path = self.file_loader.load_file(self.file_name)
+        section = self.var_lookup[var_name]['stash_section']
+        item = self.var_lookup[var_name]['stash_item']
+        return times(path, section, item)
 
-        * Constrains cube to be only variables with correct
-          stash section and item codes
-        * Populates self.times[var_name] = [t0, t1, ...]
-        * Populates self.data[var_name] = {t0: None, t1: None, ...}
-        """
-        path_to_load = self.file_loader.load_file(self.file_name)
-        field_dict = self.var_lookup[var_name]
-        cf1 = lambda cube1: \
-            cube1.attributes['STASH'].section == \
-            field_dict['stash_section'] and \
-            cube1.attributes['STASH'].item == \
-            field_dict['stash_item']
-        ic1 = iris.Constraint(cube_func=cf1)
-        cube1 = iris.load_cube(path_to_load, ic1)
-        self.times[var_name] = cube1.coord('time').points
-        self.data[var_name] =  dict([(t1,None) for t1 in self.times[var_name]] + [('all',None)])
-
-    def _wind_time_load(self, var_name):
-        """
-        """
-        if self.times['x_wind'] is None:
-            self._basic_time_load('x_wind')
-            self.data['x_wind'].update(dict([(t1,None,) for t1 in self.times['x_wind'] ]))
-
-        for var1 in WIND_VARS:
-            if self.times[var1] is None:
-                self.times[var1] = copy.deepcopy(self.times['x_wind'])
-                self.data[var1] = dict([(t1,None,) for t1 in self.times[var1] ]+ [('all',None)])
-
-    def _accum_precip_time_load(self, window_size1, var_name):
-        """
-        """
-        self._basic_time_load(PRECIP_VAR_NAME)
-        self.times[var_name] = \
-            numpy.unique(numpy.floor(self.times[PRECIP_VAR_NAME] / window_size1) * window_size1) + (window_size1/2.0)
-        self.data[var_name] = dict([(t1, None) for t1 in self.times[var_name]] + [('all',None)])
-
+    @forest.util.timer
     def get_data(self, var_name, selected_time, convert_units=True):
         """Calls functions to retrieve and load data.
 
@@ -505,109 +522,75 @@ class ForestDataset(object):
         else:
             print('loading data for time {0}'.format(time_ix))
 
-        if self.times[var_name] is None:
-            self.load_times(var_name)
-
-        if self.data[var_name][selected_time] is None:
-            if self.file_loader.file_exists(self.file_name):
-                # Load the data into memory from file (will only load
-                # metadata initially)
-                self.load_data(var_name, time_ix)
-                has_units = \
-                    self.data[var_name][time_ix].units is not None and \
-                    self.data[var_name][time_ix].units.name != 'unknown'
-                if convert_units and has_units:
-                    if UNIT_DICT[var_name]:
-                        self.data[var_name][time_ix].convert_units(
-                            UNIT_DICT[var_name])
-            else:
-                self.data[var_name] = None
-        return self.data[var_name][time_ix]
-
-    def load_data(self, var_name, selected_time):
-        """Call loader function.
-
-        Arguments
-        ---------
-        - var_name -- Str; Var name used as dict key to select loader.
-        """
-        self.cube_loaders[var_name](var_name, selected_time)
+        if self.file_loader.file_exists(self.file_name):
+            # Load the data into memory from file (will only load
+            # metadata initially)
+            cube = self.cube_loaders[var_name](var_name, time_ix)
+            has_units = cube.units is not None and \
+                        cube.units.name != 'unknown'
+            if convert_units and has_units:
+                if UNIT_DICT[var_name]:
+                    cube.convert_units(UNIT_DICT[var_name])
+        else:
+            cube = None
+        return cube
 
     def basic_cube_load(self, var_name, time_ix):
         """Load simple cubes.
 
         Arguments
         ---------
-        
         - var_name -- Str; Var name used to define data to load.
         - time_ix -- Index of the time to load
-
         """
         field_dict = self.var_lookup[var_name]
+        stash_item = field_dict['stash_item']
+        stash_section = field_dict['stash_section']
         path_to_load = self.file_loader.load_file(self.file_name)
-        dc1 = do_cube_load(path_to_load=path_to_load,
-                           field_dict=field_dict,
-                           time_ix=time_ix,
-                           lat_long_coord=None)
-        self.data[var_name][time_ix] = dc1
+        return do_cube_load(path_to_load,
+                            stash_section,
+                            stash_item,
+                            time_ix=time_ix,
+                            lat_long_coord=None)
 
     def wind_speed_loader(self, var_name, time_ix):
-    
         """Process wind cubes to calculate wind speed.
-        
         Arguments
         ---------
-        
         - var_name -- Str; Redundant: used to match other loaders.
         - time_ix -- Str; specify the time to load
-        
         """
-
-        cube_pow = iris.analysis.maths.exponentiate
         print('calculating wind speed')
+        cube_pow = iris.analysis.maths.exponentiate
         cube_x_wind = self.get_data('x_wind', time_ix)
         cube_y_wind = self.get_data('y_wind', time_ix)
-
-        self.data[WIND_SPEED_NAME][time_ix] = cube_pow(cube_pow(cube_x_wind, 2.0) +
-                                              cube_pow(cube_y_wind, 2.0),
-                                              0.5)
-        self.data[WIND_SPEED_NAME][time_ix].rename(WIND_SPEED_NAME)
+        cube = cube_pow(cube_pow(cube_x_wind, 2.0) +
+                        cube_pow(cube_y_wind, 2.0), 0.5)
+        cube.rename(WIND_SPEED_NAME)
+        return cube
 
     def wind_vector_loader(self, var_name, time_ix):
-    
-        """Gets wind data and calculates wind vectors.
-
-        Arguments
-        ---------
-        
-        - var_name -- Str; Redundant: used to match other loaders.
-
-        """
-        
+        """Gets wind data and calculates wind vectors"""
         cube_x_wind = self.get_data('x_wind', time_ix)
         cube_y_wind = self.get_data('y_wind', time_ix)
-        wv_dict = forest.util.calc_wind_vectors(cube_x_wind,
+        vectors = forest.util.calc_wind_vectors(cube_x_wind,
                                                 cube_y_wind,
                                                 WIND_GRID_SIZE)
-        for var1 in wv_dict:
-            self.data[var1][time_ix] = wv_dict[var1]
-        
+        return vectors[var_name]
+
     def accum_precip_loader(self, window_size, var_name, time_ix):
-        
         """Gets data and creates accumulated precipitation cube.
 
         Arguments
         ---------
-        
         - var_name -- Str; Precip accum variable name.
-
         """
         field_dict = self.var_lookup['precipitation']
-        cf1 = lambda cube1: \
-            cube1.attributes['STASH'].section == \
-            field_dict['stash_section'] and \
-            cube1.attributes['STASH'].item == \
-            field_dict['stash_item']
+        section = field_dict['stash_section']
+        item = field_dict['stash_item']
+        cf1 = lambda cube: \
+            cube.attributes['STASH'].section == section and \
+            cube.attributes['STASH'].item == item
         coord_constraint_dict = {}
         if time_ix != ForestDataset.TIME_INDEX_ALL:
             period_start_ix = time_ix - (window_size/2.0) - TIME_EPSILON_HRS
@@ -633,8 +616,7 @@ class ForestDataset(object):
         else:
             accum_cube = precip_cube1.collapsed('time', iris.analysis.SUM)
         accum_cube.units = cf_units.Unit(PRECIP_UNIT_ACCUM)
-
-        self.data[var_name][time_ix] = accum_cube
+        return accum_cube
 
     def _basic_ts_load(self, var_name, selected_point):
         field_dict = self.var_lookup[var_name]
@@ -645,8 +627,11 @@ class ForestDataset(object):
 
         if self.data[var_name][time_ix] is None:
             path_to_load = self.file_loader.load_file(self.file_name)
-            dc1 = do_cube_load(path_to_load=path_to_load,
-                               field_dict=field_dict,
+            stash_item = field_dict['stash_item']
+            stash_section = field_dict['stash_section']
+            dc1 = do_cube_load(path_to_load,
+                               stash_section,
+                               stash_item,
                                time_ix=time_ix,
                                lat_long_coord=selected_point)
         return dc1
@@ -657,17 +642,13 @@ class ForestDataset(object):
                                    selected_point)
         cube_y_wind = self._basic_ts_load('x_wind',
                                    selected_point)
-
         if cube_x_wind is None or cube_y_wind is None:
             return None
-
         cube_pow = iris.analysis.maths.exponentiate
-
         ws_cube = cube_pow(cube_pow(cube_x_wind, 2.0) +
                                               cube_pow(cube_y_wind, 2.0),
                                               0.5)
         ws_cube.rename(WIND_SPEED_NAME)
-
         return ws_cube
 
 
@@ -699,46 +680,33 @@ class ForestDataset(object):
         # aggregate by the new coordinate using sum
         accum_precip_cube = \
             precip_cube.aggregated_by(['agg_time'], iris.analysis.SUM)
-
         accum_precip_cube.units = cf_units.Unit(PRECIP_UNIT_ACCUM)
-
         return accum_precip_cube
 
     def get_timeseries(self, var_name, selected_point, convert_units=True):
-
         """Calls functions to retrieve and load data.
 
         Arguments
         ---------
-
         - var_name -- Str; Redundant: used to match other loaders.
 
         """
         print('load time series for point ({0},{1})'.format(selected_point[0],
                                                             selected_point[1]))
-
-
-
         # extract the relevant timeseries
         dc1 = self.ts_loaders[var_name](var_name,
-                                        selected_point,
-                                        )
-
+                                        selected_point)
         if not dc1:
             return None
-
         if not check_bounds(dc1,
                             selected_point):
             return None
-
         interp_pt = [('latitude',selected_point[0]),
                      ('longitude',selected_point[1])]
         scheme1 = iris.analysis.Linear()
         time_series_cube = dc1.interpolate(interp_pt,
                                            scheme1)
-
         if convert_units:
             if UNIT_DICT[var_name]:
                 time_series_cube.convert_units(UNIT_DICT[var_name])
-
         return time_series_cube

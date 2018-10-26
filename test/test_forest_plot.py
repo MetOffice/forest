@@ -46,6 +46,43 @@ class TestForestPlotSetRegion(unittest.TestCase):
         self.assertEqual(self.bokeh_figure.y_range.end, self.y_end)
 
 
+class TestForestPlotSetDataset(unittest.TestCase):
+    def test_set_dataset(self):
+        config = "config"
+        old_forest_datasets = {
+            config: "Old dataset"
+        }
+        plot_descriptions = {
+            config: "Plot description"
+        }
+        plot_options = None
+        plot_variable = "precipitation"
+        figure_name = None
+        region = "region"
+        region_dict = {
+            region: [0, 1, 0, 1]
+        }
+        app_path = "/some/path"
+        initial_time = None
+        forest_plot = forest.plot.ForestPlot(old_forest_datasets,
+                                             plot_descriptions,
+                                             plot_options,
+                                             figure_name,
+                                             plot_variable,
+                                             config,
+                                             region,
+                                             region_dict,
+                                             app_path,
+                                             initial_time)
+        new_forest_datasets = {
+            config: "New dataset"
+        }
+        forest_plot.render = unittest.mock.Mock()
+        forest_plot.set_dataset(new_forest_datasets)
+        self.assertEqual(forest_plot.forest_datasets,
+                         {"config": "New dataset"})
+
+
 class TestForestPlotSetConfig(unittest.TestCase):
     def test_can_be_constructed(self):
         """the minimal information needed to construct a ForestPlot"""
@@ -96,58 +133,68 @@ class FakeDataset(object):
         latitude = iris.coords.DimCoord(self.latitudes,
                                         standard_name="latitude",
                                         units="degrees")
-        return iris.cube.Cube(self.data,
+        cube = iris.cube.Cube(self.data,
                               dim_coords_and_dims=[
-                                  (longitude, 0),
-                                  (latitude, 1)
+                                  (latitude, 0),
+                                  (longitude, 1)
                               ])
+        return cube
 
 
 class TestForestPlot(unittest.TestCase):
-    def test_render(self):
-        fake_data = np.arange(4).reshape((2, 2))
-        fake_lons = [0, 1]
-        fake_lats = [0, 1]
+    def setUp(self):
+        self.data = np.arange(4).reshape((2, 2))
+        self.lons = [0, 1]
+        self.lats = [0, 1]
+        self.dataset = FakeDataset(self.data, self.lons, self.lats)
+
+    def test_render_distinguishes_model_run_times(self):
+        first_dataset = FakeDataset([[1, 2, 3], [4, 5, 6]], [0, 1, 2], [0, 1])
+        second_dataset = FakeDataset([[4, 2, 3], [4, 5, 6]], [0, 1, 2], [0, 1])
         config = "config"
-        dataset = {
-            config: {
-                "data": FakeDataset(fake_data,
-                                    fake_lons,
-                                    fake_lats),
-                "data_type_name": None
-            }
+        datasets = {
+            "config": first_dataset
         }
-        plot_var = 'mslp'
-        plot_options = {
-            "mslp": {
+        options = {
+            "precipitation": {
                 "cmap": None,
                 "norm": None
             }
         }
-        model_run_time = "2018-01-01 00:00:00"
-        init_time = None
-        figure_name = None
-        region = "region"
-        region_dict = {
-            region: [0, 1, 0, 1]
+        descriptions = {
+            "config": "Title"
         }
-        app_path = None
-        forest_plot = forest.plot.ForestPlot(
-            dataset,
-            model_run_time,
-            plot_options,
-            figure_name,
-            plot_var,
-            config,
-            region,
-            region_dict,
-            app_path,
-            init_time
-        )
-        forest_plot.render()
+        variable = "precipitation"
+        region = "region"
+        regions = {
+            "region": (0, 1, 0, 1)
+        }
+        plot = forest.plot.ForestPlot(datasets,
+                                      descriptions,
+                                      options,
+                                      None,
+                                      variable,
+                                      config,
+                                      region,
+                                      regions,
+                                      None,
+                                      None)
+        plot.render()
+        before = plot.bokeh_img_ds.data["image"][0][:]
+        plot.set_dataset({
+            "config": second_dataset
+        })
+        plot.set_model_run_time("2018-01-01 12:00")
+        plot.render()
+        after = plot.bokeh_img_ds.data["image"][0][:]
+        self.assertTrue(np.not_equal(before[:, :, :2], after[:, :, :2]).all())
+
+    def test_render(self):
+        plot = make_forest_plot(self.dataset)
+        plot.render()
 
         # Assert bokeh ColumnDataSource correctly populated
-        result = forest_plot.bokeh_img_ds.data["image"][0]
+        result = plot.bokeh_img_ds.data["image"][0]
         expect = [[[68, 1, 84, 255]]]
         np.testing.assert_array_equal(result, expect)
 
@@ -177,21 +224,14 @@ class TestForestPlot(unittest.TestCase):
         return forest_plot_args(*args, **kwargs)
 
 
-def make_forest_plot():
+def make_forest_plot(dataset):
     """minimal data needed to call set_config"""
-    data = np.arange(9).reshape((3, 3))
-    longitudes = np.linspace(0, 10, 3)
-    latitudes = np.linspace(0, 10, 3)
-    fake_dataset = FakeDataset(data=data,
-                               longitudes=longitudes,
-                               latitudes=latitudes)
-    dataset = {
-        "current_config": {
-            "data_type_name": "Label",
-            "data": fake_dataset
-        }
+    datasets = {
+        "current_config": dataset
     }
-    model_run_time = None
+    plot_descriptions = {
+        "current_config": "Label"
+    }
     plot_options = {
         "precipitation": {
             "cmap": None,
@@ -207,34 +247,31 @@ def make_forest_plot():
     }
     app_path = None
     init_time = None
-    forest_plot = forest.plot.ForestPlot(dataset,
-                                         model_run_time,
-                                         plot_options,
-                                         figname,
-                                         plot_var,
-                                         conf1,
-                                         reg1,
-                                         rd1,
-                                         app_path,
-                                         init_time)
-    return forest_plot
+    return forest.plot.ForestPlot(datasets,
+                                  plot_descriptions,
+                                  plot_options,
+                                  figname,
+                                  plot_var,
+                                  conf1,
+                                  reg1,
+                                  rd1,
+                                  app_path,
+                                  init_time)
 
 
 def forest_plot_args(plot_var='plot_var',
                      conf1='current_config',
-                     dataset=None,
                      plot_options=None,
                      init_time=None,
-                     model_run_time=None,
                      region_dict=None,
                      region="region"):
     """Helper to construct ForestPlot"""
-    if dataset is None:
-        dataset = {
-            conf1: {
-                'data_type_name': None
-            }
-        }
+    forest_datasets = {
+        conf1: None
+    }
+    plot_descriptions = {
+        conf1: None
+    }
     figname = None
     if region_dict is None:
         region_dict = {
@@ -242,8 +279,8 @@ def forest_plot_args(plot_var='plot_var',
         }
     app_path = None
     init_time = None
-    return (dataset,
-            model_run_time,
+    return (forest_datasets,
+            plot_descriptions,
             plot_options,
             figname,
             plot_var,
@@ -287,19 +324,25 @@ class TestSmoothImage(unittest.TestCase):
 
 
 class TestVisability(unittest.TestCase):
+    def setUp(self):
+        self.data = np.arange(9).reshape((3, 3))
+        self.lons = np.linspace(0, 10, 3)
+        self.lats = np.linspace(0, 10, 3)
+        self.dataset = FakeDataset(self.data, self.lons, self.lats)
+
     def test_when_visible_is_set_false_alpha_is_0(self):
-        fplot = make_forest_plot()
+        fplot = make_forest_plot(self.dataset)
         fplot.render()
         fplot.visible = False
         self.assertEqual(fplot.bokeh_image.glyph.global_alpha, 0)
 
     def test_when_visible_is_set_true_alpha_is_0(self):
-        fplot = make_forest_plot()
+        fplot = make_forest_plot(self.dataset)
         fplot.render()
         fplot.visible = True
         self.assertEqual(fplot.bokeh_image.glyph.global_alpha, 1)
 
     def test_bokeh_img_is_created_if_visible(self):
-        fplot = make_forest_plot()
+        fplot = make_forest_plot(self.dataset)
         fplot.visible = True
         self.assertIsNotNone(fplot.bokeh_image)

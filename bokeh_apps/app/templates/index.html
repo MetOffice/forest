@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+{% from macros import embed %}
+<head>
+<link rel="stylesheet" type="text/css" href="_static/css/reset.css">
+<link rel="stylesheet" type="text/css" href="app/static/css/forest.css">
+<style>
+    html, body {
+        height: 100%;
+        overflow: hidden;
+    }
+    .colorbar {
+        position: absolute;
+        bottom: 4%;
+        left: 50%;
+    }
+    .map-window {
+        position: absolute;
+        width: 96%;
+        height: 100%;
+        left: 4%;
+        top: 0;
+    }
+    .controls {
+        color: white;
+        background-color: #222;
+        position: absolute;
+        width: 2%;
+        height: 100%;
+        left: 0;
+        top: 0;
+        z-index: 2;
+        transition: width 0.5s;
+        -webkit-transition: width 0.5s;
+    }
+    .controls:hover {
+        width: auto;
+        transition: width 0.5s;
+    }
+    .controls-max {
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+    }
+    .controls:hover .controls-max {
+        transition: opacity 0.5s ease-in;
+        opacity: 1;
+        height: auto;
+        overflow: visible;
+    }
+    .controls-min {
+        transition: opacity 0.5s ease-in;
+        opacity: 1;
+        height: auto;
+    }
+    .controls:hover .controls-min {
+        transition: opacity 0.5s ease-out;
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+    }
+    .pd-rt-p5 {
+        padding-right: 0.5rem;
+    }
+    .pd-lf-p5 {
+        padding-left: 0.5rem;
+    }
+    .ps-rl-50 {
+        position: relative;
+        left: -50%;
+    }
+
+</style>
+
+<!-- Bokeh specific JS/CSS -->
+{{ bokeh_js | indent(8) if bokeh_js }}
+{{ bokeh_css | indent(8) if bokeh_css }}
+<head>
+<body>
+<div class="controls pd-lf-p5 pd-rt-p5">
+    <div class="controls-min">
+        <h1>&#9776;</h1>
+    </div>
+    <div class="controls-max">
+        <h1>Controls</h1>
+        {% for doc in docs %}
+            {% for root in doc.roots %}
+                {% if root.name == "btn" %}
+                    {{ embed(root) | indent(10) }}
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+<div class="container mg-tp-5">
+    <div class="map-window">
+    {% for doc in docs %}
+        {% for root in doc.roots %}
+            {% if root.name == "map" %}
+                {{ embed(root) | indent(10) }}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    </div>
+</div>
+<div class="colorbar">
+<div class="ps-rl-50">
+    {% for doc in docs %}
+        {% for root in doc.roots %}
+            {% if root.name == "colorbar" %}
+                {{ embed(root) | indent(10) }}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    {{ plot_script | indent(8) }}
+</div>
+</div>
+</body>
+</html>

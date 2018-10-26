@@ -28,11 +28,6 @@ VARIABLE_DD_DICT = {'precipitation': 'Precipitation',
                     'mslp': 'MSLP',
                     'cloud_fraction': 'Cloud fraction'}
 
-REGION_DD_DICT = {'indonesia': 'Indonesia',
-                  'malaysia': 'Malaysia',
-                  'phillipines': 'Philippines',
-                  'se_asia': 'SE Asia'}
-
 
 def create_dropdown_opt_list(iterable1):
     '''Create list of 2-tuples with matching values from list for
@@ -57,7 +52,7 @@ def create_dropdown_opt_list_from_dict(dict1, iterable1):
 
 def create_model_run_list(model_run_str_list):
     mr_list = []
-    for d1 in model_run_str_list.keys():
+    for d1 in model_run_str_list:
         dtobj = dateutil.parser.parse(d1)
         dt_str = ('{dt.year}-{dt.month}-{dt.day} '
                   + '{dt.hour:02d}:{dt.minute:02d}').format(dt=dtobj)
@@ -65,12 +60,61 @@ def create_model_run_list(model_run_str_list):
     return mr_list
 
 
+class Label(object):
+    """Show label in drop down menu"""
+    def __init__(self, template):
+        self.template = template
+        self.drop_down = None
+
+    def first(self, items):
+        return self.render(items[0][0])
+
+    def second(self, items):
+        return self.render(items[1][0])
+
+    def listen_to(self, drop_down):
+        self.drop_down = drop_down
+        self.drop_down.on_change("value", self.on_change)
+
+    def on_change(self, attr, old, new):
+        for label, value in self.drop_down.menu:
+            if value == new:
+                self.drop_down.label = self.render(label)
+
+    def render(self, label):
+        return self.template.format(label)
+
+
+class FeedbackController(object):
+    def __init__(self, feedback_dir, bokeh_id):
+        self.bokeh_id = bokeh_id
+        self.feedback_dir = feedback_dir
+        self.feedback_visible = False
+        config_path = os.path.join(CONFIG_DIR, FEEDBACK_CONF_FILENAME)
+        self.feedback_gui = forest.feedback.UserFeedback(config_path,
+                                                         self.feedback_dir,
+                                                         self.bokeh_id,
+                                                         )
+        self.feedback_layout = self.feedback_gui.get_feedback_widgets()
+        self.uf_vis_toggle = \
+            bokeh.models.widgets.Toggle(label='Show feedback form',
+                                        active=self.feedback_visible)
+        self.uf_vis_toggle.on_click(self._on_uf_vis_toggle)
+        self.uf_vis_layout = bokeh.layouts.column()
+        self.process_events = True
+
+    def _on_uf_vis_toggle(self, new1):
+        if not self.process_events:
+            return
+        print('toggled feedback form visibility')
+        self.feedback_visible = new1
+        if self.feedback_visible:
+            self.uf_vis_layout.children = [self.feedback_layout]
+        else:
+            self.uf_vis_layout.children = []
+
+
 class ForestController(object):
-
-    '''
-
-    '''
-
     def __init__(self,
                  init_var,
                  init_time_ix,
@@ -78,27 +122,18 @@ class ForestController(object):
                  init_fcast_time,
                  plot_type_time_lookups,
                  plots,
-                 bokeh_imgs,
-                 colorbar_widget,
-                 region_dict,
-                 feedback_dir,
-                 bokeh_id,
-                 ):
-        '''
-
-        '''
-
-        self.data_time_slider = None
-        self.model_var_dd = None
-        self.time_prev_button = None
+                 bokeh_figure,
+                 region_dict):
+        self.model_variable_drop_down = None
+        self.time_previous_button = None
         self.time_next_button = None
-        self.model_run_dd = None
-        self.region_dd = None
-        self.left_model_dd = None
-        self.right_model_dd = None
+        self.model_run_drop_down = None
+        self.region_drop_down = None
+        self.left_model_drop_down = None
+        self.right_model_drop_down = None
 
         self.plots = plots
-        self.bokeh_imgs = bokeh_imgs
+        self.bokeh_figure = bokeh_figure
         self.region_dict = region_dict
         self.plot_type_time_lookups = plot_type_time_lookups
         self.plot_names = list(self.plot_type_time_lookups.keys())
@@ -110,10 +145,6 @@ class ForestController(object):
 
         self.init_time = self.available_times[self.current_time_index]
         self.num_times = self.available_times.shape[0]
-        self.colorbar_div = colorbar_widget
-        self.bokeh_id = bokeh_id
-        self.feedback_dir = feedback_dir
-        self.feedback_visible = False
 
         self.create_widgets()
         self.process_events = True
@@ -121,110 +152,70 @@ class ForestController(object):
     def create_widgets(self):
         '''
         '''
-        class Label(object):
-            def __init__(self, template):
-                self.template = template
-                self.drop_down = None
-
-            def first(self, items):
-                """convenient method"""
-                return self.render(items[0][0])
-
-            def second(self, items):
-                """convenient method"""
-                return self.render(items[1][0])
-
-            def listen_to(self, drop_down):
-                self.drop_down = drop_down
-                self.drop_down.on_change("value", self.on_change)
-
-            def on_change(self, attr, old, new):
-                for label, value in self.drop_down.menu:
-                    if value == new:
-                        self.drop_down.label = self.render(label)
-
-            def render(self, label):
-                return self.template.format(label)
-
         # Create variable selection dropdown widget
         variable_menu_list = \
             create_dropdown_opt_list_from_dict(VARIABLE_DD_DICT,
                                                self.plot_names)
         label = Label("Variable: {}")
-        self.model_var_dd = \
+        self.model_variable_drop_down = \
             bokeh.models.widgets.Dropdown(label=label.first(variable_menu_list),
-                                          menu=variable_menu_list,
-                                          button_type='warning')
-        label.listen_to(self.model_var_dd)
-        self.model_var_dd.on_change('value', self.on_var_change)
+                                          menu=variable_menu_list)
+        label.listen_to(self.model_variable_drop_down)
+        self.model_variable_drop_down.on_change('value', self.on_var_change)
 
         # Create previous timestep button widget
-        self.time_prev_button = \
-            bokeh.models.widgets.Button(label='Previous validity time',
-                                        button_type='warning')
-        self.time_prev_button.on_click(self.on_time_prev)
-
-        # Create time selection slider widget
-        self.data_time_slider = \
-            bokeh.models.widgets.Slider(start=0,
-                                        end=self.num_times,
-                                        value=self.current_time_index,
-                                        step=1,
-                                        title="Data time",
-                                        width=400)
-        self.data_time_slider.on_change('value', self.on_data_time_change)
+        self.time_previous_button = \
+            bokeh.models.widgets.Button(label='Previous validity time')
+        self.time_previous_button.on_click(self.on_time_prev)
 
         # Create next timestep button widget
         self.time_next_button = \
-            bokeh.models.widgets.Button(label='Next validity time',
-                                        button_type='warning')
+            bokeh.models.widgets.Button(label='Next validity time')
         self.time_next_button.on_click(self.on_time_next)
 
         # select model run
         label = Label("Model run: {}")
-        model_run_list = create_model_run_list(self.datasets)
-        self.model_run_dd = \
+        model_run_list = create_model_run_list(self.datasets.keys())
+        self.model_run_drop_down = \
             bokeh.models.widgets.Dropdown(label=label.first(model_run_list),
-                                          menu=model_run_list,
-                                          button_type='warning')
-        label.listen_to(self.model_run_dd)
-        self.model_run_dd.on_change('value', self._on_model_run_change)
+                                          menu=model_run_list)
+        label.listen_to(self.model_run_drop_down)
+        self.model_run_drop_down.on_change('value', self._on_model_run_change)
 
         # Create region selection dropdown menu region
         label = Label("Region: {}")
-        region_menu_list = \
-            create_dropdown_opt_list_from_dict(REGION_DD_DICT,
-                                               self.region_dict.keys())
-        self.region_dd = bokeh.models.widgets.Dropdown(menu=region_menu_list,
-                                                       label=label.first(region_menu_list),
-                                                       button_type='warning')
-        label.listen_to(self.region_dd)
-        self.region_dd.on_change('value', self.on_region_change)
+        region_menu_list = list(self.region_dict.items())
+        self.region_drop_down = bokeh.models.widgets.Dropdown(menu=region_menu_list,
+                                                       label=label.first(region_menu_list))
+        label.listen_to(self.region_drop_down)
+        self.region_drop_down.on_change('value', self.on_region_change)
 
         # Create left figure model selection dropdown menu widget
         dataset_menu_list = create_dropdown_opt_list_from_dict(MODEL_DD_DICT,
                                                                self.datasets[self.current_fcast_time].keys())
         label = Label("Left image: {}")
-        self.left_model_dd = \
+        self.left_model_drop_down = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label=label.first(dataset_menu_list),
-                                          button_type='warning')
-        label.listen_to(self.left_model_dd)
-        self.left_model_dd.on_change('value',
+                                          label=label.first(dataset_menu_list))
+        label.listen_to(self.left_model_drop_down)
+        self.left_model_drop_down.on_change('value',
                                      functools.partial(self.on_config_change,
                                                        0))
         # Create right figure model selection dropdown menu widget
-        label = Label("Right image: {}")
-        self.right_model_dd = \
+        labels = Label("Right image: {}")
+        if len(dataset_menu_list) == 1:
+            label = labels.first(dataset_menu_list)
+        else:
+            label = labels.second(dataset_menu_list)
+        self.right_model_drop_down = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label=label.second(dataset_menu_list),
-                                          button_type='warning')
-        label.listen_to(self.right_model_dd)
-        self.right_model_dd.on_change('value',
+                                          label=label)
+        labels.listen_to(self.right_model_drop_down)
+        self.right_model_drop_down.on_change('value',
                                       functools.partial(self.on_config_change,
                                                         1))
         # Left/Right toggle UI
-        bokeh_figure = self.bokeh_imgs[0]
+        bokeh_figure = self.bokeh_figure
         left_image = self.plots[0]
         right_image = self.plots[1]
         slider = forest.image.Slider(left_image.bokeh_img_ds, right_image.bokeh_img_ds)
@@ -254,144 +245,37 @@ class ForestController(object):
         """)
         self.left_right_toggle.js_on_change("active", custom_js)
 
-        # Layout widgets
-        sizing_mode = "fixed"
-        sizing_mode = "scale_width"
-
-        config_path = os.path.join(CONFIG_DIR, FEEDBACK_CONF_FILENAME)
-
-        self.feedback_gui = forest.feedback.UserFeedback(config_path,
-                                                         self.feedback_dir,
-                                                         self.bokeh_id,
-                                                         )
-        self.feedback_layout = self.feedback_gui.get_feedback_widgets()
-
-        self.uf_vis_toggle = \
-            bokeh.models.widgets.Toggle(label='Show feedback form',
-                                        active=self.feedback_visible)
-        self.uf_vis_toggle.on_click(self._on_uf_vis_toggle)
-
-        self.uf_vis_layout = bokeh.layouts.column(sizing_mode=sizing_mode)
-        self.main_layout = self.layout_widgets(self.bokeh_imgs,
-                                               self.left_right_toggle,
-                                               self.left_model_dd,
-                                               self.right_model_dd,
-                                               self.model_var_dd,
-                                               self.region_dd,
-                                               self.time_prev_button,
-                                               self.time_next_button,
-                                               self.data_time_slider,
-                                               self.model_run_dd,
-                                               self.colorbar_div,
-                                               self.uf_vis_toggle,
-                                               self.uf_vis_layout,
-                                               sizing_mode=sizing_mode)
-
-    @staticmethod
-    def layout_widgets(bokeh_figures,
-                       left_right_toggle,
-                       left_model_drop_down,
-                       right_model_drop_down,
-                       model_variable_drop_down,
-                       region_drop_down,
-                       time_previous_button,
-                       time_next_button,
-                       time_slider,
-                       model_run_drop_down,
-                       colorbar_div,
-                       user_feedback_toggle,
-                       user_feedback_layout,
-                       sizing_mode="fixed"):
-        """Arrange bokeh widgets into a pleasing layout
-
-        Place widgets into rows/columns with appropriate sizing_modes
-        to enhance user experience of Forest
-        """
-        rows = [
-            bokeh.layouts.row(model_run_drop_down,
-                              time_previous_button,
-                              time_next_button,
-                              sizing_mode=sizing_mode),
-            bokeh.layouts.row(left_model_drop_down,
-                              right_model_drop_down,
-                              model_variable_drop_down,
-                              region_drop_down,
-                              sizing_mode=sizing_mode),
-            bokeh.layouts.row(left_right_toggle,
-                              sizing_mode=sizing_mode),
-            bokeh.layouts.row(*bokeh_figures,
-                              sizing_mode=sizing_mode),
-            bokeh.layouts.row(colorbar_div,
-                              sizing_mode=sizing_mode),
-            user_feedback_toggle,
-            user_feedback_layout
-        ]
-        return bokeh.layouts.column(*rows, sizing_mode=sizing_mode)
-
     def on_time_prev(self):
-        '''Event handler for changing to previous time step
-
-        '''
-        if not self.process_events:
-            return
-        print('selected previous time step')
-
-        new_time = int(self.data_time_slider.value - 1)
-        if new_time >= 0:
-            self.current_time_index = new_time
-            self.data_time_slider.value = self.current_time_index
+        index = int(self.current_time_index - 1)
+        if index >= 0:
+            self.set_current_time_index(index)
         else:
             print('Cannot select time < 0')
 
     def on_time_next(self):
-        '''
-
-        '''
-
-        if not self.process_events:
-            return
-        print('selected next time step')
-
-        new_time = int(self.data_time_slider.value + 1)
-        if new_time < self.num_times:
-            self.current_time_index = new_time
-            self.data_time_slider.value = self.current_time_index
+        index = self.current_time_index + 1
+        if index < self.num_times:
+            self.set_current_time_index(index)
         else:
             print('Cannot select time > num_times')
 
-    def on_data_time_change(self, attr1, old_val, new_val):
-        '''Event handler for a change in the selected forecast data time.
+    def set_current_time_index(self, value):
+        self.current_time_index = value
+        for plot in self.plots:
+            time = self.available_times[self.current_time_index]
+            plot.set_data_time(time)
 
-        '''
-
-        if not self.process_events:
-            return
-        print('data time handler')
-        self.current_time_index = new_val
-
-        for p1 in self.plots:
-            new_time1 = self.available_times[self.current_time_index]
-            # self.data_time_slider.label = 'Data time {0}'.format(new_time1)
-            p1.set_data_time(new_time1)
-
+    @forest.util.timer
     def _refresh_times(self, update_gui=True):
         self.available_times = \
             forest.data.get_available_times(
                 self.datasets[self.current_fcast_time],
                 self.plot_type_time_lookups[self.current_var])
         try:
-            new_time = self.available_times[self.current_time_index]
+            return self.available_times[self.current_time_index]
         except IndexError:
-            self.process_events = False
-            self.current_time_index = 0
-            new_time = self.available_times[self.current_time_index]
-            if update_gui and self.data_time_slider:
-                self.data_time_slider.value = self.current_time_index
-            self.process_events = True
-
-        if update_gui and self.data_time_slider:
-            self.data_time_slider.end = self.available_times.shape[0]
-        return new_time
+            self.set_current_time_index(0)
+            return self.available_times[self.current_time_index]
 
     def on_var_change(self, attr1, old_val, new_val):
         '''Event handler for a change in the selected plot type.
@@ -438,26 +322,15 @@ class ForestController(object):
         print('selected new model run {0}'.format(new_val))
         self.current_fcast_time = new_val
         new_time = self._refresh_times()
+        forest_datasets = self.datasets[self.current_fcast_time]
         for p1 in self.plots:
             # different variables have different times available, so need to
             # set time when selecting a variable
             p1.current_time = new_time
-            p1.set_dataset(self.datasets[self.current_fcast_time],
-                           self.current_fcast_time)
-
-    def _on_uf_vis_toggle(self, new1):
-        if not self.process_events:
-            return
-        print('toggled feedback form visibility')
-        self.feedback_visible = new1
-        if self.feedback_visible:
-            self.uf_vis_layout.children = [self.feedback_layout]
-        else:
-            self.uf_vis_layout.children = []
+            p1.set_dataset(forest_datasets)
 
     def _on_tap(self, tap_event):
         print('tap event occured at ({0:.2f},{1:.2f})'.format(tap_event.x,
                                                               tap_event.y))
-
         for p1 in self.plots:
             p1.set_selected_point(tap_event.y, tap_event.x)
