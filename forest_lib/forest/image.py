@@ -37,6 +37,7 @@ import os
 import sys
 import numpy as np
 import bokeh.models
+import bokeh.events
 
 
 # CustomJS callback code
@@ -76,15 +77,15 @@ class Slider(object):
                                       dimension='height',
                                       line_color='black',
                                       line_width=1)
-        shared = bokeh.models.ColumnDataSource({
-            "use_previous_mouse_x": [True],
+        self.shared = bokeh.models.ColumnDataSource({
+            "use_previous_mouse_x": [False],
             "previous_mouse_x": [0]
         })
         self.mousemove = bokeh.models.CustomJS(args=dict(
             span=self.span,
             left_images=self.left_images,
             right_images=self.right_images,
-            shared=shared
+            shared=self.shared
         ), code=JS_CODE)
 
     @property
@@ -100,6 +101,12 @@ class Slider(object):
         self.hover_tool = bokeh.models.HoverTool(callback=self.mousemove)
         figure.add_tools(self.hover_tool)
         figure.renderers.append(self.span)
+
+        # Add MouseEnter callback to reset slider
+        callback = bokeh.models.CustomJS(args=dict(shared=self.shared), code="""
+            shared.data.use_previous_mouse_x[0] = false;
+        """)
+        figure.js_on_event(bokeh.events.MouseEnter, callback)
 
 
 def get_shapes(source):
