@@ -288,6 +288,10 @@ class ForestPlot(object):
         self.coords_lat = data_cube.coords('latitude')[0].points
         self.coords_lon = data_cube.coords('longitude')[0].points
 
+        # Fix East Africa coordinates
+        if (self.coords_lon > 360.1).any():
+            self.coords_lon = self.coords_lon - 360.
+
     def create_blank(self):
         self.main_plot = None
 

@@ -307,14 +307,14 @@ def app(env, settings, document, custom_server=False):
 
     # Attach bokeh layout to current document
     controls = bokeh.layouts.column(
-             bokeh.layouts.row(forest_controller.model_run_drop_down,
-                               forest_controller.time_previous_button,
-                               forest_controller.time_next_button),
-             bokeh.layouts.row(forest_controller.left_model_drop_down,
-                               forest_controller.right_model_drop_down,
-                               forest_controller.left_right_toggle),
-             bokeh.layouts.row(forest_controller.model_variable_drop_down,
-                               forest_controller.region_drop_down),
+             forest_controller.model_run_drop_down,
+             forest_controller.time_previous_button,
+             forest_controller.time_next_button,
+             forest_controller.left_model_drop_down,
+             forest_controller.right_model_drop_down,
+             forest_controller.left_right_toggle,
+             forest_controller.model_variable_drop_down,
+             forest_controller.region_drop_down,
              name="btn")
     colorbar_widget.name = "colorbar"
     roots = [controls,
