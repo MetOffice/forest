@@ -159,21 +159,18 @@ class ForestController(object):
         label = Label("Variable: {}")
         self.model_variable_drop_down = \
             bokeh.models.widgets.Dropdown(label=label.first(variable_menu_list),
-                                          menu=variable_menu_list,
-                                          button_type='warning')
+                                          menu=variable_menu_list)
         label.listen_to(self.model_variable_drop_down)
         self.model_variable_drop_down.on_change('value', self.on_var_change)
 
         # Create previous timestep button widget
         self.time_previous_button = \
-            bokeh.models.widgets.Button(label='Previous validity time',
-                                        button_type='warning')
+            bokeh.models.widgets.Button(label='Previous validity time')
         self.time_previous_button.on_click(self.on_time_prev)
 
         # Create next timestep button widget
         self.time_next_button = \
-            bokeh.models.widgets.Button(label='Next validity time',
-                                        button_type='warning')
+            bokeh.models.widgets.Button(label='Next validity time')
         self.time_next_button.on_click(self.on_time_next)
 
         # select model run
@@ -181,8 +178,7 @@ class ForestController(object):
         model_run_list = create_model_run_list(self.datasets.keys())
         self.model_run_drop_down = \
             bokeh.models.widgets.Dropdown(label=label.first(model_run_list),
-                                          menu=model_run_list,
-                                          button_type='warning')
+                                          menu=model_run_list)
         label.listen_to(self.model_run_drop_down)
         self.model_run_drop_down.on_change('value', self._on_model_run_change)
 
@@ -190,8 +186,7 @@ class ForestController(object):
         label = Label("Region: {}")
         region_menu_list = list(self.region_dict.items())
         self.region_drop_down = bokeh.models.widgets.Dropdown(menu=region_menu_list,
-                                                       label=label.first(region_menu_list),
-                                                       button_type='warning')
+                                                       label=label.first(region_menu_list))
         label.listen_to(self.region_drop_down)
         self.region_drop_down.on_change('value', self.on_region_change)
 
@@ -201,8 +196,7 @@ class ForestController(object):
         label = Label("Left image: {}")
         self.left_model_drop_down = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label=label.first(dataset_menu_list),
-                                          button_type='warning')
+                                          label=label.first(dataset_menu_list))
         label.listen_to(self.left_model_drop_down)
         self.left_model_drop_down.on_change('value',
                                      functools.partial(self.on_config_change,
@@ -215,8 +209,7 @@ class ForestController(object):
             label = labels.second(dataset_menu_list)
         self.right_model_drop_down = \
             bokeh.models.widgets.Dropdown(menu=dataset_menu_list,
-                                          label=label,
-                                          button_type='warning')
+                                          label=label)
         labels.listen_to(self.right_model_drop_down)
         self.right_model_drop_down.on_change('value',
                                       functools.partial(self.on_config_change,
