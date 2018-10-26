@@ -9,6 +9,11 @@
         height: 100%;
         overflow: hidden;
     }
+    .colorbar {
+        position: absolute;
+        bottom: 4%;
+        left: 50%;
+    }
     .map-window {
         position: absolute;
         width: 96%;
@@ -60,6 +65,10 @@
     .pd-lf-p5 {
         padding-left: 0.5rem;
     }
+    .ps-rl-50 {
+        position: relative;
+        left: -50%;
+    }
 
 </style>
 
@@ -93,7 +102,18 @@
         {% endfor %}
     {% endfor %}
     </div>
+</div>
+<div class="colorbar">
+<div class="ps-rl-50">
+    {% for doc in docs %}
+        {% for root in doc.roots %}
+            {% if root.name == "colorbar" %}
+                {{ embed(root) | indent(10) }}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
     {{ plot_script | indent(8) }}
+</div>
 </div>
 </body>
 </html>

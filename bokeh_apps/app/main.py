@@ -1,370 +1,354 @@
-"""Minimal Forest implementation"""
-import os
-import datetime as dt
 import yaml
+import jinja2
+import datetime as dt
+import os
+import warnings
+warnings.filterwarnings('ignore')
+import bokeh.io
 import bokeh.plotting
 import bokeh.themes
+import numpy
 import matplotlib
 matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import numpy as np
-import jinja2
+import forest.util
 import forest.plot
-import forest.geography
+import forest.control
+import forest.data
+import forest.aws
 
 
-script_dir = os.path.dirname(__file__)
-env = jinja2.Environment(loader=jinja2.FileSystemLoader(script_dir))
+class NameSpace():
+    """Simple namespace turns attrs into properties"""
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
 
 
-PARAMETERS = [
-    "Precipitation",
-    "Air temperature",
-    "Wind vectors",
-    "Wind and MSLP",
-    "Wind streamlines",
-    "MSLP",
-    "Cloud fraction",
-    "Accum. precip. 3hr",
-    "Accum. precip. 6hr",
-    "Accum. precip. 12hr",
-    "Accum. precip. 24hr",
-]
+def parse_environment(env):
+    """Load settings from environment variables"""
+    if "FOREST_START" in env:
+        start_date = dt.datetime.strptime(env["FOREST_START"], "%Y%m%d")
+    else:
+        start_date = days_ago(forest.data.NUM_DATA_DAYS)
+    download_data = env.get("FOREST_DOWNLOAD_DATA",
+                            "False").upper() == "TRUE"
+    download_directory = parse_variable(env,
+                                        ["FOREST_DOWNLOAD_DIR",
+                                         "LOCAL_ROOT"],
+                                        os.path.expanduser("~/SEA_data/"))
+    if "FOREST_MOUNT_DIR" in env:
+        mount_directory = os.path.expanduser(env["FOREST_MOUNT_DIR"])
+    else:
+        s3_root = env.get("S3_ROOT", os.path.expanduser("~/s3/"))
+        mount_directory = os.path.join(s3_root, 'stephen-sea-public-london')
+    if "FOREST_CONFIG_FILE" in env:
+        config_file = env["FOREST_CONFIG_FILE" ]
+    else:
+        config_file = None
+    return NameSpace(start_date=start_date,
+                     download_data=download_data,
+                     download_directory=download_directory,
+                     mount_directory=mount_directory,
+                     config_file=config_file)
+
+
+def parse_variable(env, names, default):
+    if isinstance(names, str):
+        names = [names]
+    for name in names:
+        if name in env:
+            return env[name]
+    return default
+
+
+def load_config(path):
+    """Load Forest configuration from file"""
+    with open(path) as stream:
+        return yaml.load(stream)
+
+
+def south_east_asia_config():
+    return {
+        "title": "Two model comparison",
+        "regions": [
+            {
+                "name": "South east Asia",
+                "longitude_range": [90.0, 153.96],
+                "latitude_range": [-18.0, 29.96]
+            },
+            {
+                "name": "Indonesia",
+                "longitude_range": [99.875, 120.111],
+                "latitude_range": [-15.1, 1.0865]
+            },
+            {
+                "name": "Malaysia",
+                "longitude_range": [95.25, 108.737],
+                "latitude_range": [-2.75, 10.7365]
+            },
+            {
+                "name": "Philippines",
+                "longitude_range": [115.8, 131.987],
+                "latitude_range": [3.1375, 21.349]
+            },
+        ],
+        "models": [
+            {
+                "name": "N1280 GA6 LAM Model",
+                "file": {
+                    "pattern": "SEA_n1280_ga6_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ga6"
+                }
+            },
+            {
+                "name": "SE Asia 4.4KM RA1-T ",
+                "file": {
+                    "pattern": "SEA_km4p4_ra1t_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ra1t"
+                }
+            },
+            {
+                "name": "Indonesia 1.5KM RA1-T",
+                "file": {
+                    "pattern": "SEA_indon2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ra1t"
+                }
+            },
+            {
+                "name": "Malaysia 1.5KM RA1-T",
+                "file": {
+                    "pattern": "SEA_mal2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ra1t"
+                }
+            },
+            {
+                "name": "Philipines 1.5KM RA1-T",
+                "file": {
+                    "pattern": "SEA_phi2km1p5_ra1t_{:%Y%m%dT%H%MZ}.nc",
+                    "format": "ra1t"
+                }
+            }
+        ]
+    }
+
+
+def days_ago(days):
+    """Helper method to select time N days ago"""
+    return (dt.datetime.now() - dt.timedelta(days=days)).replace(second=0, microsecond=0)
+
+
+@forest.util.timer
+def main(bokeh_id):
+    env = parse_environment(os.environ)
+    if env.config_file is None:
+        settings = south_east_asia_config()
+    else:
+        print("Loading: {}".format(env.config_file))
+        settings = load_config(env.config_file)
+    app(env, settings, bokeh.plotting.curdoc())
 
 
 def load_app(config_file):
-    return App.load(config_file)
-
-
-class App(object):
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-
-    @classmethod
-    def load(cls, config_file):
-        with open(config_file) as stream:
-            settings = yaml.load(stream)
-        return cls(**settings)
-
-    def __call__(self, document):
-        app(document, **self.kwargs)
-
-
-def cubes(state):
-    parameter_state, model_state = state
-    parameter = name(parameter_state).lower()
-    convention = model_state["format"]
-    pattern = model_state["pattern"]
-    date = dt.datetime(2018, 10, 21)
-    path = file_name(
-            date,
-            pattern,
-            "~/s3/stephen-sea-public-london/model_data/")
-    section = forest.stash_section(
-            parameter,
-            convention)
-    item = forest.stash_item(
-            parameter,
-            convention)
-    return forest.load_cube(path, section, item)
-
-
-def file_name(start_date, pattern, directory):
-    directory = os.path.expanduser(directory)
-    basename = pattern.format(start_date)
-    return os.path.join(directory, basename)
-
-
-def forest_plot(source):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    radar = forest.util.get_radar_colours()
-    cmap = radar["cmap"]
-    norm = radar["norm"]
-    def wrapper(cube):
-        longitudes = cube.coords('longitude')[0].points
-        latitudes = cube.coords('latitude')[0].points
-        values = cube.data[0]
-        mappable = ax.pcolormesh(
-                longitudes,
-                latitudes,
-                values,
-                cmap=cmap,
-                norm=norm)
-        ni, nj = values.shape
-        shape = (ni - 1, nj -1)
-        left, right = longitudes.min(), longitudes.max()
-        bottom, top = latitudes.min(), latitudes.max()
-        x = left
-        y = bottom
-        dw = right - left
-        dh = top - bottom
-        image = forest.plot.rgba_from_mappable(
-                mappable,
-                shape)
-
-        # Smooth high resolution imagery
-        max_ni, max_nj = 800, 600
-        ni, nj, _ = image.shape
-        if (ni > max_ni) or (nj > max_nj):
-            image = forest.plot.smooth_image(
-                    image, (max_ni, max_nj))
-
-        source.data = {
-            "x": [x],
-            "y": [y],
-            "dw": [dw],
-            "dh": [dh],
-            "image": [image]
-        }
+    env = parse_environment(os.environ)
+    print("Loading: {}".format(config_file))
+    settings = load_config(config_file)
+    def wrapper(document):
+        return app(env, settings, document,
+                   custom_server=True)
     return wrapper
 
 
-def app(document, title=None, regions=None, models=None):
+def app(env, settings, document, custom_server=False):
+    '''Two-model bokeh application main program'''
+    bokeh_id = ""
+    if env.download_data:
+        file_loader = forest.aws.S3Bucket(
+                server_address='https://s3.eu-west-2.amazonaws.com',
+                bucket_name='stephen-sea-public-london',
+                download_directory=env.download_directory)
+        user_feedback_directory = os.path.join(env.download_directory,
+                'user_feedback')
+    else:
+        # FUSE mounted file system
+        file_loader = forest.aws.S3Mount(env.mount_directory)
+        user_feedback_directory = os.path.join(env.mount_directory,
+                'user_feedback')
+
+    models = settings['models']
+    plot_descriptions = {
+        model['name']: model['name']
+            for model in models
+    }
+    file_patterns = {
+        model['name']: model['file']['pattern']
+            for model in models
+    }
+    file_formats = {
+        model['name']: model['file']['format']
+            for model in models
+    }
+    model_run_times = forest.data.get_model_run_times(env.start_date,
+                                                      forest.data.NUM_DATA_DAYS,
+                                                      forest.data.MODEL_RUN_PERIOD)
+    datasets = forest.data.get_available_datasets(model_run_times,
+                                                  file_patterns,
+                                                  file_formats,
+                                                  file_loader)
+    try:
+        init_fcast_time = list(datasets.keys())[-1]
+    except IndexError:
+        print("[WARNING] No forecast times found")
+        layout1 = forest.util.load_error_page()
+        document.add_root(layout1)
+        return
+
+    print('Most recent dataset available is {0}, forecast time selected for display.'.format(init_fcast_time))
+
+    plot_type_time_lookups = {
+        'precipitation': 'precipitation',
+        'air_temperature': 'air_temperature',
+        'wind_vectors': 'x_wind',
+        'wind_mslp': 'x_wind',
+        'wind_streams': 'x_wind',
+        'mslp': 'mslp',
+        'cloud_fraction': 'cloud_fraction',
+    }
+    for var in forest.data.PRECIP_ACCUM_VARS:
+        plot_type_time_lookups[var] = var
+
+    # Setup and display plots
+    plot_opts = forest.util.create_colour_opts(list(plot_type_time_lookups.keys()))
+
+    init_data_time_index = 1
+    init_var = 'precipitation'
+
+    init_model_left = models[0]['name']
+    if len(models) == 1:
+        init_model_right = models[0]['name']
+    else:
+        init_model_right = models[1]['name']
+    app_path = os.path.join(*os.path.dirname(__file__).split('/')[-1:])
+
+    available_times = forest.data.get_available_times(datasets[init_fcast_time],
+                                                      plot_type_time_lookups[init_var])
+    init_data_time = available_times[init_data_time_index]
+    num_times = available_times.shape[0]
+
     x_range = bokeh.models.Range1d(0, 1, bounds="auto")
     y_range = bokeh.models.Range1d(0, 1, bounds="auto")
-    figure = bokeh.plotting.figure(
+    bokeh_figure = bokeh.plotting.figure(
+        active_inspect=None,
         sizing_mode="stretch_both",
         name="map",
-        title=title,
         x_range=x_range,
         y_range=y_range)
-    forest.plot.add_x_axes(figure, "above")
-    forest.plot.add_y_axes(figure, "right")
+    forest.plot.add_x_axes(bokeh_figure, "above")
+    forest.plot.add_y_axes(bokeh_figure, "right")
 
-    # Left/right RGBA
-    left_rgba = bokeh.models.ColumnDataSource({
-        "x": [],
-        "y": [],
-        "dw": [],
-        "dh": [],
-        "image": []
-    })
-    figure.image_rgba(
-            x="x",
-            y="y",
-            dw="dw",
-            dh="dh",
-            image="image",
-            source=left_rgba)
-    plot_cube = forest_plot(left_rgba)
+    # Add cartopy coastline to bokeh figure
+    def _extent(region):
+        x_start, x_end = region["longitude_range"]
+        y_start, y_end = region["latitude_range"]
+        # Note: this ordering should be removed from code base
+        #       it is too confusing
+        return y_start, y_end, x_start, x_end
+    region_names = [region['name'] for region in settings["regions"]]
+    region_dict = {region['name']: region['name'] for region in settings["regions"]}
+    region_extents = {region['name']: _extent(region) for region in settings["regions"]}
+    coords = region_extents[region_names[0]]
+    y_start = coords[0]
+    y_end = coords[1]
+    x_start = coords[2]
+    x_end = coords[3]
+    extent = (x_start, x_end, y_start, y_end)
+    forest.plot.add_coastlines(bokeh_figure, extent)
+    forest.plot.add_borders(bokeh_figure, extent)
 
-    # Coastlines/Borders
-    coastlines = bokeh.models.ColumnDataSource({
-        "xs": [],
-        "ys": []
-    })
-    figure.multi_line(xs="xs", ys="ys", source=coastlines,
-                      color="black")
-    borders = bokeh.models.ColumnDataSource({
-        "xs": [],
-        "ys": []
-    })
-    figure.multi_line(xs="xs", ys="ys", source=borders,
-                      color="grey")
+    # Set up plots
+    forest_datasets = datasets[init_fcast_time]
+    plot_obj_left = forest.plot.ForestPlot(forest_datasets,
+                                           plot_descriptions,
+                                           plot_opts,
+                                           'plot_left' + bokeh_id,
+                                           init_var,
+                                           init_model_left,
+                                           region_names[0],
+                                           region_extents,
+                                           app_path,
+                                           init_data_time,
+                                           bokeh_figure=bokeh_figure)
+    plot_obj_left.render()
 
-    # Streams
-    def any_none(items):
-        return any([item is None for item in items])
-    left_model_stream = forest.Stream()
-    right_model_stream = forest.Stream()
-    parameter_stream = forest.Stream()
-    stream = forest.rx.CombineLatest(
-            parameter_stream,
-            left_model_stream)
-    cube_stream = stream.filter(any_none).map(cubes)
-    cube_stream.map(plot_cube)
+    plot_obj_right = forest.plot.ForestPlot(forest_datasets,
+                                            plot_descriptions,
+                                            plot_opts,
+                                            'plot_right' + bokeh_id,
+                                            init_var,
+                                            init_model_right,
+                                            region_names[0],
+                                            region_extents,
+                                            app_path,
+                                            init_data_time,
+                                            bokeh_figure=bokeh_figure,
+                                            visible=False)
 
-    # Reactive figure title
-    left_model_stream.map(name).map(edit_title(figure))
+    colorbar_widget = plot_obj_left.create_colorbar_widget()
 
-    # Models
-    names = [name(m) for m in models]
+    # Set up GUI controller class
+    # feedback_controller = forest.FeedbackController(user_feedback_directory,
+    #                                                 bokeh_id)
+    forest_controller = forest.ForestController(init_var,
+                                                init_data_time_index,
+                                                datasets,
+                                                init_fcast_time,
+                                                plot_type_time_lookups,
+                                                [plot_obj_left, plot_obj_right],
+                                                bokeh_figure,
+                                                region_dict)
 
-    left_model_drop = drop_down(names)
-    on_change = on_change_model(models, left_model_stream)
-    left_model_drop.on_change("value", on_change)
-    left_model_drop.value = encode(name(models[0]))
+    # Attach bokeh layout to current document
+    controls = bokeh.layouts.column(
+             bokeh.layouts.row(forest_controller.model_run_drop_down,
+                               forest_controller.time_previous_button,
+                               forest_controller.time_next_button),
+             bokeh.layouts.row(forest_controller.left_model_drop_down,
+                               forest_controller.right_model_drop_down,
+                               forest_controller.left_right_toggle),
+             bokeh.layouts.row(forest_controller.model_variable_drop_down,
+                               forest_controller.region_drop_down),
+             name="btn")
+    colorbar_widget.name = "colorbar"
+    roots = [controls,
+             bokeh_figure,
+             colorbar_widget]
+    try:
+        bokeh_mode = os.environ['BOKEH_MODE']
+    except:
+        bokeh_mode = 'server'
+    if bokeh_mode == 'server':
+        for root in roots:
+            document.add_root(root)
+    elif bokeh_mode == 'cli':
+        root = bokeh.layouts.column(*roots)
+        bokeh.io.show(root)
+    document.title = settings["title"]
 
-    right_model_drop = drop_down(names)
-    on_change = on_change_model(models, right_model_stream)
-    right_model_drop.on_change("value", on_change)
-    right_model_drop.value = encode(name(models[1]))
+    if custom_server:
+        apply_theme(document)
+        apply_template(document)
 
-    # Regions
-    region_names = [name(region) for region in regions]
-    region_drop = drop_down(region_names)
-    on_change = on_change_region(
-            x_range,
-            y_range,
-            coastlines,
-            borders,
-            regions)
-    region_drop.on_change("value", on_change)
-    region_drop.value = encode(name(regions[0]))
 
-    # Parameters
-    parameters = PARAMETERS
-    parameter_drop = drop_down(parameters)
-    on_change = on_change_parameter(parameters, parameter_stream)
-    parameter_drop.on_change("value", on_change)
-    parameter_drop.value = encode(parameters[0])
-
-    document.add_root(controls(
-        left_model_drop,
-        right_model_drop,
-        region_drop,
-        parameter_drop))
-    document.add_root(figure)
-
+def apply_theme(document):
+    script_dir = os.path.dirname(__file__)
     filename = os.path.join(script_dir, "theme.yaml")
     document.theme = bokeh.themes.Theme(filename=filename)
-    document.title = title
+
+
+def apply_template(document):
+    script_dir = os.path.dirname(__file__)
+    loader = jinja2.FileSystemLoader(script_dir)
+    env = jinja2.Environment(loader=loader)
     document.template = env.get_template("templates/index.html")
 
 
-def name(item):
-    return item["name"]
-
-
-def edit_title(figure):
-    def wrapper(text):
-        figure.title.text = text
-    return wrapper
-
-
-def on_change_model(models, stream):
-    names = [name(model) for model in models]
-    formats = {name(model): model["file"]["format"]
-               for model in models}
-    patterns = {name(model): model["file"]["pattern"]
-               for model in models}
-    def on_change(attr, old, new):
-        name = decode(names, new)
-        stream.emit({
-            "name": name,
-            "format": formats[name],
-            "pattern": patterns[name],
-        })
-    return on_change
-
-
-def on_change_parameter(names, stream):
-    def on_change(attr, old, new):
-        name = decode(names, new)
-        stream.emit({
-            "name": name
-        })
-    return on_change
-
-
-def on_change_region(
-        x_range,
-        y_range,
-        coastlines,
-        borders,
-        regions):
-    names = [name(region) for region in regions]
-    x_ranges = {name(region): lon_range(region)
-            for region in regions}
-    y_ranges = {name(region): lat_range(region)
-            for region in regions}
-    def on_change(attr, old, new):
-        name = decode(names, new)
-        x_start, x_end = x_ranges[name]
-        y_start, y_end = y_ranges[name]
-        print(name, x_start, x_end, y_start, y_end)
-        extent = x_start, x_end, y_start, y_end
-        xs, ys = forest.geography.coastlines(extent)
-        coastlines.data = {
-            "xs": xs,
-            "ys": ys
-        }
-        xs, ys = forest.geography.borders(extent)
-        borders.data = {
-            "xs": xs,
-            "ys": ys
-        }
-        x_range.start = x_start
-        x_range.end = x_end
-        y_range.start = y_start
-        y_range.end = y_end
-    return on_change
-
-
-def lon_range(region):
-    start, end = region["longitude_range"]
-    return float(start), float(end)
-
-
-def lat_range(region):
-    start, end = region["latitude_range"]
-    return float(start), float(end)
-
-
-def controls(
-        left_model_drop,
-        right_model_drop,
-        *extra_drops):
-    checkbox = bokeh.models.CheckboxGroup(labels=["Link plots", "Activate slider"], active=[0])
-    left_child = bokeh.layouts.column(
-            plus_minus_row("Time"),
-            plus_minus_row("Forecast"),
-            plus_minus_row("Model run"),
-            left_model_drop)
-    right_child = bokeh.layouts.column(
-            plus_minus_row("Time"),
-            plus_minus_row("Forecast"),
-            plus_minus_row("Model run"),
-            right_model_drop)
-    panels = [
-     bokeh.models.Panel(child=left_child, title="Left"),
-     bokeh.models.Panel(child=right_child, title="Right")
-    ]
-    tabs = bokeh.models.Tabs(tabs=panels)
-    return bokeh.layouts.column(
-            checkbox,
-            *extra_drops,
-            tabs,
-            name="btn")
-
-
-def plus_minus_row(text):
-    return bokeh.layouts.row(p(text), button("+"), button("-"))
-
-
-def p(text):
-    return bokeh.models.Paragraph(text=text, width=80)
-
-
-def button(label, width=40):
-    btn = bokeh.models.Button(
-        label=label,
-        width=width)
-    return btn
-
-
-def drop_down(names, label=None):
-    dd = bokeh.models.Dropdown(menu=[
-        (name, encode(name)) for name in names
-    ], label=label)
-    autolabel(dd)
-    return dd
-
-
-def encode(name):
-    return name.lower().replace(" ", "").replace(".", "")
-
-
-def decode(names, encoded_name):
-    for name in names:
-        if encode(name) == encoded_name:
-            return name
-
-
-def autolabel(drop_down):
-    def on_change(attr, old, new):
-        for label, key in drop_down.menu:
-            if key == new:
-                drop_down.label = label
-    drop_down.on_change("value", on_change)
+if __name__ == '__main__' or __name__.startswith("bk"):
+    main(__name__)
