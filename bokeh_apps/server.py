@@ -8,7 +8,8 @@ from bokeh.server.server import Server
 
 import app.main
 
-env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
+script_dir = os.path.dirname(__file__)
+env = Environment(loader=FileSystemLoader(script_dir))
 
 
 class IndexHandler(RequestHandler):
@@ -17,9 +18,13 @@ class IndexHandler(RequestHandler):
         self.write(template.render())
 
 
+def load_app(config_file):
+    return app.main.load_app(os.path.join(script_dir, config_file))
+
+
 def bokeh_server(**kwargs):
-    highway = app.main.load_app("highway.yaml")
-    wcssp_south_east_asia = app.main.load_app("wcssp_south_east_asia.yaml")
+    highway = load_app("highway.yaml")
+    wcssp_south_east_asia = load_app("wcssp_south_east_asia.yaml")
     routes = {
         '/highway': highway,
         '/wcssp_south_east_asia': wcssp_south_east_asia
