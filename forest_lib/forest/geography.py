@@ -37,15 +37,9 @@ def coastlines(extent, scale="50m"):
     :param scale: cartopy scale '110m', '50m' or '10m'
     :param extent: x_start, x_end, y_start, y_end
     """
-    xs, ys = [], []
-    for x, y in feature_lines(cartopy.feature.COASTLINE,
-                              scale=scale):
-        x, y = clip_xy(x, y, extent)
-        if x.shape[0] == 0:
-            continue
-        xs.append(x)
-        ys.append(y)
-    return xs, ys
+    feature = cartopy.feature.COASTLINE
+    feature.scale = scale
+    return multi_lines(feature, extent)
 
 
 def borders(extent, scale="50m"):
@@ -59,31 +53,30 @@ def borders(extent, scale="50m"):
 
     :param scale: cartopy scale '110m', '50m' or '10m'
     """
+    feature = cartopy.feature.BORDERS
+    feature.scale = scale
+    return multi_lines(feature, extent)
+
+
+def multi_lines(feature, extent):
     xs, ys = [], []
-    for x, y in feature_lines(cartopy.feature.BORDERS,
-                              scale=scale):
-        x, y = clip_xy(x, y, extent)
-        if x.shape[0] == 0:
-            continue
+    for geometry in feature.intersecting_geometries(extent):
+        for g in geometry:
+            x, y = g.xy
+            x,y = np.asarray(x), np.asarray(y)
+        mask = ~inside(x, y, extent)
+        x = np.ma.masked_array(x, mask)
+        y = np.ma.masked_array(y, mask)
         xs.append(x)
         ys.append(y)
     return xs, ys
 
 
-def feature_lines(feature, scale="110m"):
-    feature.scale = scale
-    for geometry in feature.geometries():
-        for g in geometry:
-            x, y = g.xy
-            yield np.asarray(x), np.asarray(y)
-
-
-def clip_xy(x, y, extent):
-    """Clip coastline to be inside figure extent"""
+def inside(x, y, extent):
+    """Detect points inside extent"""
     x, y = np.asarray(x), np.asarray(y)
     x_start, x_end, y_start, y_end = extent
-    pts = np.where((x > x_start) &
-                   (x < x_end) &
-                   (y > y_start) &
-                   (y < y_end))
-    return x[pts], y[pts]
+    return ((x > x_start) &
+            (x < x_end) &
+            (y > y_start) &
+            (y < y_end))
