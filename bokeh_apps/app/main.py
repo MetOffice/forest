@@ -236,6 +236,7 @@ def app(env, settings, document, custom_server=False):
     bokeh_figure = bokeh.plotting.figure(
         active_inspect=None,
         sizing_mode="stretch_both",
+        match_aspect=True,
         name="map")
     forest.plot.add_x_axes(bokeh_figure, "above")
     forest.plot.add_y_axes(bokeh_figure, "right")
