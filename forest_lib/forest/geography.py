@@ -1,9 +1,11 @@
 """Geographical features, coast lines and political boundaries"""
+import bokeh.models
 import numpy as np
 import cartopy
 
 __all__ = [
     "bounding_square",
+    "add_coastlines",
     "coastlines"
 ]
 
@@ -23,6 +25,72 @@ def bounding_square(x0, y0, x1, y1):
     rx1 = cx + (side / 2)
     ry1 = cy + (side / 2)
     return rx0, ry0, rx1, ry1
+
+
+class Coastlines(object):
+    def __init__(self, figure):
+        self.pcb = None
+        self.figure = figure
+        self.source = bokeh.models.ColumnDataSource({
+            "xs": [],
+            "ys": []
+        })
+        figure.multi_line(xs="xs", ys="ys",
+                          source=self.source,
+                          color="black")
+        figure.x_range.on_change("start", self.on_change)
+        figure.x_range.on_change("end", self.on_change)
+        figure.x_range.on_change("start", self.on_change)
+        figure.x_range.on_change("end", self.on_change)
+        if self.has_document():
+            self.add_periodic_callback()
+
+    def on_change(self, attr, old, new):
+        if not self.has_document():
+            return
+        if not self.has_periodic_callback():
+            self.add_periodic_callback()
+
+    def has_document(self):
+        return self.figure.document is not None
+
+    def has_periodic_callback(self):
+        return self.pcb is not None
+
+    def add_periodic_callback(self):
+        self.pcb = self.figure.document.add_periodic_callback(self.redraw, 1000)
+
+    def remove_periodic_callback(self):
+        if self.pcb is None:
+            return
+        self.figure.document.remove_periodic_callback(self.pcb)
+        self.pcb = None
+
+    def redraw(self):
+        extent = (
+            self.figure.x_range.start,
+            self.figure.x_range.end,
+            self.figure.y_range.start,
+            self.figure.y_range.end
+        )
+        if self.valid(extent):
+            self.draw(extent)
+        if self.has_periodic_callback():
+            self.remove_periodic_callback()
+
+    def valid(self, extent):
+        return all(value is not None for value in extent)
+
+    def draw(self, extent):
+        xs, ys = coastlines(extent)
+        self.source.data = {
+            "xs": xs,
+            "ys": ys
+        }
+
+
+def add_coastlines(figure):
+    return Coastlines(figure)
 
 
 def coastlines(extent, scale="50m"):

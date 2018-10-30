@@ -66,10 +66,10 @@ def add_y_axes(figure, position="right"):
     figure.add_layout(axis, position)
 
 
-def add_coastlines(bokeh_figure, extent):
-    """Add coastlines to bokeh figure"""
-    xs, ys = forest.geography.coastlines(extent)
-    bokeh_figure.multi_line(xs, ys, color='black')
+# def add_coastlines(bokeh_figure, extent):
+#     """Add coastlines to bokeh figure"""
+#     xs, ys = forest.geography.coastlines(extent)
+#     bokeh_figure.multi_line(xs, ys, color='black')
 
 
 def add_borders(bokeh_figure, extent):

@@ -1,13 +1,17 @@
 import unittest
-import array
 from collections import namedtuple
-import numpy as np
-from forest import geography
+import bokeh
 import forest
 
 
 Extent = namedtuple("Extent", ["x_start", "x_end",
                                "y_start", "y_end"])
+
+
+class TestCoastlines(unittest.TestCase):
+    def test_coastlines(self):
+        figure = bokeh.plotting.figure()
+        forest.add_coastlines(figure)
 
 
 class TestBoundingSquare(unittest.TestCase):
