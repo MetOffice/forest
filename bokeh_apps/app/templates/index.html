@@ -33,10 +33,13 @@
         z-index: 2;
         transition: width 0.5s;
         -webkit-transition: width 0.5s;
+        -moz-transition: width 0.5s;
     }
     .controls:hover {
         width: auto;
         transition: width 0.5s;
+        -webkit-transition: width 0.5s;
+        -moz-transition: width 0.5s;
     }
     .controls-max {
         opacity: 0;
@@ -45,17 +48,23 @@
     }
     .controls:hover .controls-max {
         transition: opacity 0.5s ease-in;
+        -webkit-transition: opacity 0.5s ease-in;
+        -moz-transition: opacity 0.5s ease-in;
         opacity: 1;
         height: auto;
         overflow: visible;
     }
     .controls-min {
         transition: opacity 0.5s ease-in;
+        -webkit-transition: opacity 0.5s ease-in;
+        -moz-transition: opacity 0.5s ease-in;
         opacity: 1;
         height: auto;
     }
     .controls:hover .controls-min {
         transition: opacity 0.5s ease-out;
+        -webkit-transition: opacity 0.5s ease-out;
+        -moz-transition: opacity 0.5s ease-out;
         opacity: 0;
         height: 0;
         overflow: hidden;
@@ -79,7 +88,7 @@
 <head>
 <body>
 <div class="controls pd-lf-p5 pd-rt-p5">
-    <div class="controls-min">
+    <div class="controls-min" onclick="void(0)">
         <h1>&#9776;</h1>
     </div>
     <div class="controls-max">
