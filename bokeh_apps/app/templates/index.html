@@ -22,11 +22,12 @@
         left: 4%;
         top: 0;
     }
-    .controls {
+    .sb {
         color: white;
         background-color: #222;
         position: absolute;
-        width: 2%;
+        min-width: 2%;
+        width: auto;
         height: 100%;
         left: 0;
         top: 0;
@@ -35,39 +36,35 @@
         -webkit-transition: width 0.5s;
         -moz-transition: width 0.5s;
     }
-    .controls:hover {
+    .sb-max {
         width: auto;
         transition: width 0.5s;
         -webkit-transition: width 0.5s;
         -moz-transition: width 0.5s;
-    }
-    .controls-max {
-        opacity: 0;
-        height: 0;
-        overflow: hidden;
-    }
-    .controls:hover .controls-max {
+        opacity: 1;
         transition: opacity 0.5s ease-in;
         -webkit-transition: opacity 0.5s ease-in;
         -moz-transition: opacity 0.5s ease-in;
-        opacity: 1;
         height: auto;
         overflow: visible;
     }
-    .controls-min {
-        transition: opacity 0.5s ease-in;
-        -webkit-transition: opacity 0.5s ease-in;
-        -moz-transition: opacity 0.5s ease-in;
-        opacity: 1;
-        height: auto;
-    }
-    .controls:hover .controls-min {
+    .sb-min {
+        opacity: 0;
+        height: 0;
+        width: 0;
+        overflow: hidden;
         transition: opacity 0.5s ease-out;
         -webkit-transition: opacity 0.5s ease-out;
         -moz-transition: opacity 0.5s ease-out;
-        opacity: 0;
-        height: 0;
-        overflow: hidden;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    .wd-auto {
+        width: auto;
+    }
+    .fl-rt {
+        float: right;
     }
     .pd-rt-p5 {
         padding-right: 0.5rem;
@@ -87,12 +84,12 @@
 {{ bokeh_css | indent(8) if bokeh_css }}
 <head>
 <body>
-<div class="controls pd-lf-p5 pd-rt-p5">
-    <div class="controls-min" onclick="void(0)">
-        <h1>&#9776;</h1>
+<div id="sb-background" class="sb pd-lf-p5 pd-rt-p5">
+    <div id="sb-hamburger" class="sb-hamburger sb-max">
+        <h1 onclick="sb.reveal()" class="cursor-pointer">&#9776;</h1>
     </div>
-    <div class="controls-max">
-        <h1>Controls</h1>
+    <div id="sb-content" class="sb-content sb-min">
+        <h1>Controls<span class="fl-rt cursor-pointer" onclick="sb.hide()">&times;</span></h1>
         {% for doc in docs %}
             {% for root in doc.roots %}
                 {% if root.name == "btn" %}
@@ -125,5 +122,43 @@
     {{ plot_script | indent(8) }}
 </div>
 </div>
+<script>
+    // Side-bar JS
+    let sb = (function() {
+        let app = {};
+        let hamburger = "sb-hamburger";
+        let content = "sb-content";
+        let background = "sb-background";
+        let maximise = "sb-max";
+        let minimise = "sb-min";
+        app.reveal = function() {
+            let el;
+            el = document.getElementById(hamburger);
+            el.classList.remove(maximise);
+            el.classList.add(minimise);
+
+            el = document.getElementById(content);
+            el.classList.remove(minimise);
+            el.classList.add(maximise);
+
+            el = document.getElementById(background);
+            el.classList.toggle("wd-auto");
+        };
+        app.hide = function() {
+            let el;
+            el = document.getElementById(hamburger);
+            el.classList.remove(minimise);
+            el.classList.add(maximise);
+
+            el = document.getElementById(content);
+            el.classList.remove(maximise);
+            el.classList.add(minimise);
+
+            el = document.getElementById(background);
+            el.classList.toggle("wd-auto");
+        };
+        return app;
+    })();
+</script>
 </body>
 </html>
