@@ -301,6 +301,8 @@ class ForestPlot(object):
         cmap = self.plot_options[self.current_var]['cmap']
         norm = self.plot_options[self.current_var]['norm']
         self.update_coords(cube)
+        if self.main_plot in self.current_axes.collections:
+            self.current_axes.collections.remove(self.main_plot)
         self.main_plot = \
             self.current_axes.pcolormesh(self.coords_lon,
                                          self.coords_lat,
