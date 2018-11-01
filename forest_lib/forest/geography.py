@@ -38,6 +38,8 @@ class Coastlines(object):
         figure.multi_line(xs="xs", ys="ys",
                           source=self.source,
                           color="black")
+        figure.x_range.range_padding = 0.
+        figure.y_range.range_padding = 0.
         figure.x_range.on_change("start", self.on_change)
         figure.x_range.on_change("end", self.on_change)
         figure.x_range.on_change("start", self.on_change)
