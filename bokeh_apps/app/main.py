@@ -258,7 +258,7 @@ def app(env, settings, document, custom_server=False):
     x_end = coords[3]
     extent = (x_start, x_end, y_start, y_end)
     forest.add_coastlines(bokeh_figure)
-    forest.plot.add_borders(bokeh_figure, extent)
+    forest.add_borders(bokeh_figure)
 
     # Set up plots
     forest_datasets = datasets[init_fcast_time]

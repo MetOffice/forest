@@ -6,6 +6,7 @@ import cartopy
 __all__ = [
     "bounding_square",
     "add_coastlines",
+    "add_borders",
     "coastlines"
 ]
 
@@ -27,10 +28,24 @@ def bounding_square(x0, y0, x1, y1):
     return rx0, ry0, rx1, ry1
 
 
-class Coastlines(object):
-    def __init__(self, figure):
+def add_coastlines(figure, scale="50m"):
+    feature = cartopy.feature.COASTLINE
+    feature.scale = scale
+    return PeriodicArtist(figure, feature)
+
+
+def add_borders(figure, scale="50m"):
+    feature = cartopy.feature.BORDERS
+    feature.scale = scale
+    return PeriodicArtist(figure, feature)
+
+
+class PeriodicArtist(object):
+    def __init__(self, figure, feature, interval=500):
         self.pcb = None
         self.figure = figure
+        self.feature = feature
+        self.interval = interval
         self.source = bokeh.models.ColumnDataSource({
             "xs": [],
             "ys": []
@@ -60,7 +75,7 @@ class Coastlines(object):
         return self.pcb is not None
 
     def add_periodic_callback(self):
-        self.pcb = self.figure.document.add_periodic_callback(self.redraw, 1000)
+        self.pcb = self.figure.document.add_periodic_callback(self.redraw, self.interval)
 
     def remove_periodic_callback(self):
         if self.pcb is None:
@@ -84,15 +99,11 @@ class Coastlines(object):
         return all(value is not None for value in extent)
 
     def draw(self, extent):
-        xs, ys = coastlines(extent)
+        xs, ys = multi_lines(self.feature, extent)
         self.source.data = {
             "xs": xs,
             "ys": ys
         }
-
-
-def add_coastlines(figure):
-    return Coastlines(figure)
 
 
 def coastlines(extent, scale="50m"):
