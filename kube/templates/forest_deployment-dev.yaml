@@ -11,7 +11,6 @@ spec:
         app: {{ .Values.managerdev.name }}
         deployedAt : "{{ .Release.Time.Seconds }}"
     spec:
-      
       containers:
         - image: informaticslab/singleuser-notebook:0.3.4
           command: ["bash"]
