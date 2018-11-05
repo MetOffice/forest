@@ -7,7 +7,7 @@ class TestRadarColors(unittest.TestCase):
     def test_radar_colors(self):
         result = forest.util.radar_colors()
         expect = np.array([
-            (220, 220, 220, 255),
+            (255, 255, 255, 0),
             (122, 147, 212, 0.9 * 255),
             (82, 147, 212, 0.95 * 255),
             (39, 106, 188, 255),
@@ -16,7 +16,7 @@ class TestRadarColors(unittest.TestCase):
             (245, 152, 0, 255),
             (235, 47, 26, 255),
             (254, 92, 252, 255),
-            (255, 255, 255, 255),
+            (220, 220, 220, 255),
         ]) / 255.
         self.assert_array_almost_equal(expect, result)
 
