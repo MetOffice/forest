@@ -21,19 +21,16 @@ Functions
 - timer() -- Timer function for testing other functions.
 
 """
-
 import time
 import os
 import datetime
-
 import matplotlib.colors
 import matplotlib.cm
 import numpy
-
 import iris
-
 import bokeh.models.widgets
 import bokeh.layouts
+
 
 SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
                    'malaysia': [-2.75, 10.7365, 95.25, 108.737],
@@ -44,20 +41,10 @@ SEA_REGION_DICT = {'indonesia': [-15.1, 1.0865, 99.875, 120.111],
 
 def get_radar_colours():
     """Return dictionary of precip. colormap and normalisation."""
-    radar_colours1 = [(220 / 255.0, 220 / 255.0, 220 / 255.0, 1.0),
-                      (122 / 255.0, 147 / 255.0, 212 / 255.0, 0.9),
-                      (82 / 255.0, 147 / 255.0, 212 / 255.0, 0.95),
-                      (39 / 255.0, 106 / 255.0, 188 / 255.0, 1.0),
-                      (31 / 555.0, 201 / 255.0, 26 / 255.0, 1.0),
-                      (253 / 255.0, 237 / 255.0, 57 / 255.0, 1.0),
-                      (245 / 255.0, 152 / 255.0, 0 / 255.0, 1.0),
-                      (235 / 255.0, 47 / 255.0, 26 / 255.0, 1.0),
-                      (254 / 255.0, 92 / 255.0, 252 / 255.0, 1.0),
-                      (255 / 255.0, 255 / 255.0, 255 / 255.0, 1.0)]
     radar_levels = numpy.array(
         [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
     cmap_radar, norm_radar = matplotlib.colors.from_levels_and_colors(
-        radar_levels, radar_colours1, extend='max')
+        radar_levels, radar_colours(), extend='max')
     cmap_radar.set_name = 'radar'
     return {'cmap': cmap_radar, 'norm': norm_radar}
 
@@ -68,7 +55,7 @@ def radar_colors():
         (122 / 255.0, 147 / 255.0, 212 / 255.0, 0.9),
         (82 / 255.0, 147 / 255.0, 212 / 255.0, 0.95),
         (39 / 255.0, 106 / 255.0, 188 / 255.0, 1.0),
-        (31 / 555.0, 201 / 255.0, 26 / 255.0, 1.0),
+        (31 / 255.0, 201 / 255.0, 26 / 255.0, 1.0),
         (253 / 255.0, 237 / 255.0, 57 / 255.0, 1.0),
         (245 / 255.0, 152 / 255.0, 0 / 255.0, 1.0),
         (235 / 255.0, 47 / 255.0, 26 / 255.0, 1.0),
