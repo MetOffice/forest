@@ -56,6 +56,7 @@ def parse_args(argv=None):
               "to the bokeh websocket"))
     parser.add_argument(
         "--unused-session-lifetime",
+        type=int,
         default=15000,
         metavar="MILLISECONDS",
         help="how long unused sessions last")

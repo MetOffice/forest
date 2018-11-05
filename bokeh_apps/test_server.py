@@ -34,3 +34,9 @@ class TestParseArgs(unittest.TestCase):
         result = args.unused_session_lifetime
         expect = 15000
         self.assertEqual(expect, result)
+
+    def test_unused_session_lifetime_given_flag(self):
+        args = server.parse_args(["--unused-session-lifetime", "1000"])
+        result = args.unused_session_lifetime
+        expect = 1000
+        self.assertEqual(expect, result)
