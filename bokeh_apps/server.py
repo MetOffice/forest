@@ -70,7 +70,7 @@ def main():
     server = bokeh_server(
         port=args.port,
         allow_websocket_origin=args.allow_websocket_origin,
-        unused_session_lifetime=args.unused_session_lifetime
+        unused_session_lifetime_milliseconds=args.unused_session_lifetime
     )
     if args.show:
         from bokeh.util.browser import view
