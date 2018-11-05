@@ -45,7 +45,7 @@ def get_radar_colours():
     radar_levels = numpy.array(
         [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
     cmap_radar, norm_radar = matplotlib.colors.from_levels_and_colors(
-        radar_levels, radar_colours(), extend='max')
+        radar_levels, radar_colors(), extend='max')
     cmap_radar.set_name = 'radar'
     return {'cmap': cmap_radar, 'norm': norm_radar}
 
