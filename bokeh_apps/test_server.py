@@ -28,3 +28,9 @@ class TestParseArgs(unittest.TestCase):
         result = args.allow_websocket_origin
         expect = ["site.com"]
         self.assertEqual(expect, result)
+
+    def test_unused_session_lifetime(self):
+        args = server.parse_args([])
+        result = args.unused_session_lifetime
+        expect = 15000
+        self.assertEqual(expect, result)

@@ -54,6 +54,11 @@ def parse_args(argv=None):
         metavar="HOST[:PORT]", action="append",
         help=("public hostnames which may connect "
               "to the bokeh websocket"))
+    parser.add_argument(
+        "--unused-session-lifetime",
+        default=15000,
+        metavar="MILLISECONDS",
+        help="how long unused sessions last")
     return parser.parse_args(args=argv)
 
 
@@ -63,7 +68,8 @@ def main():
     print('Opening Tornado app: {}'.format(url))
     server = bokeh_server(
         port=args.port,
-        allow_websocket_origin=args.allow_websocket_origin
+        allow_websocket_origin=args.allow_websocket_origin,
+        unused_session_lifetime=args.unused_session_lifetime
     )
     if args.show:
         from bokeh.util.browser import view
