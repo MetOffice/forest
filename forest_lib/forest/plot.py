@@ -112,7 +112,8 @@ class ForestPlot(object):
                  init_time,
                  bokeh_figure=None,
                  visible=True,
-                 model_run_time=None):
+                 model_run_time=None,
+                 projection=None):
         '''Initialisation function for ForestPlot class
         '''
         self.forest_datasets = forest_datasets
@@ -128,6 +129,7 @@ class ForestPlot(object):
         self.current_config = conf1
         self.current_region = reg1
         self.app_path = app_path
+        self.projection = projection
         self.data_bounds = self.region_dict[self.current_region]
         self.plot_funcs = {'precipitation': self.plot_pcolormesh,
                            'accum_precip_3hr': self.plot_pcolormesh,
@@ -474,6 +476,11 @@ class ForestPlot(object):
         else:
             left, right = self.coords_lon.min(), self.coords_lon.max()
             bottom, top = self.coords_lat.min(), self.coords_lat.max()
+        if self.projection is not None:
+            (left, right), (bottom, top) = forest.transform(cartopy.crs.PlateCarree(),
+                                                            self.projection,
+                                                            [left, right],
+                                                            [bottom, top])
         x = left
         y = bottom
         dw = right - left

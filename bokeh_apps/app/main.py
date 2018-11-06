@@ -10,6 +10,7 @@ import bokeh.themes
 import numpy
 import matplotlib
 matplotlib.use('agg')
+import cartopy
 import forest.util
 import forest.plot
 import forest.control
@@ -237,7 +238,13 @@ def app(env, settings, document, custom_server=False):
         active_inspect=None,
         sizing_mode="stretch_both",
         match_aspect=True,
+        x_axis_type="mercator",
+        y_axis_type="mercator",
         name="map")
+    tile = bokeh.models.WMTSTileSource(
+        url='http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png'
+    )
+    bokeh_figure.add_tile(tile)
     forest.plot.add_x_axes(bokeh_figure, "above")
     forest.plot.add_y_axes(bokeh_figure, "right")
 
@@ -257,8 +264,10 @@ def app(env, settings, document, custom_server=False):
     x_start = coords[2]
     x_end = coords[3]
     extent = (x_start, x_end, y_start, y_end)
-    forest.add_coastlines(bokeh_figure)
-    forest.add_borders(bokeh_figure)
+
+    projection = cartopy.crs.Mercator.GOOGLE
+    forest.add_coastlines(bokeh_figure, projection=projection)
+    forest.add_borders(bokeh_figure, color="gray", projection=projection)
 
     # Set up plots
     forest_datasets = datasets[init_fcast_time]
@@ -272,7 +281,8 @@ def app(env, settings, document, custom_server=False):
                                            region_extents,
                                            app_path,
                                            init_data_time,
-                                           bokeh_figure=bokeh_figure)
+                                           bokeh_figure=bokeh_figure,
+                                           projection=projection)
     plot_obj_left.render()
 
     plot_obj_right = forest.plot.ForestPlot(forest_datasets,
@@ -286,7 +296,8 @@ def app(env, settings, document, custom_server=False):
                                             app_path,
                                             init_data_time,
                                             bokeh_figure=bokeh_figure,
-                                            visible=False)
+                                            visible=False,
+                                            projection=projection)
 
     colorbar_widget = plot_obj_left.create_colorbar_widget()
 
