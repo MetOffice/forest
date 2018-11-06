@@ -2,7 +2,7 @@ manager:
   name: forest-server
   domain: forest.informaticslab.co.uk
   port: 8888
-  revision: "HEAD"
+  revision: "7bb436842885bfdac0ad611aa24e32cbbabc7669"
 
 managerdev:
   name: forest-server-dev
