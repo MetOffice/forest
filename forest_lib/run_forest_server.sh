@@ -8,9 +8,20 @@ BOKEH_APP_DIR=$3
 DAY_IN_MILLISECONDS=86400000
 PING_MILLISECONDS=10000
 
-# Tornado server for HIGHWAY and WCSSP
-${BOKEH_APP_DIR}/server.py \
-    --port=${PORT} \
-    --allow-websocket-origin ${FOREST_URL} \
-    --unused-session-lifetime ${DAY_IN_MILLISECONDS} \
-    --keep-alive ${PING_MILLISECONDS}
+USE_CUSTOM=False
+if [[ "$USE_CUSTOM" == "True" ]] ; then
+    # Tornado server for HIGHWAY and WCSSP
+    ${BOKEH_APP_DIR}/server.py \
+        --port=${PORT} \
+        --allow-websocket-origin ${FOREST_URL} \
+        --unused-session-lifetime ${DAY_IN_MILLISECONDS} \
+        --keep-alive ${PING_MILLISECONDS}
+else
+    # Bokeh server for HIGHWAY only
+    FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/highway.yaml \
+    bokeh serve ${BOKEH_APP_DIR}/app \
+        --port ${PORT} \
+        --allow-websocket-origin ${FOREST_URL} \
+        --unused-session-lifetime ${DAY_IN_MILLISECONDS} \
+        --keep-alive ${PING_MILLISECONDS}
+fi
