@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+conda install bokeh=1.0.1 -y
+
 export S3_ROOT=$1
 PORT=$2
 BOKEH_APP_DIR=$3
