@@ -5,7 +5,9 @@ env:
   global:
   - HELM_URL=https://storage.googleapis.com/kubernetes-helm
   - HELM_TGZ=helm-v2.9.1-linux-amd64.tar.gz
-install: echo "Install deps here"
+install:
+  - echo "Install deps here"
+  - conda install bokeh=1.0.1 -y
 script: echo "Run tests here"
 before_deploy:
 - mkdir ~/.kube
