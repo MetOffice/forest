@@ -60,6 +60,12 @@ def parse_args(argv=None):
         default=15000,
         metavar="MILLISECONDS",
         help="how long unused sessions last")
+    parser.add_argument(
+        "--keep-alive",
+        type=int,
+        default=37000,
+        metavar="MILLISECONDS",
+        help="frequency to send keep alive pings")
     return parser.parse_args(args=argv)
 
 
@@ -70,7 +76,8 @@ def main():
     server = bokeh_server(
         port=args.port,
         allow_websocket_origin=args.allow_websocket_origin,
-        unused_session_lifetime_milliseconds=args.unused_session_lifetime
+        unused_session_lifetime_milliseconds=args.unused_session_lifetime,
+        keep_alive_milliseconds=args.keep_alive
     )
     if args.show:
         from bokeh.util.browser import view
