@@ -245,7 +245,8 @@ def app(env, settings, document, custom_server=False):
         y_axis_type="mercator",
         name="map")
     tile = bokeh.models.WMTSTileSource(
-        url='http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png'
+        url='http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png',
+        attribution="&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
     )
     bokeh_figure.add_tile(tile)
     forest.plot.add_x_axes(bokeh_figure, "above")
