@@ -235,6 +235,9 @@ def app(env, settings, document, custom_server=False):
     num_times = available_times.shape[0]
 
     bokeh_figure = bokeh.plotting.figure(
+        tools="pan,wheel_zoom,reset,save",
+        active_drag="pan",
+        active_scroll="wheel_zoom",
         active_inspect=None,
         sizing_mode="stretch_both",
         match_aspect=True,
@@ -266,8 +269,11 @@ def app(env, settings, document, custom_server=False):
     extent = (x_start, x_end, y_start, y_end)
 
     projection = cartopy.crs.Mercator.GOOGLE
-    forest.add_coastlines(bokeh_figure, projection=projection)
-    forest.add_borders(bokeh_figure, color="gray", projection=projection)
+
+    draw_coastlines = False
+    if draw_coastlines:
+        forest.add_coastlines(bokeh_figure, projection=projection)
+        forest.add_borders(bokeh_figure, color="gray", projection=projection)
 
     # Set up plots
     forest_datasets = datasets[init_fcast_time]
