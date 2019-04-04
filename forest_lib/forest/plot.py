@@ -99,6 +99,8 @@ class ForestPlot(object):
 
         self.overlay_text = None
 
+        self.process_pool = None
+
 
     def _set_config_value(self, new_config):
 

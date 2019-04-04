@@ -150,6 +150,8 @@ def main(bokeh_id):
                                              active_inspect=None)
 
     plot_list = []
+    pool1 = concurrent.futures.ProcessPoolExecutor(max_workers=2)
+
     # Set up plots
     plot_obj_left = forest.plot.ForestPlot(datasets[init_fcast_time],
                                            init_fcast_time,
@@ -164,6 +166,7 @@ def main(bokeh_id):
                                            app_path,
                                            init_data_time,
                                            bokeh_figure=bokeh_figure)
+    plot_obj_left.process_pool = pool1
     plot_list += [plot_obj_left]
     bokeh_figure_left = plot_obj_left.create_plot()
     stats_left = plot_obj_left.create_stats_widget()
@@ -181,6 +184,7 @@ def main(bokeh_id):
                                             app_path,
                                             init_data_time,
                                             bokeh_figure=bokeh_figure)
+    plot_obj_right.process_pool = pool1
     plot_list += [plot_obj_right]
     bokeh_figure_right = plot_obj_right.create_plot()
     stats_right = plot_obj_right.create_stats_widget()
