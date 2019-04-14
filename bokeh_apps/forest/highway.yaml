@@ -1,0 +1,7 @@
+patterns:
+   - name: GA6
+     directory: "model_data/highway_ga6*.nc"
+   - name: Tropical Africa 4.4km
+     directory: "model_data/highway_takm4p4*.nc"
+   - name: East Africa 4.4km
+     directory: "model_data/highway_eakm4p4*.nc"
