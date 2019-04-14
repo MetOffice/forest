@@ -8,4 +8,5 @@ managerdev:
   name: forest-server-dev
   domain: forestdev.informaticslab.co.uk
   port: 8888
-  revision: "HEAD"
+  repository: "https://github.com/informatics-lab/forest.git"
+  revision: "refs/remotes/origin/testbed1b"
