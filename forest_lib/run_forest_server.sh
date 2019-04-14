@@ -19,7 +19,7 @@ if [[ "$USE_CUSTOM" == "True" ]] ; then
 else
     # Bokeh server for HIGHWAY only
     FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/highway.yaml \
-    bokeh serve ${BOKEH_APP_DIR}/app \
+    bokeh serve ${BOKEH_APP_DIR}/forest \
         --port ${PORT} \
         --allow-websocket-origin ${FOREST_URL} \
         --unused-session-lifetime ${DAY_IN_MILLISECONDS} \
