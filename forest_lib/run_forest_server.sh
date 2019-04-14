@@ -18,7 +18,8 @@ if [[ "$USE_CUSTOM" == "True" ]] ; then
         --keep-alive ${PING_MILLISECONDS}
 else
     # Bokeh server for HIGHWAY only
-    FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/highway.yaml \
+    FOREST_DIR=${S3_ROOT}/stephen-sea-public-london \
+    FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/forest/highway.yaml \
     bokeh serve ${BOKEH_APP_DIR}/forest \
         --port ${PORT} \
         --allow-websocket-origin ${FOREST_URL} \
