@@ -30,5 +30,10 @@ def on_server_loaded(server_context):
 
     patterns = OrderedDict({})
     for item in config["patterns"]:
-        patterns[item["name"]] = item["directory"]
+        if env.directory is None:
+            pattern = item["directory"]
+        else:
+            pattern = os.path.join(env.directory, item["directory"])
+        patterns[item["name"]] = pattern
+    print(patterns)
     data.on_server_loaded(patterns)
