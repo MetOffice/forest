@@ -345,7 +345,8 @@ def app(env, settings, document, custom_server=False):
     elif bokeh_mode == 'cli':
         root = bokeh.layouts.column(*roots)
         bokeh.io.show(root)
-    document.title = settings["title"]
+    # document.title = settings["title"]
+    document.title = "Hello, testbed1b!"
 
     if custom_server:
         apply_theme(document)
