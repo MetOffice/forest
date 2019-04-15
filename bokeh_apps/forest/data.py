@@ -25,9 +25,19 @@ BORDERS = {
     "xs": [],
     "ys": []
 }
+LAKES = {
+    "xs": [],
+    "ys": []
+}
+DISPUTED = {
+    "xs": [],
+    "ys": []
+}
 
 def on_server_loaded(patterns):
+    global DISPUTED
     global COASTLINES
+    global LAKES
     global BORDERS
     global FILE_DB
     FILE_DB = FileDB(patterns)
@@ -50,21 +60,48 @@ def on_server_loaded(patterns):
 
     # Load coastlines/borders
     COASTLINES = feature_lines(cartopy.feature.COASTLINE)
+    LAKES = feature_lines(
+        at_scale(cartopy.feature.LAKES, "10m"))
+    DISPUTED = feature_lines(
+            cartopy.feature.NaturalEarthFeature(
+                "cultural",
+                "admin_0_boundary_lines_disputed_areas",
+                "50m"))
     BORDERS = feature_lines(cartopy.feature.BORDERS)
+
+
+def at_scale(feature, scale):
+    """
+    .. note:: function named at_scale to prevent name
+              clash with scale variable
+    """
+    feature.scale = scale
+    return feature
 
 
 def feature_lines(feature):
     xs, ys = [], []
-    for geometry in feature.geometries():
-        for g in geometry:
-            lons, lats = g.xy
-            x, y = geo.web_mercator(lons, lats)
-            xs.append(x)
-            ys.append(y)
+    for lons, lats in _lines(feature):
+        x, y = geo.web_mercator(lons, lats)
+        xs.append(x)
+        ys.append(y)
     return {
         "xs": xs,
         "ys": ys
     }
+
+
+def _lines(feature):
+    for geometry in feature.geometries():
+        for g in geometry:
+            try:
+                yield g.xy
+            except NotImplementedError:
+                if g.boundary.type == 'MultiLineString':
+                    for line in g.boundary:
+                        yield line.xy
+                else:
+                    yield g.boundary.xy
 
 
 class FileDB(object):

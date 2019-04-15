@@ -104,11 +104,20 @@ def main():
         if isinstance(loader, (data.UMLoader, data.GPM)):
             image_loaders.append(loader)
 
+    # Lakes
+    for figure in figures:
+        add_feature(figure, data.LAKES, color="lightblue")
+
     features = []
     for figure in figures:
         features += [
             add_feature(figure, data.COASTLINES),
             add_feature(figure, data.BORDERS)]
+
+    # Disputed borders
+    for figure in figures:
+        add_feature(figure, data.DISPUTED, color="red")
+
     toggle = bokeh.models.CheckboxButtonGroup(
             labels=["Coastlines"],
             active=[0],
@@ -157,7 +166,8 @@ def main():
             "Viridis": bokeh.palettes.Viridis[256],
             "Magma": bokeh.palettes.Magma[256],
             "Inferno": bokeh.palettes.Inferno[256],
-            "Plasma": bokeh.palettes.Plasma[256]
+            "Plasma": bokeh.palettes.Plasma[256],
+            "Greys": bokeh.palettes.Greys[256]
     }
     palette_controls = PaletteControls(
             color_mapper,
@@ -252,6 +262,7 @@ def main():
     for f in figures:
         f.on_event(bokeh.events.Tap, series.on_tap)
         f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
+
 
     document = bokeh.plotting.curdoc()
     document.add_root(
@@ -566,13 +577,13 @@ def change(widget, prop, dtype):
     return wrapper
 
 
-def add_feature(figure, data):
+def add_feature(figure, data, color="white"):
     source = bokeh.models.ColumnDataSource(data)
     return figure.multi_line(
         xs="xs",
         ys="ys",
         source=source,
-        color="white")
+        color=color)
 
 
 if __name__.startswith("bk"):
