@@ -208,6 +208,12 @@ def main():
     time_controls = TimeControls()
     time_controls.subscribe(field_controls.on_time_control)
 
+    def on_click():
+        print("Hello, world!")
+
+    button = bokeh.models.Button(label="Latest")
+    button.on_click(on_click)
+
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
@@ -267,6 +273,7 @@ def main():
     document = bokeh.plotting.curdoc()
     document.add_root(
         bokeh.layouts.column(
+            button,
             tabs,
             name="controls"))
     document.add_root(series_row)
