@@ -303,6 +303,20 @@ class Series(object):
                     color=color,
                     line_width=1.5,
                     source=source)
+            r.nonselection_glyph = bokeh.models.Line(
+                    line_width=1.5,
+                    line_color=color)
+            c = self.figure.circle(
+                    x="x",
+                    y="y",
+                    color=color,
+                    source=source)
+            c.selection_glyph = bokeh.models.Circle(
+                    fill_color="red")
+            c.nonselection_glyph = bokeh.models.Circle(
+                    fill_color=color,
+                    fill_alpha=0.5,
+                    line_alpha=0)
             items.append((name, [r]))
             self.sources[name] = source
 
@@ -320,6 +334,7 @@ class Series(object):
     def on_field(self, variable, ipressure, itime):
         self.variable = variable
         self.ipressure = ipressure
+        self.itime = itime
         self.render()
 
     def on_tap(self, event):
@@ -334,6 +349,7 @@ class Series(object):
         for name, source in self.sources.items():
             loader = data.LOADERS[name]
             source.data = loader.series(self.variable, self.x, self.y, self.ipressure)
+            source.selected.indices = [self.itime]
 
 
 def any_none(obj, attrs):
