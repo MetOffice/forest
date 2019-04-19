@@ -287,6 +287,7 @@ class Series(object):
     def __init__(self, figure):
         self.figure = figure
         self.sources = {}
+        circles = []
         items = []
         colors = cycle(bokeh.palettes.Colorblind[6][::-1])
         for name, loader in data.LOADERS.items():
@@ -317,6 +318,7 @@ class Series(object):
                     fill_color=color,
                     fill_alpha=0.5,
                     line_alpha=0)
+            circles.append(c)
             items.append((name, [r]))
             self.sources[name] = source
 
@@ -324,6 +326,20 @@ class Series(object):
                 orientation="horizontal",
                 click_policy="hide")
         self.figure.add_layout(legend, "below")
+
+        tool = bokeh.models.HoverTool(
+                tooltips=[
+                    ('Time', '@x{%F %H:%M}'),
+                    ('Value', '@y')
+                ],
+                formatters={
+                    'x': 'datetime'
+                })
+        self.figure.add_tools(tool)
+
+        tool = bokeh.models.TapTool(
+                renderers=circles)
+        self.figure.add_tools(tool)
 
         # Underlying state
         self.x = None
