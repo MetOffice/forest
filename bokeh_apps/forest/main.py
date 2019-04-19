@@ -139,7 +139,7 @@ def main():
                 ("Black", "black"),
                 ("White", "white")],
             width=50)
-    dropdown.on_click(change_label(dropdown))
+    dropdown.on_click(select(dropdown))
 
     def on_click(value):
         for feature in features:
@@ -196,6 +196,7 @@ def main():
             pressures,
             pressure_variables)
 
+
     image_controls.subscribe(artist.on_visible)
     field_controls.subscribe(artist.on_field)
 
@@ -208,16 +209,16 @@ def main():
     time_controls = TimeControls()
     time_controls.subscribe(field_controls.on_time_control)
 
-    def on_click():
-        print("Hello, world!")
-
-    button = bokeh.models.Button(label="Latest")
-    button.on_click(on_click)
+    pressure_controls = PressureControls(
+            pressures,
+            units="hPa")
+    pressure_controls.subscribe(field_controls.on_pressure_control)
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
                 time_controls.layout,
+                pressure_controls.layout,
                 bokeh.layouts.row(field_controls.drop),
                 bokeh.layouts.row(field_controls.radio),
                 image_controls.column),
@@ -273,7 +274,6 @@ def main():
     document = bokeh.plotting.curdoc()
     document.add_root(
         bokeh.layouts.column(
-            button,
             tabs,
             name="controls"))
     document.add_root(series_row)
@@ -440,6 +440,68 @@ class Artist(object):
                 viewer.render(self.variable, self.ipressure, self.itime)
 
 
+class PressureControls(Observable):
+    def __init__(self, pressures, units):
+        self.pressures = pressures
+        self.units = units
+        self.labels = ["{} {}".format(int(p), self.units)
+                for p in self.pressures]
+        menu = list(zip(self.labels, self.labels))
+        self.dropdown = bokeh.models.Dropdown(
+                label="Pressures",
+                menu=menu,
+                width=80)
+        self.dropdown.on_click(select(self.dropdown))
+        self.dropdown.on_click(self.on_dropdown)
+        self.plus = bokeh.models.Button(
+                label="+", width=80)
+        self.plus.on_click(self.on_plus)
+        self.minus = bokeh.models.Button(
+                label="-", width=80)
+        self.minus.on_click(self.on_minus)
+        sizing_mode = "fixed"
+        self.layout = bokeh.layouts.row(
+                bokeh.layouts.column(
+                    self.minus, width=90,
+                    sizing_mode=sizing_mode),
+                bokeh.layouts.column(
+                    self.dropdown, width=100,
+                    sizing_mode=sizing_mode),
+                bokeh.layouts.column(
+                    self.plus, width=90,
+                    sizing_mode=sizing_mode),
+                width=300)
+        super().__init__()
+
+    def on_dropdown(self, value):
+        self.announce(self.index)
+
+    def on_plus(self):
+        if self.dropdown.value is None:
+            return
+        if self.index == (len(self.labels) - 1):
+            return
+        else:
+            value = self.labels[self.index + 1]
+            self.dropdown.value = value
+
+    def on_minus(self):
+        if self.dropdown.value is None:
+            return
+        if self.index == 0:
+            return
+        else:
+            value = self.labels[self.index - 1]
+            self.dropdown.value = value
+            self.announce(self.index)
+
+    @property
+    def index(self):
+        if self.dropdown.value is None:
+            return
+        return self.labels.index(self.dropdown.value)
+
+
 class FieldControls(Observable):
     def __init__(self, variables, pressures, pressure_variables):
         self.variable = None
@@ -453,7 +515,7 @@ class FieldControls(Observable):
                 label="Variables",
                 menu=[(v, v) for v in self.variables],
                 width=50)
-        self.drop.on_click(change_label(self.drop))
+        self.drop.on_click(select(self.drop))
         self.drop.on_click(self.on_click)
         self.radio = bokeh.models.RadioGroup(
                 labels=[str(int(p)) for p in self.pressures],
@@ -479,6 +541,11 @@ class FieldControls(Observable):
         else:
             self.radio.disabled = True
         self.announce(self.variable, self.ipressure, self.itime)
+
+    def on_pressure_control(self, action):
+        if action is not None:
+            self.ipressure = action
+            self.render()
 
     def on_time_control(self, action):
         if action == NEXT:
@@ -593,17 +660,11 @@ class PaletteControls(object):
         self.drop = bokeh.models.Dropdown(
                 label="Palettes",
                 menu=[(k, k) for k in self.palettes.keys()])
-        self.drop.on_click(change_label(self.drop))
+        self.drop.on_click(select(self.drop))
         self.drop.on_click(self.on_click)
 
     def on_click(self, value):
         self.color_mapper.palette = self.palettes[value]
-
-
-def change_label(widget):
-    def wrapped(value):
-        widget.label = str(value)
-    return wrapped
 
 
 def change(widget, prop, dtype):
@@ -616,7 +677,7 @@ def change(widget, prop, dtype):
     return wrapper
 
 
-def add_feature(figure, data, color="white"):
+def add_feature(figure, data, color="black"):
     source = bokeh.models.ColumnDataSource(data)
     return figure.multi_line(
         xs="xs",

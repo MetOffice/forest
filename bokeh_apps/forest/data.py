@@ -59,29 +59,25 @@ def on_server_loaded(patterns):
     #     load_image(path, "relative_humidity", 0, 0)
 
     # Load coastlines/borders
-    COASTLINES = feature_lines(cartopy.feature.COASTLINE)
-    LAKES = feature_lines(
-        at_scale(cartopy.feature.LAKES, "10m"))
-    DISPUTED = feature_lines(
+    EXTENT = (-10, 50, -20, 10)
+    COASTLINES = xs_ys(iterlines(
+            cartopy.feature.COASTLINE.geometries()))
+    LAKES = xs_ys(iterlines(
+        at_scale(cartopy.feature.LAKES, "10m")
+            .intersecting_geometries(EXTENT)))
+    DISPUTED = xs_ys(iterlines(
             cartopy.feature.NaturalEarthFeature(
                 "cultural",
                 "admin_0_boundary_lines_disputed_areas",
-                "50m"))
-    BORDERS = feature_lines(cartopy.feature.BORDERS)
+                "50m").geometries()))
+    BORDERS = xs_ys(iterlines(
+            at_scale(cartopy.feature.BORDERS, '50m')
+                .intersecting_geometries(EXTENT)))
 
 
-def at_scale(feature, scale):
-    """
-    .. note:: function named at_scale to prevent name
-              clash with scale variable
-    """
-    feature.scale = scale
-    return feature
-
-
-def feature_lines(feature):
+def xs_ys(lines):
     xs, ys = [], []
-    for lons, lats in _lines(feature):
+    for lons, lats in lines:
         x, y = geo.web_mercator(lons, lats)
         xs.append(x)
         ys.append(y)
@@ -91,8 +87,8 @@ def feature_lines(feature):
     }
 
 
-def _lines(feature):
-    for geometry in feature.geometries():
+def iterlines(geometries):
+    for geometry in geometries:
         for g in geometry:
             try:
                 yield g.xy
@@ -102,6 +98,15 @@ def _lines(feature):
                         yield line.xy
                 else:
                     yield g.boundary.xy
+
+
+def at_scale(feature, scale):
+    """
+    .. note:: function named at_scale to prevent name
+              clash with scale variable
+    """
+    feature.scale = scale
+    return feature
 
 
 class FileDB(object):
