@@ -7,7 +7,10 @@ import data
 import view
 import images
 import geo
+import picker
 from util import Observable, select
+from collections import defaultdict
+import datetime as dt
 
 
 class Mode(Enum):
@@ -190,13 +193,7 @@ def main():
 
     variables = image_loaders[0].variables
     pressures = image_loaders[0].pressures
-    pressure_variables = image_loaders[0].pressure_variables
-    field_controls = FieldControls(
-            variables,
-            pressures,
-            pressure_variables)
-
-
+    field_controls = FieldControls(variables)
     image_controls.subscribe(artist.on_visible)
     field_controls.subscribe(artist.on_field)
 
@@ -206,8 +203,17 @@ def main():
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
-    time_controls = TimeControls()
+    name = list(data.FILE_DB.files.keys())[0]
+    paths = data.FILE_DB.files[name]
+    run_controls = RunControls.paths(paths)
+    run_controls.subscribe(
+            field_controls.on_run_control)
+
+    loader = data.LOADERS[name]
+    time_controls = TimeControls.times(
+            loader.times["time"])
     time_controls.subscribe(field_controls.on_time_control)
+    time_controls.subscribe(run_controls.on_step)
 
     pressure_controls = PressureControls(
             pressures,
@@ -217,12 +223,15 @@ def main():
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                run_controls.layout,
                 time_controls.layout,
-                pressure_controls.layout,
+                pressure_controls.layout),
+            title="Navigate"),
+        bokeh.models.Panel(
+            child=bokeh.layouts.column(
                 bokeh.layouts.row(field_controls.drop),
-                bokeh.layouts.row(field_controls.radio),
                 image_controls.column),
-            title="Data"),
+            title="Compare"),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
                 bokeh.layouts.row(figure_drop),
@@ -478,6 +487,7 @@ class PressureControls(Observable):
 
     def on_plus(self):
         if self.dropdown.value is None:
+            self.dropdown.value = self.labels[0]
             return
         if self.index == (len(self.labels) - 1):
             return
@@ -487,6 +497,7 @@ class PressureControls(Observable):
 
     def on_minus(self):
         if self.dropdown.value is None:
+            self.dropdown.value = self.labels[0]
             return
         if self.index == 0:
             return
@@ -503,101 +514,258 @@ class PressureControls(Observable):
 
 
 class FieldControls(Observable):
-    def __init__(self, variables, pressures, pressure_variables):
+    def __init__(self, variables):
         self.variable = None
         self.mode = Mode.TIMESTEP
         self.itime = 0
         self.ipressure = 0
         self.variables = variables
-        self.pressures = pressures
-        self.pressure_variables = pressure_variables
         self.drop = bokeh.models.Dropdown(
                 label="Variables",
                 menu=[(v, v) for v in self.variables],
                 width=50)
         self.drop.on_click(select(self.drop))
         self.drop.on_click(self.on_click)
-        self.radio = bokeh.models.RadioGroup(
-                labels=[str(int(p)) for p in self.pressures],
-                active=self.ipressure,
-                inline=True)
-        self.radio.on_change("active", self.on_radio)
         super().__init__()
 
     def on_click(self, value):
         self.variable = value
         self.render()
 
-    def on_radio(self, attr, old, new):
-        if new is not None:
-            self.ipressure = new
-            self.render()
-
     def render(self):
         if self.variable is None:
             return
-        if self.variable in self.pressure_variables:
-            self.radio.disabled = False
-        else:
-            self.radio.disabled = True
-        self.announce(self.variable, self.ipressure, self.itime)
+        self.announce(
+                self.variable,
+                self.ipressure,
+                self.itime)
 
-    def on_pressure_control(self, action):
-        if action is not None:
-            self.ipressure = action
-            self.render()
-
-    def on_time_control(self, action):
-        if action == NEXT:
-            self.next_time()
-        elif action == PREVIOUS:
-            self.previous_time()
-        elif isinstance(action, Mode):
-            self.mode = action
-
-    def next_time(self):
-        self.itime += +1
+    def on_pressure_control(self, ipressure):
+        self.ipressure = ipressure
         self.render()
 
-    def previous_time(self):
-        self.itime += -1
+    def on_run_control(self, initial_time):
+        print("run: {}".format(initial_time))
+
+    def on_time_control(self, action):
+        itime, _ = action
+        self.itime = itime
         self.render()
 
 
 class TimeControls(Observable):
-    def __init__(self):
+    def __init__(self, steps):
+        self.steps = steps
+        self.labels = ["T{:+}".format(int(s))
+                for s in self.steps]
         self.plus = bokeh.models.Button(label="+", width=80)
         self.plus.on_click(self.on_plus)
         self.minus = bokeh.models.Button(label="-", width=80)
         self.minus.on_click(self.on_minus)
-        self.modes = bokeh.models.Dropdown(
+        self.dropdown = bokeh.models.Dropdown(
                 label="Time step",
-                menu=[("Time step", "Time step"), ("Model run", "Model run")],
+                menu=list(zip(self.labels, self.labels)),
                 width=80)
-        self.modes.on_click(select(self.modes))
-        self.modes.on_click(self.on_mode)
+        self.dropdown.on_click(select(self.dropdown))
+        self.dropdown.on_click(self.on_dropdown)
         sizing_mode = "fixed"
         self.layout = bokeh.layouts.row(
                 bokeh.layouts.column(self.minus, width=90,
                     sizing_mode=sizing_mode),
-                bokeh.layouts.column(self.modes, width=100,
+                bokeh.layouts.column(self.dropdown, width=100,
                     sizing_mode=sizing_mode),
                 bokeh.layouts.column(self.plus, width=90,
                     sizing_mode=sizing_mode),
                 width=300)
         super().__init__()
 
+    @classmethod
+    def times(cls, times):
+        return cls(cls.as_steps(times))
+
+    @staticmethod
+    def as_steps(times):
+        t0 = times[0]
+        return [(t - t0).total_seconds() / (60 * 60)
+                for t in times]
+
     def on_plus(self):
-        self.announce(NEXT)
+        if self.dropdown.value is None:
+            self.dropdown.value = self.labels[0]
+            return
+        if self.index == (len(self.labels) - 1):
+            return
+        else:
+            value = self.labels[self.index + 1]
+            self.dropdown.value = value
+            self.announce((self.index, self.step))
 
     def on_minus(self):
-        self.announce(PREVIOUS)
-
-    def on_mode(self, value):
-        if value == "Time step":
-            self.announce(Mode.TIMESTEP)
+        if self.dropdown.value is None:
+            self.dropdown.value = self.labels[0]
+            return
+        if self.index == 0:
+            return
         else:
-            self.announce(Mode.RUN)
+            value = self.labels[self.index - 1]
+            self.dropdown.value = value
+            self.announce((self.index, self.step))
+
+    def on_dropdown(self, value):
+        self.announce((self.index, self.step))
+
+    @property
+    def index(self):
+        if self.dropdown.value is None:
+            return
+        return self.labels.index(self.dropdown.value)
+
+    @property
+    def step(self):
+        if self.index is None:
+            return
+        return self.steps[self.index]
+
+
+class RunControls(Observable):
+    def __init__(self, initial_times):
+        # Internal state
+        self.date = None
+        self.time = None
+        self.initial_times = initial_times
+        self._times = defaultdict(set)
+        for datetime in self.initial_times:
+            d = self.as_date(datetime)
+            t = self.as_time(datetime)
+            self._times[d].add(t)
+
+        # Widget(s)
+        width = 80
+        side = 90
+        middle = 100
+        row = 300
+        sizing_mode = 'fixed'
+        plus = bokeh.models.Button(
+                label="+",
+                width=width)
+        plus.on_click(self.on_plus)
+        minus = bokeh.models.Button(
+                label="-",
+                width=width)
+        minus.on_click(self.on_minus)
+        self.dropdown = bokeh.models.Dropdown(
+                label="Initial time",
+                width=width)
+        self.dropdown.on_click(select(self.dropdown))
+        self.dropdown.on_click(self.on_time)
+        self.valid_div = bokeh.models.Div(
+                text="Valid date",
+                width=row - 30)
+        self.date_picker = picker.DayPicker(
+                title="Initial date",
+                width=row - 30)
+        self.date_picker.on_change('value', self.on_date)
+        button_row = bokeh.layouts.row(
+                bokeh.layouts.column(
+                    minus,
+                    width=side,
+                    sizing_mode=sizing_mode),
+                bokeh.layouts.column(
+                    self.dropdown,
+                    width=middle,
+                    sizing_mode=sizing_mode),
+                bokeh.layouts.column(
+                    plus,
+                    width=side,
+                    sizing_mode=sizing_mode),
+                width=row)
+        self.layout = bokeh.layouts.column(
+                bokeh.layouts.row(
+                    self.valid_div,
+                    width=row),
+                bokeh.layouts.row(
+                    self.date_picker,
+                    width=row),
+                button_row)
+
+        # Observable
+        super().__init__()
+
+    def latest(self):
+        print("Select latest model run")
+
+    @classmethod
+    def paths(cls, paths):
+        return cls([data.initial_time(p) for p in paths])
+
+    @property
+    def initial_dates(self):
+        return [self.as_date(t)
+                for t in self.initial_times]
+
+    def times(self, date):
+        return sorted(self._times[date])
+
+    @staticmethod
+    def as_date(t):
+        return dt.date(t.year, t.month, t.day)
+
+    @staticmethod
+    def as_time(t):
+        return dt.time(t.hour, t.minute, t.second)
+
+    def on_plus(self):
+        if self.initial_time is None:
+            self.initial_time = self.initial_times[0]
+            self.date_picker.value = self.date
+            self.dropdown.value = "{:%H:%M}".format(self.initial_time)
+
+    def on_minus(self):
+        print('minus')
+
+    def on_date(self, attr, old, new):
+        self.date = new
+        if self.initial_time is not None:
+            self.announce(self.initial_time)
+
+        if new not in self._times:
+            self.dropdown.disabled = True
+        else:
+            times = self._times[new]
+            strings = ["{:%H:%M}".format(t) for t in times]
+            menu = [(s, s) for s in strings]
+            self.dropdown.disabled = False
+            self.dropdown.menu = menu
+
+    def on_step(self, action):
+        _, hours = action
+        print(hours)
+        valid_date = self.initial_time + dt.timedelta(hours=int(hours))
+        self.valid_div.text = "Valid date<br><span style='margin-left:10px'><b>{:%a %b %d %Y %H:%M}</b></span>".format(valid_date)
+
+    def on_time(self, value):
+        self.time = dt.datetime.strptime(
+                value, "%H:%M")
+        if self.initial_time is not None:
+            self.announce(self.initial_time)
+
+    @property
+    def initial_time(self):
+        if self.date is None:
+            return
+        if self.time is None:
+            return
+        return dt.datetime(
+                self.date.year,
+                self.date.month,
+                self.date.day,
+                self.time.hour,
+                self.time.minute)
+
+    @initial_time.setter
+    def initial_time(self, value):
+        self.date = self.as_date(value)
+        self.time = self.as_time(value)
 
 
 class MapperLimits(object):

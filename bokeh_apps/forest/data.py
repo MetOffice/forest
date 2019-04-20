@@ -261,6 +261,9 @@ class UMLoader(object):
                 if d in dataset.variables}
 
     def image(self, variable, ipressure, itime):
+        if variable not in self.pressure_variables:
+            ipressure = 0
+
         try:
             dimension = self.dimensions[variable][0]
         except KeyError as e:
