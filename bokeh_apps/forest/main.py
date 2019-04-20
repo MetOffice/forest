@@ -8,6 +8,7 @@ import view
 import images
 import geo
 import picker
+import colors
 from util import Observable, select
 from collections import defaultdict
 import datetime as dt
@@ -165,16 +166,8 @@ def main():
             """)
     slider.js_on_change("value", custom_js)
 
-    palettes = {
-            "Viridis": bokeh.palettes.Viridis[256],
-            "Magma": bokeh.palettes.Magma[256],
-            "Inferno": bokeh.palettes.Inferno[256],
-            "Plasma": bokeh.palettes.Plasma[256],
-            "Greys": bokeh.palettes.Greys[256]
-    }
-    palette_controls = PaletteControls(
-            color_mapper,
-            palettes)
+    colors_controls = colors.Controls(
+            color_mapper, "Plasma", 256)
 
     mapper_limits = MapperLimits(image_sources, color_mapper)
 
@@ -237,7 +230,7 @@ def main():
                 bokeh.layouts.row(figure_drop),
                 border_row,
                 bokeh.layouts.row(slider),
-                bokeh.layouts.row(palette_controls.drop),
+                colors_controls.layout,
                 bokeh.layouts.row(mapper_limits.low_input),
                 bokeh.layouts.row(mapper_limits.high_input),
                 bokeh.layouts.row(mapper_limits.checkbox),
@@ -819,20 +812,6 @@ class MapperLimits(object):
                 return
             setattr(widget, prop, dtype(new))
         return wrapper
-
-
-class PaletteControls(object):
-    def __init__(self, color_mapper, palettes):
-        self.color_mapper = color_mapper
-        self.palettes = palettes
-        self.drop = bokeh.models.Dropdown(
-                label="Palettes",
-                menu=[(k, k) for k in self.palettes.keys()])
-        self.drop.on_click(select(self.drop))
-        self.drop.on_click(self.on_click)
-
-    def on_click(self, value):
-        self.color_mapper.palette = self.palettes[value]
 
 
 def change(widget, prop, dtype):
