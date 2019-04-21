@@ -1,4 +1,3 @@
-from enum import Enum
 import bokeh.plotting
 import bokeh.events
 import numpy as np
@@ -12,14 +11,6 @@ import colors
 from util import Observable, select
 from collections import defaultdict
 import datetime as dt
-
-
-class Mode(Enum):
-    TIMESTEP = 0
-    RUN = 1
-
-NEXT = "NEXT"
-PREVIOUS = "PREVIOUS"
 
 
 def main():
@@ -218,16 +209,16 @@ def main():
             child=bokeh.layouts.column(
                 run_controls.layout,
                 time_controls.layout,
-                pressure_controls.layout),
+                pressure_controls.layout,
+                bokeh.layouts.row(field_controls.drop)),
             title="Navigate"),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
-                bokeh.layouts.row(field_controls.drop),
+                bokeh.layouts.row(figure_drop),
                 image_controls.column),
             title="Compare"),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
-                bokeh.layouts.row(figure_drop),
                 border_row,
                 bokeh.layouts.row(slider),
                 colors_controls.layout,
@@ -273,11 +264,47 @@ def main():
         f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
 
 
-    document = bokeh.plotting.curdoc()
-    document.add_root(
-        bokeh.layouts.column(
+    # Minimise controls to ease navigation
+    compact_button = bokeh.models.Button(
+            label="Compact")
+    compact_minus = bokeh.models.Button(label="-", width=50)
+    compact_minus.on_click(time_controls.on_minus)
+    compact_plus = bokeh.models.Button(label="+", width=50)
+    compact_plus.on_click(time_controls.on_plus)
+    compact_navigation = bokeh.layouts.column(
+            compact_button,
+            bokeh.layouts.row(
+                compact_minus,
+                compact_plus,
+                width=100))
+    control_root = bokeh.layouts.column(
+            compact_button,
             tabs,
-            name="controls"))
+            name="controls")
+
+    display = "large"
+    def on_compact():
+        nonlocal display
+        if display == "large":
+            control_root.height = 100
+            control_root.width = 120
+            compact_button.width = 100
+            compact_button.label = "Expand"
+            control_root.children = [
+                    compact_navigation]
+            display = "compact"
+        else:
+            control_root.height = 500
+            control_root.width = 300
+            compact_button.width = 300
+            compact_button.label = "Compact"
+            control_root.children = [compact_button, tabs]
+            display = "large"
+
+    compact_button.on_click(on_compact)
+
+    document = bokeh.plotting.curdoc()
+    document.add_root(control_root)
     document.add_root(series_row)
     document.add_root(figure_row)
 
@@ -490,7 +517,7 @@ class PressureControls(Observable):
 
     def on_minus(self):
         if self.dropdown.value is None:
-            self.dropdown.value = self.labels[0]
+            self.dropdown.value = self.labels[-1]
             return
         if self.index == 0:
             return
@@ -509,7 +536,6 @@ class PressureControls(Observable):
 class FieldControls(Observable):
     def __init__(self, variables):
         self.variable = None
-        self.mode = Mode.TIMESTEP
         self.itime = 0
         self.ipressure = 0
         self.variables = variables
