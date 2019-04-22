@@ -178,3 +178,30 @@ class GPMView(object):
                 image="image",
                 source=self.source,
                 color_mapper=self.color_mapper)
+
+class EIDA50(object):
+    def __init__(self, loader, color_mapper):
+        self.loader = loader
+        self.color_mapper = color_mapper
+        self.empty = {
+                "x": [],
+                "y": [],
+                "dw": [],
+                "dh": [],
+                "image": []}
+        self.source = bokeh.models.ColumnDataSource(
+                self.empty)
+
+    def image(self, time):
+        print("EIDA50: {}".format(time))
+        self.source.data = self.loader.image(time)
+
+    def add_figure(self, figure):
+        return figure.image(
+                x="x",
+                y="y",
+                dw="dw",
+                dh="dh",
+                image="image",
+                source=self.source,
+                color_mapper=self.color_mapper)

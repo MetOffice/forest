@@ -2,6 +2,7 @@ import bokeh.plotting
 import bokeh.events
 import numpy as np
 import os
+import satellite
 import data
 import view
 import images
@@ -9,7 +10,7 @@ import geo
 import picker
 import colors
 from util import Observable, select
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import datetime as dt
 
 
@@ -197,7 +198,14 @@ def main():
     time_controls = TimeControls.times(
             loader.times["time"])
     time_controls.subscribe(field_controls.on_time_control)
-    time_controls.subscribe(run_controls.on_step)
+
+    time_steps = TimeSteps()
+    run_controls.subscribe(time_steps.on_run_control)
+    time_controls.subscribe(time_steps.on_time_control)
+    time_steps.subscribe(print)
+
+    valid_text = ValidText(run_controls.valid_div)
+    time_steps.subscribe(valid_text.on_time_step)
 
     pressure_controls = PressureControls(
             pressures,
@@ -376,7 +384,7 @@ class Series(object):
         self.variable = None
         self.ipressure = 0
 
-    def on_field(self, variable, ipressure, itime):
+    def on_field(self, variable, ipressure, itime, time):
         self.variable = variable
         self.ipressure = ipressure
         self.itime = itime
@@ -418,6 +426,8 @@ class Artist(object):
                 viewer = view.EarthNetworks(loader)
             elif isinstance(loader, data.GPM):
                 viewer = view.GPMView(loader, self.color_mapper)
+            elif isinstance(loader, satellite.EIDA50):
+                viewer = view.EIDA50(loader, self.color_mapper)
             else:
                 viewer = view.UMView(loader, self.color_mapper)
             self.viewers[name] = viewer
@@ -467,6 +477,8 @@ class Artist(object):
             viewer = self.viewers[name]
             if isinstance(viewer, view.UMView):
                 viewer.render(self.variable, self.ipressure, self.itime)
+            elif isinstance(viewer, view.EIDA50):
+                viewer.image(self.valid_time)
 
 
 class PressureControls(Observable):
@@ -565,11 +577,15 @@ class FieldControls(Observable):
 
     def on_run_control(self, initial_time):
         print("run: {}".format(initial_time))
+        self.initial_time = initial_time
 
     def on_time_control(self, action):
         itime, _ = action
         self.itime = itime
         self.render()
+
+
+Timestep = namedtuple("Timestep", ("index", "length", "valid", "initial"))
 
 
 class TimeControls(Observable):
@@ -646,6 +662,45 @@ class TimeControls(Observable):
         return self.steps[self.index]
 
 
+class TimeSteps(Observable):
+    def __init__(self):
+        self.index = None
+        self.initial = None
+        self.length = None
+        super().__init__()
+
+    def on_run_control(self, value):
+        self.initial = value
+        self.announce(self.time_step)
+
+    def on_time_control(self, value):
+        self.index, self.length = value
+        self.announce(self.time_step)
+
+    @property
+    def time_step(self):
+        return Timestep(self.index, self.length, self.valid, self.initial)
+
+    @property
+    def valid(self):
+        if self.initial is None:
+            return
+        if self.length is None:
+            return
+        return self.initial + dt.timedelta(hours=self.length)
+
+
+class ValidText(object):
+    def __init__(self, div):
+        self.div = div
+
+    def on_time_step(self, time_step):
+        if time_step.valid is None:
+            return
+        template = "Valid date<br><span style='margin-left:10px'><b>{:%a %b %d %Y %H:%M}</b></span>"
+        self.div.text = template.format(time_step.valid)
+
+
 class RunControls(Observable):
     def __init__(self, initial_times):
         # Internal state
@@ -664,6 +719,9 @@ class RunControls(Observable):
         middle = 100
         row = 300
         sizing_mode = 'fixed'
+        self.valid_div = bokeh.models.Div(
+                text="Valid date",
+                width=row - 30)
         plus = bokeh.models.Button(
                 label="+",
                 width=width)
@@ -677,14 +735,11 @@ class RunControls(Observable):
                 width=width)
         self.dropdown.on_click(select(self.dropdown))
         self.dropdown.on_click(self.on_time)
-        self.valid_div = bokeh.models.Div(
-                text="Valid date",
-                width=row - 30)
         self.date_picker = picker.DayPicker(
                 title="Initial date",
                 width=row - 30)
         self.date_picker.on_change('value', self.on_date)
-        button_row = bokeh.layouts.row(
+        self.button_row = bokeh.layouts.row(
                 bokeh.layouts.column(
                     minus,
                     width=side,
@@ -705,7 +760,7 @@ class RunControls(Observable):
                 bokeh.layouts.row(
                     self.date_picker,
                     width=row),
-                button_row)
+                self.button_row)
 
         # Observable
         super().__init__()
@@ -755,12 +810,6 @@ class RunControls(Observable):
             menu = [(s, s) for s in strings]
             self.dropdown.disabled = False
             self.dropdown.menu = menu
-
-    def on_step(self, action):
-        _, hours = action
-        print(hours)
-        valid_date = self.initial_time + dt.timedelta(hours=int(hours))
-        self.valid_div.text = "Valid date<br><span style='margin-left:10px'><b>{:%a %b %d %Y %H:%M}</b></span>".format(valid_date)
 
     def on_time(self, value):
         self.time = dt.datetime.strptime(

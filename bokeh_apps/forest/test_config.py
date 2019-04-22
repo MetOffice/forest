@@ -27,6 +27,7 @@ class TestLoadConfig(unittest.TestCase):
             data = yaml.load(stream)
         result = as_patterns(data)
         expect = {
-            "OS42": "highway_os42_ea_*.nc"
+            "OS42": "highway_os42_ea_*.nc",
+            "EIDA50": "EIDA50_takm4p4_*.nc"
         }
         self.assertEqual(expect, result)
