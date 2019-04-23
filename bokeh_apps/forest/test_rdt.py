@@ -2,25 +2,30 @@ import unittest
 import datetime as dt
 import os
 import glob
+import json
 import rdt
 
 
 class TestRDT(unittest.TestCase):
     def setUp(self):
-        self.date = dt.datetime(2019, 4, 17)
         self.paths = glob.glob(os.path.expanduser("~/cache/RDT_features_eastafrica_*.json"))
         self.loader = rdt.Loader(self.paths)
 
-    @unittest.skip("implementing simple test")
     def test_view(self):
+        date = dt.datetime(2019, 4, 17)
         view = rdt.View(self.loader)
-        view.render(self.date)
+        view.render(date)
+        data = json.loads(view.source.geojson)
+        result = data['features'][0]['geometry']['coordinates'][0][0]
+        expect = [4313964.2267117305, 739588.7725023176]
+        self.assertEqual(expect, result)
 
-    @unittest.skip("implementing simple test")
     def test_loader(self):
-        geojson = self.loader.load_date(self.date)
-        print(geojson)
-        self.assertTrue(False)
+        date = dt.datetime(2019, 4, 17)
+        geojson = self.loader.load_date(date)
+        result = json.loads(geojson)['features'][0]['geometry']['coordinates'][0][0]
+        expect = [4313964.2267117305, 739588.7725023176]
+        self.assertEqual(expect, result)
 
     def test_find_file(self):
         date = dt.datetime(2019, 3, 15, 12, 0)
