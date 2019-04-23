@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import netCDF4
 import satellite
+import rdt
 import geo
 from collections import OrderedDict
 
@@ -43,7 +44,7 @@ def on_server_loaded(patterns):
     FILE_DB.sync()
     for name, paths in FILE_DB.files.items():
         if name == "RDT":
-            LOADERS[name] = RDT(paths)
+            LOADERS[name] = rdt.Loader(paths)
         elif "GPM" in name:
             LOADERS[name] = GPM(paths)
         elif name == "EarthNetworks":
@@ -154,32 +155,6 @@ class EarthNetworks(object):
             "1": "IC",
             "9": "Keep alive"
         }.get(value, value)
-
-
-class RDT(object):
-    def __init__(self, paths):
-        self.paths = paths
-        self.geojson = self.load(self.paths[0])
-
-    @staticmethod
-    def load(path):
-        with open(path) as stream:
-            rdt = json.load(stream)
-
-        copy = dict(rdt)
-        for i, feature in enumerate(rdt["features"]):
-            coordinates = feature['geometry']['coordinates'][0]
-            lons, lats = np.asarray(coordinates).T
-            x, y = geo.web_mercator(lons, lats)
-            c = np.array([x, y]).T.tolist()
-            copy["features"][i]['geometry']['coordinates'][0] = c
-
-        # Hack to use Categorical mapper
-        for i, feature in enumerate(rdt["features"]):
-            p = feature['properties']['PhaseLife']
-            copy["features"][i]['properties']['PhaseLife'] = str(p)
-
-        return json.dumps(copy)
 
 
 class GPM(object):

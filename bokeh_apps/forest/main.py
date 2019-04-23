@@ -6,6 +6,7 @@ import satellite
 import data
 import view
 import images
+import rdt
 import geo
 import picker
 import colors
@@ -421,8 +422,8 @@ class Artist(object):
         self.ipressure = 0
         self.itime = 0
         for name, loader in data.LOADERS.items():
-            if isinstance(loader, data.RDT):
-                viewer = view.RDT(loader)
+            if isinstance(loader, rdt.Loader):
+                viewer = rdt.View(loader)
             elif isinstance(loader, data.EarthNetworks):
                 viewer = view.EarthNetworks(loader)
             elif isinstance(loader, data.GPM):

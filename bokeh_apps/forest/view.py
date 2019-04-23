@@ -48,56 +48,6 @@ class EarthNetworks(object):
         return renderer
 
 
-class RDT(object):
-    def __init__(self, loader):
-        self.color_mapper = bokeh.models.CategoricalColorMapper(
-                palette=bokeh.palettes.Spectral6,
-                factors=["0", "1", "2", "3", "4"])
-        self.source = bokeh.models.GeoJSONDataSource(
-                geojson=loader.geojson)
-
-    def add_figure(self, figure):
-        renderer = figure.patches(
-            xs="xs",
-            ys="ys",
-            fill_alpha=0,
-            line_width=2,
-            line_color={
-                'field': 'PhaseLife',
-                'transform': self.color_mapper},
-            source=self.source)
-        tool = bokeh.models.HoverTool(
-                tooltips=[
-                    ('CType', '@CType'),
-                    ('CRainRate', '@CRainRate'),
-                    ('ConvTypeMethod', '@ConvTypeMethod'),
-                    ('ConvType', '@ConvType'),
-                    ('ConvTypeQuality', '@ConvTypeQuality'),
-                    ('SeverityIntensity', '@SeverityIntensity'),
-                    ('MvtSpeed', '@MvtSpeed'),
-                    ('MvtDirection', '@MvtDirection'),
-                    ('NumIdCell', '@NumIdCell'),
-                    ('CTPressure', '@CTPressure'),
-                    ('CTPhase', '@CTPhase'),
-                    ('CTReff', '@CTReff'),
-                    ('LonG', '@LonG'),
-                    ('LatG', '@LatG'),
-                    ('ExpansionRate', '@ExpansionRate'),
-                    ('BTmin', '@BTmin'),
-                    ('BTmoy', '@BTmoy'),
-                    ('CTCot', '@CTCot'),
-                    ('CTCwp', '@CTCwp'),
-                    ('NbPosLightning', '@NbPosLightning'),
-                    ('SeverityType', '@SeverityType'),
-                    ('Surface', '@Surface'),
-                    ('Duration', '@Duration'),
-                    ('CoolingRate', '@CoolingRate'),
-                    ('Phase life', '@PhaseLife')],
-                renderers=[renderer])
-        figure.add_tools(tool)
-        return renderer
-
-
 class UMView(object):
     def __init__(self, loader, color_mapper):
         self.loader = loader
