@@ -92,7 +92,7 @@ def main():
 
     image_sources = []
     for name, viewer in artist.viewers.items():
-        if isinstance(viewer, (view.UMView, view.GPMView)):
+        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
             image_sources.append(viewer.source)
 
     image_loaders = []
@@ -206,6 +206,7 @@ def main():
 
     valid_text = ValidText(run_controls.valid_div)
     time_steps.subscribe(valid_text.on_time_step)
+    time_steps.subscribe(artist.on_time_step)
 
     pressure_controls = PressureControls(
             pressures,
@@ -384,7 +385,7 @@ class Series(object):
         self.variable = None
         self.ipressure = 0
 
-    def on_field(self, variable, ipressure, itime, time):
+    def on_field(self, variable, ipressure, itime):
         self.variable = variable
         self.ipressure = ipressure
         self.itime = itime
@@ -397,7 +398,7 @@ class Series(object):
 
     def render(self):
         if any_none(self, ["x", "y", "variable"]):
-                return
+            return
         self.figure.title.text = self.variable
         for name, source in self.sources.items():
             loader = data.LOADERS[name]
@@ -470,6 +471,10 @@ class Artist(object):
         self.itime = itime
         self.render()
 
+    def on_time_step(self, time_step):
+        self.time_step = time_step
+        self.render()
+
     def render(self):
         if self.previous_state is None:
             return
@@ -478,7 +483,11 @@ class Artist(object):
             if isinstance(viewer, view.UMView):
                 viewer.render(self.variable, self.ipressure, self.itime)
             elif isinstance(viewer, view.EIDA50):
-                viewer.image(self.valid_time)
+                if self.time_step is None:
+                    continue
+                if self.time_step.valid is None:
+                    continue
+                viewer.image(self.time_step.valid)
 
 
 class PressureControls(Observable):
