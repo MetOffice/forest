@@ -489,6 +489,12 @@ class Artist(object):
                 if self.time_step.valid is None:
                     continue
                 viewer.image(self.time_step.valid)
+            elif isinstance(viewer, rdt.View):
+                if self.time_step is None:
+                    continue
+                if self.time_step.valid is None:
+                    continue
+                viewer.render(self.time_step.valid)
 
 
 class PressureControls(Observable):

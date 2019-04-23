@@ -3,4 +3,6 @@ patterns:
       directory: 'highway_os42_ea_*.nc'
     - name: EIDA50
       directory: 'EIDA50_takm4p4_*.nc'
+    - name: RDT
+      directory: '*.json'
 

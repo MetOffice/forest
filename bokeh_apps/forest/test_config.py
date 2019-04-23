@@ -28,6 +28,7 @@ class TestLoadConfig(unittest.TestCase):
         result = as_patterns(data)
         expect = {
             "OS42": "highway_os42_ea_*.nc",
-            "EIDA50": "EIDA50_takm4p4_*.nc"
+            "EIDA50": "EIDA50_takm4p4_*.nc",
+            "RDT": "*.json"
         }
         self.assertEqual(expect, result)
