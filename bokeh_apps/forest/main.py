@@ -778,12 +778,19 @@ class RunControls(Observable):
                     width=side,
                     sizing_mode=sizing_mode),
                 width=row)
+        self.latest= bokeh.models.Button(
+                label="Latest model run",
+                width=row - 30)
+        self.latest.on_click(self.on_latest)
         self.layout = bokeh.layouts.column(
                 bokeh.layouts.row(
                     self.valid_div,
                     width=row),
                 bokeh.layouts.row(
                     self.date_picker,
+                    width=row),
+                bokeh.layouts.row(
+                    self.latest,
                     width=row),
                 self.button_row)
 
@@ -810,7 +817,15 @@ class RunControls(Observable):
     def as_time(t):
         return dt.time(t.hour, t.minute, t.second)
 
+    def on_latest(self):
+        self.initial_time = max(self.initial_times)
+        self.date_picker.value = self.date
+        self.dropdown.value = "{:%H:%M}".format(self.initial_time)
+        self.announce(self.initial_time)
+
     def on_plus(self):
+        if len(self.initial_times) == 0:
+            return
         if self.initial_time is None:
             self.initial_time = self.initial_times[0]
         else:
@@ -821,6 +836,8 @@ class RunControls(Observable):
         self.dropdown.value = "{:%H:%M}".format(self.initial_time)
 
     def on_minus(self):
+        if len(self.initial_times) == 0:
+            return
         if self.initial_time is None:
             self.initial_time = self.initial_times[-1]
         else:
@@ -845,8 +862,8 @@ class RunControls(Observable):
             self.dropdown.menu = menu
 
     def on_time(self, value):
-        self.time = dt.datetime.strptime(
-                value, "%H:%M")
+        self.time = self.as_time(dt.datetime.strptime(
+                value, "%H:%M"))
         if self.initial_time is not None:
             self.announce(self.initial_time)
 

@@ -29,6 +29,7 @@ class TestLoadConfig(unittest.TestCase):
         expect = {
             "OS42": "highway_os42_ea_*.nc",
             "EIDA50": "EIDA50_takm4p4_*.nc",
-            "RDT": "*.json"
+            "RDT": "*.json",
+            "EarthNetworks": "engl*.txt"
         }
         self.assertEqual(expect, result)

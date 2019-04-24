@@ -16,6 +16,7 @@ from collections import OrderedDict
 
 # Application data shared across documents
 FILE_DB = None
+MODEL_NAMES = []
 LOADERS = {}
 IMAGES = OrderedDict()
 COASTLINES = {
@@ -41,6 +42,7 @@ def on_server_loaded(patterns):
     global LAKES
     global BORDERS
     global FILE_DB
+    global MODEL_NAMES
     FILE_DB = FileDB(patterns)
     FILE_DB.sync()
     for name, paths in FILE_DB.files.items():
@@ -54,6 +56,7 @@ def on_server_loaded(patterns):
             LOADERS[name] = satellite.EIDA50(paths)
         else:
             LOADERS[name] = UMLoader(paths, name=name)
+            MODEL_NAMES.append(name)
 
     # Example of server-side pre-caching
     # for name in [

@@ -72,6 +72,7 @@ class Loader(object):
 
     @staticmethod
     def load(path):
+        print(path)
         with open(path) as stream:
             rdt = json.load(stream)
 
