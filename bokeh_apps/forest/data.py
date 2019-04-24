@@ -9,6 +9,7 @@ import numpy as np
 import netCDF4
 import satellite
 import rdt
+import earth_networks
 import geo
 from collections import OrderedDict
 
@@ -48,7 +49,7 @@ def on_server_loaded(patterns):
         elif "GPM" in name:
             LOADERS[name] = GPM(paths)
         elif name == "EarthNetworks":
-            LOADERS[name] = EarthNetworks(paths)
+            LOADERS[name] = earth_networks.Loader(paths)
         elif name == "EIDA50":
             LOADERS[name] = satellite.EIDA50(paths)
         else:
@@ -120,41 +121,6 @@ class FileDB(object):
     def sync(self):
         for key, pattern in self.patterns.items():
             self.files[key] = glob.glob(pattern)
-
-
-class EarthNetworks(object):
-    def __init__(self, paths):
-        self.paths = paths
-        self.frame = self.read(paths)
-        print(self.frame)
-
-    @staticmethod
-    def read(csv_files):
-        if isinstance(csv_files, str):
-            csv_files = [csv_files]
-        frames = []
-        for csv_file in csv_files:
-            frame = pd.read_csv(
-                csv_file,
-                parse_dates=[1],
-                converters={0: EarthNetworks.flash_type},
-                usecols=[0, 1, 2, 3],
-                names=["flash_type", "date", "latitude", "longitude"],
-                header=None)
-            frames.append(frame)
-        if len(frames) == 0:
-            return None
-        else:
-            return pd.concat(frames, ignore_index=True)
-
-
-    @staticmethod
-    def flash_type(value):
-        return {
-            "0": "CG",
-            "1": "IC",
-            "9": "Keep alive"
-        }.get(value, value)
 
 
 class GPM(object):

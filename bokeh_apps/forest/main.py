@@ -6,6 +6,7 @@ import satellite
 import data
 import view
 import images
+import earth_networks
 import rdt
 import geo
 import picker
@@ -424,8 +425,8 @@ class Artist(object):
         for name, loader in data.LOADERS.items():
             if isinstance(loader, rdt.Loader):
                 viewer = rdt.View(loader)
-            elif isinstance(loader, data.EarthNetworks):
-                viewer = view.EarthNetworks(loader)
+            elif isinstance(loader, earth_networks.Loader):
+                viewer = earth_networks.View(loader)
             elif isinstance(loader, data.GPM):
                 viewer = view.GPMView(loader, self.color_mapper)
             elif isinstance(loader, satellite.EIDA50):
@@ -489,7 +490,7 @@ class Artist(object):
                 if self.time_step.valid is None:
                     continue
                 viewer.image(self.time_step.valid)
-            elif isinstance(viewer, rdt.View):
+            elif isinstance(viewer, (rdt.View, earth_networks.View)):
                 if self.time_step is None:
                     continue
                 if self.time_step.valid is None:

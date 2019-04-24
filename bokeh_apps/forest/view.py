@@ -2,52 +2,6 @@ import bokeh.models
 import geo
 
 
-class EarthNetworks(object):
-    def __init__(self, loader):
-        frame = loader.frame
-        if frame is not None:
-            x, y = geo.web_mercator(
-                    frame.longitude,
-                    frame.latitude)
-            date = frame.date
-            longitude = frame.longitude
-            latitude = frame.latitude
-            flash_type = frame.flash_type
-        else:
-            x, y = [], []
-            date = []
-            longitude = []
-            latitude = []
-            flash_type = []
-        self.source = bokeh.models.ColumnDataSource({
-            "x": x,
-            "y": y,
-            "date": date,
-            "longitude": longitude,
-            "latitude": latitude,
-            "flash_type": flash_type,
-        })
-
-    def add_figure(self, figure):
-        renderer = figure.circle(
-                x="x",
-                y="y",
-                size=10,
-                source=self.source)
-        tool = bokeh.models.HoverTool(
-                tooltips=[
-                    ('Time', '@date{%F}'),
-                    ('Lon', '@longitude'),
-                    ('Lat', '@latitude'),
-                    ('Flash type', '@flash_type')],
-                formatters={
-                    'date': 'datetime'
-                },
-                renderers=[renderer])
-        figure.add_tools(tool)
-        return renderer
-
-
 class UMView(object):
     def __init__(self, loader, color_mapper):
         self.loader = loader

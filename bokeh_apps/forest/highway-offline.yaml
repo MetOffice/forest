@@ -5,4 +5,6 @@ patterns:
       directory: 'EIDA50_takm4p4_*.nc'
     - name: RDT
       directory: '*.json'
+    - name: EarthNetworks
+      directory: 'engl*.txt'
 
