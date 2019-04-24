@@ -7,8 +7,9 @@ import json
 import pandas as pd
 import numpy as np
 import netCDF4
-import scipy.interpolate
-import scipy.ndimage
+import satellite
+import rdt
+import earth_networks
 import geo
 from collections import OrderedDict
 
@@ -25,20 +26,32 @@ BORDERS = {
     "xs": [],
     "ys": []
 }
+LAKES = {
+    "xs": [],
+    "ys": []
+}
+DISPUTED = {
+    "xs": [],
+    "ys": []
+}
 
 def on_server_loaded(patterns):
+    global DISPUTED
     global COASTLINES
+    global LAKES
     global BORDERS
     global FILE_DB
     FILE_DB = FileDB(patterns)
     FILE_DB.sync()
     for name, paths in FILE_DB.files.items():
         if name == "RDT":
-            LOADERS[name] = RDT(paths)
+            LOADERS[name] = rdt.Loader(paths)
         elif "GPM" in name:
             LOADERS[name] = GPM(paths)
         elif name == "EarthNetworks":
-            LOADERS[name] = EarthNetworks(paths)
+            LOADERS[name] = earth_networks.Loader(paths)
+        elif name == "EIDA50":
+            LOADERS[name] = satellite.EIDA50(paths)
         else:
             LOADERS[name] = UMLoader(paths, name=name)
 
@@ -49,22 +62,54 @@ def on_server_loaded(patterns):
     #     load_image(path, "relative_humidity", 0, 0)
 
     # Load coastlines/borders
-    COASTLINES = feature_lines(cartopy.feature.COASTLINE)
-    BORDERS = feature_lines(cartopy.feature.BORDERS)
+    EXTENT = (-10, 50, -20, 10)
+    COASTLINES = xs_ys(iterlines(
+            cartopy.feature.COASTLINE.geometries()))
+    LAKES = xs_ys(iterlines(
+        at_scale(cartopy.feature.LAKES, "10m")
+            .intersecting_geometries(EXTENT)))
+    DISPUTED = xs_ys(iterlines(
+            cartopy.feature.NaturalEarthFeature(
+                "cultural",
+                "admin_0_boundary_lines_disputed_areas",
+                "50m").geometries()))
+    BORDERS = xs_ys(iterlines(
+            at_scale(cartopy.feature.BORDERS, '50m')
+                .intersecting_geometries(EXTENT)))
 
 
-def feature_lines(feature):
+def xs_ys(lines):
     xs, ys = [], []
-    for geometry in feature.geometries():
-        for g in geometry:
-            lons, lats = g.xy
-            x, y = geo.web_mercator(lons, lats)
-            xs.append(x)
-            ys.append(y)
+    for lons, lats in lines:
+        x, y = geo.web_mercator(lons, lats)
+        xs.append(x)
+        ys.append(y)
     return {
         "xs": xs,
         "ys": ys
     }
+
+
+def iterlines(geometries):
+    for geometry in geometries:
+        for g in geometry:
+            try:
+                yield g.xy
+            except NotImplementedError:
+                if g.boundary.type == 'MultiLineString':
+                    for line in g.boundary:
+                        yield line.xy
+                else:
+                    yield g.boundary.xy
+
+
+def at_scale(feature, scale):
+    """
+    .. note:: function named at_scale to prevent name
+              clash with scale variable
+    """
+    feature.scale = scale
+    return feature
 
 
 class FileDB(object):
@@ -76,67 +121,6 @@ class FileDB(object):
     def sync(self):
         for key, pattern in self.patterns.items():
             self.files[key] = glob.glob(pattern)
-
-
-class EarthNetworks(object):
-    def __init__(self, paths):
-        self.paths = paths
-        self.frame = self.read(paths)
-        print(self.frame)
-
-    @staticmethod
-    def read(csv_files):
-        if isinstance(csv_files, str):
-            csv_files = [csv_files]
-        frames = []
-        for csv_file in csv_files:
-            frame = pd.read_csv(
-                csv_file,
-                parse_dates=[1],
-                converters={0: EarthNetworks.flash_type},
-                usecols=[0, 1, 2, 3],
-                names=["flash_type", "date", "latitude", "longitude"],
-                header=None)
-            frames.append(frame)
-        if len(frames) == 0:
-            return None
-        else:
-            return pd.concat(frames, ignore_index=True)
-
-
-    @staticmethod
-    def flash_type(value):
-        return {
-            "0": "CG",
-            "1": "IC",
-            "9": "Keep alive"
-        }.get(value, value)
-
-
-class RDT(object):
-    def __init__(self, paths):
-        self.paths = paths
-        self.geojson = self.load(self.paths[0])
-
-    @staticmethod
-    def load(path):
-        with open(path) as stream:
-            rdt = json.load(stream)
-
-        copy = dict(rdt)
-        for i, feature in enumerate(rdt["features"]):
-            coordinates = feature['geometry']['coordinates'][0]
-            lons, lats = np.asarray(coordinates).T
-            x, y = geo.web_mercator(lons, lats)
-            c = np.array([x, y]).T.tolist()
-            copy["features"][i]['geometry']['coordinates'][0] = c
-
-        # Hack to use Categorical mapper
-        for i, feature in enumerate(rdt["features"]):
-            p = feature['properties']['PhaseLife']
-            copy["features"][i]['properties']['PhaseLife'] = str(p)
-
-        return json.dumps(copy)
 
 
 class GPM(object):
@@ -219,6 +203,9 @@ class UMLoader(object):
                 if d in dataset.variables}
 
     def image(self, variable, ipressure, itime):
+        if variable not in self.pressure_variables:
+            ipressure = 0
+
         try:
             dimension = self.dimensions[variable][0]
         except KeyError as e:
@@ -310,66 +297,6 @@ def load_image(path, variable, ipressure, itime):
                 values = var[itime, ipressure, :]
             else:
                 values = var[itime, :]
-        image = stretch_image(lons, lats, values)
+        image = geo.stretch_image(lons, lats, values)
         IMAGES[key] = image
         return image
-
-
-def stretch_image(lons, lats, values):
-    gx, _ = geo.web_mercator(
-        lons,
-        np.zeros(len(lons), dtype="d"))
-    _, gy = geo.web_mercator(
-        np.zeros(len(lats), dtype="d"),
-        lats)
-    image = stretch_y(gy)(values)
-    x = gx.min()
-    y = gy.min()
-    dw = gx[-1] - gx[0]
-    dh = gy[-1] - gy[0]
-    return {
-        "x": [x],
-        "y": [y],
-        "dw": [dw],
-        "dh": [dh],
-        "image": [image]
-    }
-
-
-def stretch_y(uneven_y):
-    """Mercator projection stretches longitude spacing
-
-    To remedy this effect an even-spaced resampling is performed
-    in the projected space to make the pixels and grid line up
-
-    .. note:: This approach assumes the grid is evenly spaced
-              in longitude/latitude space prior to projection
-    """
-    if isinstance(uneven_y, list):
-        uneven_y = np.asarray(uneven_y, dtype=np.float)
-    even_y = np.linspace(
-        uneven_y.min(), uneven_y.max(), len(uneven_y),
-        dtype=np.float)
-    index = np.arange(len(uneven_y), dtype=np.float)
-    index_function = scipy.interpolate.interp1d(uneven_y, index)
-    index_fractions = index_function(even_y)
-
-    def wrapped(values, axis=0):
-        if isinstance(values, list):
-            values = np.asarray(values, dtype=np.float)
-        assert values.ndim == 2, "Can only stretch 2D arrays"
-        msg = "{} != {} do not match".format(values.shape[axis], len(uneven_y))
-        assert values.shape[axis] == len(uneven_y), msg
-        if axis == 0:
-            i = index_fractions
-            j = np.arange(values.shape[1], dtype=np.float)
-        elif axis == 1:
-            i = np.arange(values.shape[0], dtype=np.float)
-            j = index_fractions
-        else:
-            raise Exception("Can only handle axis 0 or 1")
-        return scipy.ndimage.map_coordinates(
-            values,
-            np.meshgrid(i, j, indexing="ij"),
-            order=1)
-    return wrapped
