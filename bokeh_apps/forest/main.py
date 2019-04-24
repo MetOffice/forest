@@ -178,9 +178,10 @@ def main():
 
     figure_drop.on_click(on_click)
 
-    variables = image_loaders[0].variables
     pressures = image_loaders[0].pressures
-    field_controls = FieldControls(variables)
+    field_controls = FieldControls()
+    variables = Variables(image_loaders[0].variables)
+    variables.subscribe(field_controls.on_variable)
     image_controls.subscribe(artist.on_visible)
     field_controls.subscribe(artist.on_field)
 
@@ -218,10 +219,10 @@ def main():
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                variables.layout,
                 run_controls.layout,
                 time_controls.layout,
-                pressure_controls.layout,
-                bokeh.layouts.row(field_controls.drop)),
+                pressure_controls.layout),
             title="Navigate"),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
@@ -562,21 +563,28 @@ class PressureControls(Observable):
         return self.labels.index(self.dropdown.value)
 
 
-class FieldControls(Observable):
+class Variables(Observable):
     def __init__(self, variables):
-        self.variable = None
-        self.itime = 0
-        self.ipressure = 0
-        self.variables = variables
-        self.drop = bokeh.models.Dropdown(
+        self.layout = bokeh.models.Dropdown(
                 label="Variables",
-                menu=[(v, v) for v in self.variables],
-                width=50)
-        self.drop.on_click(select(self.drop))
-        self.drop.on_click(self.on_click)
+                menu=[(v, v) for v in variables],
+                width=250)
+        self.layout.on_click(select(self.layout))
+        self.layout.on_click(self.on_click)
         super().__init__()
 
     def on_click(self, value):
+        self.announce(value)
+
+
+class FieldControls(Observable):
+    def __init__(self):
+        self.variable = None
+        self.itime = 0
+        self.ipressure = 0
+        super().__init__()
+
+    def on_variable(self, value):
         self.variable = value
         self.render()
 
