@@ -180,8 +180,20 @@ def main():
 
     pressures = image_loaders[0].pressures
     field_controls = FieldControls()
-    variables = Variables(image_loaders[0].variables)
+    names = Names(data.MODEL_NAMES)
+
+    variables = Variables([])
     variables.subscribe(field_controls.on_variable)
+
+    time_controls = TimeControls([])
+
+    def on_name_change(name):
+        loader = data.LOADERS[name]
+        variables.values = loader.variables
+        time_controls.set_times(loader.times["time"])
+
+    names.subscribe(on_name_change)
+
     image_controls.subscribe(artist.on_visible)
     field_controls.subscribe(artist.on_field)
 
@@ -196,10 +208,6 @@ def main():
     run_controls = RunControls.paths(paths)
     run_controls.subscribe(
             field_controls.on_run_control)
-
-    loader = data.LOADERS[name]
-    time_controls = TimeControls.times(
-            loader.times["time"])
     time_controls.subscribe(field_controls.on_time_control)
 
     time_steps = TimeSteps()
@@ -219,6 +227,7 @@ def main():
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                names.layout,
                 variables.layout,
                 run_controls.layout,
                 time_controls.layout,
@@ -563,15 +572,37 @@ class PressureControls(Observable):
         return self.labels.index(self.dropdown.value)
 
 
-class Variables(Observable):
-    def __init__(self, variables):
+class Names(Observable):
+    def __init__(self, names):
         self.layout = bokeh.models.Dropdown(
-                label="Variables",
-                menu=[(v, v) for v in variables],
-                width=250)
+                label="Model",
+                menu=[(n, n) for n in names],
+                width=270)
         self.layout.on_click(select(self.layout))
         self.layout.on_click(self.on_click)
         super().__init__()
+
+    def on_click(self, value):
+        self.announce(value)
+
+
+class Variables(Observable):
+    def __init__(self, variables):
+        self.layout = bokeh.models.Dropdown(
+                label="Variable",
+                width=270)
+        self.variables = variables
+        self.layout.on_click(select(self.layout))
+        self.layout.on_click(self.on_click)
+        super().__init__()
+
+    @property
+    def values(self):
+        return [v for _, v in self.layout.menu]
+
+    @values.setter
+    def values(self, texts):
+        self.layout.menu = [(t, t) for t in texts]
 
     def on_click(self, value):
         self.announce(value)
@@ -639,9 +670,12 @@ class TimeControls(Observable):
                 width=300)
         super().__init__()
 
-    @classmethod
-    def times(cls, times):
-        return cls(cls.as_steps(times))
+    def set_times(self, times):
+        self.steps = self.as_steps(times)
+        self.labels = ["T{:+}".format(int(s))
+                for s in self.steps]
+        self.dropdown.menu = list(zip(
+            self.labels, self.labels))
 
     @staticmethod
     def as_steps(times):
