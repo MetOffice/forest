@@ -790,9 +790,6 @@ class RunControls(Observable):
         # Observable
         super().__init__()
 
-    def latest(self):
-        print("Select latest model run")
-
     @classmethod
     def paths(cls, paths):
         return cls([data.initial_time(p) for p in paths])
@@ -816,11 +813,22 @@ class RunControls(Observable):
     def on_plus(self):
         if self.initial_time is None:
             self.initial_time = self.initial_times[0]
-            self.date_picker.value = self.date
-            self.dropdown.value = "{:%H:%M}".format(self.initial_time)
+        else:
+            i = self.initial_times.index(self.initial_time)
+            if (i + 1) < len(self.initial_times):
+                self.initial_time = self.initial_times[i + 1]
+        self.date_picker.value = self.date
+        self.dropdown.value = "{:%H:%M}".format(self.initial_time)
 
     def on_minus(self):
-        print('minus')
+        if self.initial_time is None:
+            self.initial_time = self.initial_times[-1]
+        else:
+            i = self.initial_times.index(self.initial_time)
+            if (i - 1) >= 0:
+                self.initial_time = self.initial_times[i - 1]
+        self.date_picker.value = self.date
+        self.dropdown.value = "{:%H:%M}".format(self.initial_time)
 
     def on_date(self, attr, old, new):
         self.date = new
