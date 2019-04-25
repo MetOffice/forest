@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 conda install bokeh=1.0.4 -y
-conda install -c conda-forge nodejs -y
 
 export S3_ROOT=$1
 PORT=$2
@@ -18,12 +17,6 @@ if [[ "$USE_CUSTOM" == "True" ]] ; then
         --unused-session-lifetime ${DAY_IN_MILLISECONDS} \
         --keep-alive ${PING_MILLISECONDS}
 else
-    # Install custom Typescript
-    cd ${BOKEH_APP_DIR}/forest/wind
-    npm install
-    npm run-script build
-    cd -
-
     # Bokeh server for HIGHWAY only
     FOREST_DIR=${S3_ROOT}/stephen-sea-public-london \
     FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/forest/highway.yaml \

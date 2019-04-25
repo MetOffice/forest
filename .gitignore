@@ -5,5 +5,4 @@
 __pycache__
 kubeconfig
 *.swp
-dist
 node_modules

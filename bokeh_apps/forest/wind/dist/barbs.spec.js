@@ -1,0 +1,200 @@
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+(function (factory) {
+    if (typeof module === "object" && typeof module.exports === "object") {
+        var v = factory(require, exports);
+        if (v !== undefined) module.exports = v;
+    }
+    else if (typeof define === "function" && define.amd) {
+        define(["require", "exports", "mocha", "chai", "sinon", "./barbs"], factory);
+    }
+})(function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    require("mocha");
+    var chai_1 = require("chai");
+    var sinon = __importStar(require("sinon"));
+    var barbs = __importStar(require("./barbs"));
+    describe('wind_barbs', function () {
+        describe('count_tails', function () {
+            it('should return zeros given calm conditions', function () {
+                check(2, { 'flags': 0, 'full_barbs': 0, 'half_barbs': 0 });
+            });
+            it('should return one given wind speed greater than 50', function () {
+                check(50, { 'flags': 1, 'full_barbs': 0, 'half_barbs': 0 });
+            });
+            it('should return one barb given 10', function () {
+                check(10, { 'flags': 0, 'full_barbs': 1, 'half_barbs': 0 });
+            });
+            it('should return one and a half barbs given 15', function () {
+                check(15, { 'flags': 0, 'full_barbs': 1, 'half_barbs': 1 });
+            });
+            var check = function (speed, expected) {
+                var actual = barbs.count_tails(speed);
+                chai_1.expect(actual).deep.equal(expected);
+            };
+        });
+        describe('calm', function () {
+            it('should draw circle', function () {
+                var calledWith;
+                var ctx = {
+                    closePath: function () { },
+                    beginPath: function () { },
+                    stroke: function () { },
+                    arc: function () {
+                        calledWith = Array.from(arguments);
+                    }
+                };
+                var u = 2;
+                var v = 0;
+                var r = 7 * 0.15; // matplotlib settings
+                barbs.draw(ctx, u, v);
+                var expected = [0, 0, r, 0, 2 * Math.PI];
+                var actual = calledWith;
+                chai_1.expect(actual).deep.equal(expected);
+            });
+        });
+        describe('vertices', function () {
+            it('should trace a half barb', function () {
+                check({ flags: 0, full_barbs: 0, half_barbs: 1 }, [
+                    [0, 0],
+                    [-7, 0],
+                    [-5.6875, 0],
+                    [-6.125, 1.4],
+                    [-5.6875, 0],
+                    [0, 0]
+                ]);
+            });
+            it('should trace a full barb', function () {
+                check({ flags: 0, full_barbs: 1, half_barbs: 0 }, [
+                    [0, 0],
+                    [-7, 0],
+                    [-7.875, 2.8],
+                    [-7, 0],
+                    [0, 0]
+                ]);
+            });
+            it('should trace two full barbs', function () {
+                check({ flags: 0, full_barbs: 2, half_barbs: 0 }, [
+                    [0, 0],
+                    [-7, 0],
+                    [-7.875, 2.8],
+                    [-7, 0],
+                    [-6.125, 0],
+                    [-7, 2.8],
+                    [-6.125, 0],
+                    [0, 0]
+                ]);
+            });
+            it('should trace two and a half barbs', function () {
+                check({ flags: 0, full_barbs: 2, half_barbs: 1 }, [
+                    [0, 0],
+                    [-7, 0],
+                    [-7.875, 2.8],
+                    [-7, 0],
+                    [-6.125, 0],
+                    [-7, 2.8],
+                    [-6.125, 0],
+                    [-5.25, 0],
+                    [-5.6875, 1.4],
+                    [-5.25, 0],
+                    [0, 0]
+                ]);
+            });
+            it('should trace a flag', function () {
+                check({ flags: 1, full_barbs: 0, half_barbs: 0 }, [
+                    [0, 0],
+                    [-7, 0],
+                    [-6.125, 2.8],
+                    [-5.25, 0],
+                    [0, 0]
+                ]);
+            });
+            it('should trace two flags', function () {
+                check({ flags: 2, full_barbs: 0, half_barbs: 0 }, [
+                    [0, 0],
+                    [-7, 0],
+                    [-6.125, 2.8],
+                    [-5.25, 0],
+                    [-4.8125, 0],
+                    [-3.9375, 2.8],
+                    [-3.0625, 0],
+                    [0, 0]
+                ]);
+            });
+            it('should trace two flags and a barb', function () {
+                check({ flags: 2, full_barbs: 1, half_barbs: 0 }, [
+                    [0, 0],
+                    [-7, 0],
+                    [-6.125, 2.8],
+                    [-5.25, 0],
+                    [-4.8125, 0],
+                    [-3.9375, 2.8],
+                    [-3.0625, 0],
+                    [-2.1875, 0],
+                    [-3.0625, 2.8],
+                    [-2.1875, 0],
+                    [0, 0]
+                ]);
+            });
+            var check = function (arrow, expected) {
+                var actual = barbs.vertices(arrow);
+                chai_1.expect(actual).deep.equal(expected);
+            };
+        });
+        describe('speed', function () {
+            it('should return magnitude of vector', function () {
+                var u = 3;
+                var v = 4;
+                var actual = barbs.speed(u, v);
+                var expected = 5;
+                chai_1.expect(actual).to.equal(expected);
+            });
+        });
+        describe('direction', function () {
+            it('should return direction of U vector', function () {
+                check(1, 0, 0);
+            });
+            it('should return direction of V vector', function () {
+                check(0, 1, Math.PI / 2);
+            });
+            it('should return direction of (1, 1)', function () {
+                check(1, 1, Math.PI / 4);
+            });
+            var check = function (u, v, expected) {
+                var actual = barbs.direction(u, v);
+                chai_1.expect(actual).to.equal(expected);
+            };
+        });
+        describe('draw', function () {
+            it('should draw half barb', function () {
+                // Integration test to confirm canvas context
+                // used correctly
+                var ctx = {
+                    rotate: sinon.fake(),
+                    beginPath: sinon.fake(),
+                    closePath: sinon.fake(),
+                    moveTo: sinon.fake(),
+                    lineTo: sinon.fake(),
+                    fill: sinon.fake(),
+                    stroke: sinon.fake(),
+                };
+                var u = 5;
+                var v = 0;
+                barbs.draw(ctx, u, v);
+                // Note: the order of operation isn't being checked
+                sinon.assert.calledOnce(ctx.beginPath);
+                sinon.assert.calledWith(ctx.rotate, 0);
+                sinon.assert.calledWith(ctx.moveTo, 0, 0);
+                sinon.assert.calledWith(ctx.lineTo, 0, 0);
+                sinon.assert.calledWith(ctx.rotate, 0);
+                sinon.assert.calledOnce(ctx.closePath);
+            });
+        });
+    });
+});
