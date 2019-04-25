@@ -7,6 +7,7 @@ import json
 import pandas as pd
 import numpy as np
 import netCDF4
+import cf_units
 import satellite
 import rdt
 import earth_networks
@@ -300,6 +301,20 @@ def load_image(path, variable, ipressure, itime):
                 values = var[itime, ipressure, :]
             else:
                 values = var[itime, :]
+            # Units
+            if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
+                if var.units == "mm h-1":
+                    values = values
+                else:
+                    values = convert_units(values, var.units, "kg m-2 hour-1")
+            elif var.units == "K":
+                values = convert_units(values, "K", "Celsius")
         image = geo.stretch_image(lons, lats, values)
         IMAGES[key] = image
         return image
+
+
+def convert_units(values, old_unit, new_unit):
+    if isinstance(values, list):
+        values = np.asarray(values)
+    return cf_units.Unit(old_unit).convert(values, new_unit)

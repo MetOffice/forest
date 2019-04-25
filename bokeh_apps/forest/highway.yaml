@@ -1,7 +1,11 @@
 patterns:
-   - name: GA6
-     directory: "model_data/highway_ga6*.nc"
-   - name: Tropical Africa 4.4km
-     directory: "model_data/highway_takm4p4*.nc"
-   - name: East Africa 4.4km
-     directory: "model_data/highway_eakm4p4*.nc"
+    - name: OS42
+      directory: 'model_data/highway_os42_ea_*.nc'
+    - name: GA6
+      directory: "model_data/highway_ga6*.nc"
+    - name: Tropical Africa 4.4km
+      directory: "model_data/highway_takm4p4*.nc"
+    - name: EIDA50
+      directory: 'eida50/EIDA50_takm4p4_*.nc'
+    - name: RDT
+      directory: 'rdt_json/*.json'
