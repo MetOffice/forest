@@ -7,6 +7,7 @@ import json
 import pandas as pd
 import numpy as np
 import netCDF4
+import cf_units
 import satellite
 import rdt
 import earth_networks
@@ -16,6 +17,7 @@ from collections import OrderedDict
 
 # Application data shared across documents
 FILE_DB = None
+MODEL_NAMES = []
 LOADERS = {}
 IMAGES = OrderedDict()
 COASTLINES = {
@@ -41,6 +43,7 @@ def on_server_loaded(patterns):
     global LAKES
     global BORDERS
     global FILE_DB
+    global MODEL_NAMES
     FILE_DB = FileDB(patterns)
     FILE_DB.sync()
     for name, paths in FILE_DB.files.items():
@@ -54,6 +57,7 @@ def on_server_loaded(patterns):
             LOADERS[name] = satellite.EIDA50(paths)
         else:
             LOADERS[name] = UMLoader(paths, name=name)
+            MODEL_NAMES.append(name)
 
     # Example of server-side pre-caching
     # for name in [
@@ -297,6 +301,20 @@ def load_image(path, variable, ipressure, itime):
                 values = var[itime, ipressure, :]
             else:
                 values = var[itime, :]
+            # Units
+            if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
+                if var.units == "mm h-1":
+                    values = values
+                else:
+                    values = convert_units(values, var.units, "kg m-2 hour-1")
+            elif var.units == "K":
+                values = convert_units(values, "K", "Celsius")
         image = geo.stretch_image(lons, lats, values)
         IMAGES[key] = image
         return image
+
+
+def convert_units(values, old_unit, new_unit):
+    if isinstance(values, list):
+        values = np.asarray(values)
+    return cf_units.Unit(old_unit).convert(values, new_unit)
