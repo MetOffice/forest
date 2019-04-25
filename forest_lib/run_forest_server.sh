@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 conda install bokeh=1.0.1 -y
+conda install -c conda-forge nodejs -y
 
 export S3_ROOT=$1
 PORT=$2

@@ -5,6 +5,5 @@
 __pycache__
 kubeconfig
 *.swp
-package-lock.json
 dist
 node_modules
