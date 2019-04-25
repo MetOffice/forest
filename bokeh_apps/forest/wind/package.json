@@ -1,0 +1,35 @@
+{
+  "name": "wind_barbs",
+  "version": "1.0.0",
+  "description": "Wind barb plots",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha dist/**.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/andrewgryan/typescript-playground.git"
+  },
+  "keywords": [
+    "Typescript",
+    "wind",
+    "barbs"
+  ],
+  "author": "Andrew Ryan",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/andrewgryan/typescript-playground/issues"
+  },
+  "homepage": "https://github.com/andrewgryan/typescript-playground#readme",
+  "devDependencies": {
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^10.12.5",
+    "@types/sinon": "^5.0.5",
+    "bokehjs": "^1.0.1",
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0",
+    "sinon": "^7.1.1"
+  },
+  "dependencies": {}
+}
