@@ -24,7 +24,7 @@ else
     # npm install > ${FOREST_DIR}/npm_install.log 2>&1
     # npm run-script build > ${FOREST_DIR}/npm_run_script.log 2>&1
     # cd -
-    touch ${S3_ROOT}/stephen-sea-public-london/file.txt
+    touch ${S3_ROOT}/stephen-sea-public-london/server.file
 
     FOREST_DIR=${S3_ROOT}/stephen-sea-public-london \
     FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/forest/highway.yaml \
