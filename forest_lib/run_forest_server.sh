@@ -19,15 +19,15 @@ if [[ "$USE_CUSTOM" == "True" ]] ; then
         --keep-alive ${PING_MILLISECONDS}
 else
     # Bokeh server for HIGHWAY only
-    export FOREST_DIR=${S3_ROOT}/stephen-sea-public-london
-    export FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/forest/highway.yaml
 
     # Install custom Typescript
-    cd ${BOKEH_APP_DIR}/forest/wind
-    npm install > ${FOREST_DIR}/npm_install.log 2>&1
-    npm run-script build > ${FOREST_DIR}/npm_run_script.log 2>&1
-    cd -
+    # cd ${BOKEH_APP_DIR}/forest/wind
+    # npm install > ${FOREST_DIR}/npm_install.log 2>&1
+    # npm run-script build > ${FOREST_DIR}/npm_run_script.log 2>&1
+    # cd -
 
+    FOREST_DIR=${S3_ROOT}/stephen-sea-public-london \
+    FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/forest/highway.yaml \
     bokeh serve ${BOKEH_APP_DIR}/forest \
         --port ${PORT} \
         --allow-websocket-origin ${FOREST_URL} \
