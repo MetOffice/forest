@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-conda install bokeh=1.0.1 -y
+conda install bokeh=1.0.4 -y
 conda install -c conda-forge nodejs -y
 
 export S3_ROOT=$1
@@ -8,12 +8,6 @@ PORT=$2
 BOKEH_APP_DIR=$3
 DAY_IN_MILLISECONDS=86400000
 PING_MILLISECONDS=10000
-
-# Install custom Typescript
-cd ${BOKEH_APP_DIR}/forest/wind
-npm install
-npm run-script build
-cd -
 
 USE_CUSTOM=False
 if [[ "$USE_CUSTOM" == "True" ]] ; then
@@ -25,11 +19,18 @@ if [[ "$USE_CUSTOM" == "True" ]] ; then
         --keep-alive ${PING_MILLISECONDS}
 else
     # Bokeh server for HIGHWAY only
-    FOREST_DIR=${S3_ROOT}/stephen-sea-public-london \
-    FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/forest/highway.yaml \
+    export FOREST_DIR=${S3_ROOT}/stephen-sea-public-london
+    export FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/forest/highway.yaml
+
+    # Install custom Typescript
+    cd ${BOKEH_APP_DIR}/forest/wind
+    npm install > ${FOREST_DIR}/npm_install.log 2>&1
+    npm run-script build > ${FOREST_DIR}/npm_run_script.log 2>&1
+    cd -
+
     bokeh serve ${BOKEH_APP_DIR}/forest \
         --port ${PORT} \
         --allow-websocket-origin ${FOREST_URL} \
         --unused-session-lifetime ${DAY_IN_MILLISECONDS} \
-        --keep-alive ${PING_MILLISECONDS}
+        --keep-alive ${PING_MILLISECONDS} > ${FOREST_DIR}/bokeh_serve.log 2>&1
 fi
