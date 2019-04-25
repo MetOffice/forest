@@ -14,6 +14,7 @@ import colors
 from util import Observable, select
 from collections import defaultdict, namedtuple
 import datetime as dt
+import wind
 
 
 def main():
@@ -32,6 +33,21 @@ def main():
         url="https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
         attribution=""
     )
+
+    # Wind barbs
+    source = bokeh.models.ColumnDataSource({
+            "x": [0],
+            "y": [0],
+            "u": [15],
+            "v": [15],
+        })
+    figure.barb(
+            x="x",
+            y="y",
+            u="u",
+            v="v",
+            source=source)
+
     figures = [figure]
     for _ in range(2):
         f = bokeh.plotting.figure(
