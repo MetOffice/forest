@@ -8,6 +8,12 @@ BOKEH_APP_DIR=$3
 DAY_IN_MILLISECONDS=86400000
 PING_MILLISECONDS=10000
 
+# Install custom Typescript
+cd ${BOKEH_APP_DIR}/forest/wind
+npm install
+npm run-script build
+cd -
+
 USE_CUSTOM=False
 if [[ "$USE_CUSTOM" == "True" ]] ; then
     # Tornado server for HIGHWAY and WCSSP
