@@ -12,7 +12,9 @@ import satellite
 import rdt
 import earth_networks
 import geo
+import bokeh.models
 from collections import OrderedDict
+from functools import partial
 
 
 # Application data shared across documents
@@ -20,6 +22,7 @@ FILE_DB = None
 MODEL_NAMES = []
 LOADERS = {}
 IMAGES = OrderedDict()
+VECTORS = OrderedDict()
 COASTLINES = {
     "xs": [],
     "ys": []
@@ -144,6 +147,133 @@ def initial_time(path):
     groups = re.search(r"[0-9]{8}T[0-9]{4}Z", path)
     if groups:
         return dt.datetime.strptime(groups[0], "%Y%m%dT%H%MZ")
+
+
+class View(object):
+    def add_figure(self, figure):
+        return self.remove
+
+    def sync(self, state):
+        print("View.sync({})".format(state))
+
+    def remove(self):
+        print("View.remove()")
+
+
+def cache(name):
+    store = globals()[name]
+    def decorator(f):
+        def wrapped(*args):
+            if args not in store:
+                print("load from disk")
+                store[args] = f(*args)
+            else:
+                print("seen before")
+            return store[args]
+        return wrapped
+    return decorator
+
+
+class WindBarbs(object):
+    def __init__(self, paths):
+        self.paths = paths
+        self.source = bokeh.models.ColumnDataSource({
+            "x": [],
+            "y": [],
+            "u": [],
+            "v": []})
+        self.active = False
+        self.loaded_state = None
+        self.pending_state = None
+
+    def add_figure(self, figure):
+        renderer = figure.barb(
+                x="x",
+                y="y",
+                u="u",
+                v="v",
+                source=self.source)
+        self.active = True
+        if self.pending_state is not None:
+            self.load(self.pending_state)
+            self.pending_state = None
+        def hide(renderer):
+            renderer.visible = False
+            self.active = False
+        return partial(hide, renderer)
+
+    def on_state(self, state):
+        if self.active:
+            if (self.loaded_state != state):
+                self.load(state)
+            self.pending_state = None
+        else:
+            self.pending_state = state
+
+    def load(self, state):
+        variable, time, pressure = None, None, None
+        path = self.find_path(time)
+        # itime = self.time_index(time)
+        itime = state.index
+        ipressure = self.pressure_index(pressure)
+        self.source.data = self.load_data(
+                path,
+                variable,
+                itime,
+                ipressure)
+        self.loaded_state = state
+
+    def find_path(self, time):
+        return self.paths[0]
+
+    def time_index(self, time):
+        return 0
+
+    def pressure_index(self, pressure):
+        return -1
+
+    @staticmethod
+    @cache("VECTORS")
+    def load_data(path, variable, itime, ipressure):
+        print("load_data",
+                path,
+                variable,
+                ipressure,
+                itime)
+        step = 100
+        with netCDF4.Dataset(path) as dataset:
+            var = dataset.variables["x_wind"]
+            if len(var.dimensions) == 4:
+                values = var[itime, ipressure]
+            else:
+                values = var[itime]
+            u = values[::step, ::step]
+            var = dataset.variables["y_wind"]
+            if len(var.dimensions) == 4:
+                values = var[itime, ipressure]
+            else:
+                values = var[itime]
+            v = values[::step, ::step]
+            for d in var.dimensions:
+                if "longitude" in d:
+                    lons = dataset.variables[d][::step]
+                if "latitude" in d:
+                    lats = dataset.variables[d][::step]
+        gx, _ = geo.web_mercator(
+            lons,
+            np.zeros(len(lons), dtype="d"))
+        _, gy = geo.web_mercator(
+            np.zeros(len(lats), dtype="d"),
+            lats)
+        x, y = np.meshgrid(gx, gy)
+        u = convert_units(u, 'm s-1', 'knots')
+        v = convert_units(v, 'm s-1', 'knots')
+        return {
+            "x": x.flatten(),
+            "y": y.flatten(),
+            "u": u.flatten(),
+            "v": v.flatten()
+        }
 
 
 class UMLoader(object):

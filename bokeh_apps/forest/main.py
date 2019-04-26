@@ -1,3 +1,4 @@
+import wind  # meta-programming to inject figure.barbs()
 import bokeh.plotting
 import bokeh.events
 import numpy as np
@@ -11,10 +12,10 @@ import rdt
 import geo
 import picker
 import colors
+import compare
 from util import Observable, select
 from collections import defaultdict, namedtuple
 import datetime as dt
-import wind
 
 
 def main():
@@ -34,20 +35,6 @@ def main():
         attribution=""
     )
 
-    # Wind barbs
-    source = bokeh.models.ColumnDataSource({
-            "x": [0],
-            "y": [0],
-            "u": [15],
-            "v": [15],
-        })
-    figure.barb(
-            x="x",
-            y="y",
-            u="u",
-            v="v",
-            source=source)
-
     figures = [figure]
     for _ in range(2):
         f = bokeh.plotting.figure(
@@ -64,6 +51,16 @@ def main():
         f.toolbar_location = None
         f.min_border = 0
         f.add_tile(tile)
+
+    # Wind barbs
+    paths = data.FILE_DB.files["OS42"]
+    wind_barbs = data.WindBarbs(paths)
+
+    table = compare.table(
+            ["wind", "view"],
+            [wind_barbs, data.View()],
+            figures,
+            labels=["Show"])
 
     figure_row = bokeh.layouts.row(*figures,
             sizing_mode="stretch_both")
@@ -194,6 +191,20 @@ def main():
 
     figure_drop.on_click(on_click)
 
+    def on_click(value):
+        if int(value) == 1:
+            labels = ["Show"]
+        elif int(value) == 2:
+            labels = ["L", "R"]
+        elif int(value) == 3:
+            labels = ["L", "C", "R"]
+        table.row_factory.labels = labels
+        for row in table.rows:
+            row.labels = labels
+            print(row.labels)
+
+    figure_drop.on_click(on_click)
+
     pressures = image_loaders[0].pressures
     field_controls = FieldControls()
     names = Names(data.MODEL_NAMES)
@@ -230,6 +241,7 @@ def main():
     run_controls.subscribe(time_steps.on_run_control)
     time_controls.subscribe(time_steps.on_time_control)
     time_steps.subscribe(print)
+    time_steps.subscribe(wind_barbs.on_state)
 
     valid_text = ValidText(run_controls.valid_div)
     time_steps.subscribe(valid_text.on_time_step)
@@ -251,9 +263,13 @@ def main():
             title="Navigate"),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
-                bokeh.layouts.row(figure_drop),
                 image_controls.column),
             title="Compare"),
+        bokeh.models.Panel(
+            child=bokeh.layouts.column(
+                bokeh.layouts.row(figure_drop),
+                table.layout),
+            title="Compare++"),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
                 border_row,

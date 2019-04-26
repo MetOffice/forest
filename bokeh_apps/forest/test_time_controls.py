@@ -14,15 +14,6 @@ class TestInitialTimes(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
-class TestNavigateByModel(unittest.TestCase):
-    """Time navigation should be data-driven"""
-    def test_on_name(self):
-        names = main.Names(["A", "B", "C"])
-        names.subscribe(callback)
-        names.on_name("A")
-        callback.assert_called_once_with("A")
-
-
 class TestRunControls(unittest.TestCase):
     def test_on_plus_given_no_times(self):
         controls = main.RunControls([])
