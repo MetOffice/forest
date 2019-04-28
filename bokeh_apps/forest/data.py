@@ -149,17 +149,6 @@ def initial_time(path):
         return dt.datetime.strptime(groups[0], "%Y%m%dT%H%MZ")
 
 
-class View(object):
-    def add_figure(self, figure):
-        return self.remove
-
-    def sync(self, state):
-        print("View.sync({})".format(state))
-
-    def remove(self):
-        print("View.remove()")
-
-
 def cache(name):
     store = globals()[name]
     def decorator(f):
@@ -174,28 +163,20 @@ def cache(name):
     return decorator
 
 
-class WindBarbs(object):
-    def __init__(self, paths):
-        self.paths = paths
-        self.source = bokeh.models.ColumnDataSource({
-            "x": [],
-            "y": [],
-            "u": [],
-            "v": []})
+class ActiveViewer(object):
+    def __init__(self):
         self.active = False
         self.loaded_state = None
         self.pending_state = None
 
     def add_figure(self, figure):
-        renderer = figure.barb(
-                x="x",
-                y="y",
-                u="u",
-                v="v",
-                source=self.source)
+        raise Exception("this method should be implemented")
+
+    def connect_data(self, figure, renderer):
         self.active = True
         if self.pending_state is not None:
             self.load(self.pending_state)
+            self.loaded_state = self.pending_state
             self.pending_state = None
         def hide(renderer):
             renderer.visible = False
@@ -206,40 +187,55 @@ class WindBarbs(object):
         if self.active:
             if (self.loaded_state != state):
                 self.load(state)
+                self.loaded_state = state
             self.pending_state = None
         else:
             self.pending_state = state
 
+
+class WindBarbs(ActiveViewer):
+    def __init__(self, paths):
+        self.paths = paths
+        self.source = bokeh.models.ColumnDataSource({
+            "x": [],
+            "y": [],
+            "u": [],
+            "v": []})
+        super().__init__()
+
+    def add_figure(self, figure):
+        renderer = figure.barb(
+                x="x",
+                y="y",
+                u="u",
+                v="v",
+                source=self.source)
+        return super().connect_data(figure, renderer)
+
     def load(self, state):
-        variable, time, pressure = None, None, None
-        path = self.find_path(time)
-        # itime = self.time_index(time)
-        itime = state.index
-        ipressure = self.pressure_index(pressure)
+        time_step, ipressure = state
+        if time_step is None:
+            return
+        if ipressure is None:
+            return
+        path = self.find_path(time_step.initial)
+        # itime = self.time_index(time_step.length)
+        itime = time_step.index
         self.source.data = self.load_data(
                 path,
-                variable,
                 itime,
                 ipressure)
-        self.loaded_state = state
 
-    def find_path(self, time):
+    def find_path(self, initial_time):
         return self.paths[0]
 
-    def time_index(self, time):
+    def time_index(self, length):
         return 0
-
-    def pressure_index(self, pressure):
-        return -1
 
     @staticmethod
     @cache("VECTORS")
-    def load_data(path, variable, itime, ipressure):
-        print("load_data",
-                path,
-                variable,
-                ipressure,
-                itime)
+    def load_data(path, itime, ipressure):
+        print("load_data", path, ipressure, itime)
         step = 100
         with netCDF4.Dataset(path) as dataset:
             var = dataset.variables["x_wind"]

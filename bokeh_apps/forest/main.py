@@ -52,16 +52,6 @@ def main():
         f.min_border = 0
         f.add_tile(tile)
 
-    # Wind barbs
-    paths = data.FILE_DB.files["OS42"]
-    wind_barbs = data.WindBarbs(paths)
-
-    table = compare.table(
-            ["wind", "view"],
-            [wind_barbs, data.View()],
-            figures,
-            labels=["Show"])
-
     figure_row = bokeh.layouts.row(*figures,
             sizing_mode="stretch_both")
     figure_row.children = [figures[0]]  # Trick to keep correct sizing modes
@@ -99,6 +89,28 @@ def main():
             major_tick_line_color="black",
             bar_line_color="black")
         figure.add_layout(colorbar, 'center')
+
+    # Comparison tab
+    names = []
+    views = []
+    for name, loader in data.LOADERS.items():
+        if isinstance(loader, rdt.Loader):
+            viewer = rdt.View(loader)
+        elif isinstance(loader, earth_networks.Loader):
+            viewer = earth_networks.View(loader)
+        elif isinstance(loader, data.GPM):
+            viewer = view.GPMView(loader, color_mapper)
+        elif isinstance(loader, satellite.EIDA50):
+            viewer = view.EIDA50(loader, color_mapper)
+        else:
+            viewer = view.UMView(loader, color_mapper)
+        names.append(name)
+        views.append(viewer)
+    table = compare.table(
+            names,
+            views,
+            figures,
+            labels=["Show"])
 
     artist = Artist(figures, color_mapper)
     renderers = []
@@ -240,8 +252,6 @@ def main():
     time_steps = TimeSteps()
     run_controls.subscribe(time_steps.on_run_control)
     time_controls.subscribe(time_steps.on_time_control)
-    time_steps.subscribe(print)
-    time_steps.subscribe(wind_barbs.on_state)
 
     valid_text = ValidText(run_controls.valid_div)
     time_steps.subscribe(valid_text.on_time_step)
@@ -251,6 +261,11 @@ def main():
             pressures,
             units="hPa")
     pressure_controls.subscribe(field_controls.on_pressure_control)
+
+    time_pressure = Join(
+            time_steps,
+            pressure_controls)
+    time_pressure.subscribe(print)
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
@@ -454,6 +469,20 @@ def any_none(obj, attrs):
     return any([getattr(obj, x) is None for x in attrs])
 
 
+class Join(Observable):
+    def __init__(self, *observables):
+        self.state = len(observables) * [None]
+        for i, o in enumerate(observables):
+            o.subscribe(self.on_change(i))
+        super().__init__()
+
+    def on_change(self, index):
+        def callback(action):
+            self.state[index] = action
+            self.announce(self.state)
+        return callback
+
+
 class Artist(object):
     def __init__(self, figures, color_mapper):
         self.figures = figures
@@ -595,7 +624,6 @@ class PressureControls(Observable):
         else:
             value = self.labels[self.index - 1]
             self.dropdown.value = value
-            self.announce(self.index)
 
     @property
     def index(self):
@@ -724,7 +752,6 @@ class TimeControls(Observable):
         else:
             value = self.labels[self.index + 1]
             self.dropdown.value = value
-            self.announce((self.index, self.step))
 
     def on_minus(self):
         if self.dropdown.value is None:
@@ -735,7 +762,6 @@ class TimeControls(Observable):
         else:
             value = self.labels[self.index - 1]
             self.dropdown.value = value
-            self.announce((self.index, self.step))
 
     def on_dropdown(self, value):
         self.announce((self.index, self.step))

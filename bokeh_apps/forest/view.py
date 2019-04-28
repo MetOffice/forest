@@ -53,6 +53,14 @@ class UMView(object):
         return renderer
 
 
+class Image(object):
+    pass
+
+
+class Barbs(object):
+    pass
+
+
 class GPMView(object):
     def __init__(self, loader, color_mapper):
         self.loader = loader
