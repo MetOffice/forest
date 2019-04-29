@@ -90,27 +90,27 @@ def main():
             bar_line_color="black")
         figure.add_layout(colorbar, 'center')
 
-    # Comparison tab
-    names = []
-    views = []
-    for name, loader in data.LOADERS.items():
-        if isinstance(loader, rdt.Loader):
-            viewer = rdt.View(loader)
-        elif isinstance(loader, earth_networks.Loader):
-            viewer = earth_networks.View(loader)
-        elif isinstance(loader, data.GPM):
-            viewer = view.GPMView(loader, color_mapper)
-        elif isinstance(loader, satellite.EIDA50):
-            viewer = view.EIDA50(loader, color_mapper)
-        else:
-            viewer = view.UMView(loader, color_mapper)
-        names.append(name)
-        views.append(viewer)
-    table = compare.table(
-            names,
-            views,
-            figures,
-            labels=["Show"])
+    # # Comparison tab
+    # names = []
+    # views = []
+    # for name, loader in data.LOADERS.items():
+    #     if isinstance(loader, rdt.Loader):
+    #         viewer = rdt.View(loader)
+    #     elif isinstance(loader, earth_networks.Loader):
+    #         viewer = earth_networks.View(loader)
+    #     elif isinstance(loader, data.GPM):
+    #         viewer = view.GPMView(loader, color_mapper)
+    #     elif isinstance(loader, satellite.EIDA50):
+    #         viewer = view.EIDA50(loader, color_mapper)
+    #     else:
+    #         viewer = view.UMView(loader, color_mapper)
+    #     names.append(name)
+    #     views.append(viewer)
+    # table = compare.table(
+    #         names,
+    #         views,
+    #         figures,
+    #         labels=["Show"])
 
     artist = Artist(figures, color_mapper)
     renderers = []
@@ -203,19 +203,19 @@ def main():
 
     figure_drop.on_click(on_click)
 
-    def on_click(value):
-        if int(value) == 1:
-            labels = ["Show"]
-        elif int(value) == 2:
-            labels = ["L", "R"]
-        elif int(value) == 3:
-            labels = ["L", "C", "R"]
-        table.row_factory.labels = labels
-        for row in table.rows:
-            row.labels = labels
-            print(row.labels)
+    # def on_click(value):
+    #     if int(value) == 1:
+    #         labels = ["Show"]
+    #     elif int(value) == 2:
+    #         labels = ["L", "R"]
+    #     elif int(value) == 3:
+    #         labels = ["L", "C", "R"]
+    #     table.row_factory.labels = labels
+    #     for row in table.rows:
+    #         row.labels = labels
+    #         print(row.labels)
 
-    figure_drop.on_click(on_click)
+    # figure_drop.on_click(on_click)
 
     pressures = image_loaders[0].pressures
     field_controls = FieldControls()
@@ -267,6 +267,11 @@ def main():
             pressure_controls)
     time_pressure.subscribe(print)
 
+    #    bokeh.models.Panel(
+    #        child=bokeh.layouts.column(
+    #            bokeh.layouts.row(figure_drop),
+    #            table.layout),
+    #        title="Compare++"),
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
@@ -280,11 +285,6 @@ def main():
             child=bokeh.layouts.column(
                 image_controls.column),
             title="Compare"),
-        bokeh.models.Panel(
-            child=bokeh.layouts.column(
-                bokeh.layouts.row(figure_drop),
-                table.layout),
-            title="Compare++"),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
                 border_row,
