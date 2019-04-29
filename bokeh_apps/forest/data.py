@@ -15,6 +15,7 @@ import geo
 import bokeh.models
 from collections import OrderedDict
 from functools import partial
+import scipy.ndimage
 
 
 # Application data shared across documents
@@ -398,6 +399,8 @@ class UMLoader(object):
                 values = var[:, j, i]
             else:
                 raise NotImplementedError("3 or 4 dimensions only")
+            if var.units == "K":
+                values = convert_units(values, "K", "Celsius")
         return {
             "x": times,
             "y": values}
@@ -435,6 +438,16 @@ def load_image(path, variable, ipressure, itime):
                     values = convert_units(values, var.units, "kg m-2 hour-1")
             elif var.units == "K":
                 values = convert_units(values, "K", "Celsius")
+
+        # Coarsify images
+        values = scipy.ndimage.zoom(values, 0.5)
+        ny, nx = values.shape
+        lons = np.linspace(lons.min(), lons.max(), nx)
+        lats = np.linspace(lats.min(), lats.max(), ny)
+        print(values.shape)
+        print(lons.shape)
+        print(lats.shape)
+
         image = geo.stretch_image(lons, lats, values)
         IMAGES[key] = image
         return image
