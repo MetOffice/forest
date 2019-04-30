@@ -1,3 +1,5 @@
+import os
+import re
 import datetime as dt
 from functools import partial
 
@@ -49,3 +51,10 @@ def timeout_cache(interval):
                     return cache[x]
         return wrapped
     return decorator
+
+
+def initial_time(path):
+    name = os.path.basename(path)
+    groups = re.search(r"[0-9]{8}T[0-9]{4}Z", path)
+    if groups:
+        return dt.datetime.strptime(groups[0], "%Y%m%dT%H%MZ")
