@@ -16,6 +16,7 @@ import bokeh.models
 from collections import OrderedDict
 from functools import partial
 import scipy.ndimage
+from util import timeout_cache
 
 
 # Application data shared across documents
@@ -128,7 +129,11 @@ class FileDB(object):
 
     def sync(self):
         for key, pattern in self.patterns.items():
-            self.files[key] = glob.glob(pattern)
+            self.files[key] = self.find(pattern)
+
+    @timeout_cache(dt.timedelta(minutes=10))
+    def find(pattern):
+        return glob.glob(pattern)
 
 
 class GPM(object):
@@ -417,9 +422,20 @@ class Finder(object):
         self.paths = paths
         self.table = {
                 initial_time(p): p for p in paths}
+        self.initial_times = np.array(
+                [initial_time(p) for p in paths],
+                dtype='datetime64[s]')
 
     def find(self, initial_time):
-        return self.table[initial_time]
+        try:
+            return self.table[initial_time]
+        except KeyError:
+            initial_time = np.datetime64(
+                    initial_time, 's')
+            i = np.argmin(
+                    np.abs(
+                        self.initial_times - initial_time))
+            return self.paths[i]
 
 
 def load_image(path, variable, ipressure, itime):

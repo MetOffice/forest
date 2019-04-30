@@ -19,6 +19,10 @@ import datetime as dt
 
 
 def main():
+    # Access latest files
+    data.FILE_DB.sync()
+
+    # Full screen map
     lon_range = (0, 30)
     lat_range = (0, 30)
     x_range, y_range = geo.web_mercator(

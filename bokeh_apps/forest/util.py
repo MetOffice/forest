@@ -1,3 +1,4 @@
+import datetime as dt
 from functools import partial
 
 
@@ -25,3 +26,26 @@ def select(dropdown):
             if value == new:
                 dropdown.label = label
     return wrapped
+
+
+def timeout_cache(interval):
+    def decorator(f):
+        cache = {}
+        call_time = {}
+        def wrapped(x):
+            nonlocal cache
+            nonlocal call_time
+            now = dt.datetime.now()
+            if x not in cache:
+                cache[x] = f(x)
+                call_time[x] = now
+                return cache[x]
+            else:
+                if (now - call_time[x]) > interval:
+                    cache[x] = f(x)
+                    call_time[x] = now
+                    return cache[x]
+                else:
+                    return cache[x]
+        return wrapped
+    return decorator
