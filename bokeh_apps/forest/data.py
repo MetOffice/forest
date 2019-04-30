@@ -131,6 +131,7 @@ class FileDB(object):
         for key, pattern in self.patterns.items():
             self.files[key] = self.find(pattern)
 
+    @staticmethod
     @timeout_cache(dt.timedelta(minutes=10))
     def find(pattern):
         return glob.glob(pattern)
