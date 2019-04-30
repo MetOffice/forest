@@ -197,6 +197,7 @@ class ActiveViewer(object):
 class WindBarbs(ActiveViewer):
     def __init__(self, paths):
         self.paths = paths
+        self.finder = Finder(paths)
         self.source = bokeh.models.ColumnDataSource({
             "x": [],
             "y": [],
@@ -228,7 +229,7 @@ class WindBarbs(ActiveViewer):
                 ipressure)
 
     def find_path(self, initial_time):
-        return self.paths[0]
+        return self.finder.find(initial_time)
 
     def time_index(self, length):
         return 0
@@ -277,6 +278,7 @@ class UMLoader(object):
     def __init__(self, paths, name="UM"):
         self.name = name
         self.paths = paths
+        self.finder = Finder(paths)
         self.initial_times = {initial_time(p): p for p in paths}
         with netCDF4.Dataset(self.paths[0]) as dataset:
             self.dimensions = self.load_dimensions(dataset)
@@ -350,8 +352,9 @@ class UMLoader(object):
         initial = times[0]
         hours = (valid - initial).total_seconds() / (60*60)
         length = "T{:+}".format(int(hours))
+        path = self.find_path(initial)
         data = load_image(
-                self.paths[0],
+                path,
                 variable,
                 ipressure,
                 itime)
@@ -365,6 +368,9 @@ class UMLoader(object):
         data["length"] = [length]
         data["level"] = [level]
         return data
+
+    def find_path(self, initial_time):
+        return self.finder.find(initial_time)
 
     def series(self, variable, x0, y0, k):
         lon0, lat0 = geo.plate_carree(x0, y0)
@@ -404,6 +410,16 @@ class UMLoader(object):
         return {
             "x": times,
             "y": values}
+
+
+class Finder(object):
+    def __init__(self, paths):
+        self.paths = paths
+        self.table = {
+                initial_time(p): p for p in paths}
+
+    def find(self, initial_time):
+        return self.table[initial_time]
 
 
 def load_image(path, variable, ipressure, itime):
