@@ -10,11 +10,54 @@ import geo
 class View(object):
     def __init__(self, loader):
         self.loader = loader
+        empty = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[[0, 0]]]
+                    },
+                    "properties": {
+                        'LatG': 0,
+                        'LonG': 0,
+                        'CType': 0,
+                        'CRainRate': 0,
+                        'CType': 0,
+                        'CRainRate': 0,
+                        'ConvTypeMethod': 0,
+                        'ConvType': 0,
+                        'ConvTypeQuality': 0,
+                        'SeverityIntensity': 0,
+                        'MvtSpeed': '',
+                        'MvtDirection': '',
+                        'NumIdCell': 0,
+                        'CTPressure': 0,
+                        'CTPhase': '',
+                        'CTReff': '',
+                        'ExpansionRate': '',
+                        'BTmin': 0,
+                        'BTmoy': 0,
+                        'CTCot': '',
+                        'CTCwp': '',
+                        'NbPosLightning': 0,
+                        'SeverityType': '',
+                        'Surface': '',
+                        'Duration': 0,
+                        'CoolingRate': 0,
+                        'PhaseLife': "0"
+                    }
+                }
+            ]
+        }
+        self.empty_geojson = json.dumps(empty)
+        print(self.empty_geojson)
         self.color_mapper = bokeh.models.CategoricalColorMapper(
                 palette=bokeh.palettes.Spectral6,
                 factors=["0", "1", "2", "3", "4"])
         self.source = bokeh.models.GeoJSONDataSource(
-                geojson=loader.geojson)
+                geojson=self.empty_geojson)
 
     def render(self, valid_date):
         self.source.geojson = self.loader.load_date(valid_date)
@@ -26,8 +69,8 @@ class View(object):
             fill_alpha=0,
             line_width=2,
             line_color={
-                'field': 'PhaseLife',
-                'transform': self.color_mapper},
+                 'field': 'PhaseLife',
+                 'transform': self.color_mapper},
             source=self.source)
         tool = bokeh.models.HoverTool(
                 tooltips=[
