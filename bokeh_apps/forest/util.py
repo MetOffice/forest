@@ -2,6 +2,8 @@ import os
 import re
 import datetime as dt
 from functools import partial
+import scipy.ndimage
+import numpy as np
 
 
 class Observable(object):
@@ -51,6 +53,14 @@ def timeout_cache(interval):
                     return cache[x]
         return wrapped
     return decorator
+
+
+def coarsify(lons, lats, values, fraction):
+    values = scipy.ndimage.zoom(values, fraction)
+    ny, nx = values.shape
+    lons = np.linspace(lons.min(), lons.max(), nx)
+    lats = np.linspace(lats.min(), lats.max(), ny)
+    return lons, lats, values
 
 
 def initial_time(path):

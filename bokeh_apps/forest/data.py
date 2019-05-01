@@ -16,7 +16,7 @@ import bokeh.models
 from collections import OrderedDict
 from functools import partial
 import scipy.ndimage
-from util import timeout_cache, initial_time
+from util import timeout_cache, initial_time, coarsify
 
 
 # Application data shared across documents
@@ -466,13 +466,9 @@ def load_image(path, variable, ipressure, itime):
                 values = convert_units(values, "K", "Celsius")
 
         # Coarsify images
-        values = scipy.ndimage.zoom(values, 0.5)
-        ny, nx = values.shape
-        lons = np.linspace(lons.min(), lons.max(), nx)
-        lats = np.linspace(lats.min(), lats.max(), ny)
-        print(values.shape)
-        print(lons.shape)
-        print(lats.shape)
+        fraction = 0.25
+        lons, lats, values = coarsify(
+                lons, lats, values, fraction)
 
         image = geo.stretch_image(lons, lats, values)
         IMAGES[key] = image

@@ -4,6 +4,7 @@ import netCDF4
 import numpy as np
 import os
 import geo
+from util import coarsify
 
 
 class EIDA50(object):
@@ -50,12 +51,15 @@ class EIDA50(object):
         return self.load_image(path, itime)
 
     def load_image(self, path, itime):
+        lons = self.longitudes
+        lats = self.latitudes
         with netCDF4.Dataset(path) as dataset:
             values = dataset.variables["data"][itime]
+        fraction = 0.25
+        lons, lats, values = coarsify(
+                lons, lats, values, fraction)
         return geo.stretch_image(
-                self.longitudes,
-                self.latitudes,
-                values)
+                lons, lats, values)
 
     def find_path(self, time):
         date = self.nearest_before(self.dates, time)
