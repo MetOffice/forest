@@ -1,6 +1,8 @@
 patterns:
-    - name: OS42
+    - name: Tropical Africa OS42
       directory: 'highway_os42_ea_*.nc'
+    - name: Global OS42
+      directory: 'global_africa_*.nc'
     - name: EIDA50
       directory: 'EIDA50_takm4p4_*.nc'
     - name: RDT

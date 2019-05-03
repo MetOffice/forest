@@ -13,12 +13,12 @@ class UMView(object):
                 "dh": [],
                 "image": []})
 
-    def render(self, variable, ipressure, itime):
+    def render(self, variable, pressure, itime):
         if variable is None:
             return
         self.source.data = self.loader.image(
                 variable,
-                ipressure,
+                pressure,
                 itime)
 
         def on_change(attr, old, new):
@@ -75,7 +75,7 @@ class GPMView(object):
                 "image": []}
         self.source = bokeh.models.ColumnDataSource(self.empty)
 
-    def render(self, variable, ipressure, itime):
+    def render(self, variable, pressure, itime):
         if variable != "precipitation_flux":
             self.source.data = self.empty
         else:

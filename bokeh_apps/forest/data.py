@@ -17,6 +17,7 @@ from collections import OrderedDict
 from functools import partial
 import scipy.ndimage
 from util import timeout_cache, initial_time, coarsify
+import disk
 
 
 # Application data shared across documents
@@ -61,7 +62,14 @@ def on_server_loaded(patterns):
         elif name == "EIDA50":
             LOADERS[name] = satellite.EIDA50(paths)
         else:
-            LOADERS[name] = UMLoader(paths, name=name)
+            if is_global_africa(paths):
+                finder = disk.GlobalUM(paths)
+            else:
+                finder = None
+            LOADERS[name] = UMLoader(
+                    paths,
+                    name=name,
+                    finder=finder)
             MODEL_NAMES.append(name)
 
     # Example of server-side pre-caching
@@ -86,6 +94,8 @@ def on_server_loaded(patterns):
             at_scale(cartopy.feature.BORDERS, '50m')
                 .intersecting_geometries(EXTENT)))
 
+def is_global_africa(paths):
+    return os.path.basename(paths[0]).startswith("global_africa")
 
 def xs_ys(lines):
     xs, ys = [], []
@@ -274,17 +284,18 @@ class WindBarbs(ActiveViewer):
 
 
 class UMLoader(object):
-    def __init__(self, paths, name="UM"):
+    def __init__(self, paths, name="UM", finder=None):
         self.name = name
+        self.path = None
         self.paths = paths
-        self.finder = Finder(paths)
-        self.initial_times = {initial_time(p): p for p in paths}
+        if finder is None:
+            finder = Finder(paths)
+        self.finder = finder
         with netCDF4.Dataset(self.paths[0]) as dataset:
             self.dimensions = self.load_dimensions(dataset)
             self.dimension_variables = self.load_dimension_variables(dataset)
             self.times = self.load_times(dataset)
             self.variables = self.load_variables(dataset)
-            self.pressure_variables, self.pressures = self.load_heights(dataset)
 
     @staticmethod
     def load_variables(dataset):
@@ -300,17 +311,6 @@ class UMLoader(object):
         return variables
 
     @staticmethod
-    def load_heights(dataset):
-        variables = set()
-        pressures = dataset.variables["pressure"][:]
-        for variable, var in dataset.variables.items():
-            if variable == "pressure":
-                continue
-            if "pressure" in var.dimensions:
-                variables.add(variable)
-        return variables, pressures
-
-    @staticmethod
     def load_times(dataset):
         times = {}
         for v in dataset.variables:
@@ -318,7 +318,8 @@ class UMLoader(object):
             if len(var.dimensions) != 1:
                 continue
             if v.startswith("time"):
-                times[v] = netCDF4.num2date(
+                d = var.dimensions[0]
+                times[d] = netCDF4.num2date(
                         var[:],
                         units=var.units)
         return times
@@ -334,9 +335,7 @@ class UMLoader(object):
                 for d in dataset.dimensions
                 if d in dataset.variables}
 
-    def image(self, variable, ipressure, itime):
-        if variable not in self.pressure_variables:
-            ipressure = 0
+    def image(self, variable, pressure, itime):
 
         try:
             dimension = self.dimensions[variable][0]
@@ -351,14 +350,27 @@ class UMLoader(object):
         initial = times[0]
         hours = (valid - initial).total_seconds() / (60*60)
         length = "T{:+}".format(int(hours))
-        path = self.find_path(initial)
-        data = load_image(
-                path,
-                variable,
-                ipressure,
-                itime)
+        if hasattr(self.finder, 'path_points'):
+            self.path, pts = self.finder.path_points(
+                    initial,
+                    valid,
+                    pressure)
+            data = load_image_pts(
+                    self.path,
+                    variable,
+                    pts,
+                    pts)
+        else:
+            self.path, ipressure = self.finder.find(
+                    initial,
+                    pressure)
+            data = load_image(
+                    self.path,
+                    variable,
+                    ipressure,
+                    itime)
         if variable in self.pressure_variables:
-            level = "{} hPa".format(int(self.pressures[ipressure]))
+            level = "{} hPa".format(int(pressure))
         else:
             level = "Surface"
         data["name"] = [self.name]
@@ -368,17 +380,16 @@ class UMLoader(object):
         data["level"] = [level]
         return data
 
-    def find_path(self, initial_time):
-        return self.finder.find(initial_time)
-
     def series(self, variable, x0, y0, k):
+        if self.path is None:
+            return
         lon0, lat0 = geo.plate_carree(x0, y0)
         lon0, lat0 = lon0[0], lat0[0]  # Map to scalar
         lons = geo.to_180(self.longitudes(variable))
         lats = self.latitudes(variable)
         i = np.argmin(np.abs(lons - lon0))
         j = np.argmin(np.abs(lats - lat0))
-        return self.series_ijk(variable, i, j, k)
+        return self.series_ijk(self.path, variable, i, j, k)
 
     def longitudes(self, variable):
         return self._lookup("longitude", variable)
@@ -392,8 +403,7 @@ class UMLoader(object):
             if dim.startswith(prefix):
                 return self.dimension_variables[dim]
 
-    def series_ijk(self, variable, i, j, k):
-        path = self.paths[0]
+    def series_ijk(self, path, variable, i, j, k):
         dimension = self.dimensions[variable][0]
         times = self.times[dimension]
         with netCDF4.Dataset(path) as dataset:
@@ -419,8 +429,36 @@ class Finder(object):
         self.initial_times = np.array(
                 [initial_time(p) for p in paths],
                 dtype='datetime64[s]')
+        with netCDF4.Dataset(self.paths[0]) as dataset:
+            self.pressure_variables, self.pressures = self.load_heights(dataset)
 
-    def find(self, initial_time):
+    @staticmethod
+    def load_heights(dataset):
+        variables = set()
+        pressures = dataset.variables["pressure"][:]
+        for variable, var in dataset.variables.items():
+            if variable == "pressure":
+                continue
+            if "pressure" in var.dimensions:
+                variables.add(variable)
+        return variables, pressures
+
+    def find(self, initial, pressure):
+        return (
+                self.find_path(initial),
+                self.pressure_index(pressure))
+
+    def pressure_index(self, pressure):
+        if variable not in self.pressure_variables:
+            return 0
+        else:
+            if isinstance(self.pressures, np.ndarray):
+                pressures = self.pressures.tolist()
+            else:
+                pressures = self.pressures
+            return pressures.index(pressure)
+
+    def find_path(self, initial_time):
         try:
             return self.table[initial_time]
         except KeyError:
@@ -432,8 +470,19 @@ class Finder(object):
             return self.paths[i]
 
 
-def load_image(path, variable, ipressure, itime):
-    key = (path, variable, ipressure, itime)
+def pts_hash(pts):
+    if isinstance(pts, np.ndarray):
+        return pts.tostring()
+    else:
+        return pts
+
+
+def load_image(path, variable, itime, ipressure):
+    return load_image_pts(path, variable, (itime,), (itime, ipressure))
+
+
+def load_image_pts(path, variable, pts_3d, pts_4d):
+    key = (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
     if key in IMAGES:
         print("already seen: {}".format(key))
         return IMAGES[key]
@@ -453,9 +502,9 @@ def load_image(path, variable, ipressure, itime):
                 if "latitude" in d:
                     lats = dataset.variables[d][:]
             if len(var.dimensions) == 4:
-                values = var[itime, ipressure, :]
+                values = var[pts_4d]
             else:
-                values = var[itime, :]
+                values = var[pts_3d]
             # Units
             if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
                 if var.units == "mm h-1":

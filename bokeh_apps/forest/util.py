@@ -57,10 +57,11 @@ def timeout_cache(interval):
 
 def coarsify(lons, lats, values, fraction):
     values = scipy.ndimage.zoom(values, fraction)
+    data = np.ma.masked_array(values, np.isnan(values))
     ny, nx = values.shape
     lons = np.linspace(lons.min(), lons.max(), nx)
     lats = np.linspace(lats.min(), lats.max(), ny)
-    return lons, lats, values
+    return lons, lats, data
 
 
 def initial_time(path):

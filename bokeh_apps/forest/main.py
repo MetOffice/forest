@@ -13,7 +13,7 @@ import geo
 import picker
 import colors
 import compare
-from util import Observable, select
+from util import Observable, select, initial_time
 from collections import defaultdict, namedtuple
 import datetime as dt
 
@@ -246,9 +246,13 @@ def main():
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
-    name = list(data.FILE_DB.files.keys())[0]
-    paths = data.FILE_DB.files[name]
-    run_controls = RunControls.paths(paths)
+    initial_times = []
+    for name, paths in data.FILE_DB.files.items():
+        if name not in data.MODEL_NAMES:
+            continue
+        initial_times += [
+                initial_time(p) for p in paths]
+    run_controls = RunControls(initial_times)
     run_controls.subscribe(
             field_controls.on_run_control)
     time_controls.subscribe(field_controls.on_time_control)
@@ -278,9 +282,9 @@ def main():
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                run_controls.layout,
                 names.layout,
                 variables.layout,
-                run_controls.layout,
                 time_controls.layout,
                 pressure_controls.layout),
             title="Navigate"),
@@ -376,6 +380,7 @@ def main():
     compact_button.on_click(on_compact)
 
     document = bokeh.plotting.curdoc()
+    document.title = "FOREST"
     document.add_root(control_root)
     document.add_root(series_row)
     document.add_root(figure_row)
@@ -446,11 +451,11 @@ class Series(object):
         self.x = None
         self.y = None
         self.variable = None
-        self.ipressure = 0
 
-    def on_field(self, variable, ipressure, itime):
+    def on_field(self, action):
+        variable, pressure, itime = action
         self.variable = variable
-        self.ipressure = ipressure
+        self.pressure = pressure
         self.itime = itime
         self.render()
 
@@ -465,7 +470,11 @@ class Series(object):
         self.figure.title.text = self.variable
         for name, source in self.sources.items():
             loader = data.LOADERS[name]
-            source.data = loader.series(self.variable, self.x, self.y, self.ipressure)
+            source.data = loader.series(
+                    self.variable,
+                    self.x,
+                    self.y,
+                    self.pressure)
             source.selected.indices = [self.itime]
 
 
@@ -495,7 +504,7 @@ class Artist(object):
         self.renderers = {}
         self.previous_state = None
         self.variable = None
-        self.ipressure = 0
+        self.pressure = None
         self.itime = 0
         for name, loader in data.LOADERS.items():
             if isinstance(loader, rdt.Loader):
@@ -542,9 +551,10 @@ class Artist(object):
             items += [(key, i, f) for i, f in enumerate(flags)]
         return items
 
-    def on_field(self, variable, ipressure, itime):
+    def on_field(self, action):
+        variable, pressure, itime = action
         self.variable = variable
-        self.ipressure = ipressure
+        self.pressure = pressure
         self.itime = itime
         self.render()
 
@@ -558,7 +568,10 @@ class Artist(object):
         for name in self.previous_state:
             viewer = self.viewers[name]
             if isinstance(viewer, view.UMView):
-                viewer.render(self.variable, self.ipressure, self.itime)
+                viewer.render(
+                        self.variable,
+                        self.pressure,
+                        self.itime)
             elif isinstance(viewer, view.EIDA50):
                 if self.time_step is None:
                     continue
@@ -607,7 +620,7 @@ class PressureControls(Observable):
         super().__init__()
 
     def on_dropdown(self, value):
-        self.announce(self.index)
+        self.announce((self.index, self.pressure))
 
     def on_plus(self):
         if self.dropdown.value is None:
@@ -676,7 +689,7 @@ class FieldControls(Observable):
     def __init__(self):
         self.variable = None
         self.itime = 0
-        self.ipressure = 0
+        self.pressure = None
         super().__init__()
 
     def on_variable(self, value):
@@ -687,12 +700,12 @@ class FieldControls(Observable):
         if self.variable is None:
             return
         self.announce(
-                self.variable,
-                self.ipressure,
-                self.itime)
+                (self.variable,
+                self.pressure,
+                self.itime))
 
-    def on_pressure_control(self, ipressure):
-        self.ipressure = ipressure
+    def on_pressure_control(self, action):
+        self.pressure = action
         self.render()
 
     def on_run_control(self, initial_time):
@@ -892,10 +905,6 @@ class RunControls(Observable):
 
         # Observable
         super().__init__()
-
-    @classmethod
-    def paths(cls, paths):
-        return cls([data.initial_time(p) for p in paths])
 
     @property
     def initial_dates(self):
