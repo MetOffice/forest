@@ -273,7 +273,6 @@ def main():
 
     #    bokeh.models.Panel(
     #        child=bokeh.layouts.column(
-    #            bokeh.layouts.row(figure_drop),
     #            table.layout),
     #        title="Compare++"),
     tabs = bokeh.models.Tabs(tabs=[
@@ -287,6 +286,7 @@ def main():
             title="Navigate"),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                bokeh.layouts.row(figure_drop),
                 image_controls.column),
             title="Compare"),
         bokeh.models.Panel(
