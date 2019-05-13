@@ -16,6 +16,7 @@ import bokeh.models
 from collections import OrderedDict
 from functools import partial
 import scipy.ndimage
+import shapely.geometry
 from util import timeout_cache, initial_time, coarsify
 import disk
 
@@ -80,22 +81,31 @@ def on_server_loaded(patterns):
 
     # Load coastlines/borders
     EXTENT = (-10, 50, -20, 10)
-    COASTLINES = xs_ys(iterlines(
-            cartopy.feature.COASTLINE.geometries()))
+    COASTLINES = load_coastlines()
     LAKES = xs_ys(iterlines(
-        at_scale(cartopy.feature.LAKES, "10m")
-            .intersecting_geometries(EXTENT)))
+        cartopy.feature.NaturalEarthFeature(
+            'physical',
+            'lakes',
+            '10m').intersecting_geometries(EXTENT)))
     DISPUTED = xs_ys(iterlines(
             cartopy.feature.NaturalEarthFeature(
                 "cultural",
                 "admin_0_boundary_lines_disputed_areas",
                 "50m").geometries()))
     BORDERS = xs_ys(iterlines(
-            at_scale(cartopy.feature.BORDERS, '50m')
-                .intersecting_geometries(EXTENT)))
+        cartopy.feature.NaturalEarthFeature(
+            'cultural',
+            'admin_0_boundary_lines_land',
+            '50m').geometries()))
 
 def is_global_africa(paths):
     return os.path.basename(paths[0]).startswith("global_africa")
+
+
+def load_coastlines():
+    return xs_ys(iterlines(
+            cartopy.feature.COASTLINE.geometries()))
+
 
 def xs_ys(lines):
     xs, ys = [], []
@@ -110,25 +120,17 @@ def xs_ys(lines):
 
 
 def iterlines(geometries):
+    def xy(g):
+        if isinstance(g, shapely.geometry.LineString):
+            return g.xy
+        else:
+            return g.exterior.coords.xy
     for geometry in geometries:
-        for g in geometry:
-            try:
-                yield g.xy
-            except NotImplementedError:
-                if g.boundary.type == 'MultiLineString':
-                    for line in g.boundary:
-                        yield line.xy
-                else:
-                    yield g.boundary.xy
-
-
-def at_scale(feature, scale):
-    """
-    .. note:: function named at_scale to prevent name
-              clash with scale variable
-    """
-    feature.scale = scale
-    return feature
+        try:
+            for g in geometry:
+                yield xy(g)
+        except TypeError:
+            yield xy(geometry)
 
 
 class FileDB(object):
