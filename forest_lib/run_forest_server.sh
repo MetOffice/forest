@@ -19,8 +19,8 @@ if [[ "$USE_CUSTOM" == "True" ]] ; then
 else
     # Bokeh server for HIGHWAY only
     FOREST_DIR=${S3_ROOT}/stephen-sea-public-london \
-    FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/forest/highway.yaml \
-    bokeh serve ${BOKEH_APP_DIR}/forest \
+    FOREST_CONFIG_FILE=${BOKEH_APP_DIR}/../forest/highway.yaml \
+    bokeh serve ${BOKEH_APP_DIR}/../forest \
         --port ${PORT} \
         --allow-websocket-origin ${FOREST_URL} \
         --unused-session-lifetime ${DAY_IN_MILLISECONDS} \
