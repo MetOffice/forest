@@ -56,6 +56,7 @@ dependencies:
   - mkl_random=1.0.2=py36hd81dba3_0
   - ncurses=6.1=he6710b0_1
   - netcdf4=1.4.2=py36h808af73_0
+  - nodejs=11.14.0=he1b5a44_1
   - numpy=1.16.3=py36h7e9f1db_0
   - numpy-base=1.16.3=py36hde5b4d6_0
   - olefile=0.46=py36_0
