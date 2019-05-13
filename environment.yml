@@ -5,12 +5,15 @@ dependencies:
   - asn1crypto=0.24.0=py36_0
   - blas=1.0=mkl
   - bokeh=1.0.4=py36_0
+  - bzip2=1.0.6=h14c3975_5
   - ca-certificates=2019.1.23=0
   - cartopy=0.17.0=py36hbb7e04d_1
   - certifi=2019.3.9=py36_0
   - cffi=1.12.3=py36h2e261b9_0
+  - cftime=1.0.3.4=py36hdd07704_0
   - chardet=3.0.4=py36_1
   - cryptography=2.6.1=py36h1ba5d50_0
+  - curl=7.64.1=hbc83047_0
   - cycler=0.10.0=py36_0
   - dbus=1.13.6=h746ee38_0
   - expat=2.2.6=he6710b0_0
@@ -20,17 +23,23 @@ dependencies:
   - glib=2.56.2=hd408876_0
   - gst-plugins-base=1.14.0=hbbd80ab_1
   - gstreamer=1.14.0=hb453b48_1
+  - hdf4=4.2.13=h3ca952b_2
+  - hdf5=1.10.4=hb1b8bf9_0
   - icu=58.2=h9c2bf20_1
   - idna=2.8=py36_0
   - intel-openmp=2019.3=199
   - jinja2=2.10.1=py36_0
   - jpeg=9b=h024ee3a_2
   - kiwisolver=1.1.0=py36he6710b0_0
+  - krb5=1.16.1=h173b8e3_7
+  - libcurl=7.64.1=h20c2e04_0
   - libedit=3.1.20181209=hc058e9b_0
   - libffi=3.2.1=hd88cf55_4
   - libgcc-ng=8.2.0=hdf63c60_1
   - libgfortran-ng=7.3.0=hdf63c60_0
+  - libnetcdf=4.6.1=h11d0813_2
   - libpng=1.6.37=hbc83047_0
+  - libssh2=1.8.2=h1ba5d50_0
   - libstdcxx-ng=8.2.0=hdf63c60_1
   - libtiff=4.0.10=h2733197_2
   - libuuid=1.0.3=h1bed415_2
@@ -44,6 +53,7 @@ dependencies:
   - mkl_fft=1.0.12=py36ha843d7b_0
   - mkl_random=1.0.2=py36hd81dba3_0
   - ncurses=6.1=he6710b0_1
+  - netcdf4=1.4.2=py36h808af73_0
   - numpy=1.16.3=py36h7e9f1db_0
   - numpy-base=1.16.3=py36hde5b4d6_0
   - olefile=0.46=py36_0
