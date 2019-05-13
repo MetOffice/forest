@@ -1,14 +1,16 @@
 name: forest_develop
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - asn1crypto=0.24.0=py36_0
   - blas=1.0=mkl
   - bokeh=1.0.4=py36_0
   - bzip2=1.0.6=h14c3975_5
-  - ca-certificates=2019.1.23=0
+  - ca-certificates=2019.3.9=hecc5488_0
   - cartopy=0.17.0=py36hbb7e04d_1
   - certifi=2019.3.9=py36_0
+  - cf_units=2.0.1=py36h3010b51_1002
   - cffi=1.12.3=py36h2e261b9_0
   - cftime=1.0.3.4=py36hdd07704_0
   - chardet=3.0.4=py36_1
@@ -57,7 +59,7 @@ dependencies:
   - numpy=1.16.3=py36h7e9f1db_0
   - numpy-base=1.16.3=py36hde5b4d6_0
   - olefile=0.46=py36_0
-  - openssl=1.1.1b=h7b6447c_1
+  - openssl=1.1.1b=h14c3975_1
   - owslib=0.17.1=py_0
   - packaging=19.0=py36_0
   - pandas=0.24.2=py36he6710b0_0
@@ -89,6 +91,7 @@ dependencies:
   - sqlite=3.28.0=h7b6447c_0
   - tk=8.6.8=hbc83047_0
   - tornado=6.0.2=py36h7b6447c_0
+  - udunits2=2.2.27.6=h4e0c4b3_1001
   - urllib3=1.24.2=py36_0
   - wheel=0.33.2=py36_0
   - xz=5.2.4=h14c3975_4
