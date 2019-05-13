@@ -221,11 +221,10 @@ def main():
 
     # figure_drop.on_click(on_click)
 
-    pressures = image_loaders[0].pressures
     field_controls = FieldControls()
     names = Names(data.MODEL_NAMES)
 
-    variables = Variables([])
+    variables = Menu("Variable", [])
     variables.subscribe(field_controls.on_variable)
 
     time_controls = TimeControls([])
@@ -266,7 +265,7 @@ def main():
     time_steps.subscribe(artist.on_time_step)
 
     pressure_controls = PressureControls(
-            pressures,
+            [],
             units="hPa")
     pressure_controls.subscribe(field_controls.on_pressure_control)
 
@@ -663,12 +662,11 @@ class Names(Observable):
         self.announce(value)
 
 
-class Variables(Observable):
-    def __init__(self, variables):
+class Menu(Observable):
+    def __init__(self, label, values):
         self.layout = bokeh.models.Dropdown(
-                label="Variable",
+                label=label,
                 width=270)
-        self.variables = variables
         self.layout.on_click(select(self.layout))
         self.layout.on_click(self.on_click)
         super().__init__()

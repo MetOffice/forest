@@ -336,7 +336,6 @@ class UMLoader(object):
                 if d in dataset.variables}
 
     def image(self, variable, pressure, itime):
-
         try:
             dimension = self.dimensions[variable][0]
         except KeyError as e:
@@ -363,7 +362,8 @@ class UMLoader(object):
         else:
             self.path, ipressure = self.finder.find(
                     initial,
-                    pressure)
+                    pressure,
+                    variable)
             data = load_image(
                     self.path,
                     variable,
@@ -443,20 +443,19 @@ class Finder(object):
                 variables.add(variable)
         return variables, pressures
 
-    def find(self, initial, pressure):
-        return (
-                self.find_path(initial),
-                self.pressure_index(pressure))
-
-    def pressure_index(self, pressure):
-        if variable not in self.pressure_variables:
-            return 0
+    def find(self, initial, pressure, variable):
+        if variable in self.pressure_variables:
+            ipressure = 0
         else:
-            if isinstance(self.pressures, np.ndarray):
-                pressures = self.pressures.tolist()
-            else:
-                pressures = self.pressures
-            return pressures.index(pressure)
+            ipressure = self.pressure_index(
+                    self.pressures,
+                    pressure)
+        return self.find_path(initial), ipressure
+
+    def pressure_index(self, pressures, pressure):
+        if isinstance(pressures, list):
+            pressures = np.array(pressures, dtype="f")
+        return np.argmin(np.abs(pressures - pressure))
 
     def find_path(self, initial_time):
         try:
