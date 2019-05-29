@@ -14,6 +14,10 @@ class TestDatabase(unittest.TestCase):
     def tearDown(self):
         self.connection.close()
 
+    def test_connect_to_database_multiple_times(self):
+        self.database = db.Database(self.connection)
+        self.database = db.Database(self.connection)
+
     def test_insert_file_name(self):
         names = ["file_1.nc", "file_2.nc"]
         for name in names:
@@ -76,6 +80,18 @@ class TestDatabase(unittest.TestCase):
             self.database.insert_coordinate(path, variable, name, axis=axis)
         result = self.database.axis(path, variable, "pressure")[0]
         expect = 0
+        self.assertEqual(expect, result)
+
+    def test_insert_pressure(self):
+        path = "file.nc"
+        variable = "air_temperature"
+        values = [1000., 950., 850.]
+        self.database.insert_pressure(
+            path,
+            variable,
+            values)
+        result = self.database.pressures(path, variable)
+        expect = [1000., 950., 850.]
         self.assertEqual(expect, result)
 
 

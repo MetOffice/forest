@@ -7,26 +7,32 @@ class Database(object):
         self.connection = connection
         self.cursor = self.connection.cursor()
         self.cursor.execute("""
-            CREATE TABLE file (
+            CREATE TABLE IF NOT EXISTS file (
                       id INTEGER PRIMARY KEY,
                     name TEXT,
             initial_time TEXT,
                          UNIQUE(name))
         """)
         self.cursor.execute("""
-            CREATE TABLE variable (
+            CREATE TABLE IF NOT EXISTS variable (
                       id INTEGER PRIMARY KEY,
                     name TEXT,
                  file_id INTEGER,
                          FOREIGN KEY(file_id) REFERENCES file(id))
         """)
         self.cursor.execute("""
-            CREATE TABLE coordinate (
+            CREATE TABLE IF NOT EXISTS coordinate (
                       id INTEGER PRIMARY KEY,
                     name TEXT,
                     axis INTEGER,
              variable_id INTEGER,
                          FOREIGN KEY(variable_id) REFERENCES variable(id))
+        """)
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS pressure (
+                      id INTEGER PRIMARY KEY,
+                       i INTEGER,
+                   value REAL)
         """)
 
     @classmethod
@@ -51,7 +57,25 @@ class Database(object):
                     cube.var_name,
                     coord.name())
 
-    def insert_coordinate(self, path, variable, name, axis=None):
+    def insert_pressure(self, path, variable, values):
+        self.cursor.executemany("""
+            INSERT OR IGNORE INTO pressure (i, value)
+            VALUES(:i, :value)
+        """, [dict(i=i, value=value) for i, value in enumerate(values)])
+
+    def pressures(self, path, variable):
+        self.cursor.execute("""
+            SELECT value FROM pressure
+        """)
+        rows = self.cursor.fetchall()
+        return [p for p, in rows]
+
+    def insert_coordinate(
+            self,
+            path,
+            variable,
+            name,
+            axis=None):
         self.insert_variable(path, variable)
         self.cursor.execute("""
             INSERT INTO coordinate (name, axis, variable_id)
