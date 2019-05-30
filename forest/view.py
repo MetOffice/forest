@@ -13,7 +13,10 @@ class UMView(object):
                 "dh": [],
                 "image": []})
 
-    def render(self, variable, pressure, itime):
+    def render(self, state):
+        print("{}: {}".format(self.__class__.__name__, state))
+
+    def _render(self, variable, pressure, itime):
         if variable is None:
             return
         self.source.data = self.loader.image(

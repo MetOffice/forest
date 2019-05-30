@@ -100,7 +100,28 @@ def main():
             bar_line_color="black")
         figure.add_layout(colorbar, 'center')
 
-    artist = Artist(figures, color_mapper)
+    for name, pattern in config.patterns:
+        if name not in data.LOADERS:
+            data.add_loader(name, pattern)
+
+    renderers = {}
+    viewers = {}
+    for name, loader in data.LOADERS.items():
+        if isinstance(loader, rdt.Loader):
+            viewer = rdt.View(loader)
+        elif isinstance(loader, earth_networks.Loader):
+            viewer = earth_networks.View(loader)
+        elif isinstance(loader, data.GPM):
+            viewer = view.GPMView(loader, color_mapper)
+        elif isinstance(loader, satellite.EIDA50):
+            viewer = view.EIDA50(loader, color_mapper)
+        else:
+            viewer = view.UMView(loader, color_mapper)
+        viewers[name] = viewer
+        renderers[name] = [
+                viewer.add_figure(f)
+                for f in figures]
+    artist = Artist(viewers, renderers)
     renderers = []
     for _, r in artist.renderers.items():
         renderers += r
@@ -110,10 +131,10 @@ def main():
         if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
             image_sources.append(viewer.source)
 
-    image_loaders = []
-    for name, loader in data.LOADERS.items():
-        if isinstance(loader, (data.UMLoader, data.GPM)):
-            image_loaders.append(loader)
+    # image_loaders = []
+    # for name, loader in data.LOADERS.items():
+    #     if isinstance(loader, (data.UMLoader, data.GPM)):
+    #         image_loaders.append(loader)
 
     # Lakes
     for figure in figures:
@@ -179,6 +200,9 @@ def main():
     mapper_limits = MapperLimits(image_sources, color_mapper)
 
     menu = [(n, n) for n in data.FILE_DB.names]
+    for k, _ in config.patterns:
+        menu.append((k, k))
+
     image_controls = images.Controls(menu)
 
     def on_click(value):
@@ -191,10 +215,7 @@ def main():
 
     figure_drop.on_click(on_click)
 
-    field_controls = FieldControls()
-
     image_controls.subscribe(artist.on_visible)
-    field_controls.subscribe(artist.on_field)
 
     div = bokeh.models.Div(text="", width=10)
     border_row = bokeh.layouts.row(
@@ -205,10 +226,16 @@ def main():
     # Add prototype database controls
     database = db.Database.connect(args.database)
     controls = db.Controls(database, patterns=config.patterns)
+    locator = db.Locator.connect(args.database)
+    text = db.View(text="", locator=locator)
+    controls.subscribe(text.on_state)
+    controls.subscribe(artist.on_state)
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
-            child=controls.layout,
+            child=bokeh.layouts.column(
+                text.div,
+                controls.layout),
             title="DB"
         ),
         bokeh.models.Panel(
@@ -257,7 +284,7 @@ def main():
             "y": []})
 
     series = Series(series_figure)
-    field_controls.subscribe(series.on_field)
+    controls.subscribe(series.on_state)
     for f in figures:
         f.on_event(bokeh.events.Tap, series.on_tap)
         f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
@@ -267,9 +294,7 @@ def main():
     compact_button = bokeh.models.Button(
             label="Compact")
     compact_minus = bokeh.models.Button(label="-", width=50)
-    # compact_minus.on_click(time_controls.on_minus)
     compact_plus = bokeh.models.Button(label="+", width=50)
-    # compact_plus.on_click(time_controls.on_plus)
     compact_navigation = bokeh.layouts.column(
             compact_button,
             bokeh.layouts.row(
@@ -375,12 +400,8 @@ class Series(object):
         self.y = None
         self.variable = None
 
-    def on_field(self, action):
-        variable, pressure, itime = action
-        self.variable = variable
-        self.pressure = pressure
-        self.itime = itime
-        self.render()
+    def on_state(self, state):
+        print("Series: {}".format(state))
 
     def on_tap(self, event):
         self.x = event.x
@@ -406,43 +427,24 @@ def any_none(obj, attrs):
 
 
 class Artist(object):
-    def __init__(self, figures, color_mapper):
-        self.figures = figures
-        self.color_mapper = color_mapper
-        self.viewers = {}
-        self.renderers = {}
-        self.previous_state = None
-        self.variable = None
-        self.pressure = None
-        self.itime = 0
-        for name, loader in data.LOADERS.items():
-            if isinstance(loader, rdt.Loader):
-                viewer = rdt.View(loader)
-            elif isinstance(loader, earth_networks.Loader):
-                viewer = earth_networks.View(loader)
-            elif isinstance(loader, data.GPM):
-                viewer = view.GPMView(loader, self.color_mapper)
-            elif isinstance(loader, satellite.EIDA50):
-                viewer = view.EIDA50(loader, self.color_mapper)
-            else:
-                viewer = view.UMView(loader, self.color_mapper)
-            self.viewers[name] = viewer
-            self.renderers[name] = [
-                    viewer.add_figure(f)
-                    for f in self.figures]
+    def __init__(self, viewers, renderers):
+        self.viewers = viewers
+        self.renderers = renderers
+        self.visible_state = None
+        self.state = None
 
-    def on_visible(self, state):
-        print("on_visible", state)
-        if self.previous_state is not None:
-             # Hide deselected states
-             lost_items = (
-                     set(self.flatten(self.previous_state)) -
-                     set(self.flatten(state)))
-             for key, i, _ in lost_items:
-                 self.renderers[key][i].visible = False
+    def on_visible(self, visible_state):
+        print("on_visible", visible_state)
+        if self.visible_state is not None:
+            # Hide deselected states
+            lost_items = (
+                    set(self.flatten(self.visible_state)) -
+                    set(self.flatten(visible_state)))
+            for key, i, _ in lost_items:
+                self.renderers[key][i].visible = False
 
         # Sync visible states with menu choices
-        states = set(self.flatten(state))
+        states = set(self.flatten(visible_state))
         hidden = [(i, j) for i, j, v in states if not v]
         visible = [(i, j) for i, j, v in states if v]
         for i, j in hidden:
@@ -450,7 +452,7 @@ class Artist(object):
         for i, j in visible:
             self.renderers[i][j].visible = True
 
-        self.previous_state = dict(state)
+        self.visible_state = dict(visible_state)
         self.render()
 
     @staticmethod
@@ -460,72 +462,19 @@ class Artist(object):
             items += [(key, i, f) for i, f in enumerate(flags)]
         return items
 
-    def on_field(self, action):
-        variable, pressure, itime = action
-        self.variable = variable
-        self.pressure = pressure
-        self.itime = itime
-        self.render()
-
-    def on_time_step(self, time_step):
-        self.time_step = time_step
+    def on_state(self, state):
+        print("Artist: {}".format(state))
+        self.state = state
         self.render()
 
     def render(self):
-        if self.previous_state is None:
+        if self.visible_state is None:
             return
-        for name in self.previous_state:
+        if self.state is None:
+            return
+        for name in self.visible_state:
             viewer = self.viewers[name]
-            if isinstance(viewer, view.UMView):
-                viewer.render(
-                        self.variable,
-                        self.pressure,
-                        self.itime)
-            elif isinstance(viewer, view.EIDA50):
-                if self.time_step is None:
-                    continue
-                if self.time_step.valid is None:
-                    continue
-                viewer.image(self.time_step.valid)
-            elif isinstance(viewer, (rdt.View, earth_networks.View)):
-                if self.time_step is None:
-                    continue
-                if self.time_step.valid is None:
-                    continue
-                viewer.render(self.time_step.valid)
-
-
-class FieldControls(Observable):
-    def __init__(self):
-        self.variable = None
-        self.itime = 0
-        self.pressure = None
-        super().__init__()
-
-    def on_variable(self, value):
-        self.variable = value
-        self.render()
-
-    def render(self):
-        if self.variable is None:
-            return
-        self.announce(
-                (self.variable,
-                self.pressure,
-                self.itime))
-
-    def on_pressure_control(self, action):
-        self.pressure = action
-        self.render()
-
-    def on_run_control(self, initial_time):
-        print("run: {}".format(initial_time))
-        self.initial_time = initial_time
-
-    def on_time_control(self, action):
-        itime, _ = action
-        self.itime = itime
-        self.render()
+            viewer.render(self.state)
 
 
 Timestep = namedtuple("Timestep", ("index", "length", "valid", "initial"))

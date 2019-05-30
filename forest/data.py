@@ -23,7 +23,6 @@ import disk
 
 # Application data shared across documents
 FILE_DB = None
-MODEL_NAMES = []
 LOADERS = {}
 IMAGES = OrderedDict()
 VECTORS = OrderedDict()
@@ -44,34 +43,17 @@ DISPUTED = {
     "ys": []
 }
 
+
 def on_server_loaded(patterns):
     global DISPUTED
     global COASTLINES
     global LAKES
     global BORDERS
     global FILE_DB
-    global MODEL_NAMES
     FILE_DB = FileDB(patterns)
     FILE_DB.sync()
     for name, paths in FILE_DB.files.items():
-        if name == "RDT":
-            LOADERS[name] = rdt.Loader(paths)
-        elif "GPM" in name:
-            LOADERS[name] = GPM(paths)
-        elif name == "EarthNetworks":
-            LOADERS[name] = earth_networks.Loader(paths)
-        elif name == "EIDA50":
-            LOADERS[name] = satellite.EIDA50(paths)
-        else:
-            if is_global_africa(paths):
-                finder = disk.GlobalUM(paths)
-            else:
-                finder = None
-            LOADERS[name] = UMLoader(
-                    paths,
-                    name=name,
-                    finder=finder)
-            MODEL_NAMES.append(name)
+        add_loader(name, paths)
 
     # Example of server-side pre-caching
     # for name in [
@@ -98,8 +80,21 @@ def on_server_loaded(patterns):
             'admin_0_boundary_lines_land',
             '50m').geometries()))
 
-def is_global_africa(paths):
-    return os.path.basename(paths[0]).startswith("global_africa")
+
+def add_loader(name, paths):
+    global LOADERS
+    if name in LOADERS:
+        return
+    if name == "RDT":
+        LOADERS[name] = rdt.Loader(paths)
+    elif "GPM" in name:
+        LOADERS[name] = GPM(paths)
+    elif name == "EarthNetworks":
+        LOADERS[name] = earth_networks.Loader(paths)
+    elif name == "EIDA50":
+        LOADERS[name] = satellite.EIDA50(paths)
+    else:
+        LOADERS[name] = DBLoader()
 
 
 def load_coastlines():
@@ -283,6 +278,23 @@ class WindBarbs(ActiveViewer):
             "u": u.flatten(),
             "v": v.flatten()
         }
+
+
+class DBLoader(object):
+    def image(self, variable, pressure, valid_time):
+        print("{}: {}, {}, {}".format(
+            self.__class__.__name__,
+            variable,
+            pressure,
+            valid_time))
+
+    def series(self, variable, x0, y0, k):
+        print("{}: {}, {}, {}".format(
+            self.__class__.__name__,
+            variable,
+            x0,
+            y0,
+            k))
 
 
 class UMLoader(object):

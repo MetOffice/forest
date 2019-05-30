@@ -219,7 +219,6 @@ class Locator(Connection):
             valid_time=valid_time,
             pressure=pressure))
         rows = self.cursor.fetchall()
-        print(rows)
         for (path, ta, pa, ti, pi) in rows:
             if ta == pa:
                 if ti != pi:
