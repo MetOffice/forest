@@ -186,20 +186,6 @@ def main():
 
     figure_drop.on_click(on_click)
 
-    # def on_click(value):
-    #     if int(value) == 1:
-    #         labels = ["Show"]
-    #     elif int(value) == 2:
-    #         labels = ["L", "R"]
-    #     elif int(value) == 3:
-    #         labels = ["L", "C", "R"]
-    #     table.row_factory.labels = labels
-    #     for row in table.rows:
-    #         row.labels = labels
-    #         print(row.labels)
-
-    # figure_drop.on_click(on_click)
-
     field_controls = FieldControls()
     names = Names(data.MODEL_NAMES)
 
@@ -253,11 +239,15 @@ def main():
             pressure_controls)
     time_pressure.subscribe(print)
 
-    #    bokeh.models.Panel(
-    #        child=bokeh.layouts.column(
-    #            table.layout),
-    #        title="Compare++"),
+    # Add prototype database controls
+    database = db.Database.connect(":memory:")
+    controls = db.Controls(database, patterns=[])
+
     tabs = bokeh.models.Tabs(tabs=[
+        bokeh.models.Panel(
+            child=controls.layout,
+            title="DB"
+        ),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
                 run_controls.layout,
