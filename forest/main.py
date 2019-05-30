@@ -13,6 +13,7 @@ import geo
 import picker
 import colors
 import compare
+import db
 from util import Observable, select, initial_time
 from collections import defaultdict, namedtuple
 import datetime as dt
@@ -93,28 +94,6 @@ def main():
             major_tick_line_color="black",
             bar_line_color="black")
         figure.add_layout(colorbar, 'center')
-
-    # # Comparison tab
-    # names = []
-    # views = []
-    # for name, loader in data.LOADERS.items():
-    #     if isinstance(loader, rdt.Loader):
-    #         viewer = rdt.View(loader)
-    #     elif isinstance(loader, earth_networks.Loader):
-    #         viewer = earth_networks.View(loader)
-    #     elif isinstance(loader, data.GPM):
-    #         viewer = view.GPMView(loader, color_mapper)
-    #     elif isinstance(loader, satellite.EIDA50):
-    #         viewer = view.EIDA50(loader, color_mapper)
-    #     else:
-    #         viewer = view.UMView(loader, color_mapper)
-    #     names.append(name)
-    #     views.append(viewer)
-    # table = compare.table(
-    #         names,
-    #         views,
-    #         figures,
-    #         labels=["Show"])
 
     artist = Artist(figures, color_mapper)
     renderers = []
