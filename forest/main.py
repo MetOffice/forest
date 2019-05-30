@@ -192,19 +192,6 @@ def main():
     figure_drop.on_click(on_click)
 
     field_controls = FieldControls()
-    names = Names(data.MODEL_NAMES)
-
-    variables = Menu("Variable", [])
-    variables.subscribe(field_controls.on_variable)
-
-    time_controls = TimeControls([])
-
-    def on_name_change(name):
-        loader = data.LOADERS[name]
-        variables.values = loader.variables
-        time_controls.set_times(loader.times["time"])
-
-    names.subscribe(on_name_change)
 
     image_controls.subscribe(artist.on_visible)
     field_controls.subscribe(artist.on_field)
@@ -215,35 +202,6 @@ def main():
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
-    initial_times = []
-    for name, paths in data.FILE_DB.files.items():
-        if name not in data.MODEL_NAMES:
-            continue
-        initial_times += [
-                initial_time(p) for p in paths]
-    run_controls = RunControls(initial_times)
-    run_controls.subscribe(
-            field_controls.on_run_control)
-    time_controls.subscribe(field_controls.on_time_control)
-
-    time_steps = TimeSteps()
-    run_controls.subscribe(time_steps.on_run_control)
-    time_controls.subscribe(time_steps.on_time_control)
-
-    valid_text = ValidText(run_controls.valid_div)
-    time_steps.subscribe(valid_text.on_time_step)
-    time_steps.subscribe(artist.on_time_step)
-
-    pressure_controls = PressureControls(
-            [],
-            units="hPa")
-    pressure_controls.subscribe(field_controls.on_pressure_control)
-
-    time_pressure = Join(
-            time_steps,
-            pressure_controls)
-    time_pressure.subscribe(print)
-
     # Add prototype database controls
     database = db.Database.connect(args.database)
     controls = db.Controls(database, patterns=config.patterns)
@@ -253,14 +211,6 @@ def main():
             child=controls.layout,
             title="DB"
         ),
-        bokeh.models.Panel(
-            child=bokeh.layouts.column(
-                run_controls.layout,
-                names.layout,
-                variables.layout,
-                time_controls.layout,
-                pressure_controls.layout),
-            title="Navigate"),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
                 bokeh.layouts.row(figure_drop),
@@ -317,9 +267,9 @@ def main():
     compact_button = bokeh.models.Button(
             label="Compact")
     compact_minus = bokeh.models.Button(label="-", width=50)
-    compact_minus.on_click(time_controls.on_minus)
+    # compact_minus.on_click(time_controls.on_minus)
     compact_plus = bokeh.models.Button(label="+", width=50)
-    compact_plus.on_click(time_controls.on_plus)
+    # compact_plus.on_click(time_controls.on_plus)
     compact_navigation = bokeh.layouts.column(
             compact_button,
             bokeh.layouts.row(
@@ -455,20 +405,6 @@ def any_none(obj, attrs):
     return any([getattr(obj, x) is None for x in attrs])
 
 
-class Join(Observable):
-    def __init__(self, *observables):
-        self.state = len(observables) * [None]
-        for i, o in enumerate(observables):
-            o.subscribe(self.on_change(i))
-        super().__init__()
-
-    def on_change(self, index):
-        def callback(action):
-            self.state[index] = action
-            self.announce(self.state)
-        return callback
-
-
 class Artist(object):
     def __init__(self, figures, color_mapper):
         self.figures = figures
@@ -557,104 +493,6 @@ class Artist(object):
                 if self.time_step.valid is None:
                     continue
                 viewer.render(self.time_step.valid)
-
-
-class PressureControls(Observable):
-    def __init__(self, pressures, units):
-        self.pressures = pressures
-        self.units = units
-        self.labels = ["{} {}".format(int(p), self.units)
-                for p in self.pressures]
-        menu = list(zip(self.labels, self.labels))
-        self.dropdown = bokeh.models.Dropdown(
-                label="Pressures",
-                menu=menu,
-                width=80)
-        self.dropdown.on_click(select(self.dropdown))
-        self.dropdown.on_click(self.on_dropdown)
-        self.plus = bokeh.models.Button(
-                label="+", width=80)
-        self.plus.on_click(self.on_plus)
-        self.minus = bokeh.models.Button(
-                label="-", width=80)
-        self.minus.on_click(self.on_minus)
-        sizing_mode = "fixed"
-        self.layout = bokeh.layouts.row(
-                bokeh.layouts.column(
-                    self.minus, width=90,
-                    sizing_mode=sizing_mode),
-                bokeh.layouts.column(
-                    self.dropdown, width=100,
-                    sizing_mode=sizing_mode),
-                bokeh.layouts.column(
-                    self.plus, width=90,
-                    sizing_mode=sizing_mode),
-                width=300)
-        super().__init__()
-
-    def on_dropdown(self, value):
-        self.announce((self.index, self.pressure))
-
-    def on_plus(self):
-        if self.dropdown.value is None:
-            self.dropdown.value = self.labels[0]
-            return
-        if self.index == (len(self.labels) - 1):
-            return
-        else:
-            value = self.labels[self.index + 1]
-            self.dropdown.value = value
-
-    def on_minus(self):
-        if self.dropdown.value is None:
-            self.dropdown.value = self.labels[-1]
-            return
-        if self.index == 0:
-            return
-        else:
-            value = self.labels[self.index - 1]
-            self.dropdown.value = value
-
-    @property
-    def index(self):
-        if self.dropdown.value is None:
-            return
-        return self.labels.index(self.dropdown.value)
-
-
-class Names(Observable):
-    def __init__(self, names):
-        self.layout = bokeh.models.Dropdown(
-                label="Model",
-                menu=[(n, n) for n in names],
-                width=270)
-        self.layout.on_click(select(self.layout))
-        self.layout.on_click(self.on_click)
-        super().__init__()
-
-    def on_click(self, value):
-        self.announce(value)
-
-
-class Menu(Observable):
-    def __init__(self, label, values):
-        self.layout = bokeh.models.Dropdown(
-                label=label,
-                width=270)
-        self.layout.on_click(select(self.layout))
-        self.layout.on_click(self.on_click)
-        super().__init__()
-
-    @property
-    def values(self):
-        return [v for _, v in self.layout.menu]
-
-    @values.setter
-    def values(self, texts):
-        self.layout.menu = [(t, t) for t in texts]
-
-    def on_click(self, value):
-        self.announce(value)
 
 
 class FieldControls(Observable):
@@ -766,201 +604,6 @@ class TimeControls(Observable):
         if self.index is None:
             return
         return self.steps[self.index]
-
-
-class TimeSteps(Observable):
-    def __init__(self):
-        self.index = None
-        self.initial = None
-        self.length = None
-        super().__init__()
-
-    def on_run_control(self, value):
-        self.initial = value
-        self.announce(self.time_step)
-
-    def on_time_control(self, value):
-        self.index, self.length = value
-        self.announce(self.time_step)
-
-    @property
-    def time_step(self):
-        return Timestep(self.index, self.length, self.valid, self.initial)
-
-    @property
-    def valid(self):
-        if self.initial is None:
-            return
-        if self.length is None:
-            return
-        return self.initial + dt.timedelta(hours=self.length)
-
-
-class ValidText(object):
-    def __init__(self, div):
-        self.div = div
-
-    def on_time_step(self, time_step):
-        if time_step.valid is None:
-            return
-        template = "Valid date<br><span style='margin-left:10px'><b>{:%a %b %d %Y %H:%M}</b></span>"
-        self.div.text = template.format(time_step.valid)
-
-
-class RunControls(Observable):
-    def __init__(self, initial_times):
-        # Internal state
-        self.date = None
-        self.time = None
-        self.initial_times = initial_times
-        self._times = defaultdict(set)
-        for datetime in self.initial_times:
-            d = self.as_date(datetime)
-            t = self.as_time(datetime)
-            self._times[d].add(t)
-
-        # Widget(s)
-        width = 80
-        side = 90
-        middle = 100
-        row = 300
-        sizing_mode = 'fixed'
-        self.valid_div = bokeh.models.Div(
-                text="Valid date",
-                width=row - 30)
-        plus = bokeh.models.Button(
-                label="+",
-                width=width)
-        plus.on_click(self.on_plus)
-        minus = bokeh.models.Button(
-                label="-",
-                width=width)
-        minus.on_click(self.on_minus)
-        self.dropdown = bokeh.models.Dropdown(
-                label="Initial time",
-                width=width)
-        self.dropdown.on_click(select(self.dropdown))
-        self.dropdown.on_click(self.on_time)
-        self.date_picker = picker.DayPicker(
-                title="Initial date",
-                width=row - 30)
-        self.date_picker.on_change('value', self.on_date)
-        self.button_row = bokeh.layouts.row(
-                bokeh.layouts.column(
-                    minus,
-                    width=side,
-                    sizing_mode=sizing_mode),
-                bokeh.layouts.column(
-                    self.dropdown,
-                    width=middle,
-                    sizing_mode=sizing_mode),
-                bokeh.layouts.column(
-                    plus,
-                    width=side,
-                    sizing_mode=sizing_mode),
-                width=row)
-        self.latest= bokeh.models.Button(
-                label="Latest model run",
-                width=row - 30)
-        self.latest.on_click(self.on_latest)
-        self.layout = bokeh.layouts.column(
-                bokeh.layouts.row(
-                    self.valid_div,
-                    width=row),
-                bokeh.layouts.row(
-                    self.date_picker,
-                    width=row),
-                bokeh.layouts.row(
-                    self.latest,
-                    width=row),
-                self.button_row)
-
-        # Observable
-        super().__init__()
-
-    @property
-    def initial_dates(self):
-        return [self.as_date(t)
-                for t in self.initial_times]
-
-    def times(self, date):
-        return sorted(self._times[date])
-
-    @staticmethod
-    def as_date(t):
-        return dt.date(t.year, t.month, t.day)
-
-    @staticmethod
-    def as_time(t):
-        return dt.time(t.hour, t.minute, t.second)
-
-    def on_latest(self):
-        self.initial_time = max(self.initial_times)
-        self.date_picker.value = self.date
-        self.dropdown.value = "{:%H:%M}".format(self.initial_time)
-        self.announce(self.initial_time)
-
-    def on_plus(self):
-        if len(self.initial_times) == 0:
-            return
-        if self.initial_time is None:
-            self.initial_time = self.initial_times[0]
-        else:
-            i = self.initial_times.index(self.initial_time)
-            if (i + 1) < len(self.initial_times):
-                self.initial_time = self.initial_times[i + 1]
-        self.date_picker.value = self.date
-        self.dropdown.value = "{:%H:%M}".format(self.initial_time)
-
-    def on_minus(self):
-        if len(self.initial_times) == 0:
-            return
-        if self.initial_time is None:
-            self.initial_time = self.initial_times[-1]
-        else:
-            i = self.initial_times.index(self.initial_time)
-            if (i - 1) >= 0:
-                self.initial_time = self.initial_times[i - 1]
-        self.date_picker.value = self.date
-        self.dropdown.value = "{:%H:%M}".format(self.initial_time)
-
-    def on_date(self, attr, old, new):
-        self.date = new
-        if self.initial_time is not None:
-            self.announce(self.initial_time)
-
-        if new not in self._times:
-            self.dropdown.disabled = True
-        else:
-            times = self._times[new]
-            strings = ["{:%H:%M}".format(t) for t in times]
-            menu = [(s, s) for s in strings]
-            self.dropdown.disabled = False
-            self.dropdown.menu = menu
-
-    def on_time(self, value):
-        self.time = self.as_time(dt.datetime.strptime(
-                value, "%H:%M"))
-        if self.initial_time is not None:
-            self.announce(self.initial_time)
-
-    @property
-    def initial_time(self):
-        if self.date is None:
-            return
-        if self.time is None:
-            return
-        return dt.datetime(
-                self.date.year,
-                self.date.month,
-                self.date.day,
-                self.time.hour,
-                self.time.minute)
-
-    @initial_time.setter
-    def initial_time(self, value):
-        self.date = self.as_date(value)
-        self.time = self.as_time(value)
 
 
 class MapperLimits(object):
