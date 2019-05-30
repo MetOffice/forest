@@ -294,9 +294,9 @@ class DBLoader(object):
             self.__class__.__name__,
             state))
         if (
-                (state.variable is None) and
-                (state.initial_time is None) and
-                (state.valid_time is None) and
+                (state.variable is None) or
+                (state.initial_time is None) or
+                (state.valid_time is None) or
                 (state.pressure is None)):
             return
         pressure = float(state.pressure.replace("hPa", ""))

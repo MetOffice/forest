@@ -234,6 +234,7 @@ class Locator(Connection):
                 pts[ta] = ti
                 pts[pa] = pi
                 return path, tuple(pts)
+        return None, None  # Default case: consider refactor
 
 
 class Database(Connection):

@@ -236,15 +236,14 @@ def main():
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                bokeh.models.Div(text="Navigate:"),
                 controls.layout,
-                text.div),
-            title="Navigate"
-        ),
-        bokeh.models.Panel(
-            child=bokeh.layouts.column(
+                bokeh.models.Div(text="Compare:"),
                 bokeh.layouts.row(figure_drop),
-                image_controls.column),
-            title="Compare"),
+                image_controls.column,
+                text.div),
+            title="Control"
+        ),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
                 border_row,
