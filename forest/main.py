@@ -14,12 +14,17 @@ import picker
 import colors
 import compare
 import db
+import parse_args
 from util import Observable, select, initial_time
 from collections import defaultdict, namedtuple
 import datetime as dt
 
 
 def main():
+    args = parse_args.parse_args()
+    with open(args.config_file) as stream:
+        config = parse_args.load_config(stream)
+
     # Access latest files
     data.FILE_DB.sync()
 
@@ -240,8 +245,8 @@ def main():
     time_pressure.subscribe(print)
 
     # Add prototype database controls
-    database = db.Database.connect(":memory:")
-    controls = db.Controls(database, patterns=[])
+    database = db.Database.connect(args.database)
+    controls = db.Controls(database, patterns=config.patterns)
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
