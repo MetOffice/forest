@@ -3,7 +3,7 @@ import datetime as dt
 import os
 import sqlite3
 import netCDF4
-import _main as main
+import db.main as main
 
 
 class TestMain(unittest.TestCase):

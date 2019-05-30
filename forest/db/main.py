@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-import _database as db
+from . import database as db
 
 
 def parse_args(argv=None):

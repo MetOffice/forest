@@ -1,9 +1,11 @@
 import bokeh.plotting
 import argparse
 import yaml
-import _control as control
-import _view as view
-import _database as db
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+import db
 
 
 def parse_args(argv=None):
@@ -24,11 +26,11 @@ def main():
     with open(args.config_file) as stream:
         config = load_config(stream)
     database = db.Database.connect(args.database)
-    controls = control.Controls(database, patterns=config.patterns)
+    controls = db.Controls(database, patterns=config.patterns)
     controls.subscribe(print)
 
     locator = db.Locator.connect(args.database)
-    text = view.View(text="Hello, world!", locator=locator)
+    text = db.View(text="Hello, world!", locator=locator)
     controls.subscribe(text.on_state)
 
     document = bokeh.plotting.curdoc()

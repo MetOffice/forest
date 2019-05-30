@@ -1,7 +1,7 @@
 import unittest
 import datetime as dt
 import sqlite3
-import _database as db
+import db
 
 
 class TestDatabase(unittest.TestCase):

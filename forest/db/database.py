@@ -4,6 +4,13 @@ import netCDF4
 import jinja2
 
 
+__all__ = [
+    "Database",
+    "Locator",
+    "CoordinateDB"
+]
+
+
 class Connection(object):
     def __init__(self, connection):
         self.connection = connection

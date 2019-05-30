@@ -1,14 +1,13 @@
 import unittest
 import unittest.mock
 import datetime as dt
-import _control as control
-import _database as db
+import db
 
 
 class TestControls(unittest.TestCase):
     def setUp(self):
         self.database = db.Database.connect(":memory:")
-        self.controls = control.Controls(self.database)
+        self.controls = db.Controls(self.database)
 
     def tearDown(self):
         self.database.close()
@@ -16,18 +15,18 @@ class TestControls(unittest.TestCase):
     def test_on_click_emits_state(self):
         key = "k"
         value = "*.nc"
-        controls = control.Controls(self.database, patterns=[(key, value)])
+        controls = db.Controls(self.database, patterns=[(key, value)])
         callback = unittest.mock.Mock()
         controls.subscribe(callback)
         controls.on_click('pattern')(value)
-        callback.assert_called_once_with(control.State(pattern=value))
+        callback.assert_called_once_with(db.State(pattern=value))
 
     def test_on_variable_emits_state(self):
         value = "token"
         callback = unittest.mock.Mock()
         self.controls.subscribe(callback)
         self.controls.on_click("variable")(value)
-        callback.assert_called_once_with(control.State(variable=value))
+        callback.assert_called_once_with(db.State(variable=value))
 
     @unittest.skip("refactoring test suite")
     def test_on_variable_sets_initial_times_drop_down(self):
@@ -40,13 +39,13 @@ class TestControls(unittest.TestCase):
         self.assertEqual(expect, result)
 
     def test_next_state_given_kwargs(self):
-        current = control.State(pattern="p")
-        result = control.next_state(current, variable="v")
-        expect = control.State(pattern="p", variable="v")
+        current = db.State(pattern="p")
+        result = db.next_state(current, variable="v")
+        expect = db.State(pattern="p", variable="v")
         self.assertEqual(expect, result)
 
     def test_observable(self):
-        state = control.State()
+        state = db.State()
         callback = unittest.mock.Mock()
         self.controls.subscribe(callback)
         self.controls.notify(state)
@@ -55,8 +54,8 @@ class TestControls(unittest.TestCase):
     def test_render_state_configures_variable_menu(self):
         self.database.insert_variable("a.nc", "air_temperature")
         self.database.insert_variable("b.nc", "mslp")
-        controls = control.Controls(self.database)
-        state = control.State(pattern="b.nc")
+        controls = db.Controls(self.database)
+        state = db.State(pattern="b.nc")
         controls.render(state)
         result = controls.dropdowns["variable"].menu
         expect = ["mslp"]
@@ -68,7 +67,7 @@ class TestControls(unittest.TestCase):
                 ("a_0.nc", dt.datetime(2019, 1, 1)),
                 ("a_3.nc", dt.datetime(2019, 1, 1, 12))]:
             self.database.insert_file_name(path, time)
-        state = control.State(pattern="a_?.nc")
+        state = db.State(pattern="a_?.nc")
         self.controls.render(state)
         result = self.controls.dropdowns["initial_time"].menu
         expect = ["2019-01-01 00:00:00", "2019-01-01 12:00:00"]
@@ -79,7 +78,7 @@ class TestControls(unittest.TestCase):
         valid = dt.datetime(2019, 1, 1, 3)
         self.database.insert_file_name("file.nc", initial)
         self.database.insert_time("file.nc", "variable", valid, 0)
-        state = control.State(initial_time="2019-01-01 00:00:00")
+        state = db.State(initial_time="2019-01-01 00:00:00")
         self.controls.render(state)
         result = self.controls.dropdowns["valid_time"].menu
         expect = ["2019-01-01 03:00:00"]
@@ -91,13 +90,13 @@ class TestControls(unittest.TestCase):
         self.database.insert_file_name("file.nc", initial_time)
         for i, value in enumerate(pressures):
             self.database.insert_pressure("file.nc", "variable", value, i)
-        self.controls.render(control.State(initial_time=initial_time))
+        self.controls.render(db.State(initial_time=initial_time))
         result = self.controls.dropdowns["pressure"].menu
         expect = ["1000hPa", "950hPa", "850hPa"]
         self.assert_label_equal(expect, result)
 
     def test_hpa_given_small_pressures(self):
-        result = control.Controls.hpa(0.001)
+        result = db.Controls.hpa(0.001)
         expect = "0.001hPa"
         self.assertEqual(expect, result)
 

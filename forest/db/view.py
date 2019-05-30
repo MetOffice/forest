@@ -2,6 +2,12 @@ import bokeh.models
 from collections import namedtuple
 
 
+__all__ = [
+    "Image",
+    "View"
+]
+
+
 Image = namedtuple("Image", ("path", "variable", "pts"))
 
 
