@@ -22,6 +22,7 @@ import datetime as dt
 
 def main():
     args = parse_args.parse_args()
+    database = db.Database.connect(args.database)
     with open(args.config_file) as stream:
         config = parse_args.load_config(stream)
 
@@ -102,7 +103,9 @@ def main():
 
     for name, pattern in config.patterns:
         if name not in data.LOADERS:
-            data.add_loader(name, pattern)
+            locator = db.Locator(database.connection)
+            loader = data.DBLoader(name, pattern, locator)
+            data.add_loader(name, loader)
 
     renderers = {}
     viewers = {}
@@ -224,7 +227,6 @@ def main():
         bokeh.layouts.column(dropdown))
 
     # Add prototype database controls
-    database = db.Database.connect(args.database)
     controls = db.Controls(database, patterns=config.patterns)
     locator = db.Locator.connect(args.database)
     text = db.View(text="", locator=locator)
@@ -234,9 +236,9 @@ def main():
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
-                text.div,
-                controls.layout),
-            title="DB"
+                controls.layout,
+                text.div),
+            title="Navigate"
         ),
         bokeh.models.Panel(
             child=bokeh.layouts.column(

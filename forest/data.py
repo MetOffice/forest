@@ -53,7 +53,9 @@ def on_server_loaded(patterns):
     FILE_DB = FileDB(patterns)
     FILE_DB.sync()
     for name, paths in FILE_DB.files.items():
-        add_loader(name, paths)
+        loader = loader_factory(name, paths)
+        if loader is not None:
+            add_loader(name, loader)
 
     # Example of server-side pre-caching
     # for name in [
@@ -81,20 +83,21 @@ def on_server_loaded(patterns):
             '50m').geometries()))
 
 
-def add_loader(name, paths):
+def add_loader(name, loader):
     global LOADERS
-    if name in LOADERS:
-        return
+    if name not in LOADERS:
+        LOADERS[name] = loader
+
+
+def loader_factory(name, paths):
     if name == "RDT":
-        LOADERS[name] = rdt.Loader(paths)
+        return rdt.Loader(paths)
     elif "GPM" in name:
-        LOADERS[name] = GPM(paths)
+        return GPM(paths)
     elif name == "EarthNetworks":
-        LOADERS[name] = earth_networks.Loader(paths)
+        return earth_networks.Loader(paths)
     elif name == "EIDA50":
-        LOADERS[name] = satellite.EIDA50(paths)
-    else:
-        LOADERS[name] = DBLoader()
+        return satellite.EIDA50(paths)
 
 
 def load_coastlines():
@@ -281,12 +284,47 @@ class WindBarbs(ActiveViewer):
 
 
 class DBLoader(object):
-    def image(self, variable, pressure, valid_time):
-        print("{}: {}, {}, {}".format(
+    def __init__(self, name, pattern, locator):
+        self.name = name
+        self.pattern = pattern
+        self.locator = locator
+
+    def image(self, state):
+        print("{}: {}".format(
             self.__class__.__name__,
-            variable,
-            pressure,
-            valid_time))
+            state))
+        if (
+                (state.variable is None) and
+                (state.initial_time is None) and
+                (state.valid_time is None) and
+                (state.pressure is None)):
+            return
+        pressure = float(state.pressure.replace("hPa", ""))
+        path, pts = self.locator.path_points(
+            self.pattern,
+            state.variable,
+            state.initial_time,
+            state.valid_time,
+            pressure)
+        valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%d %H:%M:%S")
+        initial = dt.datetime.strptime(state.initial_time, "%Y-%m-%d %H:%M:%S")
+        hours = (valid - initial).total_seconds() / (60*60)
+        length = "T{:+}".format(int(hours))
+        data = load_image_pts(
+                path,
+                state.variable,
+                pts,
+                pts)
+        if True:
+            level = "{} hPa".format(int(pressure))
+        else:
+            level = "Surface"
+        data["name"] = [self.name]
+        data["valid"] = [valid]
+        data["initial"] = [initial]
+        data["length"] = [length]
+        data["level"] = [level]
+        return data
 
     def series(self, variable, x0, y0, k):
         print("{}: {}, {}, {}".format(

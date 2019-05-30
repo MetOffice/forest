@@ -14,21 +14,7 @@ class UMView(object):
                 "image": []})
 
     def render(self, state):
-        print("{}: {}".format(self.__class__.__name__, state))
-
-    def _render(self, variable, pressure, itime):
-        if variable is None:
-            return
-        self.source.data = self.loader.image(
-                variable,
-                pressure,
-                itime)
-
-        def on_change(attr, old, new):
-            print(attr, old, new)
-
-        self.source.selected.on_change("indices",
-                on_change)
+        self.source.data = self.loader.image(state)
 
     def add_figure(self, figure):
         renderer = figure.image(
