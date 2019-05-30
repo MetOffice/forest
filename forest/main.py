@@ -103,7 +103,9 @@ def main():
 
     for name, pattern in config.patterns:
         if name not in data.LOADERS:
-            locator = db.Locator(database.connection)
+            locator = db.Locator(
+                database.connection,
+                directory=args.directory)
             loader = data.DBLoader(name, pattern, locator)
             data.add_loader(name, loader)
 
@@ -228,7 +230,9 @@ def main():
 
     # Add prototype database controls
     controls = db.Controls(database, patterns=config.patterns)
-    locator = db.Locator.connect(args.database)
+    locator = db.Locator(
+        database.connection,
+        directory=args.directory)
     text = db.View(text="", locator=locator)
     controls.subscribe(text.on_state)
     controls.subscribe(artist.on_state)

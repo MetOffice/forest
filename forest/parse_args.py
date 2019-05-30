@@ -5,6 +5,9 @@ import yaml
 def parse_args(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--directory",
+        help="directory to use with paths returned from database")
+    parser.add_argument(
         "--database",
         required=True,
         help="SQL database to optimise menu system")

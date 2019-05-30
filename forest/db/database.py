@@ -1,4 +1,5 @@
 import sqlite3
+import os
 import iris
 import netCDF4
 import jinja2
@@ -186,6 +187,11 @@ class CoordinateDB(Connection):
 
 class Locator(Connection):
     """Query database for path and index related to fields"""
+    def __init__(self, connection, directory=None):
+        self.directory = directory
+        self.connection = connection
+        self.cursor = self.connection.cursor()
+
     def path_points(
             self,
             pattern,
@@ -220,6 +226,9 @@ class Locator(Connection):
             pressure=pressure))
         rows = self.cursor.fetchall()
         for (path, ta, pa, ti, pi) in rows:
+            if self.directory is not None:
+                # HACK: consider refactor
+                path = os.path.join(self.directory, os.path.basename(path))
             if ta == pa:
                 if ti != pi:
                     continue
