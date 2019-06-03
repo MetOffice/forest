@@ -4,7 +4,7 @@ Helpers to choose color palette(s), limits etc.
 import bokeh.palettes
 import bokeh.colors
 import bokeh.layouts
-from util import select
+from db.util import autolabel
 
 
 class Controls(object):
@@ -20,16 +20,16 @@ class Controls(object):
                 label="Palettes",
                 value=self.name,
                 menu=menu)
-        self.names.on_click(select(self.names))
-        self.names.on_click(self.on_name)
+        autolabel(self.names)
+        self.names.on_change("value", self.on_name)
 
         numbers = sorted(self.palettes[self.name].keys())
         self.numbers = bokeh.models.Dropdown(
                 label="N",
                 value=str(self.number),
                 menu=self.numbers_menu(numbers))
-        self.numbers.on_click(select(self.numbers))
-        self.numbers.on_click(self.on_number)
+        autolabel(self.numbers)
+        self.numbers.on_change("value", self.on_number)
 
         self.reverse = False
         self.checkbox = bokeh.models.CheckboxButtonGroup(
@@ -58,9 +58,9 @@ class Controls(object):
                 self.invisible_checkbox,
                 self.invisible_input)
 
-    def on_name(self, name):
-        self.name = name
-        numbers = sorted(self.palettes[name].keys())
+    def on_name(self, attr, old, new):
+        self.name = new
+        numbers = sorted(self.palettes[self.name].keys())
         if self.number is None:
             self.number = numbers[-1]
         elif self.number not in numbers:
@@ -73,8 +73,8 @@ class Controls(object):
         labels = [str(n) for n in numbers]
         return list(zip(labels, labels))
 
-    def on_number(self, number):
-        self.number = int(number)
+    def on_number(self, attr, old, new):
+        self.number = int(new)
         self.render()
 
     def on_reverse(self, attr, old, new):

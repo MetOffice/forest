@@ -13,8 +13,8 @@ import colors
 import compare
 import db
 import parse_args
-from util import Observable, select, initial_time
-from collections import defaultdict, namedtuple
+from util import Observable
+from db.util import autolabel
 import datetime as dt
 
 
@@ -174,13 +174,13 @@ def main():
                 ("Black", "black"),
                 ("White", "white")],
             width=50)
-    dropdown.on_click(select(dropdown))
+    autolabel(dropdown)
 
-    def on_click(value):
+    def on_change(attr, old, new):
         for feature in features:
-            feature.glyph.line_color = value
+            feature.glyph.line_color = new
 
-    dropdown.on_click(on_click)
+    dropdown.on_change("value", on_change)
 
     slider = bokeh.models.Slider(
         start=0,
@@ -480,8 +480,6 @@ class Artist(object):
             viewer.render(self.state)
 
 
-Timestep = namedtuple("Timestep", ("index", "length", "valid", "initial"))
-
 
 class TimeControls(Observable):
     def __init__(self, steps):
@@ -496,7 +494,7 @@ class TimeControls(Observable):
                 label="Time step",
                 menu=list(zip(self.labels, self.labels)),
                 width=80)
-        self.dropdown.on_click(select(self.dropdown))
+        autolabel(self.dropdown)
         self.dropdown.on_click(self.on_dropdown)
         sizing_mode = "fixed"
         self.layout = bokeh.layouts.row(

@@ -1,7 +1,7 @@
 """Widgets responsible for comparisons"""
 from collections import defaultdict
 import bokeh.models
-from util import select
+from db.util import autolabel
 
 
 def table(*args, labels=None):
@@ -53,7 +53,7 @@ class Row(object):
                 menu=menu,
                 label="Model/observation",
                 width=110)
-        dropdown.on_click(select(dropdown))
+        autolabel(dropdown)
         dropdown.on_click(self.on_view)
         self.views = dict(zip(names, views))
         self.view = None
