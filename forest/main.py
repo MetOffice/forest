@@ -1,4 +1,3 @@
-import wind  # meta-programming to inject figure.barbs()
 import bokeh.plotting
 import bokeh.events
 import numpy as np
@@ -10,7 +9,6 @@ import images
 import earth_networks
 import rdt
 import geo
-import picker
 import colors
 import compare
 import db

@@ -62,7 +62,7 @@ class Controls(Observable):
         for key, dropdown in self.dropdowns.items():
             util.autolabel(dropdown)
             util.autowarn(dropdown)
-            dropdown.on_click(self.on_click(key))
+            dropdown.on_change("value", self.on_change(key))
         self.layout = bokeh.layouts.column(
             self.dropdowns["pattern"],
             self.dropdowns["variable"],
@@ -99,10 +99,10 @@ class Controls(Observable):
             valid_times = sorted(set(valid_times))
             self.dropdowns["valid_time"].menu = self.menu(valid_times)
 
-    def on_click(self, key):
-        """Wire up bokeh on_click callbacks to State changes"""
-        def callback(value):
-            state = next_state(self.state, **{key: value})
+    def on_change(self, key):
+        """Wire up bokeh on_change callbacks to State changes"""
+        def callback(attr, old, new):
+            state = next_state(self.state, **{key: new})
             self.notify(state)
             self.state = state
         return callback
