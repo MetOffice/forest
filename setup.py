@@ -8,4 +8,8 @@ setuptools.setup(
         author_email="andrew.ryan@metoffice.gov.uk",
         description="Forecast visualisation and survey tool",
         packages=setuptools.find_packages(),
-        scripts=['bin/forest'])
+        entry_points={
+            'console_scripts': [
+                'forest=forest.cli.main:main'
+            ]
+        })

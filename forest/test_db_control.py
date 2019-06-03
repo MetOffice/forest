@@ -12,20 +12,20 @@ class TestControls(unittest.TestCase):
     def tearDown(self):
         self.database.close()
 
-    def test_on_click_emits_state(self):
+    def test_on_change_emits_state(self):
         key = "k"
         value = "*.nc"
         controls = db.Controls(self.database, patterns=[(key, value)])
         callback = unittest.mock.Mock()
         controls.subscribe(callback)
-        controls.on_click('pattern')(value)
+        controls.on_change('pattern')(None, None, value)
         callback.assert_called_once_with(db.State(pattern=value))
 
     def test_on_variable_emits_state(self):
         value = "token"
         callback = unittest.mock.Mock()
         self.controls.subscribe(callback)
-        self.controls.on_click("variable")(value)
+        self.controls.on_change("variable")(None, None, value)
         callback.assert_called_once_with(db.State(variable=value))
 
     @unittest.skip("refactoring test suite")
@@ -70,7 +70,7 @@ class TestControls(unittest.TestCase):
         state = db.State(pattern="a_?.nc")
         self.controls.render(state)
         result = self.controls.dropdowns["initial_time"].menu
-        expect = ["2019-01-01 00:00:00", "2019-01-01 12:00:00"]
+        expect = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
         self.assert_label_equal(expect, result)
 
     def test_render_given_initial_time_populates_valid_time_menu(self):

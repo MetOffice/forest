@@ -1,4 +1,3 @@
-import wind  # meta-programming to inject figure.barbs()
 import bokeh.plotting
 import bokeh.events
 import numpy as np
@@ -10,13 +9,11 @@ import images
 import earth_networks
 import rdt
 import geo
-import picker
 import colors
-import compare
 import db
 import parse_args
-from util import Observable, select, initial_time
-from collections import defaultdict, namedtuple
+from util import Observable
+from db.util import autolabel
 import datetime as dt
 
 
@@ -71,21 +68,21 @@ def main():
             label="Figure",
             menu=[(str(i), str(i)) for i in [1, 2, 3]])
 
-    def on_click(value):
-        if int(value) == 1:
+    def on_change(attr, old, new):
+        if int(new) == 1:
             figure_row.children = [
                     figures[0]]
-        elif int(value) == 2:
+        elif int(new) == 2:
             figure_row.children = [
                     figures[0],
                     figures[1]]
-        elif int(value) == 3:
+        elif int(new) == 3:
             figure_row.children = [
                     figures[0],
                     figures[1],
                     figures[2]]
 
-    figure_drop.on_click(on_click)
+    figure_drop.on_change("value", on_change)
 
     color_mapper = bokeh.models.LinearColorMapper(
             low=0,
@@ -176,13 +173,13 @@ def main():
                 ("Black", "black"),
                 ("White", "white")],
             width=50)
-    dropdown.on_click(select(dropdown))
+    autolabel(dropdown)
 
-    def on_click(value):
+    def on_change(attr, old, new):
         for feature in features:
-            feature.glyph.line_color = value
+            feature.glyph.line_color = new
 
-    dropdown.on_click(on_click)
+    dropdown.on_change("value", on_change)
 
     slider = bokeh.models.Slider(
         start=0,
@@ -210,15 +207,15 @@ def main():
 
     image_controls = images.Controls(menu)
 
-    def on_click(value):
-        if int(value) == 1:
+    def on_change(attr, old, new):
+        if int(new) == 1:
             image_controls.labels = ["Show"]
-        elif int(value) == 2:
+        elif int(new) == 2:
             image_controls.labels = ["L", "R"]
-        elif int(value) == 3:
+        elif int(new) == 3:
             image_controls.labels = ["L", "C", "R"]
 
-    figure_drop.on_click(on_click)
+    figure_drop.on_change("value", on_change)
 
     image_controls.subscribe(artist.on_visible)
 
@@ -482,8 +479,6 @@ class Artist(object):
             viewer.render(self.state)
 
 
-Timestep = namedtuple("Timestep", ("index", "length", "valid", "initial"))
-
 
 class TimeControls(Observable):
     def __init__(self, steps):
@@ -498,7 +493,7 @@ class TimeControls(Observable):
                 label="Time step",
                 menu=list(zip(self.labels, self.labels)),
                 width=80)
-        self.dropdown.on_click(select(self.dropdown))
+        autolabel(self.dropdown)
         self.dropdown.on_click(self.on_dropdown)
         sizing_mode = "fixed"
         self.layout = bokeh.layouts.row(

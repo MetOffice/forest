@@ -24,14 +24,6 @@ class Observable(object):
             listener(*args)
 
 
-def select(dropdown):
-    def wrapped(new):
-        for label, value in dropdown.menu:
-            if value == new:
-                dropdown.label = label
-    return wrapped
-
-
 def timeout_cache(interval):
     def decorator(f):
         cache = {}

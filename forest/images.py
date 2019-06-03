@@ -1,7 +1,8 @@
 import bokeh.models
 import bokeh.layouts
 import numpy as np
-from util import select, Observable
+from util import Observable
+from db.util import autolabel
 
 
 class Controls(Observable):
@@ -42,11 +43,12 @@ class Controls(Observable):
         dropdown = bokeh.models.Dropdown(
                 menu=self.menu,
                 label="Model/observation",
-                width=150)
-        dropdown.on_click(select(dropdown))
+                width=230,)
+        autolabel(dropdown)
         dropdown.on_change('value', self.on_dropdown(i))
         group = bokeh.models.CheckboxButtonGroup(
-                labels=self.labels)
+                labels=self.labels,
+                width=50)
         group.on_change("active", self.on_radio(i))
         self.groups.append(group)
         row = bokeh.layouts.row(dropdown, group)

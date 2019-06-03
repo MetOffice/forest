@@ -1,9 +1,0 @@
-patterns:
-    - name: Global operational
-      directory: "model_data/global_africa*.nc"
-    - name: Tropical Africa operational
-      directory: 'model_data/highway_os42_ea_*.nc'
-    - name: EIDA50
-      directory: 'eida50/EIDA50_takm4p4_*.nc'
-    - name: RDT
-      directory: 'rdt_json/*.json'
