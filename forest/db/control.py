@@ -7,6 +7,7 @@ from collections import namedtuple
 
 __all__ = [
     "State",
+    "Observable",
     "Controls",
     "next_state"
 ]
@@ -80,8 +81,8 @@ class Controls(Observable):
         variables = self.database.variables(pattern=state.pattern)
         self.dropdowns["variable"].menu = self.menu(variables)
 
-        initial_times = self.database.initial_times(
-            pattern=state.pattern)
+        initial_times = reversed(self.database.initial_times(
+            pattern=state.pattern))
         self.dropdowns["initial_time"].menu = self.menu(initial_times)
 
         if state.initial_time is not None:
