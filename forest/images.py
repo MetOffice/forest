@@ -43,11 +43,12 @@ class Controls(Observable):
         dropdown = bokeh.models.Dropdown(
                 menu=self.menu,
                 label="Model/observation",
-                width=150)
+                width=230,)
         autolabel(dropdown)
         dropdown.on_change('value', self.on_dropdown(i))
         group = bokeh.models.CheckboxButtonGroup(
-                labels=self.labels)
+                labels=self.labels,
+                width=50)
         group.on_change("active", self.on_radio(i))
         self.groups.append(group)
         row = bokeh.layouts.row(dropdown, group)

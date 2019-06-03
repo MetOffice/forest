@@ -10,7 +10,6 @@ import earth_networks
 import rdt
 import geo
 import colors
-import compare
 import db
 import parse_args
 from util import Observable
@@ -69,21 +68,21 @@ def main():
             label="Figure",
             menu=[(str(i), str(i)) for i in [1, 2, 3]])
 
-    def on_click(value):
-        if int(value) == 1:
+    def on_change(attr, old, new):
+        if int(new) == 1:
             figure_row.children = [
                     figures[0]]
-        elif int(value) == 2:
+        elif int(new) == 2:
             figure_row.children = [
                     figures[0],
                     figures[1]]
-        elif int(value) == 3:
+        elif int(new) == 3:
             figure_row.children = [
                     figures[0],
                     figures[1],
                     figures[2]]
 
-    figure_drop.on_click(on_click)
+    figure_drop.on_change("value", on_change)
 
     color_mapper = bokeh.models.LinearColorMapper(
             low=0,
@@ -208,15 +207,15 @@ def main():
 
     image_controls = images.Controls(menu)
 
-    def on_click(value):
-        if int(value) == 1:
+    def on_change(attr, old, new):
+        if int(new) == 1:
             image_controls.labels = ["Show"]
-        elif int(value) == 2:
+        elif int(new) == 2:
             image_controls.labels = ["L", "R"]
-        elif int(value) == 3:
+        elif int(new) == 3:
             image_controls.labels = ["L", "C", "R"]
 
-    figure_drop.on_click(on_click)
+    figure_drop.on_change("value", on_change)
 
     image_controls.subscribe(artist.on_visible)
 
