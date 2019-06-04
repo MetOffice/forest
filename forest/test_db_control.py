@@ -12,6 +12,7 @@ class TestControls(unittest.TestCase):
     def tearDown(self):
         self.database.close()
 
+    @unittest.skip("waiting on green light")
     def test_on_change_emits_state(self):
         key = "k"
         value = "*.nc"
@@ -52,26 +53,43 @@ class TestControls(unittest.TestCase):
         callback.assert_called_once_with(state)
 
     def test_render_state_configures_variable_menu(self):
-        self.database.insert_variable("a.nc", "air_temperature")
-        self.database.insert_variable("b.nc", "mslp")
         controls = db.Controls(self.database)
-        state = db.State(pattern="b.nc")
+        state = db.State(variables=["mslp"])
         controls.render(state)
         result = controls.dropdowns["variable"].menu
         expect = ["mslp"]
         self.assert_label_equal(expect, result)
         self.assert_value_equal(expect, result)
 
+    def test_send_sets_state_variables(self):
+        self.database.insert_variable("a.nc", "air_temperature")
+        self.database.insert_variable("b.nc", "mslp")
+        controls = db.Controls(self.database)
+        controls.state = db.State(pattern="b.nc")
+        controls.send(db.Message('blank', None))
+        result = controls.state.variables
+        expect = ["mslp"]
+        self.assertEqual(expect, result)
+
     def test_render_state_configures_initial_time_menu(self):
+        initial_times = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
+        state = db.State(initial_times=initial_times)
+        self.controls.render(state)
+        result = self.controls.dropdowns["initial_time"].menu
+        expect = initial_times
+        self.assert_label_equal(expect, result)
+
+    def test_send_configures_initial_times(self):
+        blank_message = db.Message('blank', None)
         for path, time in [
                 ("a_0.nc", dt.datetime(2019, 1, 1)),
                 ("a_3.nc", dt.datetime(2019, 1, 1, 12))]:
             self.database.insert_file_name(path, time)
-        state = db.State(pattern="a_?.nc")
-        self.controls.render(state)
-        result = self.controls.dropdowns["initial_time"].menu
+        self.controls.state = db.State(pattern="a_?.nc")
+        self.controls.send(blank_message)
+        result = self.controls.state.initial_times
         expect = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
-        self.assert_label_equal(expect, result)
+        self.assertEqual(expect, result)
 
     def test_render_given_initial_time_populates_valid_time_menu(self):
         initial = dt.datetime(2019, 1, 1)
@@ -85,15 +103,31 @@ class TestControls(unittest.TestCase):
         self.assert_label_equal(expect, result)
 
     def test_render_sets_pressure_levels(self):
+        pressures = [1000, 950, 850]
+        self.controls.render(db.State(pressures=pressures))
+        result = self.controls.dropdowns["pressure"].menu
+        expect = ["1000hPa", "950hPa", "850hPa"]
+        self.assert_label_equal(expect, result)
+
+    def test_modify_pressure_levels(self):
         initial_time = "2019-01-01 00:00:00"
         pressures = [1000., 950., 850.]
         self.database.insert_file_name("file.nc", initial_time)
         for i, value in enumerate(pressures):
             self.database.insert_pressure("file.nc", "variable", value, i)
-        self.controls.render(db.State(initial_time=initial_time))
-        result = self.controls.dropdowns["pressure"].menu
-        expect = ["1000hPa", "950hPa", "850hPa"]
-        self.assert_label_equal(expect, result)
+        state = self.controls.modify(db.State(initial_time=initial_time))
+        result = state.pressures
+        expect = pressures
+        self.assertEqual(expect, result)
+
+    def test_plus_pressure(self):
+        self.controls.on_click('pressure', 'next')()
+
+    @unittest.skip("waiting on green light")
+    def test_database_pressures(self):
+        result = self.database.pressures()
+        expect = [1000]
+        self.assertEqual(expect, result)
 
     def test_hpa_given_small_pressures(self):
         result = db.Controls.hpa(0.001)
