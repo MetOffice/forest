@@ -19,6 +19,8 @@ import datetime as dt
 
 def main():
     args = parse_args.parse_args()
+    if args.database != ':memory:':
+        assert os.path.exists(args.database), "{} must exist".format(args.database)
     database = db.Database.connect(args.database)
     with open(args.config_file) as stream:
         config = parse_args.load_config(stream)

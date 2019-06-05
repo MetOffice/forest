@@ -299,13 +299,12 @@ class DBLoader(object):
                 (state.valid_time is None) or
                 (state.pressure is None)):
             return
-        pressure = float(state.pressure.replace("hPa", ""))
         path, pts = self.locator.path_points(
             self.pattern,
             state.variable,
             state.initial_time,
             state.valid_time,
-            pressure)
+            state.pressure)
         valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%d %H:%M:%S")
         initial = dt.datetime.strptime(state.initial_time, "%Y-%m-%d %H:%M:%S")
         hours = (valid - initial).total_seconds() / (60*60)
@@ -316,7 +315,7 @@ class DBLoader(object):
                 pts,
                 pts)
         if True:
-            level = "{} hPa".format(int(pressure))
+            level = "{} hPa".format(int(state.pressure))
         else:
             level = "Surface"
         data["name"] = [self.name]

@@ -8,6 +8,7 @@ class TestControls(unittest.TestCase):
     def setUp(self):
         self.database = db.Database.connect(":memory:")
         self.controls = db.Controls(self.database)
+        self.blank_message = db.Message('blank', None)
 
     def tearDown(self):
         self.database.close()
@@ -66,7 +67,7 @@ class TestControls(unittest.TestCase):
         self.database.insert_variable("b.nc", "mslp")
         controls = db.Controls(self.database)
         controls.state = db.State(pattern="b.nc")
-        controls.send(db.Message('blank', None))
+        controls.send(self.blank_message)
         result = controls.state.variables
         expect = ["mslp"]
         self.assertEqual(expect, result)
@@ -80,13 +81,12 @@ class TestControls(unittest.TestCase):
         self.assert_label_equal(expect, result)
 
     def test_send_configures_initial_times(self):
-        blank_message = db.Message('blank', None)
         for path, time in [
                 ("a_0.nc", dt.datetime(2019, 1, 1)),
                 ("a_3.nc", dt.datetime(2019, 1, 1, 12))]:
             self.database.insert_file_name(path, time)
         self.controls.state = db.State(pattern="a_?.nc")
-        self.controls.send(blank_message)
+        self.controls.send(self.blank_message)
         result = self.controls.state.initial_times
         expect = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
         self.assertEqual(expect, result)
@@ -115,13 +115,59 @@ class TestControls(unittest.TestCase):
         self.database.insert_file_name("file.nc", initial_time)
         for i, value in enumerate(pressures):
             self.database.insert_pressure("file.nc", "variable", value, i)
-        state = self.controls.modify(db.State(initial_time=initial_time))
+        state = self.controls.modify(
+            db.State(initial_time=initial_time),
+            self.blank_message)
         result = state.pressures
         expect = pressures
         self.assertEqual(expect, result)
 
-    def test_plus_pressure(self):
+    def test_next_pressure_given_pressures_returns_first_element(self):
+        value = 950
+        self.controls.state = db.State(pressures=[value])
         self.controls.on_click('pressure', 'next')()
+        result = self.controls.state.pressure
+        expect = value
+        self.assertEqual(expect, result)
+
+    def test_next_pressure_given_pressures_none(self):
+        self.controls.state = db.State()
+        self.controls.on_click('pressure', 'next')()
+        result = self.controls.state.pressure
+        expect = None
+        self.assertEqual(expect, result)
+
+    def test_next_pressure_given_initial_time(self):
+        # initial_time should not interact with pressures
+        pressure=None
+        pressures=[1000.0000000001, 950.0000000001, 925.0000000001,]
+        self.controls.state = db.State(
+            initial_time="2019-01-01 00:00:00",
+            pressure=pressure,
+            pressures=pressures)
+        self.controls.on_click('pressure', 'next')()
+        result = self.controls.state.pressure
+        expect = 1000.0000000001
+        self.assertEqual(expect, result)
+
+    def test_next_pressure_given_current_pressure(self):
+        pressure = 950
+        pressures = [1000, 950, 800]
+        self.controls.state = db.State(
+            pressures=pressures,
+            pressure=pressure)
+        self.controls.on_click('pressure', 'next')()
+        result = self.controls.state.pressure
+        expect = 800
+        self.assertEqual(expect, result)
+
+    def test_render_given_pressure(self):
+        self.controls.render(db.State(
+            pressures=[1000],
+            pressure=1000))
+        result = self.controls.dropdowns["pressure"].label
+        expect = "1000hPa"
+        self.assertEqual(expect, result)
 
     @unittest.skip("waiting on green light")
     def test_database_pressures(self):

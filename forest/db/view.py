@@ -24,14 +24,12 @@ class View(object):
                 (state.initial_time is not None) and
                 (state.valid_time is not None) and
                 (state.pressure is not None)):
-            p = float(state.pressure.replace("hPa", ""))
-            print(p)
             path, pts = self.locator.path_points(
                 state.pattern,
                 state.variable,
                 state.initial_time,
                 state.valid_time,
-                p)
+                state.pressure)
             image = Image(path=path, variable=state.variable, pts=pts)
         self.div.text = "<ul><li>{}</li><li>{}</li></ul>".format(
             str(state),

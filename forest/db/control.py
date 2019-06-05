@@ -28,7 +28,14 @@ State = namedtuple("State", (
 State.__new__.__defaults__ = (None,) * len(State._fields)
 
 
-Message = namedtuple("Message", ("kind", "payload"))
+class Message(object):
+    def __init__(self, kind, payload):
+        self.kind = kind
+        self.payload = payload
+
+    @classmethod
+    def button(cls, category, instruction):
+        return ButtonClick(category, instruction)
 
 
 class ButtonClick(object):
@@ -148,9 +155,11 @@ class Controls(Observable):
                 state.initial_times)
 
         if state.pressures is not None:
-            self.dropdowns["pressure"].menu = self.menu(
-                state.pressures,
-                self.hpa)
+            menu = [(self.hpa(p), str(p)) for p in state.pressures]
+            self.dropdowns["pressure"].menu = menu
+
+        if state.pressure is not None:
+            self.dropdowns["pressure"].value = str(state.pressure)
 
         if state.initial_time is not None:
             valid_times = self.database.valid_times(
@@ -180,26 +189,42 @@ class Controls(Observable):
         """Adjust state given message"""
         if message.kind == 'dropdown':
             key, value = message.payload
+            if key == 'pressure':
+                value = float(value)
             state = next_state(state, **{key: value})
+            if key != 'pressure':
+                if state.pattern is not None:
+                    variables = self.database.variables(pattern=state.pattern)
+                    state = next_state(state, variables=variables)
+
+                    initial_times = list(reversed(
+                        self.database.initial_times(pattern=state.pattern)))
+                    state = next_state(state, initial_times=initial_times)
+
+                if state.initial_time is not None:
+                    pressures = self.database.pressures(
+                        pattern=state.pattern,
+                        variable=state.variable,
+                        initial_time=state.initial_time)
+                    pressures = list(reversed(pressures))
+                    state = next_state(state, pressures=pressures)
         elif message.kind == 'button':
-            pass
-
-        if state.pattern is not None:
-            variables = self.database.variables(pattern=state.pattern)
-            state = next_state(state, variables=variables)
-
-            initial_times = list(reversed(
-                self.database.initial_times(pattern=state.pattern)))
-            state = next_state(state, initial_times=initial_times)
-
-        if state.initial_time is not None:
-            pressures = self.database.pressures(
-                pattern=state.pattern,
-                variable=state.variable,
-                initial_time=state.initial_time)
-            pressures = reversed(pressures)
-            state = next_state(state, pressures=pressures)
+            state = self.next_pressure(state)
         return state
+
+    def next_pressure(self, state):
+        if state.pressures is None:
+            return state
+        if state.pressure is None:
+            return next_state(state, pressure=state.pressures[0])
+        return next_state(state, pressure=self.next_item(
+            state.pressures,
+            state.pressure))
+
+    @staticmethod
+    def next_item(items, item):
+        i = items.index(item)
+        return items[i + 1]
 
     @staticmethod
     def menu(values, formatter=str):
