@@ -288,6 +288,18 @@ class DBLoader(object):
         self.name = name
         self.pattern = pattern
         self.locator = locator
+        self.empty_image = {
+            "x": [],
+            "y": [],
+            "dw": [],
+            "dh": [],
+            "image": [],
+            "name": [],
+            "valid": [],
+            "initial": [],
+            "length": [],
+            "level": []
+        }
 
     def image(self, state):
         print("{}: {}".format(
@@ -298,13 +310,17 @@ class DBLoader(object):
                 (state.initial_time is None) or
                 (state.valid_time is None) or
                 (state.pressure is None)):
-            return
+            return self.empty_image
         path, pts = self.locator.path_points(
             self.pattern,
             state.variable,
             state.initial_time,
             state.valid_time,
             state.pressure)
+        if path is None:
+            return self.empty_image
+        if state.pressure not in state.pressures:
+            return self.empty_image
         valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%d %H:%M:%S")
         initial = dt.datetime.strptime(state.initial_time, "%Y-%m-%d %H:%M:%S")
         hours = (valid - initial).total_seconds() / (60*60)
