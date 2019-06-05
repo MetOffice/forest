@@ -309,18 +309,28 @@ class DBLoader(object):
                 (state.variable is None) or
                 (state.initial_time is None) or
                 (state.valid_time is None) or
-                (state.pressure is None)):
+                (state.pressures is None)):
             return self.empty_image
-        path, pts = self.locator.path_points(
-            self.pattern,
-            state.variable,
-            state.initial_time,
-            state.valid_time,
-            state.pressure)
+
+        if len(state.pressures) == 0:
+            path, pts = self.locator.surface_path_points(
+                self.pattern,
+                state.variable,
+                state.initial_time,
+                state.valid_time)
+        else:
+            path, pts = self.locator.path_points(
+                self.pattern,
+                state.variable,
+                state.initial_time,
+                state.valid_time,
+                state.pressure)
+            if state.pressure not in state.pressures:
+                return self.empty_image
+
         if path is None:
             return self.empty_image
-        if state.pressure not in state.pressures:
-            return self.empty_image
+
         valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%d %H:%M:%S")
         initial = dt.datetime.strptime(state.initial_time, "%Y-%m-%d %H:%M:%S")
         hours = (valid - initial).total_seconds() / (60*60)
@@ -330,7 +340,7 @@ class DBLoader(object):
                 state.variable,
                 pts,
                 pts)
-        if True:
+        if len(state.pressures) > 0:
             level = "{} hPa".format(int(state.pressure))
         else:
             level = "Surface"

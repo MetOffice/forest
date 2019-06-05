@@ -98,14 +98,8 @@ class TestEIDA50(unittest.TestCase):
 
 
 class TestDBLoader(unittest.TestCase):
-    def test_image_given_empty_state(self):
-        name = None
-        pattern = None
-        locator = None
-        state = db.State()
-        loader = data.DBLoader(name, pattern, locator)
-        result = loader.image(state)
-        expect = {
+    def setUp(self):
+        self.empty_image = {
             "x": [],
             "y": [],
             "dw": [],
@@ -117,6 +111,15 @@ class TestDBLoader(unittest.TestCase):
             "length": [],
             "level": [],
         }
+
+    def test_image_given_empty_state(self):
+        name = None
+        pattern = None
+        locator = None
+        state = db.State()
+        loader = data.DBLoader(name, pattern, locator)
+        result = loader.image(state)
+        expect = self.empty_image
         self.assert_dict_equal(expect, result)
 
     def test_image_given_non_existent_entry_in_database(self):
@@ -131,18 +134,7 @@ class TestDBLoader(unittest.TestCase):
             pressure=1000.)
         loader = data.DBLoader(name, pattern, locator)
         result = loader.image(state)
-        expect = {
-            "x": [],
-            "y": [],
-            "dw": [],
-            "dh": [],
-            "image": [],
-            "name": [],
-            "valid": [],
-            "initial": [],
-            "length": [],
-            "level": [],
-        }
+        expect = self.empty_image
         self.assert_dict_equal(expect, result)
 
     def test_image_given_inconsistent_pressures(self):
@@ -164,18 +156,28 @@ class TestDBLoader(unittest.TestCase):
             pressures=[925.])
         loader = data.DBLoader(None, "*.nc", locator)
         result = loader.image(state)
-        expect = {
-            "x": [],
-            "y": [],
-            "dw": [],
-            "dh": [],
-            "image": [],
-            "name": [],
-            "valid": [],
-            "initial": [],
-            "length": [],
-            "level": [],
-        }
+        expect = self.empty_image
+        self.assert_dict_equal(expect, result)
+
+    def test_image_given_surface_field(self):
+        path = "file.nc"
+        variable = "variable"
+        initial_time = "2019-01-01 00:00:00"
+        valid_time = "2019-01-01 00:00:00"
+        pressure = 1000.
+        database = db.Database.connect(":memory:")
+        database.insert_file_name(path, initial_time)
+        database.insert_time(path, variable, valid_time, i=0)
+        locator = db.Locator(database.connection)
+        state = db.State(
+            variable=variable,
+            initial_time=initial_time,
+            valid_time=valid_time,
+            pressure=pressure,
+            pressures=[])
+        loader = data.DBLoader(None, "*.nc", locator)
+        result = loader.image(state)
+        expect = {}
         self.assert_dict_equal(expect, result)
 
     def assert_dict_equal(self, expect, result):

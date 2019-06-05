@@ -192,6 +192,37 @@ class Locator(Connection):
         self.connection = connection
         self.cursor = self.connection.cursor()
 
+    def surface_path_points(
+            self,
+            pattern,
+            variable,
+            initial_time,
+            valid_time):
+        query = """
+            SELECT f.name, t.i
+              FROM file AS f
+              JOIN variable AS v
+                ON v.file_id = f.id
+              JOIN variable_to_time AS vt
+                ON vt.variable_id = v.id
+              JOIN time AS t
+                ON vt.time_id = t.id
+             WHERE f.name GLOB :pattern
+               AND f.reference = :initial_time
+               AND v.name = :variable
+               AND t.value = :valid_time
+        """
+        self.cursor.execute(query, dict(
+            pattern=pattern,
+            variable=variable,
+            initial_time=initial_time,
+            valid_time=valid_time))
+        row = self.cursor.fetchone()
+        if row is None:
+            return None, None
+        path, i = row
+        return path, (i,)
+
     def path_points(
             self,
             pattern,

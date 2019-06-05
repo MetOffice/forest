@@ -549,9 +549,22 @@ class TestLocator(unittest.TestCase):
     def tearDown(self):
         self.connection.close()
 
-    def test_path_points(self):
-        result = self.locator.path_points()
-        expect = []
+    def test_path_points_given_surface_criteria(self):
+        pattern = "*.nc"
+        for path, initial_time in [
+                ("a.nc", "2019-01-01 00:00:00"),
+                ("b.nc", "2019-01-02 00:00:00")]:
+            self.database.insert_file_name(path, initial_time)
+            for variable, time, i in [
+                    ("mslp", "2019-01-02 00:00:00", 0),
+                    ("mslp", "2019-01-02 01:00:00", 1)]:
+                self.database.insert_time(path, variable, time, i=i)
+        result = self.locator.surface_path_points(
+            pattern,
+            "mslp",
+            "2019-01-02 00:00:00",
+            "2019-01-02 01:00:00")
+        expect = "b.nc", (1,)
         self.assertEqual(expect, result)
 
     def test_path_points(self):
