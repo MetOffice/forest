@@ -22,10 +22,16 @@ State = namedtuple("State", (
     "initial_time",
     "initial_times",
     "valid_time",
+    "valid_times",
     "pressure",
-    "pressures",
-    "surface"))
+    "pressures"))
 State.__new__.__defaults__ = (None,) * len(State._fields)
+
+
+def next_state(current, **kwargs):
+    _kwargs = current._asdict()
+    _kwargs.update(kwargs)
+    return State(**_kwargs)
 
 
 class Message(object):
@@ -37,13 +43,17 @@ class Message(object):
     def button(cls, category, instruction):
         return ButtonClick(category, instruction)
 
+    @classmethod
+    def dropdown(cls, key, value):
+        return cls("dropdown", (key, value))
+
 
 class ButtonClick(object):
     kind = "button"
 
-    def __init__(self, category, value):
+    def __init__(self, category, instruction):
         self.category = category
-        self.value = value
+        self.instruction = instruction
 
     def __repr__(self):
         if self.__class__.__module__ is not None:
@@ -57,21 +67,10 @@ class ButtonClick(object):
             else:
                 return str(value)
 
-        args = (self.category, self.value)
+        args = (self.category, self.instruction)
         return "{}({})".format(
             ".".join(names),
             ", ".join(map(stringify, args)))
-
-
-def next_state(current, **kwargs):
-    _kwargs = current._asdict()
-    _kwargs.update(kwargs)
-    return State(**_kwargs)
-
-
-def next_item(items, item):
-    i = items.index(item)
-    return items[i + 1]
 
 
 class Observable(object):
@@ -132,6 +131,7 @@ class Controls(Observable):
                 self.buttons[key]["previous"],
                 self.dropdowns[key],
                 self.buttons[key]["next"])
+
         self.layout = bokeh.layouts.column(
             self.dropdowns["pattern"],
             self.dropdowns["variable"],
@@ -146,28 +146,33 @@ class Controls(Observable):
 
     def render(self, state):
         """Configure dropdown menus"""
-        if state.variables is not None:
-            self.dropdowns["variable"].menu = self.menu(
-                state.variables)
+        for key, values in [
+                ("variable", state.variables),
+                ("initial_time", state.initial_times),
+                ("valid_time", state.valid_times),
+                ("pressure", state.pressures)]:
+            if values is None:
+                disabled = True
+            else:
+                disabled = len(values) == 0
+                if key == "pressure":
+                    menu = [(self.hpa(p), str(p)) for p in state.pressures]
+                else:
+                    menu = self.menu(values)
+                self.dropdowns[key].menu = menu
+            self.dropdowns[key].disabled = disabled
+            if key in self.buttons:
+                self.buttons[key]["next"].disabled = disabled
+                self.buttons[key]["previous"].disabled = disabled
 
-        if state.initial_times is not None:
-            self.dropdowns["initial_time"].menu = self.menu(
-                state.initial_times)
-
-        if state.pressures is not None:
-            menu = [(self.hpa(p), str(p)) for p in state.pressures]
-            self.dropdowns["pressure"].menu = menu
+        if state.initial_time is not None:
+            self.dropdowns['initial_time'].value = state.initial_time
 
         if state.pressure is not None:
             self.dropdowns["pressure"].value = str(state.pressure)
 
-        if state.initial_time is not None:
-            valid_times = self.database.valid_times(
-                pattern=state.pattern,
-                variable=state.variable,
-                initial_time=state.initial_time)
-            valid_times = sorted(set(valid_times))
-            self.dropdowns["valid_time"].menu = self.menu(valid_times)
+        if state.valid_time is not None:
+            self.dropdowns['valid_time'].value = state.valid_time
 
     def on_change(self, key):
         """Wire up bokeh on_change callbacks to State changes"""
@@ -175,15 +180,16 @@ class Controls(Observable):
             self.send(Message("dropdown", (key, new)))
         return callback
 
-    def on_click(self, category, value):
+    def on_click(self, category, instruction):
         def callback():
-            self.send(ButtonClick(category, value))
+            self.send(ButtonClick(category, instruction))
         return callback
 
     def send(self, message):
         state = self.modify(self.state, message)
-        self.notify(state)
-        self.state = state
+        if state is not None:
+            self.notify(state)
+            self.state = state
 
     def modify(self, state, message):
         """Adjust state given message"""
@@ -208,23 +214,44 @@ class Controls(Observable):
                         initial_time=state.initial_time)
                     pressures = list(reversed(pressures))
                     state = next_state(state, pressures=pressures)
-        elif message.kind == 'button':
-            state = self.next_pressure(state)
+
+                if state.initial_time is not None:
+                    valid_times = self.database.valid_times(
+                        pattern=state.pattern,
+                        variable=state.variable,
+                        initial_time=state.initial_time)
+                    valid_times = sorted(set(valid_times))
+                    state = next_state(state, valid_times=valid_times)
+
+        if message.kind == 'button':
+            state = self.modify_button(state, message)
         return state
 
-    def next_pressure(self, state):
-        if state.pressures is None:
+    def modify_button(self, state, message):
+        if message.category == 'initial_time':
+            values = state.initial_times
+            value = state.initial_time
+        elif message.category == 'valid_time':
+            values = state.valid_times
+            value = state.valid_time
+        elif message.category == 'pressure':
+            values = state.pressures
+            value = state.pressure
+        if values is None:
             return state
-        if state.pressure is None:
-            return next_state(state, pressure=state.pressures[0])
-        return next_state(state, pressure=self.next_item(
-            state.pressures,
-            state.pressure))
-
-    @staticmethod
-    def next_item(items, item):
-        i = items.index(item)
-        return items[i + 1]
+        if message.instruction == 'previous':
+            if value is None:
+                value = values[0]
+            else:
+                i = values.index(value)
+                value = values[i - 1]
+        else:
+            if value is None:
+                value = values[0]
+            else:
+                i = values.index(value)
+                value = values[i + 1]
+        return next_state(state, **{message.category: value})
 
     @staticmethod
     def menu(values, formatter=str):

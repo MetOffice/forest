@@ -229,6 +229,7 @@ def main():
 
     # Add prototype database controls
     controls = db.Controls(database, patterns=config.patterns)
+    controls.render(controls.state)
     locator = db.Locator(
         database.connection,
         directory=args.directory)
