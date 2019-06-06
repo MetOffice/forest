@@ -39,3 +39,6 @@ class TestLocate(unittest.TestCase):
         )
         expect = "file.nc", (42,)
         self.assertEqual(expect, result)
+
+    def test_db_given_axes_0_1_with_pressure_none(self):
+        pass

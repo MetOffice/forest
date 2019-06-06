@@ -583,6 +583,9 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
             elif var.units == "K":
                 values = convert_units(values, "K", "Celsius")
 
+        # DEBUG
+        print(pts_3d, values.shape)
+
         # Coarsify images
         fraction = 0.25
         lons, lats, values = coarsify(
