@@ -233,8 +233,9 @@ def main():
     locator = db.Locator(
         database.connection,
         directory=args.directory)
-    text = db.View(text="", locator=locator)
-    controls.subscribe(text.on_state)
+    # text = db.View(text="", locator=locator)
+    # controls.subscribe(text.on_state)
+    # text.div removed from Panel
     controls.subscribe(artist.on_state)
 
     tabs = bokeh.models.Tabs(tabs=[
@@ -244,8 +245,7 @@ def main():
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
                 bokeh.layouts.row(figure_drop),
-                image_controls.column,
-                text.div),
+                image_controls.column),
             title="Control"
         ),
         bokeh.models.Panel(
@@ -406,7 +406,8 @@ class Series(object):
         self.variable = None
 
     def on_state(self, state):
-        print("Series: {}".format(state))
+        pass
+        # print("Series: {}".format(state))
 
     def on_tap(self, event):
         self.x = event.x
@@ -468,7 +469,7 @@ class Artist(object):
         return items
 
     def on_state(self, state):
-        print("Artist: {}".format(state))
+        # print("Artist: {}".format(state))
         self.state = state
         self.render()
 

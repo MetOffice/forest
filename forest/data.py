@@ -302,9 +302,10 @@ class DBLoader(object):
         }
 
     def image(self, state):
-        print("{}: {}".format(
-            self.__class__.__name__,
-            state))
+        if False:
+            print("{}: {}".format(
+                self.__class__.__name__,
+                state))
         if (
                 (state.variable is None) or
                 (state.initial_time is None) or
@@ -312,21 +313,12 @@ class DBLoader(object):
                 (state.pressures is None)):
             return self.empty_image
 
-        if len(state.pressures) == 0:
-            path, pts = self.locator.surface_path_points(
-                self.pattern,
-                state.variable,
-                state.initial_time,
-                state.valid_time)
-        else:
-            path, pts = self.locator.path_points(
-                self.pattern,
-                state.variable,
-                state.initial_time,
-                state.valid_time,
-                state.pressure)
-            if state.pressure not in state.pressures:
-                return self.empty_image
+        path, pts = self.locator.locate(
+            self.pattern,
+            state.variable,
+            state.initial_time,
+            state.valid_time,
+            state.pressure)
 
         if path is None:
             return self.empty_image
@@ -340,7 +332,7 @@ class DBLoader(object):
                 state.variable,
                 pts,
                 pts)
-        if len(state.pressures) > 0:
+        if (len(state.pressures) > 0) and (state.pressure is not None):
             level = "{} hPa".format(int(state.pressure))
         else:
             level = "Surface"
@@ -352,12 +344,13 @@ class DBLoader(object):
         return data
 
     def series(self, variable, x0, y0, k):
-        print("{}: {}, {}, {}".format(
-            self.__class__.__name__,
-            variable,
-            x0,
-            y0,
-            k))
+        if False:
+            print("{}: {}, {}, {}".format(
+                self.__class__.__name__,
+                variable,
+                x0,
+                y0,
+                k))
 
 
 class UMLoader(object):

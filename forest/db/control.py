@@ -47,6 +47,23 @@ class Message(object):
     def dropdown(cls, key, value):
         return cls("dropdown", (key, value))
 
+    def __repr__(self):
+        if self.__class__.__module__ is not None:
+            names = (self.__class__.__module__, self.__class__.__name__)
+        else:
+            names = (self.__class__.__name__,)
+
+        def stringify(value):
+            if isinstance(value, str):
+                return "'{}'".format(value)
+            else:
+                return str(value)
+
+        args = (self.kind, self.payload)
+        return "{}({})".format(
+            ".".join(names),
+            ", ".join(map(stringify, args)))
+
 
 class ButtonClick(object):
     kind = "button"
@@ -193,9 +210,10 @@ class Controls(Observable):
 
     def modify(self, state, message):
         """Adjust state given message"""
+        print(message)
         if message.kind == 'dropdown':
             key, value = message.payload
-            if key == 'pressure':
+            if (key == 'pressure') and (value is not None):
                 value = float(value)
             state = next_state(state, **{key: value})
             if key != 'pressure':
@@ -262,10 +280,3 @@ class Controls(Observable):
         if p < 1:
             return "{}hPa".format(str(p))
         return "{}hPa".format(int(p))
-
-    @staticmethod
-    def first(items):
-        try:
-            return items[0]
-        except IndexError:
-            return

@@ -549,7 +549,7 @@ class TestLocator(unittest.TestCase):
     def tearDown(self):
         self.connection.close()
 
-    def test_path_points_given_surface_criteria(self):
+    def test_locate_given_surface_criteria(self):
         pattern = "*.nc"
         for path, initial_time in [
                 ("a.nc", "2019-01-01 00:00:00"),
@@ -559,7 +559,7 @@ class TestLocator(unittest.TestCase):
                     ("mslp", "2019-01-02 00:00:00", 0),
                     ("mslp", "2019-01-02 01:00:00", 1)]:
                 self.database.insert_time(path, variable, time, i=i)
-        result = self.locator.path_points(
+        result = self.locator.locate(
             pattern,
             "mslp",
             "2019-01-02 00:00:00",
@@ -567,7 +567,7 @@ class TestLocator(unittest.TestCase):
         expect = "b.nc", (1,)
         self.assertEqual(expect, result)
 
-    def test_path_points(self):
+    def test_locate(self):
         pattern = "file_*.nc"
         path = "file_000.nc"
         variable = "temperature"
@@ -592,7 +592,7 @@ class TestLocator(unittest.TestCase):
             variable,
             pressure,
             i=0)
-        result = self.locator.path_points(
+        result = self.locator.locate(
             pattern,
             variable,
             initial_time,

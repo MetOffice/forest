@@ -193,7 +193,6 @@ class Locator(Connection):
         self.directory = directory
         self.connection = connection
         self.cursor = self.connection.cursor()
-        self.path_points = self.locate
 
     def locate(
             self,
@@ -215,9 +214,20 @@ class Locator(Connection):
             else:
                 path = file_name
             ta, pa = self.axes(file_name, variable)
+            if (ta is None) and (pa is None):
+                return path, ()
+            elif (ta is None) and (pa is not None):
+                # Search pressure axis
+                pressures = self.coordinate(file_name, variable, "pressure")
+                if pressure is None:
+                    return None, None
+                i = np.where(np.abs(pressures - pressure) < tolerance)[0][0]
+                return path, (i,)
+
             times = self.coordinate(file_name, variable, "time")
             if pressure is None:
-                return path, np.where(times == valid_time64)
+                i = np.where(times == valid_time64)[0][0]
+                return path, (i,)
             else:
                 pressures = self.coordinate(file_name, variable, "pressure")
                 if (ta == 0) and (pa == 0):

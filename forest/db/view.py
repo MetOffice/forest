@@ -22,9 +22,8 @@ class View(object):
                 (state.pattern is not None) and
                 (state.variable is not None) and
                 (state.initial_time is not None) and
-                (state.valid_time is not None) and
-                (state.pressure is not None)):
-            path, pts = self.locator.path_points(
+                (state.valid_time is not None)):
+            path, pts = self.locator.locate(
                 state.pattern,
                 state.variable,
                 state.initial_time,
