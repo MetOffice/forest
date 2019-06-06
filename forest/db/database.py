@@ -2,7 +2,9 @@ import sqlite3
 import os
 import iris
 import netCDF4
+import numpy as np
 import jinja2
+from functools import lru_cache
 
 
 __all__ = [
@@ -191,6 +193,7 @@ class Locator(Connection):
         self.directory = directory
         self.connection = connection
         self.cursor = self.connection.cursor()
+        self.path_points = self.locate
 
     def locate(
             self,
@@ -198,8 +201,39 @@ class Locator(Connection):
             variable,
             initial_time,
             valid_time,
-            pressure=None):
-        # Get file given pattern, variable, initial and valid time
+            pressure=None,
+            tolerance=0.001):
+        valid_time64 = np.datetime64(valid_time, 's')
+        for file_name in self.file_names(
+                pattern,
+                variable,
+                initial_time,
+                valid_time):
+            if self.directory is not None:
+                # HACK: consider refactor
+                path = os.path.join(self.directory, os.path.basename(file_name))
+            else:
+                path = file_name
+            ta, pa = self.axes(file_name, variable)
+            times = self.coordinate(file_name, variable, "time")
+            if pressure is None:
+                return path, np.where(times == valid_time64)
+            else:
+                pressures = self.coordinate(file_name, variable, "pressure")
+                if (ta == 0) and (pa == 0):
+                    pts = np.where(
+                        (times == valid_time64) &
+                        (np.abs(pressures - pressure) < tolerance))
+                    i = pts[0][0]
+                    return path, (i,)
+                else:
+                    ti = np.where(times == valid_time64)[0][0]
+                    pi = np.where(np.abs(pressures - pressure) < tolerance)[0][0]
+                    return path, (ti, pi)
+        return None, None  # Default case: consider refactor
+
+    @lru_cache()
+    def file_names(self, pattern, variable, initial_time, valid_time):
         self.cursor.execute("""
             SELECT DISTINCT(f.name)
               FROM file AS f
@@ -219,48 +253,13 @@ class Locator(Connection):
             initial_time=initial_time,
             valid_time=valid_time,
         ))
-        file_name_rows = self.cursor.fetchall()
-        for file_name, in file_name_rows:
-            print(file_name)
-            # Get axis information
-            self.cursor.execute("""
-                SELECT v.time_axis, v.pressure_axis
-                  FROM file AS f
-                  JOIN variable AS v
-                    ON v.file_id = f.id
-                 WHERE f.name = :file_name
-                   AND v.name = :variable
-            """, dict(
-                file_name=file_name,
-                variable=variable
-            ))
-            ta, pa = self.cursor.fetchone()
+        return [file_name for file_name, in self.cursor.fetchall()]
 
-            # Get time index given file, variable, valid_time
+    @lru_cache()
+    def coordinate(self, file_name, variable, coord):
+        if coord == "pressure":
             self.cursor.execute("""
-                SELECT t.i
-                  FROM file AS f
-                  JOIN variable AS v
-                    ON v.file_id = f.id
-                  JOIN variable_to_time AS vt
-                    ON vt.variable_id = v.id
-                  JOIN time AS t
-                    ON t.id = vt.time_id
-                 WHERE f.name GLOB :pattern
-                   AND f.reference = :initial_time
-                   AND v.name = :variable
-                   AND t.value = :valid_time
-            """, dict(
-                pattern=pattern,
-                variable=variable,
-                initial_time=initial_time,
-                valid_time=valid_time,
-            ))
-            its = set([i for i, in self.cursor.fetchall()])
-
-            # Get pressure index given file, variable, pressure
-            self.cursor.execute("""
-                SELECT p.i
+                SELECT p.i, p.value
                   FROM file AS f
                   JOIN variable AS v
                     ON v.file_id = f.id
@@ -270,108 +269,60 @@ class Locator(Connection):
                     ON p.id = vp.pressure_id
                  WHERE f.name = :file_name
                    AND v.name = :variable
-                   AND ABS(p.value - :pressure) < :tolerance
+              ORDER BY p.i
             """, dict(
                 file_name=file_name,
-                variable=variable,
-                pressure=pressure,
-                tolerance=0.001
+                variable=variable
             ))
-            ips = set([i for i, in self.cursor.fetchall()])
-            if ta == pa:
-                if len(its & ips) == 1:
-                    i = list(its & ips)[0]
-                    return file_name, (i,)
+            rows = self.cursor.fetchall()
+        elif coord == "time":
+            self.cursor.execute("""
+                SELECT t.i, t.value
+                  FROM file AS f
+                  JOIN variable AS v
+                    ON v.file_id = f.id
+                  JOIN variable_to_time AS vt
+                    ON vt.variable_id = v.id
+                  JOIN time AS t
+                    ON t.id = vt.time_id
+                 WHERE f.name = :file_name
+                   AND v.name = :variable
+              ORDER BY t.i
+            """, dict(
+                file_name=file_name,
+                variable=variable
+            ))
+            rows = self.cursor.fetchall()
+        else:
+            raise Exception("unknown coordinate: {}".format(coord))
+        if coord == "time":
+            dtype = "datetime64[s]"
+        else:
+            dtype = "f"
+        index, values = zip(*rows)
+        array = np.empty(np.max(index) + 1, dtype=dtype)
+        for i, v in zip(index, values):
+            array[i] = v
+        return array
 
-    def path_points(
-            self,
-            pattern,
-            variable,
-            initial_time,
-            valid_time,
-            pressure=None):
-        if pressure is None:
-            return self.surface_path_points(
-                pattern,
-                variable,
-                initial_time,
-                valid_time)
-        query = """
-            SELECT f.name, v.time_axis, v.pressure_axis, t.i, p.i
+    @lru_cache()
+    def axes(self, file_name, variable):
+        """Time/pressure axis information
+
+        :returns: (time_axis, pressure_axis)
+        """
+        self.cursor.execute("""
+            SELECT v.time_axis, v.pressure_axis
               FROM file AS f
               JOIN variable AS v
                 ON v.file_id = f.id
-              JOIN variable_to_time AS vt
-                ON vt.variable_id = v.id
-              JOIN time AS t
-                ON vt.time_id = t.id
-              JOIN variable_to_pressure AS vp
-                ON vp.variable_id = v.id
-              JOIN pressure AS p
-                ON p.id = vp.pressure_id
-             WHERE f.name GLOB :pattern
+             WHERE f.name = :file_name
                AND v.name = :variable
-               AND f.reference = :initial_time
-               AND t.value = :valid_time
-             ORDER BY ABS(p.value - :pressure) ASC
-        """
-        self.cursor.execute(query, dict(
-            pattern=pattern,
-            variable=variable,
-            initial_time=initial_time,
-            valid_time=valid_time,
-            pressure=pressure))
-        rows = self.cursor.fetchall()
-        for (path, ta, pa, ti, pi) in rows:
-            if self.directory is not None:
-                # HACK: consider refactor
-                path = os.path.join(self.directory, os.path.basename(path))
-            if ta == pa:
-                if ti != pi:
-                    continue
-                return path, (ti,)
-            elif ta is None:
-                return path, (pi,)
-            elif pa is None:
-                return path, (ti,)
-            else:
-                rank = max(ta, pa) + 1
-                pts = rank * [None]
-                pts[ta] = ti
-                pts[pa] = pi
-                return path, tuple(pts)
-        return None, None  # Default case: consider refactor
-
-    def surface_path_points(
-            self,
-            pattern,
-            variable,
-            initial_time,
-            valid_time):
-        query = """
-            SELECT f.name, t.i
-              FROM file AS f
-              JOIN variable AS v
-                ON v.file_id = f.id
-              JOIN variable_to_time AS vt
-                ON vt.variable_id = v.id
-              JOIN time AS t
-                ON vt.time_id = t.id
-             WHERE f.name GLOB :pattern
-               AND f.reference = :initial_time
-               AND v.name = :variable
-               AND t.value = :valid_time
-        """
-        self.cursor.execute(query, dict(
-            pattern=pattern,
-            variable=variable,
-            initial_time=initial_time,
-            valid_time=valid_time))
-        row = self.cursor.fetchone()
-        if row is None:
-            return None, None
-        path, i = row
-        return path, (i,)
+        """, dict(
+            file_name=file_name,
+            variable=variable
+        ))
+        return self.cursor.fetchone()
 
 
 class Database(Connection):
