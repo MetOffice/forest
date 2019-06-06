@@ -192,36 +192,96 @@ class Locator(Connection):
         self.connection = connection
         self.cursor = self.connection.cursor()
 
-    def surface_path_points(
+    def locate(
             self,
             pattern,
             variable,
             initial_time,
-            valid_time):
-        query = """
-            SELECT f.name, t.i
+            valid_time,
+            pressure=None):
+        # Get file given pattern, variable, initial and valid time
+        self.cursor.execute("""
+            SELECT DISTINCT(f.name)
               FROM file AS f
               JOIN variable AS v
                 ON v.file_id = f.id
               JOIN variable_to_time AS vt
                 ON vt.variable_id = v.id
               JOIN time AS t
-                ON vt.time_id = t.id
+                ON t.id = vt.time_id
              WHERE f.name GLOB :pattern
                AND f.reference = :initial_time
                AND v.name = :variable
                AND t.value = :valid_time
-        """
-        self.cursor.execute(query, dict(
+        """, dict(
             pattern=pattern,
             variable=variable,
             initial_time=initial_time,
-            valid_time=valid_time))
-        row = self.cursor.fetchone()
-        if row is None:
-            return None, None
-        path, i = row
-        return path, (i,)
+            valid_time=valid_time,
+        ))
+        file_name_rows = self.cursor.fetchall()
+        for file_name, in file_name_rows:
+            print(file_name)
+            # Get axis information
+            self.cursor.execute("""
+                SELECT v.time_axis, v.pressure_axis
+                  FROM file AS f
+                  JOIN variable AS v
+                    ON v.file_id = f.id
+                 WHERE f.name = :file_name
+                   AND v.name = :variable
+            """, dict(
+                file_name=file_name,
+                variable=variable
+            ))
+            ta, pa = self.cursor.fetchone()
+
+            # Get time index given file, variable, valid_time
+            self.cursor.execute("""
+                SELECT t.i
+                  FROM file AS f
+                  JOIN variable AS v
+                    ON v.file_id = f.id
+                  JOIN variable_to_time AS vt
+                    ON vt.variable_id = v.id
+                  JOIN time AS t
+                    ON t.id = vt.time_id
+                 WHERE f.name GLOB :pattern
+                   AND f.reference = :initial_time
+                   AND v.name = :variable
+                   AND t.value = :valid_time
+            """, dict(
+                pattern=pattern,
+                variable=variable,
+                initial_time=initial_time,
+                valid_time=valid_time,
+            ))
+            its = set([i for i, in self.cursor.fetchall()])
+
+            # Get pressure index given file, variable, pressure
+            self.cursor.execute("""
+                SELECT p.i
+                  FROM file AS f
+                  JOIN variable AS v
+                    ON v.file_id = f.id
+                  JOIN variable_to_pressure AS vp
+                    ON vp.variable_id = v.id
+                  JOIN pressure AS p
+                    ON p.id = vp.pressure_id
+                 WHERE f.name = :file_name
+                   AND v.name = :variable
+                   AND ABS(p.value - :pressure) < :tolerance
+            """, dict(
+                file_name=file_name,
+                variable=variable,
+                pressure=pressure,
+                tolerance=0.001
+            ))
+            ips = set([i for i, in self.cursor.fetchall()])
+            if ta == pa:
+                if len(its & ips) == 1:
+                    i = list(its & ips)[0]
+                    return file_name, (i,)
 
     def path_points(
             self,
@@ -229,7 +289,13 @@ class Locator(Connection):
             variable,
             initial_time,
             valid_time,
-            pressure):
+            pressure=None):
+        if pressure is None:
+            return self.surface_path_points(
+                pattern,
+                variable,
+                initial_time,
+                valid_time)
         query = """
             SELECT f.name, v.time_axis, v.pressure_axis, t.i, p.i
               FROM file AS f
@@ -275,6 +341,37 @@ class Locator(Connection):
                 pts[pa] = pi
                 return path, tuple(pts)
         return None, None  # Default case: consider refactor
+
+    def surface_path_points(
+            self,
+            pattern,
+            variable,
+            initial_time,
+            valid_time):
+        query = """
+            SELECT f.name, t.i
+              FROM file AS f
+              JOIN variable AS v
+                ON v.file_id = f.id
+              JOIN variable_to_time AS vt
+                ON vt.variable_id = v.id
+              JOIN time AS t
+                ON vt.time_id = t.id
+             WHERE f.name GLOB :pattern
+               AND f.reference = :initial_time
+               AND v.name = :variable
+               AND t.value = :valid_time
+        """
+        self.cursor.execute(query, dict(
+            pattern=pattern,
+            variable=variable,
+            initial_time=initial_time,
+            valid_time=valid_time))
+        row = self.cursor.fetchone()
+        if row is None:
+            return None, None
+        path, i = row
+        return path, (i,)
 
 
 class Database(Connection):

@@ -559,7 +559,7 @@ class TestLocator(unittest.TestCase):
                     ("mslp", "2019-01-02 00:00:00", 0),
                     ("mslp", "2019-01-02 01:00:00", 1)]:
                 self.database.insert_time(path, variable, time, i=i)
-        result = self.locator.surface_path_points(
+        result = self.locator.path_points(
             pattern,
             "mslp",
             "2019-01-02 00:00:00",

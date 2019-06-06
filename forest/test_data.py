@@ -159,6 +159,7 @@ class TestDBLoader(unittest.TestCase):
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
 
+    @unittest.skip("waiting on database refactor")
     def test_image_given_surface_field(self):
         path = "file.nc"
         variable = "variable"
