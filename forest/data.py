@@ -18,6 +18,7 @@ from functools import partial
 import scipy.ndimage
 import shapely.geometry
 from util import timeout_cache, initial_time, coarsify
+from db.exceptions import SearchFail
 import disk
 
 
@@ -302,25 +303,17 @@ class DBLoader(object):
         }
 
     def image(self, state):
-        if False:
-            print("{}: {}".format(
-                self.__class__.__name__,
-                state))
-        if (
-                (state.variable is None) or
-                (state.initial_time is None) or
-                (state.valid_time is None) or
-                (state.pressures is None)):
+        if not self.valid(state):
             return self.empty_image
 
-        path, pts = self.locator.locate(
-            self.pattern,
-            state.variable,
-            state.initial_time,
-            state.valid_time,
-            state.pressure)
-
-        if path is None:
+        try:
+            path, pts = self.locator.locate(
+                self.pattern,
+                state.variable,
+                state.initial_time,
+                state.valid_time,
+                state.pressure)
+        except SearchFail:
             return self.empty_image
 
         valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%d %H:%M:%S")
@@ -342,6 +335,25 @@ class DBLoader(object):
         data["length"] = [length]
         data["level"] = [level]
         return data
+
+    def valid(self, state):
+        if state.variable is None:
+            return False
+        if state.initial_time is None:
+            return False
+        if state.valid_time is None:
+            return False
+        if state.pressures is None:
+            return False
+        if len(state.pressures) > 0:
+            if not self.has_pressure(state.pressures, state.pressure):
+                return False
+        return True
+
+    def has_pressure(self, pressures, pressure, tolerance=0.01):
+        if isinstance(pressures, list):
+            pressures = np.array(pressures)
+        return any(np.abs(pressures - pressure) < tolerance)
 
     def series(self, variable, x0, y0, k):
         if False:
