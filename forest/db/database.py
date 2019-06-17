@@ -261,7 +261,7 @@ class Database(Connection):
         except iris.exceptions.CoordinateNotFoundError:
             return None
 
-    def initial_times(self, pattern=None):
+    def initial_times(self, pattern=None, variable=None):
         """Distinct initialisation times"""
         if pattern is None:
             query = """

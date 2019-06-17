@@ -227,9 +227,20 @@ def main():
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
+    # Pre-select menu choices (if any)
+    state = None
+    for _, pattern in config.patterns:
+        state = db.initial_state(database, pattern=pattern)
+        break
+
+    # Pre-select first layer
+    for name, _ in config.patterns:
+        image_controls.select(name)
+        break
+
     # Add prototype database controls
-    controls = db.Controls(database, patterns=config.patterns)
-    controls.render(controls.state)
+    controls = db.Controls(database, patterns=config.patterns, state=state)
+    controls.subscribe(controls.render)
     locator = db.Locator(
         database.connection,
         directory=args.directory)
@@ -237,6 +248,9 @@ def main():
     # controls.subscribe(text.on_state)
     # text.div removed from Panel
     controls.subscribe(artist.on_state)
+
+    # Ensure all listeners are pointing to the current state
+    controls.notify(controls.state)
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
@@ -481,7 +495,6 @@ class Artist(object):
         for name in self.visible_state:
             viewer = self.viewers[name]
             viewer.render(self.state)
-
 
 
 class TimeControls(Observable):

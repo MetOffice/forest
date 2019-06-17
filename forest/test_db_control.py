@@ -98,8 +98,10 @@ class TestControls(unittest.TestCase):
         valid = dt.datetime(2019, 1, 1, 3)
         self.database.insert_file_name("file.nc", initial)
         self.database.insert_time("file.nc", "variable", valid, 0)
-        state = db.State(initial_time="2019-01-01 00:00:00")
-        self.controls.render(state)
+        state = db.State()
+        message = db.Message.dropdown("initial_time", "2019-01-01 00:00:00")
+        new_state = self.controls.modify(state, message)
+        self.controls.render(new_state)
         result = self.controls.dropdowns["valid_time"].menu
         expect = ["2019-01-01 03:00:00"]
         self.assert_label_equal(expect, result)

@@ -16,7 +16,9 @@ class Controls(Observable):
         self.previous_state = None
         self.renderers = []
         self._labels = ["Show"]
+
         self.groups = []
+        self.dropdowns = []
 
         add = bokeh.models.Button(label="Add", width=50)
         remove = bokeh.models.Button(label="Remove", width=50)
@@ -27,6 +29,14 @@ class Controls(Observable):
         add.on_click(self.add_row)
         remove.on_click(self.remove_row)
         super().__init__()
+
+    def select(self, name):
+        """Select particular layers and visibility states"""
+        self.groups[0].active = [0]
+        dropdown = self.dropdowns[0]
+        for k, v in dropdown.menu:
+            if k == name:
+                dropdown.value = v
 
     @property
     def labels(self):
@@ -46,6 +56,7 @@ class Controls(Observable):
                 width=230,)
         autolabel(dropdown)
         dropdown.on_change('value', self.on_dropdown(i))
+        self.dropdowns.append(dropdown)
         group = bokeh.models.CheckboxButtonGroup(
                 labels=self.labels,
                 width=50)
@@ -59,6 +70,8 @@ class Controls(Observable):
             i = self.rows - 1
             self.models.pop(i, None)
             self.flags.pop(i, None)
+            self.dropdowns.pop(-1)
+            self.groups.pop(-1)
             self.column.children.pop(-2)
             self.render()
 

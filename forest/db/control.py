@@ -11,7 +11,8 @@ __all__ = [
     "Message",
     "Observable",
     "Controls",
-    "next_state"
+    "next_state",
+    "initial_state"
 ]
 
 
@@ -102,13 +103,53 @@ class Observable(object):
             callback(state)
 
 
+def initial_state(database, pattern=None):
+    """Find initial state given database"""
+    variables = database.variables(pattern)
+    variable = first(variables)
+    initial_times = database.initial_times(pattern, variable)
+    initial_time = None
+    if len(initial_times) > 0:
+        initial_time = max(initial_times)
+    valid_times = database.valid_times(
+        variable=variable,
+        pattern=pattern,
+        initial_time=initial_time)
+    valid_time = None
+    if len(valid_times) > 0:
+        valid_time = min(valid_times)
+    pressures = database.pressures(variable, pattern, initial_time)
+    pressures = list(reversed(sorted(pressures)))
+    pressure = None
+    if len(pressures) > 0:
+        pressure = pressures[0]
+    state = State(
+        pattern=pattern,
+        variable=variable,
+        variables=variables,
+        initial_time=initial_time,
+        initial_times=initial_times,
+        valid_time=valid_time,
+        valid_times=valid_times,
+        pressures=pressures,
+        pressure=pressure)
+    return state
+
+
+def first(items):
+    for item in items:
+        return item
+
+
 class Controls(Observable):
-    def __init__(self, database, patterns=None):
+    def __init__(self, database, patterns=None, state=None):
         if patterns is None:
             patterns = []
         self.patterns = patterns
         self.database = database
-        self.state = State()
+        if state is None:
+            state = State()
+        self.state = state
         dropdown_width = 180
         button_width = 75
         self.dropdowns = {
@@ -158,9 +199,6 @@ class Controls(Observable):
 
         super().__init__()
 
-        # Connect state changes to render
-        self.subscribe(self.render)
-
     def render(self, state):
         """Configure dropdown menus"""
         for key, values in [
@@ -181,6 +219,12 @@ class Controls(Observable):
             if key in self.buttons:
                 self.buttons[key]["next"].disabled = disabled
                 self.buttons[key]["previous"].disabled = disabled
+
+        if state.pattern is not None:
+            self.dropdowns['pattern'].value = state.pattern
+
+        if state.variable is not None:
+            self.dropdowns['variable'].value = state.variable
 
         if state.initial_time is not None:
             self.dropdowns['initial_time'].value = state.initial_time
