@@ -261,3 +261,52 @@ class TestMessage(unittest.TestCase):
         self.assertEqual(expect.initial_time, result.initial_time)
         self.assertEqual(expect.initial_times, result.initial_times)
         self.assertEqual(expect, result)
+
+
+class TestNextPrevious(unittest.TestCase):
+    def setUp(self):
+        self.initial_times = [
+            "2019-01-02 00:00:00",
+            "2019-01-01 00:00:00",
+            "2019-01-04 00:00:00",
+            "2019-01-03 00:00:00",
+        ]
+        self.state = db.State(initial_times=self.initial_times)
+        self.store = db.Store(self.state)
+
+    def test_next_given_none_selects_latest_time(self):
+        message = db.Message.button("initial_time", "next")
+        self.store.dispatch(message)
+        result = self.store.state
+        expect = db.State(
+            initial_time="2019-01-04 00:00:00",
+            initial_times=self.initial_times
+        )
+        self.assert_state_equal(expect, result)
+
+    def test_reducer_next_given_time_moves_forward_in_time(self):
+        message = db.Message.button("initial_time", "next")
+        state = db.State(
+            initial_time="2019-01-01 00:00:00",
+            initial_times=[
+                "2019-01-01 00:00:00",
+                "2019-01-01 02:00:00",
+                "2019-01-01 01:00:00",
+            ])
+        result = db.reducer(state, message)
+        expect = db.next_state(state, initial_time="2019-01-01 01:00:00")
+        self.assert_state_equal(expect, result)
+
+    def test_previous_given_none_selects_earliest_time(self):
+        message = db.Message.button("initial_time", "previous")
+        self.store.dispatch(message)
+        result = self.store.state
+        expect = db.State(
+            initial_time="2019-01-01 00:00:00",
+            initial_times=self.initial_times
+        )
+        self.assert_state_equal(expect, result)
+
+    def assert_state_equal(self, expect, result):
+        for k, v in expect._asdict().items():
+            self.assertEqual(v, getattr(result, k), k)

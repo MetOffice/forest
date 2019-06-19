@@ -16,6 +16,12 @@ __all__ = [
 ]
 
 
+def export(obj):
+    if obj.__name__ not in __all__:
+        __all__.append(obj.__name__)
+    return obj
+
+
 State = namedtuple("State", (
     "pattern",
     "variable",
@@ -139,6 +145,76 @@ def initial_state(database, pattern=None):
 def first(items):
     for item in items:
         return item
+
+
+@export
+class Store(Observable):
+    def __init__(self, state=None):
+        if state is None:
+            state = State()
+        self.state = state
+        self.reducer = reducer
+
+    def dispatch(self, action):
+        self.state = self.reducer(self.state, action)
+
+
+@export
+def reducer(state, action):
+    if action.kind == "button":
+        return button_reducer(state, action)
+    return state
+
+
+def button_reducer(state, action):
+    items, item = get_items(state, action)
+    if action.category == "pressure":
+        instruction = reverse(action.instruction)
+    else:
+        instruction = action.instruction
+    if instruction == "next":
+        item = next_item(items, item)
+    else:
+        item = previous_item(items, item)
+    return next_state(state, **{action.category: item})
+
+
+def reverse(instruction):
+    if instruction == "next":
+        return "previous"
+    else:
+        return "next"
+
+
+def get_items(state, action):
+    if action.category == 'initial_time':
+        return state.initial_times, state.initial_time
+    elif action.category == 'valid_time':
+        return state.valid_times, state.valid_time
+    elif action.category == 'pressure':
+        return state.pressures, state.pressure
+    else:
+        raise Exception("Unrecognised category: {}".format(action.category))
+
+
+def next_item(items, item):
+    if items is None:
+        return None
+    if item is None:
+        return max(items)
+    items = list(sorted(items))
+    i = items.index(item)
+    return items[i + 1]
+
+
+def previous_item(items, item):
+    if items is None:
+        return None
+    if item is None:
+        return min(items)
+    items = list(sorted(items))
+    i = items.index(item)
+    return items[i - 1]
 
 
 class Controls(Observable):
@@ -286,34 +362,8 @@ class Controls(Observable):
                     state = next_state(state, valid_times=valid_times)
 
         if message.kind == 'button':
-            state = self.modify_button(state, message)
+            state = button_reducer(state, message)
         return state
-
-    def modify_button(self, state, message):
-        if message.category == 'initial_time':
-            values = state.initial_times
-            value = state.initial_time
-        elif message.category == 'valid_time':
-            values = state.valid_times
-            value = state.valid_time
-        elif message.category == 'pressure':
-            values = state.pressures
-            value = state.pressure
-        if values is None:
-            return state
-        if message.instruction == 'previous':
-            if value is None:
-                value = values[0]
-            else:
-                i = values.index(value)
-                value = values[i - 1]
-        else:
-            if value is None:
-                value = values[0]
-            else:
-                i = values.index(value)
-                value = values[i + 1]
-        return next_state(state, **{message.category: value})
 
     @staticmethod
     def menu(values, formatter=str):
