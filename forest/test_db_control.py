@@ -307,6 +307,16 @@ class TestNextPrevious(unittest.TestCase):
         )
         self.assert_state_equal(expect, result)
 
+    def test_next_item_given_last_item_returns_first_item(self):
+        result = db.control.next_item([0, 1, 2], 2)
+        expect = 0
+        self.assertEqual(expect, result)
+
+    def test_previous_item_given_first_item_returns_last_item(self):
+        result = db.control.previous_item([0, 1, 2], 0)
+        expect = 2
+        self.assertEqual(expect, result)
+
     def assert_state_equal(self, expect, result):
         for k, v in expect._asdict().items():
             self.assertEqual(v, getattr(result, k), k)

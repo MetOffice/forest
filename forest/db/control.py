@@ -204,7 +204,7 @@ def next_item(items, item):
         return max(items)
     items = list(sorted(items))
     i = items.index(item)
-    return items[i + 1]
+    return items[(i + 1) % len(items)]
 
 
 def previous_item(items, item):
