@@ -1,10 +1,11 @@
 #!/bin/bash
 # EC2 instance bokeh serve command
-WEBSOCKET_ORIGIN=$1
+REPO_DIR=$1
+WEBSOCKET_ORIGIN=$2
 bokeh serve \
     --port 8080 \
     --allow-websocket-origin ${WEBSOCKET_ORIGIN} \
-    forest \
+    ${REPO_DIR}/forest \
     --args \
-        --database forest/empty.db \
-        --config-file forest/config.yaml
+        --database ${REPO_DIR}/forest/empty.db \
+        --config-file ${REPO_DIR}/forest/config.yaml
