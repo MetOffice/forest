@@ -13,6 +13,11 @@ exec sudo -u ec2-user /bin/bash - <<EOF
     sudo make install
 
     cd
+    curl -L https://github.com/kahing/goofys/releases/latest/download/goofys > goofys
+    chmod +x goofys
+    sudo mv goofys /usr/bin/goofys
+
+    cd
     git clone https://github.com/informatics-lab/forest.git
     docker run \
       -p 80:8080 \
