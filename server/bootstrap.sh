@@ -16,14 +16,14 @@ exec sudo -u ec2-user /bin/bash - <<EOF
     chmod +x goofys
     sudo mv goofys /usr/bin/goofys
 
-    mkdir -p ~/buckets/met-office-rmed-forest
-    goofys met-office-rmed-forest ~/buckets/met-office-rmed-forest
+    sudo mkdir -p /s3/met-office-rmed-forest
+    sudo goofys -o allow_other met-office-rmed-forest /s3/met-office-rmed-forest
 
     cd
     git clone https://github.com/informatics-lab/forest.git
     docker run \
       -p 80:8080 \
       -v /home/ec2-user/forest:/repo/forest \
-      -v /home/ec2-user/buckets:/buckets \
-      informaticslab/forest bash -c '. /repo/forest/server/run-ec2.sh /repo/forest /buckets'
+      -v /s3:/s3 \
+      informaticslab/forest bash -c '. /repo/forest/server/run-ec2.sh /repo/forest /s3'
 EOF
