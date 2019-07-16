@@ -1,3 +1,0 @@
-
-.. automodule:: forest.aws
-    :members:

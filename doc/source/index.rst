@@ -16,8 +16,7 @@ using a simple user interface
    :maxdepth: 2
    :caption: Contents:
 
-   aws
-   image
+   guide
 
 
 
