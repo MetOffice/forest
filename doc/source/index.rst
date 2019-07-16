@@ -15,6 +15,7 @@ using a simple user interface.
    :maxdepth: 2
    :caption: Contents:
 
+   user
    guide
    api
 
