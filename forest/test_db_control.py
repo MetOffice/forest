@@ -129,27 +129,34 @@ class TestControls(unittest.TestCase):
 
     def test_next_pressure_given_pressures_returns_first_element(self):
         value = 950
-        self.controls.state = db.State(pressures=[value])
-        self.controls.on_click('pressure', 'next')()
-        result = self.controls.state.pressure
+        controls = db.Controls(
+            self.database,
+            state=db.State(pressures=[value]))
+        controls.on_click('pressure', 'next')()
+        result = controls.state.pressure
         expect = value
         self.assertEqual(expect, result)
 
     def test_next_pressure_given_pressures_none(self):
-        self.controls.state = db.State()
-        self.controls.on_click('pressure', 'next')()
-        result = self.controls.state.pressure
+        controls = db.Controls(
+            self.database,
+            state=db.State())
+        controls.on_click('pressure', 'next')()
+        result = controls.state.pressure
         expect = None
         self.assertEqual(expect, result)
 
     def test_next_pressure_given_current_pressure(self):
         pressure = 950
         pressures = [1000, 950, 800]
-        self.controls.state = db.State(
-            pressures=pressures,
-            pressure=pressure)
-        self.controls.on_click('pressure', 'next')()
-        result = self.controls.state.pressure
+        controls = db.Controls(
+            self.database,
+            state=db.State(
+                pressures=pressures,
+                pressure=pressure)
+        )
+        controls.on_click('pressure', 'next')()
+        result = controls.state.pressure
         expect = 800
         self.assertEqual(expect, result)
 
@@ -159,12 +166,6 @@ class TestControls(unittest.TestCase):
             pressure=1000))
         result = self.controls.dropdowns["pressure"].label
         expect = "1000hPa"
-        self.assertEqual(expect, result)
-
-    @unittest.skip("waiting on green light")
-    def test_database_pressures(self):
-        result = self.database.pressures()
-        expect = [1000]
         self.assertEqual(expect, result)
 
     def test_hpa_given_small_pressures(self):
@@ -260,6 +261,19 @@ class TestMessage(unittest.TestCase):
             initial_time="2019-01-01 00:00:00")
         self.assertEqual(expect.initial_time, result.initial_time)
         self.assertEqual(expect.initial_times, result.initial_times)
+        self.assertEqual(expect, result)
+
+
+class TestValidFormat(unittest.TestCase):
+    def test_render_valid_format(self):
+        state = db.State(
+            initial_time="2019-01-01 00:00:00",
+            valid_times=["2019-01-01 00:00:00"],
+            valid_format="T+")
+        controls = db.Controls()
+        controls.render(state)
+        result = control.dropdowns["valid_time"].menu
+        expect = [("T+0", "2019-01-01 00:00:00")]
         self.assertEqual(expect, result)
 
 
