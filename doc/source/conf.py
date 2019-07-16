@@ -27,7 +27,7 @@ author = 'Stephen Haddad, Graeme Anderson, Andrew Ryan'
 # The short X.Y version
 version = forest.__version__
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = forest.__version__
 
 
 # -- General configuration ---------------------------------------------------
