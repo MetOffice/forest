@@ -6,18 +6,18 @@
 Forest - forecast evaluation tools
 ==================================
 
-Forest is an application and a framework for evaluating
-numerical weather prediction (NWP) and ocean models. Forecast
+Forest is a framework for evaluating geophysical numerical models. Forecast
 and nowcast fields can be compared to equivalent observations
-using a simple user interface
+using a simple user interface.
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   aws
-   image
+   user
+   guide
+   api
 
 
 
