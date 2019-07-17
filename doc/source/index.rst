@@ -10,6 +10,7 @@ Forest is a framework for evaluating geophysical numerical models. Forecast
 and nowcast fields can be compared to equivalent observations
 using a simple user interface.
 
+The code is available on `GitHub <https://github.com/informatics-lab/forest>`_ and contributions are welcome.
 
 .. toctree::
    :maxdepth: 2
