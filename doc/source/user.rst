@@ -63,13 +63,15 @@ that lets forest know where each dataset lives on the file system.
              pattern: '*os42_ea*.nc'
 
 At present the ``--database`` flag and ``--config`` flags are mandatory,
-this will change in the very near future. An example of a command line
-argument used to run a local implementation of FOREST looks like the following
+this will change in the very near future.
 
 To construct a database run the ``forestdb --database file.db *.nc`` command
 on the files you intend to navigate through. This is a highly unnecessary step
 and will be removed in the very near future. It was introduced to optimise
 communication between cloud computing services.
+
+An example to run a local implementation of FOREST looks like the
+following:
 
 .. code-block:: sh
 
@@ -80,6 +82,10 @@ communication between cloud computing services.
       --database /path/to/file.db \
       --config /path/to/file.yaml \
       --directory /replacement/directory
+
+Where the various ``bokeh serve`` options are passed straight through
+to the underlying bokeh server. FOREST specific options will be refined
+in the coming releases.
 
 .. warning:: While the intention is to support file(s) directly on the
              command line, at present this functionality is not supported
