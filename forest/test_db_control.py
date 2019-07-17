@@ -264,19 +264,6 @@ class TestMessage(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
-class TestValidFormat(unittest.TestCase):
-    def test_render_valid_format(self):
-        state = db.State(
-            initial_time="2019-01-01 00:00:00",
-            valid_times=["2019-01-01 00:00:00"],
-            valid_format="T+")
-        controls = db.Controls()
-        controls.render(state)
-        result = control.dropdowns["valid_time"].menu
-        expect = [("T+0", "2019-01-01 00:00:00")]
-        self.assertEqual(expect, result)
-
-
 class TestNextPrevious(unittest.TestCase):
     def setUp(self):
         self.initial_times = [
