@@ -23,6 +23,7 @@ setuptools.setup(
         packages=setuptools.find_packages(),
         entry_points={
             'console_scripts': [
-                'forest=forest.cli.main:main'
+                'forest=forest.cli.main:main',
+                'forestdb=forest.db.main:main'
             ]
         })
