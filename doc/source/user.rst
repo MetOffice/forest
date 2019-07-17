@@ -30,6 +30,14 @@ run the forest command.
    conda activate forest
    conda install -c conda-forge bokeh iris
 
+Then once the dependencies are available inside your virtual environment
+it is possible to install forest in development mode.
+
+.. code-block:: sh
+
+   cd /path/to/repo/
+   python setup.py develop
+
 
 You can check if you have a successful install by bringing up the
 help message
@@ -38,6 +46,7 @@ help message
 
    forest -h
 
+.. note:: Future releases will simply use ``conda install -c conda-forge forest``
 
 Basic usage
 ~~~~~~~~~~~
@@ -56,6 +65,11 @@ that lets forest know where each dataset lives on the file system.
 At present the ``--database`` flag and ``--config`` flags are mandatory,
 this will change in the very near future. An example of a command line
 argument used to run a local implementation of FOREST looks like the following
+
+To construct a database run the ``forestdb --database file.db *.nc`` command
+on the files you intend to navigate through. This is a highly unnecessary step
+and will be removed in the very near future. It was introduced to optimise
+communication between cloud computing services.
 
 .. code-block:: sh
 
