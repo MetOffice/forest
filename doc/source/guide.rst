@@ -6,7 +6,7 @@ Contributing to FOREST should be simple. Building, testing and documenting
 the code should be straight forward.
 
 To begin to develop FOREST first take a look at
-the existing issues_ list available at the github_ repository. If an
+the existing issues_ list available at the github_ repository. If a
 suitable issue exists that you would like to work on, go ahead and
 assign yourself to it. Alternatively, if there are no issues that address
 your need open a new issue that captures the feature/bug/enhancement you would

@@ -20,7 +20,7 @@ either inside a virtual or conda environment with the setup.py script
    git clone git@github.com:informatics-lab/forest.git
 
 
-There is an conda-spec.txt file shipped with the repository or create
+There is a conda-spec.txt file shipped with the repository or create
 a fresh conda environment with bokeh and iris should be sufficient to
 run the forest command.
 
