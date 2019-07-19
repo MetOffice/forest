@@ -23,4 +23,4 @@ quickly become an invaluable resource over time.
 
 ## License
 
-FOREST is distributed under the GNU Lesser General Public License v3.0
+FOREST is licensed under the GNU Lesser General Public License v3.0
