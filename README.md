@@ -20,3 +20,7 @@ Please read the [docs](https://forest-informaticslab.readthedocs.io), they
 should address all of the most common issues, frequently asked questions, developer
 guides, tutorials, api references. They are a work in progress but should
 quickly become an invaluable resource over time.
+
+## License
+
+FOREST is distributed under the GNU Lesser General Public License v3.0
