@@ -7,12 +7,9 @@ This repository hosts the code to visualise forecast model output and observatio
 
 ## Installation
 
-At present installation is a simple case of cloning this repository. The
-setup.py and conda-spec.txt are intended to make it easier to build the
-package inside a virtual environment.
+The easiest way to install forest is with [conda](https://conda.io/miniconda.html):
 
-Currently there is work taking place to deploy FOREST with conda, but this
-has yet to be finalised.
+    conda install -c conda-forge forest
 
 ## Documentation
 
