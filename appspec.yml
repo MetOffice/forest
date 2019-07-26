@@ -1,5 +1,8 @@
 version: 0.0
 os: linux
+files:
+  - source: /
+    destination: /home/ec2-user/forest
 hooks:
   BeforeInstall:
     - location: server/before.sh
