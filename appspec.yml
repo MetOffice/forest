@@ -5,6 +5,10 @@ files:
     destination: /home/ec2-user/forest
 hooks:
   BeforeInstall:
-    - location: server/before.sh
+    - location: server/install_packages.sh
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: server/start_docker.sh
       timeout: 300
       runas: root
