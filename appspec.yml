@@ -12,3 +12,11 @@ hooks:
     - location: server/start_docker.sh
       timeout: 300
       runas: root
+  ApplicationStart:
+    - location: server/start_container.sh
+      timeout: 300
+      runas: root
+  ApplicationStop:
+    - location: server/stop_container.sh
+      timeout: 300
+      runas: root

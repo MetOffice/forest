@@ -20,6 +20,8 @@ exec sudo -u ec2-user /bin/bash - <<EOF
 
     cd
     docker run \
+      --name forest-container \
+      -d \
       -p 80:8080 \
       -v /home/ec2-user/forest:/repo/forest \
       -v /s3:/s3 \
