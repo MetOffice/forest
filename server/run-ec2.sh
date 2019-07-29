@@ -1,7 +1,6 @@
 #!/bin/bash
 REPO_DIR=$1
 bokeh serve \
-    --use-xheaders \
     --port 8080 \
     --allow-websocket-origin forest-future.informaticslab.co.uk \
      ${REPO_DIR}/apps/hello
