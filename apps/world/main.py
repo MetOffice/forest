@@ -28,6 +28,7 @@ def main():
     figure.min_border = 0
     row = bokeh.layouts.row(figure, sizing_mode="stretch_both")
     document = bokeh.plotting.curdoc()
+    document.title = "FOREST"
     document.add_root(row)
 
 
