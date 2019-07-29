@@ -2,7 +2,7 @@
 REPO_DIR=$1
 bokeh serve \
     --port 8080 \
-    --allow-websocket-origin future.informaticslab.co.uk \
+    --allow-websocket-origin forest.informaticslab.co.uk \
      ${REPO_DIR}/apps/hello
 
 
