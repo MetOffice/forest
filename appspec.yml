@@ -1,0 +1,22 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /home/ec2-user/forest
+hooks:
+  BeforeInstall:
+    - location: server/install_packages.sh
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: server/start_docker.sh
+      timeout: 300
+      runas: root
+  ApplicationStart:
+    - location: server/start_container.sh
+      timeout: 300
+      runas: root
+  ApplicationStop:
+    - location: server/stop_container.sh
+      timeout: 300
+      runas: root

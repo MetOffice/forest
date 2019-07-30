@@ -1,5 +1,4 @@
 #!/bin/bash
-yum install -y gcc libstdc++-devel gcc-c++ fuse fuse-devel curl-devel libxml2-devel mailcap automake openssl-devel git docker
 service docker start
 usermod -a -G docker ec2-user
 exec sudo -u ec2-user /bin/bash - <<EOF
@@ -20,8 +19,9 @@ exec sudo -u ec2-user /bin/bash - <<EOF
     sudo goofys -o allow_other met-office-rmed-forest /s3/met-office-rmed-forest
 
     cd
-    git clone https://github.com/informatics-lab/forest.git
     docker run \
+      --name forest-container \
+      -d \
       -p 80:8080 \
       -v /home/ec2-user/forest:/repo/forest \
       -v /s3:/s3 \
