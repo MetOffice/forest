@@ -10,8 +10,9 @@ point in the deployment life cycle.
 ## launch-config.sh
 
 This script is not run directly but instead is a good
-place to copy and paste from for editing the User Data
-associated with a launch configuration.
+place to copy and paste from launch configuration User Data.
+Since the text box Amazon provides is fairly difficult to use and 
+a launch configuration's user data cannot be edited after creation.
 
 ## appspec.yml
 
