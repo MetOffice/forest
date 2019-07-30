@@ -10,7 +10,7 @@ point in the deployment life cycle.
 ## launch-config.sh
 
 This script is not run directly but instead is manually copied and pasted
-into the User Data section of a new launch configuration. Launch
+into the `user data` section of a new launch configuration. Launch
 configuration user data sections are immutable after creation, so this
 is a very convenient piece of text to keep around.
 
