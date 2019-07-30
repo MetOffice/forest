@@ -1,4 +1,7 @@
 #!/bin/bash
-yum install -y git
-git clone https://github.com/informatics-lab/forest.git
-./forest/server/bootstrap.sh
+yum -y update
+yum install -y ruby
+cd /home/ec2-user
+curl -O https://aws-codedeploy-eu-west-2.s3.amazonaws.com/latest/install
+chmod +x ./install
+./install auto
