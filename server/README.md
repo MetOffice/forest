@@ -30,3 +30,9 @@ files:
 There is very little documentation elsewhere on
 the internet at present to explain the true meaning and
 usage of that section
+
+## Health check error code
+
+As bokeh apps return a `302` redirect code instead of `200` on navigation to `/`, the EC2
+application load balancer target group health check has been modified
+to expect a `302` to signify a healthy FOREST instance
