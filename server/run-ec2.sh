@@ -7,5 +7,5 @@ bokeh serve \
      ${REPO_DIR}/forest \
          --args \
          --config ${REPO_DIR}/forest/config.yaml \
-         --directory ${BUCKET_DIR}/met-office-rmed-forest/model_data \
+         --directory ${BUCKET_DIR}/met-office-rmed-forest/unified_model \
          --database ${BUCKET_DIR}/met-office-rmed-forest/forest-informaticslab.db
