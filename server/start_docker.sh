@@ -18,6 +18,9 @@ exec sudo -u ec2-user /bin/bash - <<EOF
     sudo mkdir -p /s3/met-office-rmed-forest
     sudo goofys -o allow_other met-office-rmed-forest /s3/met-office-rmed-forest
 
+    sudo mkdir /mnt/efs
+    sudo mount -t efs fs-b043e241:/ /mnt/efs
+
     cd
     docker run \
       --name forest-container \
@@ -25,5 +28,6 @@ exec sudo -u ec2-user /bin/bash - <<EOF
       -p 80:8080 \
       -v /home/ec2-user/forest:/repo/forest \
       -v /s3:/s3 \
+      -v /mnt/efs:/mnt/efs \
       informaticslab/forest bash -c '. /repo/forest/server/run-ec2.sh /repo/forest /s3'
 EOF

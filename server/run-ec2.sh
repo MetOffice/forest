@@ -8,4 +8,4 @@ bokeh serve \
          --args \
          --config ${REPO_DIR}/forest/config.yaml \
          --directory ${BUCKET_DIR}/met-office-rmed-forest/unified_model \
-         --database ${BUCKET_DIR}/met-office-rmed-forest/forest-informaticslab.db
+         --database /mnt/efs/forest-informaticslab.db
