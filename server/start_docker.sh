@@ -20,6 +20,8 @@ exec sudo -u ec2-user /bin/bash - <<EOF
 
     sudo mkdir /mnt/efs
     sudo mount -t efs fs-b043e241:/ /mnt/efs
+    mkdir ~/database
+    cp /mnt/efs/*.db ~/database/
 
     cd
     docker run \
@@ -27,7 +29,7 @@ exec sudo -u ec2-user /bin/bash - <<EOF
       -d \
       -p 80:8080 \
       -v /home/ec2-user/forest:/repo/forest \
+      -v /home/ec2-user/database:/database \
       -v /s3:/s3 \
-      -v /mnt/efs:/mnt/efs \
       informaticslab/forest bash -c '. /repo/forest/server/run-ec2.sh /repo/forest /s3'
 EOF
