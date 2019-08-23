@@ -1,36 +1,51 @@
 import unittest
 import yaml
+import os
+import forest
 
 
-def as_patterns(data):
-    d = {}
-    for row in data["patterns"]:
-        d[row['name']] = row['directory']
-    return d
+class TestConfig(unittest.TestCase):
+    def setUp(self):
+        self.path = "test-config.yaml"
 
+    def tearDown(self):
+        if os.path.exists(self.path):
+            os.remove(self.path)
 
-@unittest.skip("changes too frequently")
-class TestLoadConfig(unittest.TestCase):
-    def test_highway_yaml(self):
-        with open("highway.yaml") as stream:
-            result = yaml.load(stream)
-        expect = {
-            "patterns": [
-                {"name": "GA6", "directory": "model_data/highway_ga6*.nc"},
-                {"name": "Tropical Africa 4.4km", "directory": "model_data/highway_takm4p4*.nc"},
-                {"name": "East Africa 4.4km", "directory": "model_data/highway_eakm4p4*.nc"}
+    def test_load_config(self):
+        data = {
+            "files": [
+                {"name": "EIDA50",
+                 "directory": "~/cache",
+                 "pattern": "*.nc"}
             ]
         }
+        with open(self.path, "w") as stream:
+            yaml.dump(data, stream)
+        result = forest.load_config(self.path).data
+        expect = data
         self.assertEqual(expect, result)
 
-    def test_offline(self):
-        with open("highway-offline.yaml") as stream:
-            data = yaml.load(stream)
-        result = as_patterns(data)
-        expect = {
-            "OS42": "highway_os42_ea_*.nc",
-            "EIDA50": "EIDA50_takm4p4_*.nc",
-            "RDT": "*.json",
-            "EarthNetworks": "engl*.txt"
+    def test_patterns(self):
+        data = {
+            "files": []
         }
+        with open(self.path, "w") as stream:
+            yaml.dump(data, stream)
+        config = forest.load_config(self.path)
+        result = config.patterns
+        expect = []
+        self.assertEqual(expect, result)
+
+    def test_patterns(self):
+        config = forest.config.Config({
+            "files": [
+                {
+                    "name": "Name",
+                    "pattern": "*.nc"
+                }
+            ]
+        })
+        result = config.patterns
+        expect = [("Name", "*.nc")]
         self.assertEqual(expect, result)

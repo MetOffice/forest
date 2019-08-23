@@ -11,6 +11,7 @@ import rdt
 import geo
 import colors
 import db
+import config as cfg
 import parse_args
 from util import Observable
 from db.util import autolabel
@@ -23,7 +24,7 @@ def main():
         assert os.path.exists(args.database), "{} must exist".format(args.database)
     database = db.Database.connect(args.database)
     with open(args.config_file) as stream:
-        config = parse_args.load_config(stream)
+        config = cfg.load_config(stream)
 
     # Access latest files
     data.FILE_DB.sync()

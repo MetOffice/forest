@@ -3,3 +3,6 @@ models:
           pattern: '*global_africa*.nc'
         - name: Operational Tropical Africa
           pattern: '*os42_ea*.nc'
+        - name: EIDA50
+          directory: ~/cache
+          pattern: EIDA50*.nc
