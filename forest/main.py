@@ -23,8 +23,7 @@ def main():
     if args.database != ':memory:':
         assert os.path.exists(args.database), "{} must exist".format(args.database)
     database = db.Database.connect(args.database)
-    with open(args.config_file) as stream:
-        config = cfg.load_config(stream)
+    config = cfg.load_config(args.config_file)
 
     # Access latest files
     data.FILE_DB.sync()
@@ -101,13 +100,20 @@ def main():
             bar_line_color="black")
         figure.add_layout(colorbar, 'center')
 
-    for name, pattern in config.patterns:
-        if name not in data.LOADERS:
-            locator = db.Locator(
-                database.connection,
-                directory=args.directory)
-            loader = data.DBLoader(name, pattern, locator)
-            data.add_loader(name, loader)
+    # Database/File system loader(s)
+    for group in config.file_groups:
+        if group.name not in data.LOADERS:
+            if group.search == "database":
+                locator = db.Locator(
+                    database.connection,
+                    directory=args.directory)
+                loader = data.DBLoader(group.name, group.pattern, locator)
+                data.add_loader(group.name, loader)
+            elif group.search == "file_system":
+                loader = data.FSLoader(group.name, group.pattern, group.file_type)
+                data.add_loader(group.name, loader)
+            else:
+                raise Exception("Unknown search: {}".format(group.search))
 
     renderers = {}
     viewers = {}
@@ -135,11 +141,6 @@ def main():
     for name, viewer in artist.viewers.items():
         if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
             image_sources.append(viewer.source)
-
-    # image_loaders = []
-    # for name, loader in data.LOADERS.items():
-    #     if isinstance(loader, (data.UMLoader, data.GPM)):
-    #         image_loaders.append(loader)
 
     # Lakes
     for figure in figures:
@@ -242,9 +243,9 @@ def main():
     # Add prototype database controls
     controls = db.Controls(database, patterns=config.patterns, state=state)
     controls.subscribe(controls.render)
-    locator = db.Locator(
-        database.connection,
-        directory=args.directory)
+    # locator = db.Locator(
+    #     database.connection,
+    #     directory=args.directory)
     # text = db.View(text="", locator=locator)
     # controls.subscribe(text.on_state)
     # text.div removed from Panel

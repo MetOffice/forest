@@ -1,8 +1,17 @@
-models:
+files:
         - name: Operational GA6
           pattern: '*global_africa*.nc'
+          locator: database
+          file_type: unified_model
         - name: Operational Tropical Africa
           pattern: '*os42_ea*.nc'
+          locator: database
+          file_type: unified_model
         - name: EIDA50
-          directory: ~/cache
-          pattern: EIDA50*.nc
+          pattern: 'EIDA50_takm4p4*.nc'
+          locator: file_system
+          file_type: eida50
+        - name: RDT
+          pattern: '*.json'
+          locator: file_system
+          file_type: rdt
