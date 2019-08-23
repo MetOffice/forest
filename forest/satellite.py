@@ -3,17 +3,17 @@ import datetime as dt
 import netCDF4
 import numpy as np
 import os
+import glob
 import geo
 from util import coarsify
 
 
 class EIDA50(object):
     total_seconds = np.vectorize(dt.timedelta.total_seconds)
-    def __init__(self, paths):
-        self.paths = [
-                os.path.expanduser(p) for p in paths]
+    def __init__(self, pattern):
+        self.paths = sorted(glob.glob(os.path.expanduser(pattern)))
         self.dates = [
-            self.parse_date(path) for path in paths]
+            self.parse_date(path) for path in self.paths]
         self.cache = {}
         with netCDF4.Dataset(self.paths[-1]) as dataset:
             self.cache["longitude"] = dataset.variables["longitude"][:]

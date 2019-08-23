@@ -6,11 +6,15 @@ import json
 import rdt
 
 
-@unittest.skip("green light")
 class TestRDT(unittest.TestCase):
     def setUp(self):
-        self.paths = glob.glob(os.path.expanduser("~/cache/RDT_features_eastafrica_*.json"))
-        self.loader = rdt.Loader(self.paths)
+        pattern = os.path.join(os.path.dirname(__file__), "sample/RDT*.json")
+        self.loader = rdt.Loader(pattern)
+
+    def test_paths(self):
+        result = [os.path.basename(path) for path in self.loader.paths]
+        expect = ["RDT_features_eastafrica_201904171245.json"]
+        self.assertEqual(expect, result)
 
     @unittest.skip("cache changed")
     def test_view(self):
@@ -32,8 +36,8 @@ class TestRDT(unittest.TestCase):
 
     def test_find_file(self):
         date = dt.datetime(2019, 3, 15, 12, 0)
-        result = self.loader.find_file(date)
-        expect = "/Users/andrewryan/cache/RDT_features_eastafrica_201903151200.json"
+        result = os.path.basename(self.loader.find_file(date))
+        expect = "RDT_features_eastafrica_201904171245.json"
         self.assertEqual(expect, result)
 
     def test_parse_date(self):

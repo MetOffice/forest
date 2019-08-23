@@ -1,3 +1,4 @@
+import datetime as dt
 import bokeh.models
 import geo
 
@@ -92,6 +93,11 @@ class EIDA50(object):
                 "image": []}
         self.source = bokeh.models.ColumnDataSource(
                 self.empty)
+
+    def render(self, state):
+        print(state)
+        if state.valid_time is not None:
+            self.image(dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S'))
 
     def image(self, time):
         print("EIDA50: {}".format(time))

@@ -23,7 +23,6 @@ import disk
 
 
 # Application data shared across documents
-FILE_DB = None
 LOADERS = {}
 IMAGES = OrderedDict()
 VECTORS = OrderedDict()
@@ -45,25 +44,11 @@ DISPUTED = {
 }
 
 
-def on_server_loaded(patterns):
+def on_server_loaded():
     global DISPUTED
     global COASTLINES
     global LAKES
     global BORDERS
-    global FILE_DB
-    FILE_DB = FileDB(patterns)
-    FILE_DB.sync()
-    for name, paths in FILE_DB.files.items():
-        loader = loader_factory(name, paths)
-        if loader is not None:
-            add_loader(name, loader)
-
-    # Example of server-side pre-caching
-    # for name in [
-    #         "Tropical Africa 4.4km"]:
-    #     path = FILE_DB.files[name][0]
-    #     load_image(path, "relative_humidity", 0, 0)
-
     # Load coastlines/borders
     EXTENT = (-10, 50, -20, 10)
     COASTLINES = load_coastlines()
@@ -90,15 +75,15 @@ def add_loader(name, loader):
         LOADERS[name] = loader
 
 
-def loader_factory(name, paths):
-    if name == "RDT":
-        return rdt.Loader(paths)
-    elif "GPM" in name:
-        return GPM(paths)
-    elif name == "EarthNetworks":
-        return earth_networks.Loader(paths)
-    elif name == "EIDA50":
-        return satellite.EIDA50(paths)
+def file_loader(file_type, pattern):
+    if file_type.lower() == 'rdt':
+        return rdt.Loader(pattern)
+    elif file_type.lower() == 'gpm':
+        return GPM(pattern)
+    elif file_type.lower() == 'earthnetworks':
+        return earth_networks.Loader(pattern)
+    elif file_type.lower() == 'eida50':
+        return satellite.EIDA50(pattern)
 
 
 def load_coastlines():
@@ -132,25 +117,17 @@ def iterlines(geometries):
             yield xy(geometry)
 
 
-class FileDB(object):
-    def __init__(self, patterns):
-        self.patterns = patterns
-        self.names = list(patterns.keys())
-        self.files = {}
-
-    def sync(self):
-        for key, pattern in self.patterns.items():
-            self.files[key] = self.find(pattern)
-
-    @staticmethod
+class FileLocator(object):
+    """Base class for file system locators"""
     @timeout_cache(dt.timedelta(minutes=10))
-    def find(pattern):
-        return glob.glob(pattern)
+    def find(self, pattern):
+        return sorted(glob.glob(pattern))
 
 
-class GPM(object):
-    def __init__(self, paths):
-        self.paths = paths
+class GPM(FileLocator):
+    def __init__(self, pattern):
+        self.pattern = pattern
+        super().__init__()
 
     def image(self, itime):
         return load_image(

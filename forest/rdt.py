@@ -1,10 +1,12 @@
 import os
+import glob
 import re
 import datetime as dt
 import bokeh
 import json
 import numpy as np
 import geo
+from util import timeout_cache
 
 
 class View(object):
@@ -105,10 +107,19 @@ class View(object):
 
 
 class Loader(object):
-    def __init__(self, paths):
-        self.paths = paths
-        self.dates = np.array([self.parse_date(p) for p in paths], dtype='datetime64[s]')
+    def __init__(self, pattern):
+        self.pattern = pattern
         self.geojson = self.load(self.paths[0])
+        super().__init__()
+
+    @property
+    def paths(self):
+        return self.find(self.pattern)
+
+    @staticmethod
+    @timeout_cache(dt.timedelta(minutes=10))
+    def find(pattern):
+        return sorted(glob.glob(pattern))
 
     def load_date(self, date):
         return self.load(self.find_file(date))
@@ -137,8 +148,13 @@ class Loader(object):
     def find_file(self, date):
         if isinstance(date, dt.datetime):
             date = np.datetime64(date, 's')
-        i = np.argmin(np.abs(self.dates - date))
+        i = np.argmin(np.abs(self.dates(self.paths) - date))
         return self.paths[i]
+
+    def dates(self, paths):
+        return np.array([
+            self.parse_date(p) for p in paths],
+            dtype='datetime64[s]')
 
     def parse_date(self, path):
         groups = re.search(r"[0-9]{12}", os.path.basename(path))

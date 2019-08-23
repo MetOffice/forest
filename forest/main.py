@@ -25,9 +25,6 @@ def main():
     database = db.Database.connect(args.database)
     config = cfg.load_config(args.config_file)
 
-    # Access latest files
-    data.FILE_DB.sync()
-
     # Full screen map
     lon_range = (0, 30)
     lat_range = (0, 30)
@@ -103,17 +100,23 @@ def main():
     # Database/File system loader(s)
     for group in config.file_groups:
         if group.name not in data.LOADERS:
-            if group.search == "database":
+            if group.locator == "database":
                 locator = db.Locator(
                     database.connection,
                     directory=args.directory)
                 loader = data.DBLoader(group.name, group.pattern, locator)
                 data.add_loader(group.name, loader)
-            elif group.search == "file_system":
-                loader = data.FSLoader(group.name, group.pattern, group.file_type)
+            elif group.locator == "file_system":
+                if args.directory is not None:
+                    pattern = os.path.join(args.directory, group.pattern)
+                else:
+                    pattern = group.pattern
+                loader = data.file_loader(
+                        group.file_type,
+                        pattern)
                 data.add_loader(group.name, loader)
             else:
-                raise Exception("Unknown search: {}".format(group.search))
+                raise Exception("Unknown locator: {}".format(group.locator))
 
     renderers = {}
     viewers = {}
@@ -205,7 +208,7 @@ def main():
 
     mapper_limits = MapperLimits(image_sources, color_mapper)
 
-    menu = [(n, n) for n in data.FILE_DB.names]
+    menu = []
     for k, _ in config.patterns:
         menu.append((k, k))
 
