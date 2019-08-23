@@ -61,8 +61,11 @@ class View(object):
         self.source = bokeh.models.GeoJSONDataSource(
                 geojson=self.empty_geojson)
 
-    def render(self, valid_date):
-        self.source.geojson = self.loader.load_date(valid_date)
+    def render(self, state):
+        if state.valid_time is not None:
+            date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
+            print(date)
+            self.source.geojson = self.loader.load_date(date)
 
     def add_figure(self, figure):
         renderer = figure.patches(
