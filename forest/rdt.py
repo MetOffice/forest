@@ -6,6 +6,7 @@ import bokeh
 import json
 import numpy as np
 import geo
+import locate
 from util import timeout_cache
 from exceptions import FileNotFound
 
@@ -147,8 +148,10 @@ class Locator(object):
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
-        bounds = self.bounds(self.dates(paths), dt.timedelta(minutes=15))
-        pts = self.in_bounds(bounds, valid_date)
+        bounds = locate.bounds(
+                self.dates(paths),
+                dt.timedelta(minutes=15))
+        pts = locate.in_bounds(bounds, valid_date)
         found = paths[pts]
         if len(found) > 0:
             return found[0]
@@ -173,18 +176,3 @@ class Locator(object):
         groups = re.search(r"[0-9]{12}", os.path.basename(path))
         if groups is not None:
             return dt.datetime.strptime(groups[0], "%Y%m%d%H%M")
-
-    @staticmethod
-    def bounds(times, length):
-        dtype = 'datetime64[s]'
-        if isinstance(times, list):
-            times = np.asarray(times, dtype=dtype)
-        if isinstance(length, dt.timedelta):
-            length = np.asarray(length, dtype='timedelta64[s]')
-        return np.array([times, times + length], dtype=dtype).T
-
-    @staticmethod
-    def in_bounds(bounds, point):
-        if isinstance(point, str):
-            point = np.datetime64(point, 's')
-        return (bounds[:, 0] <= point) & (point < bounds[:, 1])
