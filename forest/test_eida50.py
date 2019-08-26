@@ -17,6 +17,12 @@ class TestLocator(unittest.TestCase):
             if os.path.exists(path):
                 os.remove(path)
 
+    def test_parse_date(self):
+        path = "/some/file-20190101.nc"
+        result = self.locator.parse_date(path)
+        expect = dt.datetime(2019, 1, 1)
+        self.assertEqual(expect, result)
+
     def test_find_given_no_files_raises_notfound(self):
         any_date = dt.datetime.now()
         with self.assertRaises(FileNotFound):
