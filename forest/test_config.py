@@ -14,7 +14,8 @@ class TestIntegration(unittest.TestCase):
         expect = forest.config.FileGroup(
                 "Operational GA6",
                 "*global_africa*.nc",
-                locator="database")
+                locator="database",
+                directory="unified_model")
         self.assert_group_equal(expect, result)
 
     def test_load_server_config_second_group(self):
@@ -22,7 +23,8 @@ class TestIntegration(unittest.TestCase):
         expect = forest.config.FileGroup(
                 "Operational Tropical Africa",
                 "*os42_ea*.nc",
-                locator="database")
+                locator="database",
+                directory="unified_model")
         self.assert_group_equal(expect, result)
 
     def test_load_server_config_has_eida50(self):
@@ -31,7 +33,7 @@ class TestIntegration(unittest.TestCase):
         result = groups[0]
         expect = forest.config.FileGroup(
                 "EIDA50",
-                "EIDA50_takm4p4*.nc",
+                "eida50/EIDA50_takm4p4*.nc",
                 file_type="eida50")
         self.assert_group_equal(expect, result)
 

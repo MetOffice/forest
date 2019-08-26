@@ -98,12 +98,23 @@ def main():
         figure.add_layout(colorbar, 'center')
 
     # Database/File system loader(s)
+    def replace_dir(args_dir, group_dir):
+        if args_dir is None:
+            return group_dir
+        elif group_dir is None:
+            return args_dir
+        else:
+            if os.path.isabs(group_dir):
+                return group_dir
+            else:
+                return os.path.join(args_dir, group_dir)
+
     for group in config.file_groups:
         if group.name not in data.LOADERS:
             if group.locator == "database":
                 locator = db.Locator(
                     database.connection,
-                    directory=args.directory)
+                    directory=replace_dir(args.directory, group.directory))
                 loader = data.DBLoader(group.name, group.pattern, locator)
                 data.add_loader(group.name, loader)
             elif group.locator == "file_system":

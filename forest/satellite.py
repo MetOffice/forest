@@ -16,9 +16,10 @@ class EIDA50(object):
         self.locator = Locator(pattern)
         self.cache = {}
         paths = self.locator.paths()
-        with netCDF4.Dataset(paths[-1]) as dataset:
-            self.cache["longitude"] = dataset.variables["longitude"][:]
-            self.cache["latitude"] = dataset.variables["latitude"][:]
+        if len(paths) > 0:
+            with netCDF4.Dataset(paths[-1]) as dataset:
+                self.cache["longitude"] = dataset.variables["longitude"][:]
+                self.cache["latitude"] = dataset.variables["latitude"][:]
 
     @property
     def longitudes(self):

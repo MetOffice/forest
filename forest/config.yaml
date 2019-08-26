@@ -3,15 +3,17 @@ files:
           pattern: '*global_africa*.nc'
           locator: database
           file_type: unified_model
+          directory: unified_model
         - name: Operational Tropical Africa
           pattern: '*os42_ea*.nc'
           locator: database
           file_type: unified_model
+          directory: unified_model
         - name: EIDA50
-          pattern: 'EIDA50_takm4p4*.nc'
+          pattern: 'eida50/EIDA50_takm4p4*.nc'
           locator: file_system
           file_type: eida50
         - name: RDT
-          pattern: '*.json'
+          pattern: 'rdt_json/*.json'
           locator: file_system
           file_type: rdt
