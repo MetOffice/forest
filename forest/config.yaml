@@ -1,19 +1,19 @@
 files:
-        - name: Operational GA6
+        - label: Operational GA6
           pattern: '*global_africa*.nc'
           locator: database
           file_type: unified_model
           directory: unified_model
-        - name: Operational Tropical Africa
+        - label: Operational Tropical Africa
           pattern: '*os42_ea*.nc'
           locator: database
           file_type: unified_model
           directory: unified_model
-        - name: EIDA50
+        - label: EIDA50
           pattern: 'eida50/EIDA50_takm4p4*.nc'
           locator: file_system
           file_type: eida50
-        - name: RDT
+        - label: RDT
           pattern: 'rdt_json/*.json'
           locator: file_system
           file_type: rdt

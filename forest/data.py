@@ -332,15 +332,6 @@ class DBLoader(object):
             pressures = np.array(pressures)
         return any(np.abs(pressures - pressure) < tolerance)
 
-    def series(self, variable, x0, y0, k):
-        if False:
-            print("{}: {}, {}, {}".format(
-                self.__class__.__name__,
-                variable,
-                x0,
-                y0,
-                k))
-
 
 class UMLoader(object):
     def __init__(self, paths, name="UM", finder=None):
@@ -355,6 +346,10 @@ class UMLoader(object):
             self.dimension_variables = self.load_dimension_variables(dataset)
             self.times = self.load_times(dataset)
             self.variables = self.load_variables(dataset)
+
+    @classmethod
+    def from_pattern(cls, pattern):
+        return cls(sorted(glob.glob(os.path.expanduser(pattern))))
 
     @staticmethod
     def load_variables(dataset):
@@ -440,8 +435,10 @@ class UMLoader(object):
         return data
 
     def series(self, variable, x0, y0, k):
+        if len(self.paths) > 0:
+            self.path = self.paths[-1]
         if self.path is None:
-            return
+            return {"x": [], "y": []}
         lon0, lat0 = geo.plate_carree(x0, y0)
         lon0, lat0 = lon0[0], lat0[0]  # Map to scalar
         lons = geo.to_180(self.longitudes(variable))

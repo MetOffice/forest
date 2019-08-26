@@ -1,4 +1,5 @@
 """Application configuration"""
+import os
 import yaml
 
 
@@ -23,7 +24,7 @@ class Config(object):
     @property
     def patterns(self):
         if "files" in self.data:
-            return [(f["name"], f["pattern"])
+            return [(f["label"], f["pattern"])
                     for f in self.data["files"]]
         return []
 
@@ -41,28 +42,34 @@ class Config(object):
 
 class FileGroup(object):
     def __init__(self,
-            name,
+            label,
             pattern,
             locator="file_system",
             file_type="unified_model",
             directory=None):
-        self.name = name
+        self.label = label
         self.pattern = pattern
         self.locator = locator
         self.file_type = file_type
         self.directory = directory
 
+    @property
+    def full_pattern(self):
+        if self.directory is None:
+            return self.pattern
+        return os.path.join(self.directory, self.pattern)
+
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             raise Exception("Can not compare")
-        attrs = ("name", "pattern", "locator", "file_type", "directory")
+        attrs = ("label", "pattern", "locator", "file_type", "directory")
         return all(
                 getattr(self, attr) == getattr(other, attr)
                 for attr in attrs)
 
     def __repr__(self):
         arg_attrs = [
-            "name",
+            "label",
             "pattern"]
         args = [self._str(getattr(self, attr))
                 for attr in arg_attrs]

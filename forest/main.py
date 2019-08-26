@@ -110,13 +110,13 @@ def main():
                 return os.path.join(args_dir, group_dir)
 
     for group in config.file_groups:
-        if group.name not in data.LOADERS:
+        if group.label not in data.LOADERS:
             if group.locator == "database":
                 locator = db.Locator(
                     database.connection,
                     directory=replace_dir(args.directory, group.directory))
-                loader = data.DBLoader(group.name, group.pattern, locator)
-                data.add_loader(group.name, loader)
+                loader = data.DBLoader(group.label, group.pattern, locator)
+                data.add_loader(group.label, loader)
             elif group.locator == "file_system":
                 if args.directory is not None:
                     pattern = os.path.join(args.directory, group.pattern)
@@ -125,7 +125,7 @@ def main():
                 loader = data.file_loader(
                         group.file_type,
                         pattern)
-                data.add_loader(group.name, loader)
+                data.add_loader(group.label, loader)
             else:
                 raise Exception("Unknown locator: {}".format(group.locator))
 
@@ -257,12 +257,6 @@ def main():
     # Add prototype database controls
     controls = db.Controls(database, patterns=config.patterns, state=state)
     controls.subscribe(controls.render)
-    # locator = db.Locator(
-    #     database.connection,
-    #     directory=args.directory)
-    # text = db.View(text="", locator=locator)
-    # controls.subscribe(text.on_state)
-    # text.div removed from Panel
     controls.subscribe(artist.on_state)
 
     # Ensure all listeners are pointing to the current state
@@ -317,8 +311,10 @@ def main():
     marker_source = bokeh.models.ColumnDataSource({
             "x": [],
             "y": []})
-
-    series = Series(series_figure)
+    series = Series.from_groups(
+            series_figure,
+            config.file_groups,
+            directory=args.directory)
     controls.subscribe(series.on_state)
     for f in figures:
         f.on_event(bokeh.events.Tap, series.on_tap)
@@ -373,15 +369,14 @@ from itertools import cycle
 
 
 class Series(object):
-    def __init__(self, figure):
+    def __init__(self, figure, loaders):
         self.figure = figure
+        self.loaders = loaders
         self.sources = {}
         circles = []
         items = []
         colors = cycle(bokeh.palettes.Colorblind[6][::-1])
-        for name, loader in data.LOADERS.items():
-            if not isinstance(loader, data.UMLoader):
-                continue
+        for name in self.loaders.keys():
             source = bokeh.models.ColumnDataSource({
                 "x": [],
                 "y": [],
@@ -435,9 +430,22 @@ class Series(object):
         self.y = None
         self.variable = None
 
+    @classmethod
+    def from_groups(cls, figure, groups, directory=None):
+        loaders = {}
+        for group in groups:
+            if group.file_type == "unified_model":
+                if directory is None:
+                    pattern = group.full_pattern
+                else:
+                    pattern = os.path.join(directory, group.full_pattern)
+                loaders[group.label] = data.UMLoader.from_pattern(pattern)
+        return cls(figure, loaders)
+
     def on_state(self, state):
-        pass
-        # print("Series: {}".format(state))
+        print("Series: {}".format(state))
+        self.variable = state.variable
+        self.pressure = state.pressure
 
     def on_tap(self, event):
         self.x = event.x
@@ -449,13 +457,12 @@ class Series(object):
             return
         self.figure.title.text = self.variable
         for name, source in self.sources.items():
-            loader = data.LOADERS[name]
+            loader = self.loaders[name]
             source.data = loader.series(
                     self.variable,
                     self.x,
                     self.y,
                     self.pressure)
-            source.selected.indices = [self.itime]
 
 
 def any_none(obj, attrs):
