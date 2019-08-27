@@ -333,6 +333,119 @@ class DBLoader(object):
         return any(np.abs(pressures - pressure) < tolerance)
 
 
+class SeriesLoader(object):
+    def __init__(self, paths):
+        self.locator = SeriesLocator(paths)
+
+    @classmethod
+    def from_pattern(cls, pattern):
+        return cls(sorted(glob.glob(os.path.expanduser(pattern))))
+
+    def series(self,
+            initial_time,
+            variable,
+            lon0,
+            lat0,
+            pressure=None):
+        data = {"x": [], "y": []}
+        paths = self.locator.locate(initial_time)
+        print(paths)
+        for path in paths:
+            segment = self.series_file(
+                    path,
+                    variable,
+                    lon0,
+                    lat0,
+                    pressure=pressure)
+            data["x"] += list(segment["x"])
+            data["y"] += list(segment["y"])
+        return data
+
+    def series_file(self,
+            path,
+            variable,
+            lon0,
+            lat0,
+            pressure=None):
+        with netCDF4.Dataset(path) as dataset:
+            try:
+                var = dataset.variables[variable]
+            except KeyError:
+                return {
+                    "x": [],
+                    "y": []
+                }
+            lons = geo.to_180(self._longitudes(dataset, var))
+            lats = self._latitudes(dataset, var)
+            i = np.argmin(np.abs(lons - lon0))
+            j = np.argmin(np.abs(lats - lat0))
+            times = self._times(dataset, var)
+            values = var[..., j, i]
+            if (
+                    ("pressure" in var.coordinates) or
+                    ("pressure" in var.dimensions)):
+                pressures = self._pressures(dataset, var)
+                if len(var.dimensions) == 3:
+                    pts = self.search(pressures, pressure)
+                    values = values[pts]
+                    if isinstance(times, dt.datetime):
+                        times = [times]
+                    else:
+                        times = times[pts]
+                else:
+                    mask = self.search(pressures, pressure)
+                    values = values[:, mask][:, 0]
+        return {
+            "x": times,
+            "y": values}
+
+    @staticmethod
+    def _times(dataset, variable):
+        """Find times related to variable in dataset"""
+        time_dimension = variable.dimensions[0]
+        coordinates = variable.coordinates.split()
+        for c in coordinates:
+            if c.startswith("time"):
+                try:
+                    var = dataset.variables[c]
+                    return netCDF4.num2date(var[:], units=var.units)
+                except KeyError:
+                    pass
+        for v, var in dataset.variables.items():
+            if len(var.dimensions) != 1:
+                continue
+            if v.startswith("time"):
+                d = var.dimensions[0]
+                if d == time_dimension:
+                    return netCDF4.num2date(var[:], units=var.units)
+
+    def _pressures(self, dataset, variable):
+        return self._dimension("pressure", dataset, variable)
+
+    def _longitudes(self, dataset, variable):
+        return self._dimension("longitude", dataset, variable)
+
+    def _latitudes(self, dataset, variable):
+        return self._dimension("latitude", dataset, variable)
+
+    @staticmethod
+    def _dimension(prefix, dataset, variable):
+        for d in variable.dimensions:
+            if not d.startswith(prefix):
+                continue
+            if d in dataset.variables:
+                return dataset.variables[d][:]
+        for c in variable.coordinates.split():
+            if not c.startswith(prefix):
+                continue
+            if c in dataset.variables:
+                return dataset.variables[c][:]
+
+    @staticmethod
+    def search(pressures, pressure, rtol=0.01):
+        return np.abs(pressures - pressure) < (rtol * pressure)
+
+
 class UMLoader(object):
     def __init__(self, paths, name="UM", finder=None):
         self.name = name
@@ -341,16 +454,11 @@ class UMLoader(object):
         if finder is None:
             finder = Finder(paths)
         self.finder = finder
-        self.series_locator = SeriesLocator(paths)
         with netCDF4.Dataset(self.paths[0]) as dataset:
             self.dimensions = self.load_dimensions(dataset)
             self.dimension_variables = self.load_dimension_variables(dataset)
             self.times = self.load_times(dataset)
             self.variables = self.load_variables(dataset)
-
-    @classmethod
-    def from_pattern(cls, pattern):
-        return cls(sorted(glob.glob(os.path.expanduser(pattern))))
 
     @staticmethod
     def load_variables(dataset):
@@ -434,101 +542,6 @@ class UMLoader(object):
         data["length"] = [length]
         data["level"] = [level]
         return data
-
-    def series(self,
-            initial_time,
-            variable,
-            lon0,
-            lat0,
-            pressure=None):
-        data = {"x": [], "y": []}
-        paths = self.series_locator.locate(initial_time)
-        print(paths)
-        for path in paths:
-            segment = self.series_file(
-                    path,
-                    variable,
-                    lon0,
-                    lat0,
-                    pressure=pressure)
-            data["x"] += list(segment["x"])
-            data["y"] += list(segment["y"])
-        return data
-
-    def series_file(self,
-            path,
-            variable,
-            lon0,
-            lat0,
-            pressure=None):
-        with netCDF4.Dataset(path) as dataset:
-            try:
-                var = dataset.variables[variable]
-            except KeyError:
-                return {
-                    "x": [],
-                    "y": []
-                }
-            lons = geo.to_180(self.longitudes(variable))
-            lats = self.latitudes(variable)
-            i = np.argmin(np.abs(lons - lon0))
-            j = np.argmin(np.abs(lats - lat0))
-            times = self._times(dataset, var)
-            values = var[..., j, i]
-            if (
-                    ("pressure" in var.coordinates) or
-                    ("pressure" in var.dimensions)):
-                if len(var.dimensions) == 3:
-                    pressures = self._pressures(
-                            dataset, var.dimensions[0])
-                    pts = self.search(pressures, pressure)
-                    values = values[pts]
-                    if isinstance(times, dt.datetime):
-                        times = [times]
-                    else:
-                        times = times[pts]
-                else:
-                    pressures = self._pressures(
-                            dataset, var.dimensions[1])
-                    mask = self.search(pressures, pressure)
-                    values = values[:, mask][:, 0]
-        return {
-            "x": times,
-            "y": values}
-
-    @staticmethod
-    def _times(dataset, variable):
-        """Find times related to variable in dataset"""
-        time_dimension = variable.dimensions[0]
-        coordinates = variable.coordinates.split()
-        for c in coordinates:
-            if c.startswith("time"):
-                try:
-                    var = dataset.variables[c]
-                    return netCDF4.num2date(var[:], units=var.units)
-                except KeyError:
-                    pass
-        for v, var in dataset.variables.items():
-            if len(var.dimensions) != 1:
-                continue
-            if v.startswith("time"):
-                d = var.dimensions[0]
-                if d == time_dimension:
-                    return netCDF4.num2date(var[:], units=var.units)
-
-    @staticmethod
-    def _pressures(dataset, dimension):
-        for v, var in dataset.variables.items():
-            if len(var.dimensions) != 1:
-                continue
-            if v.startswith("pressure"):
-                d = var.dimensions[0]
-                if d == dimension:
-                    return var[:]
-
-    @staticmethod
-    def search(pressures, pressure, rtol=0.01):
-        return np.abs(pressures - pressure) < (rtol * pressure)
 
     def longitudes(self, variable):
         return self._lookup("longitude", variable)

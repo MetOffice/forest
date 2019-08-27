@@ -437,7 +437,7 @@ class Series(object):
                     pattern = group.full_pattern
                 else:
                     pattern = os.path.join(directory, group.full_pattern)
-                loaders[group.label] = data.UMLoader.from_pattern(pattern)
+                loaders[group.label] = data.SeriesLoader.from_pattern(pattern)
         return cls(figure, loaders)
 
     def on_state(self, app_state):
