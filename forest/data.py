@@ -434,10 +434,10 @@ class UMLoader(object):
         data["level"] = [level]
         return data
 
-    def series(self, variable, x0, y0, k):
+    def series(self, variable, x0, y0, pressure):
         if len(self.paths) > 0:
-            self.path = self.paths[-1]
-        if self.path is None:
+            path = self.paths[-1]
+        if path is None:
             return {"x": [], "y": []}
         lon0, lat0 = geo.plate_carree(x0, y0)
         lon0, lat0 = lon0[0], lat0[0]  # Map to scalar
@@ -445,7 +445,51 @@ class UMLoader(object):
         lats = self.latitudes(variable)
         i = np.argmin(np.abs(lons - lon0))
         j = np.argmin(np.abs(lats - lat0))
-        return self.series_ijk(self.path, variable, i, j, k)
+        dimension = self.dimensions[variable][0]
+        with netCDF4.Dataset(path) as dataset:
+            times = self._times(dataset, dimension)
+            pressures = self._pressures(dataset, dimension)
+            pts = self.search(pressures, pressure)
+            times = times[pts]
+            var = dataset.variables[variable]
+            if var.dimensions[0] == dimension:
+                values = var[:, j, i]
+                values = values[pts]
+            elif len(var.dimensions) == 4:
+                values = var[:, k, j, i]
+            elif len(var.dimensions) == 3:
+                values = var[:, j, i]
+            else:
+                raise NotImplementedError("3 or 4 dimensions only")
+            if var.units == "K":
+                values = convert_units(values, "K", "Celsius")
+        return {
+            "x": times,
+            "y": values}
+
+    @staticmethod
+    def _times(dataset, dimension):
+        for v, var in dataset.variables.items():
+            if len(var.dimensions) != 1:
+                continue
+            if v.startswith("time"):
+                d = var.dimensions[0]
+                if d == dimension:
+                    return netCDF4.num2date(var[:], units=var.units)
+
+    @staticmethod
+    def _pressures(dataset, dimension):
+        for v, var in dataset.variables.items():
+            if len(var.dimensions) != 1:
+                continue
+            if v.startswith("pressure"):
+                d = var.dimensions[0]
+                if d == dimension:
+                    return var[:]
+
+    @staticmethod
+    def search(pressures, pressure, rtol=0.01):
+        return np.abs(pressures - pressure) < (rtol * pressure)
 
     def longitudes(self, variable):
         return self._lookup("longitude", variable)
@@ -458,23 +502,6 @@ class UMLoader(object):
         for dim in dims:
             if dim.startswith(prefix):
                 return self.dimension_variables[dim]
-
-    def series_ijk(self, path, variable, i, j, k):
-        dimension = self.dimensions[variable][0]
-        times = self.times[dimension]
-        with netCDF4.Dataset(path) as dataset:
-            var = dataset.variables[variable]
-            if len(var.dimensions) == 4:
-                values = var[:, k, j, i]
-            elif len(var.dimensions) == 3:
-                values = var[:, j, i]
-            else:
-                raise NotImplementedError("3 or 4 dimensions only")
-            if var.units == "K":
-                values = convert_units(values, "K", "Celsius")
-        return {
-            "x": times,
-            "y": values}
 
 
 class Finder(object):
