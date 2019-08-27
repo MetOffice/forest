@@ -13,7 +13,7 @@ import rdt
 import earth_networks
 import geo
 import bokeh.models
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from functools import partial
 import scipy.ndimage
 import shapely.geometry
@@ -341,6 +341,7 @@ class UMLoader(object):
         if finder is None:
             finder = Finder(paths)
         self.finder = finder
+        self.series_locator = SeriesLocator(paths)
         with netCDF4.Dataset(self.paths[0]) as dataset:
             self.dimensions = self.load_dimensions(dataset)
             self.dimension_variables = self.load_dimension_variables(dataset)
@@ -434,28 +435,52 @@ class UMLoader(object):
         data["level"] = [level]
         return data
 
-    def series(self, variable, lon0, lat0, pressure=None):
-        if len(self.paths) > 0:
-            path = self.paths[-1]
-        if path is None:
-            return {"x": [], "y": []}
+    def series(self,
+            initial_time,
+            variable,
+            lon0,
+            lat0,
+            pressure=None):
+        data = {"x": [], "y": []}
+        paths = self.series_locator.locate(initial_time)
+        print(paths)
+        for path in paths:
+            segment = self.series_file(
+                    path,
+                    variable,
+                    lon0,
+                    lat0,
+                    pressure=pressure)
+            data["x"] += list(segment["x"])
+            data["y"] += list(segment["y"])
+        return data
+
+    def series_file(self,
+            path,
+            variable,
+            lon0,
+            lat0,
+            pressure=None):
         lons = geo.to_180(self.longitudes(variable))
         lats = self.latitudes(variable)
         i = np.argmin(np.abs(lons - lon0))
         j = np.argmin(np.abs(lats - lat0))
         with netCDF4.Dataset(path) as dataset:
             var = dataset.variables[variable]
-            dimension = var.dimensions[0]
-            times = self._times(dataset, dimension)
+            times = self._times(dataset, var)
             values = var[..., j, i]
             if (
                     ("pressure" in var.coordinates) or
                     ("pressure" in var.dimensions)):
                 if len(var.dimensions) == 3:
-                    pressures = self._pressures(dataset, dimension)
+                    pressures = self._pressures(
+                            dataset, var.dimensions[0])
                     pts = self.search(pressures, pressure)
                     values = values[pts]
-                    times = times[pts]
+                    if isinstance(times, dt.datetime):
+                        times = [times]
+                    else:
+                        times = times[pts]
                 else:
                     pressures = self._pressures(
                             dataset, var.dimensions[1])
@@ -466,13 +491,23 @@ class UMLoader(object):
             "y": values}
 
     @staticmethod
-    def _times(dataset, dimension):
+    def _times(dataset, variable):
+        """Find times related to variable in dataset"""
+        time_dimension = variable.dimensions[0]
+        coordinates = variable.coordinates.split()
+        for c in coordinates:
+            if c.startswith("time"):
+                try:
+                    var = dataset.variables[c]
+                    return netCDF4.num2date(var[:], units=var.units)
+                except KeyError:
+                    pass
         for v, var in dataset.variables.items():
             if len(var.dimensions) != 1:
                 continue
             if v.startswith("time"):
                 d = var.dimensions[0]
-                if d == dimension:
+                if d == time_dimension:
                     return netCDF4.num2date(var[:], units=var.units)
 
     @staticmethod
@@ -500,6 +535,35 @@ class UMLoader(object):
         for dim in dims:
             if dim.startswith(prefix):
                 return self.dimension_variables[dim]
+
+
+class SeriesLocator(object):
+    """Helper to find files related to Series"""
+    def __init__(self, paths):
+        self.paths = paths
+        self.table = defaultdict(list)
+        for path in paths:
+            time = initial_time(path)
+            if time is None:
+                # NOTE: Could read reference_time from file
+                continue
+            self.table[self.key(time)].append(path)
+
+    def initial_times(self):
+        return np.array(list(self.table.keys()),
+                dtype='datetime64[s]')
+
+    def locate(self, initial_time):
+        if isinstance(initial_time, str):
+            return self.table[initial_time]
+        if isinstance(initial_time, np.datetime64):
+            initial_time = initial_time.astype(dt.datetime)
+        return self.table[self.key(initial_time)]
+
+    __getitem__ = locate
+
+    def key(self, time):
+        return "{:%Y-%m-%d %H:%M:%S}".format(time)
 
 
 class Finder(object):

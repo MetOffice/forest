@@ -426,9 +426,7 @@ class Series(object):
         self.figure.add_tools(tool)
 
         # Underlying state
-        self.x = None
-        self.y = None
-        self.variable = None
+        self.state = {}
 
     @classmethod
     def from_groups(cls, figure, groups, directory=None):
@@ -443,26 +441,42 @@ class Series(object):
         return cls(figure, loaders)
 
     def on_state(self, state):
-        print("Series: {}".format(state))
-        self.variable = state.variable
-        self.pressure = state.pressure
+        if state.initial_time is not None:
+            self.state["initial_time"] = state.initial_time
+        if state.variable is not None:
+            self.state["variable"] = state.variable
+        if state.pressure is not None:
+            self.state["pressure"] = state.pressure
         self.render()
 
     def on_tap(self, event):
-        self.x = event.x
-        self.y = event.y
+        self.state["x"] = event.x
+        self.state["y"] = event.y
         self.render()
 
     def render(self):
-        if any_none(self, ["x", "y", "variable"]):
-            return
-        self.figure.title.text = self.variable
+        for attr in ["x", "y", "variable", "initial_time"]:
+            if attr not in self.state:
+                return
+        x = self.state["x"]
+        y = self.state["y"]
+        variable = self.state["variable"]
+        initial_time = dt.datetime.strptime(
+                self.state["initial_time"],
+                "%Y-%m-%d %H:%M:%S")
+        pressure = self.state.get("pressure", None)
+        self.figure.title.text = variable
         for name, source in self.sources.items():
+            print(name, source)
             loader = self.loaders[name]
-            lon, lat = geo.plate_carree(self.x, self.y)
+            lon, lat = geo.plate_carree(x, y)
             lon, lat = lon[0], lat[0]  # Map to scalar
             source.data = loader.series(
-                    self.variable, lon, lat, self.pressure)
+                    initial_time,
+                    variable,
+                    lon,
+                    lat,
+                    pressure)
 
 
 def any_none(obj, attrs):
