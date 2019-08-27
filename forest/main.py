@@ -440,14 +440,21 @@ class Series(object):
                 loaders[group.label] = data.UMLoader.from_pattern(pattern)
         return cls(figure, loaders)
 
-    def on_state(self, state):
-        if state.initial_time is not None:
-            self.state["initial_time"] = state.initial_time
-        if state.variable is not None:
-            self.state["variable"] = state.variable
-        if state.pressure is not None:
-            self.state["pressure"] = state.pressure
-        self.render()
+    def on_state(self, app_state):
+        next_state = dict(self.state)
+        attrs = [
+                "initial_time",
+                "variable",
+                "pressure"]
+        for attr in attrs:
+            if getattr(app_state, attr) is not None:
+                next_state[attr] = getattr(app_state, attr)
+        state_change = any(
+                next_state.get(k, None) != self.state.get(k, None)
+                for k in attrs)
+        if state_change:
+            self.render()
+        self.state = next_state
 
     def on_tap(self, event):
         self.state["x"] = event.x
