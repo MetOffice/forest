@@ -20,8 +20,9 @@ exec sudo -u ec2-user /bin/bash - <<EOF
 
     sudo mkdir /mnt/efs
     sudo mount -t efs fs-b043e241:/ /mnt/efs
+
     mkdir ~/database
-    cp /mnt/efs/*.db ~/database/
+    aws s3 cp s3://met-office-rmed-forest/forest-informaticslab.db ~/database/
 
     cd
     docker run \
