@@ -434,35 +434,33 @@ class UMLoader(object):
         data["level"] = [level]
         return data
 
-    def series(self, variable, x0, y0, pressure):
+    def series(self, variable, lon0, lat0, pressure=None):
         if len(self.paths) > 0:
             path = self.paths[-1]
         if path is None:
             return {"x": [], "y": []}
-        lon0, lat0 = geo.plate_carree(x0, y0)
-        lon0, lat0 = lon0[0], lat0[0]  # Map to scalar
         lons = geo.to_180(self.longitudes(variable))
         lats = self.latitudes(variable)
         i = np.argmin(np.abs(lons - lon0))
         j = np.argmin(np.abs(lats - lat0))
-        dimension = self.dimensions[variable][0]
         with netCDF4.Dataset(path) as dataset:
-            times = self._times(dataset, dimension)
-            pressures = self._pressures(dataset, dimension)
-            pts = self.search(pressures, pressure)
-            times = times[pts]
             var = dataset.variables[variable]
-            if var.dimensions[0] == dimension:
-                values = var[:, j, i]
-                values = values[pts]
-            elif len(var.dimensions) == 4:
-                values = var[:, k, j, i]
-            elif len(var.dimensions) == 3:
-                values = var[:, j, i]
-            else:
-                raise NotImplementedError("3 or 4 dimensions only")
-            if var.units == "K":
-                values = convert_units(values, "K", "Celsius")
+            dimension = var.dimensions[0]
+            times = self._times(dataset, dimension)
+            values = var[..., j, i]
+            if (
+                    ("pressure" in var.coordinates) or
+                    ("pressure" in var.dimensions)):
+                if len(var.dimensions) == 3:
+                    pressures = self._pressures(dataset, dimension)
+                    pts = self.search(pressures, pressure)
+                    values = values[pts]
+                    times = times[pts]
+                else:
+                    pressures = self._pressures(
+                            dataset, var.dimensions[1])
+                    mask = self.search(pressures, pressure)
+                    values = values[:, mask][:, 0]
         return {
             "x": times,
             "y": values}
@@ -513,18 +511,21 @@ class Finder(object):
                 [initial_time(p) for p in paths],
                 dtype='datetime64[s]')
         with netCDF4.Dataset(self.paths[0]) as dataset:
-            self.pressure_variables, self.pressures = self.load_heights(dataset)
+            if "pressure" in dataset.variables:
+                self.pressures = dataset.variables["pressure"][:]
+            else:
+                self.pressures = None
+            self.pressure_variables = self.load_heights(dataset)
 
     @staticmethod
     def load_heights(dataset):
         variables = set()
-        pressures = dataset.variables["pressure"][:]
         for variable, var in dataset.variables.items():
             if variable == "pressure":
                 continue
             if "pressure" in var.dimensions:
                 variables.add(variable)
-        return variables, pressures
+        return variables
 
     def find(self, initial, pressure, variable):
         if variable in self.pressure_variables:

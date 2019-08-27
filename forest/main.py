@@ -446,6 +446,7 @@ class Series(object):
         print("Series: {}".format(state))
         self.variable = state.variable
         self.pressure = state.pressure
+        self.render()
 
     def on_tap(self, event):
         self.x = event.x
@@ -458,11 +459,10 @@ class Series(object):
         self.figure.title.text = self.variable
         for name, source in self.sources.items():
             loader = self.loaders[name]
+            lon, lat = geo.plate_carree(self.x, self.y)
+            lon, lat = lon[0], lat[0]  # Map to scalar
             source.data = loader.series(
-                    self.variable,
-                    self.x,
-                    self.y,
-                    self.pressure)
+                    self.variable, lon, lat, self.pressure)
 
 
 def any_none(obj, attrs):
