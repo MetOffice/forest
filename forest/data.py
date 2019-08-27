@@ -461,12 +461,18 @@ class UMLoader(object):
             lon0,
             lat0,
             pressure=None):
-        lons = geo.to_180(self.longitudes(variable))
-        lats = self.latitudes(variable)
-        i = np.argmin(np.abs(lons - lon0))
-        j = np.argmin(np.abs(lats - lat0))
         with netCDF4.Dataset(path) as dataset:
-            var = dataset.variables[variable]
+            try:
+                var = dataset.variables[variable]
+            except KeyError:
+                return {
+                    "x": [],
+                    "y": []
+                }
+            lons = geo.to_180(self.longitudes(variable))
+            lats = self.latitudes(variable)
+            i = np.argmin(np.abs(lons - lon0))
+            j = np.argmin(np.abs(lats - lat0))
             times = self._times(dataset, var)
             values = var[..., j, i]
             if (
