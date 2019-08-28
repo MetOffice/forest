@@ -13,7 +13,7 @@ import rdt
 import earth_networks
 import geo
 import bokeh.models
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from functools import partial
 import scipy.ndimage
 import shapely.geometry
@@ -23,7 +23,6 @@ import disk
 
 
 # Application data shared across documents
-FILE_DB = None
 LOADERS = {}
 IMAGES = OrderedDict()
 VECTORS = OrderedDict()
@@ -45,25 +44,11 @@ DISPUTED = {
 }
 
 
-def on_server_loaded(patterns):
+def on_server_loaded():
     global DISPUTED
     global COASTLINES
     global LAKES
     global BORDERS
-    global FILE_DB
-    FILE_DB = FileDB(patterns)
-    FILE_DB.sync()
-    for name, paths in FILE_DB.files.items():
-        loader = loader_factory(name, paths)
-        if loader is not None:
-            add_loader(name, loader)
-
-    # Example of server-side pre-caching
-    # for name in [
-    #         "Tropical Africa 4.4km"]:
-    #     path = FILE_DB.files[name][0]
-    #     load_image(path, "relative_humidity", 0, 0)
-
     # Load coastlines/borders
     EXTENT = (-10, 50, -20, 10)
     COASTLINES = load_coastlines()
@@ -90,15 +75,15 @@ def add_loader(name, loader):
         LOADERS[name] = loader
 
 
-def loader_factory(name, paths):
-    if name == "RDT":
-        return rdt.Loader(paths)
-    elif "GPM" in name:
-        return GPM(paths)
-    elif name == "EarthNetworks":
-        return earth_networks.Loader(paths)
-    elif name == "EIDA50":
-        return satellite.EIDA50(paths)
+def file_loader(file_type, pattern):
+    if file_type.lower() == 'rdt':
+        return rdt.Loader(pattern)
+    elif file_type.lower() == 'gpm':
+        return GPM(pattern)
+    elif file_type.lower() == 'earthnetworks':
+        return earth_networks.Loader(pattern)
+    elif file_type.lower() == 'eida50':
+        return satellite.EIDA50(pattern)
 
 
 def load_coastlines():
@@ -132,25 +117,17 @@ def iterlines(geometries):
             yield xy(geometry)
 
 
-class FileDB(object):
-    def __init__(self, patterns):
-        self.patterns = patterns
-        self.names = list(patterns.keys())
-        self.files = {}
-
-    def sync(self):
-        for key, pattern in self.patterns.items():
-            self.files[key] = self.find(pattern)
-
-    @staticmethod
+class FileLocator(object):
+    """Base class for file system locators"""
     @timeout_cache(dt.timedelta(minutes=10))
-    def find(pattern):
-        return glob.glob(pattern)
+    def find(self, pattern):
+        return sorted(glob.glob(pattern))
 
 
-class GPM(object):
-    def __init__(self, paths):
-        self.paths = paths
+class GPM(FileLocator):
+    def __init__(self, pattern):
+        self.pattern = pattern
+        super().__init__()
 
     def image(self, itime):
         return load_image(
@@ -355,14 +332,118 @@ class DBLoader(object):
             pressures = np.array(pressures)
         return any(np.abs(pressures - pressure) < tolerance)
 
-    def series(self, variable, x0, y0, k):
-        if False:
-            print("{}: {}, {}, {}".format(
-                self.__class__.__name__,
-                variable,
-                x0,
-                y0,
-                k))
+
+class SeriesLoader(object):
+    def __init__(self, paths):
+        self.locator = SeriesLocator(paths)
+
+    @classmethod
+    def from_pattern(cls, pattern):
+        return cls(sorted(glob.glob(os.path.expanduser(pattern))))
+
+    def series(self,
+            initial_time,
+            variable,
+            lon0,
+            lat0,
+            pressure=None):
+        data = {"x": [], "y": []}
+        paths = self.locator.locate(initial_time)
+        print(paths)
+        for path in paths:
+            segment = self.series_file(
+                    path,
+                    variable,
+                    lon0,
+                    lat0,
+                    pressure=pressure)
+            data["x"] += list(segment["x"])
+            data["y"] += list(segment["y"])
+        return data
+
+    def series_file(self,
+            path,
+            variable,
+            lon0,
+            lat0,
+            pressure=None):
+        with netCDF4.Dataset(path) as dataset:
+            try:
+                var = dataset.variables[variable]
+            except KeyError:
+                return {
+                    "x": [],
+                    "y": []
+                }
+            lons = geo.to_180(self._longitudes(dataset, var))
+            lats = self._latitudes(dataset, var)
+            i = np.argmin(np.abs(lons - lon0))
+            j = np.argmin(np.abs(lats - lat0))
+            times = self._times(dataset, var)
+            values = var[..., j, i]
+            if (
+                    ("pressure" in var.coordinates) or
+                    ("pressure" in var.dimensions)):
+                pressures = self._pressures(dataset, var)
+                if len(var.dimensions) == 3:
+                    pts = self.search(pressures, pressure)
+                    values = values[pts]
+                    if isinstance(times, dt.datetime):
+                        times = [times]
+                    else:
+                        times = times[pts]
+                else:
+                    mask = self.search(pressures, pressure)
+                    values = values[:, mask][:, 0]
+        return {
+            "x": times,
+            "y": values}
+
+    @staticmethod
+    def _times(dataset, variable):
+        """Find times related to variable in dataset"""
+        time_dimension = variable.dimensions[0]
+        coordinates = variable.coordinates.split()
+        for c in coordinates:
+            if c.startswith("time"):
+                try:
+                    var = dataset.variables[c]
+                    return netCDF4.num2date(var[:], units=var.units)
+                except KeyError:
+                    pass
+        for v, var in dataset.variables.items():
+            if len(var.dimensions) != 1:
+                continue
+            if v.startswith("time"):
+                d = var.dimensions[0]
+                if d == time_dimension:
+                    return netCDF4.num2date(var[:], units=var.units)
+
+    def _pressures(self, dataset, variable):
+        return self._dimension("pressure", dataset, variable)
+
+    def _longitudes(self, dataset, variable):
+        return self._dimension("longitude", dataset, variable)
+
+    def _latitudes(self, dataset, variable):
+        return self._dimension("latitude", dataset, variable)
+
+    @staticmethod
+    def _dimension(prefix, dataset, variable):
+        for d in variable.dimensions:
+            if not d.startswith(prefix):
+                continue
+            if d in dataset.variables:
+                return dataset.variables[d][:]
+        for c in variable.coordinates.split():
+            if not c.startswith(prefix):
+                continue
+            if c in dataset.variables:
+                return dataset.variables[c][:]
+
+    @staticmethod
+    def search(pressures, pressure, rtol=0.01):
+        return np.abs(pressures - pressure) < (rtol * pressure)
 
 
 class UMLoader(object):
@@ -462,17 +543,6 @@ class UMLoader(object):
         data["level"] = [level]
         return data
 
-    def series(self, variable, x0, y0, k):
-        if self.path is None:
-            return
-        lon0, lat0 = geo.plate_carree(x0, y0)
-        lon0, lat0 = lon0[0], lat0[0]  # Map to scalar
-        lons = geo.to_180(self.longitudes(variable))
-        lats = self.latitudes(variable)
-        i = np.argmin(np.abs(lons - lon0))
-        j = np.argmin(np.abs(lats - lat0))
-        return self.series_ijk(self.path, variable, i, j, k)
-
     def longitudes(self, variable):
         return self._lookup("longitude", variable)
 
@@ -485,22 +555,34 @@ class UMLoader(object):
             if dim.startswith(prefix):
                 return self.dimension_variables[dim]
 
-    def series_ijk(self, path, variable, i, j, k):
-        dimension = self.dimensions[variable][0]
-        times = self.times[dimension]
-        with netCDF4.Dataset(path) as dataset:
-            var = dataset.variables[variable]
-            if len(var.dimensions) == 4:
-                values = var[:, k, j, i]
-            elif len(var.dimensions) == 3:
-                values = var[:, j, i]
-            else:
-                raise NotImplementedError("3 or 4 dimensions only")
-            if var.units == "K":
-                values = convert_units(values, "K", "Celsius")
-        return {
-            "x": times,
-            "y": values}
+
+class SeriesLocator(object):
+    """Helper to find files related to Series"""
+    def __init__(self, paths):
+        self.paths = paths
+        self.table = defaultdict(list)
+        for path in paths:
+            time = initial_time(path)
+            if time is None:
+                # NOTE: Could read reference_time from file
+                continue
+            self.table[self.key(time)].append(path)
+
+    def initial_times(self):
+        return np.array(list(self.table.keys()),
+                dtype='datetime64[s]')
+
+    def locate(self, initial_time):
+        if isinstance(initial_time, str):
+            return self.table[initial_time]
+        if isinstance(initial_time, np.datetime64):
+            initial_time = initial_time.astype(dt.datetime)
+        return self.table[self.key(initial_time)]
+
+    __getitem__ = locate
+
+    def key(self, time):
+        return "{:%Y-%m-%d %H:%M:%S}".format(time)
 
 
 class Finder(object):
@@ -512,18 +594,21 @@ class Finder(object):
                 [initial_time(p) for p in paths],
                 dtype='datetime64[s]')
         with netCDF4.Dataset(self.paths[0]) as dataset:
-            self.pressure_variables, self.pressures = self.load_heights(dataset)
+            if "pressure" in dataset.variables:
+                self.pressures = dataset.variables["pressure"][:]
+            else:
+                self.pressures = None
+            self.pressure_variables = self.load_heights(dataset)
 
     @staticmethod
     def load_heights(dataset):
         variables = set()
-        pressures = dataset.variables["pressure"][:]
         for variable, var in dataset.variables.items():
             if variable == "pressure":
                 continue
             if "pressure" in var.dimensions:
                 variables.add(variable)
-        return variables, pressures
+        return variables
 
     def find(self, initial, pressure, variable):
         if variable in self.pressure_variables:

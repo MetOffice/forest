@@ -11,6 +11,7 @@ import rdt
 import geo
 import colors
 import db
+import config as cfg
 import parse_args
 from util import Observable
 from db.util import autolabel
@@ -22,11 +23,7 @@ def main():
     if args.database != ':memory:':
         assert os.path.exists(args.database), "{} must exist".format(args.database)
     database = db.Database.connect(args.database)
-    with open(args.config_file) as stream:
-        config = parse_args.load_config(stream)
-
-    # Access latest files
-    data.FILE_DB.sync()
+    config = cfg.load_config(args.config_file)
 
     # Full screen map
     lon_range = (0, 30)
@@ -100,13 +97,37 @@ def main():
             bar_line_color="black")
         figure.add_layout(colorbar, 'center')
 
-    for name, pattern in config.patterns:
-        if name not in data.LOADERS:
-            locator = db.Locator(
-                database.connection,
-                directory=args.directory)
-            loader = data.DBLoader(name, pattern, locator)
-            data.add_loader(name, loader)
+    # Database/File system loader(s)
+    def replace_dir(args_dir, group_dir):
+        if args_dir is None:
+            return group_dir
+        elif group_dir is None:
+            return args_dir
+        else:
+            if os.path.isabs(group_dir):
+                return group_dir
+            else:
+                return os.path.join(args_dir, group_dir)
+
+    for group in config.file_groups:
+        if group.label not in data.LOADERS:
+            if group.locator == "database":
+                locator = db.Locator(
+                    database.connection,
+                    directory=replace_dir(args.directory, group.directory))
+                loader = data.DBLoader(group.label, group.pattern, locator)
+                data.add_loader(group.label, loader)
+            elif group.locator == "file_system":
+                if args.directory is not None:
+                    pattern = os.path.join(args.directory, group.pattern)
+                else:
+                    pattern = group.pattern
+                loader = data.file_loader(
+                        group.file_type,
+                        pattern)
+                data.add_loader(group.label, loader)
+            else:
+                raise Exception("Unknown locator: {}".format(group.locator))
 
     renderers = {}
     viewers = {}
@@ -134,11 +155,6 @@ def main():
     for name, viewer in artist.viewers.items():
         if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
             image_sources.append(viewer.source)
-
-    # image_loaders = []
-    # for name, loader in data.LOADERS.items():
-    #     if isinstance(loader, (data.UMLoader, data.GPM)):
-    #         image_loaders.append(loader)
 
     # Lakes
     for figure in figures:
@@ -203,7 +219,7 @@ def main():
 
     mapper_limits = MapperLimits(image_sources, color_mapper)
 
-    menu = [(n, n) for n in data.FILE_DB.names]
+    menu = []
     for k, _ in config.patterns:
         menu.append((k, k))
 
@@ -241,12 +257,6 @@ def main():
     # Add prototype database controls
     controls = db.Controls(database, patterns=config.patterns, state=state)
     controls.subscribe(controls.render)
-    locator = db.Locator(
-        database.connection,
-        directory=args.directory)
-    # text = db.View(text="", locator=locator)
-    # controls.subscribe(text.on_state)
-    # text.div removed from Panel
     controls.subscribe(artist.on_state)
 
     # Ensure all listeners are pointing to the current state
@@ -301,8 +311,10 @@ def main():
     marker_source = bokeh.models.ColumnDataSource({
             "x": [],
             "y": []})
-
-    series = Series(series_figure)
+    series = Series.from_groups(
+            series_figure,
+            config.file_groups,
+            directory=args.directory)
     controls.subscribe(series.on_state)
     for f in figures:
         f.on_event(bokeh.events.Tap, series.on_tap)
@@ -357,15 +369,14 @@ from itertools import cycle
 
 
 class Series(object):
-    def __init__(self, figure):
+    def __init__(self, figure, loaders):
         self.figure = figure
+        self.loaders = loaders
         self.sources = {}
         circles = []
         items = []
         colors = cycle(bokeh.palettes.Colorblind[6][::-1])
-        for name, loader in data.LOADERS.items():
-            if not isinstance(loader, data.UMLoader):
-                continue
+        for name in self.loaders.keys():
             source = bokeh.models.ColumnDataSource({
                 "x": [],
                 "y": [],
@@ -415,31 +426,64 @@ class Series(object):
         self.figure.add_tools(tool)
 
         # Underlying state
-        self.x = None
-        self.y = None
-        self.variable = None
+        self.state = {}
 
-    def on_state(self, state):
-        pass
-        # print("Series: {}".format(state))
+    @classmethod
+    def from_groups(cls, figure, groups, directory=None):
+        loaders = {}
+        for group in groups:
+            if group.file_type == "unified_model":
+                if directory is None:
+                    pattern = group.full_pattern
+                else:
+                    pattern = os.path.join(directory, group.full_pattern)
+                loaders[group.label] = data.SeriesLoader.from_pattern(pattern)
+        return cls(figure, loaders)
+
+    def on_state(self, app_state):
+        next_state = dict(self.state)
+        attrs = [
+                "initial_time",
+                "variable",
+                "pressure"]
+        for attr in attrs:
+            if getattr(app_state, attr) is not None:
+                next_state[attr] = getattr(app_state, attr)
+        state_change = any(
+                next_state.get(k, None) != self.state.get(k, None)
+                for k in attrs)
+        if state_change:
+            self.render()
+        self.state = next_state
 
     def on_tap(self, event):
-        self.x = event.x
-        self.y = event.y
+        self.state["x"] = event.x
+        self.state["y"] = event.y
         self.render()
 
     def render(self):
-        if any_none(self, ["x", "y", "variable"]):
-            return
-        self.figure.title.text = self.variable
+        for attr in ["x", "y", "variable", "initial_time"]:
+            if attr not in self.state:
+                return
+        x = self.state["x"]
+        y = self.state["y"]
+        variable = self.state["variable"]
+        initial_time = dt.datetime.strptime(
+                self.state["initial_time"],
+                "%Y-%m-%d %H:%M:%S")
+        pressure = self.state.get("pressure", None)
+        self.figure.title.text = variable
         for name, source in self.sources.items():
-            loader = data.LOADERS[name]
+            print(name, source)
+            loader = self.loaders[name]
+            lon, lat = geo.plate_carree(x, y)
+            lon, lat = lon[0], lat[0]  # Map to scalar
             source.data = loader.series(
-                    self.variable,
-                    self.x,
-                    self.y,
-                    self.pressure)
-            source.selected.indices = [self.itime]
+                    initial_time,
+                    variable,
+                    lon,
+                    lat,
+                    pressure)
 
 
 def any_none(obj, attrs):

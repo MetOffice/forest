@@ -1,10 +1,14 @@
 import os
+import glob
 import re
 import datetime as dt
 import bokeh
 import json
 import numpy as np
 import geo
+import locate
+from util import timeout_cache
+from exceptions import FileNotFound
 
 
 class View(object):
@@ -59,8 +63,14 @@ class View(object):
         self.source = bokeh.models.GeoJSONDataSource(
                 geojson=self.empty_geojson)
 
-    def render(self, valid_date):
-        self.source.geojson = self.loader.load_date(valid_date)
+    def render(self, state):
+        if state.valid_time is not None:
+            date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
+            print(date)
+            try:
+                self.source.geojson = self.loader.load_date(date)
+            except FileNotFound:
+                self.source.geojson = self.empty_geojson
 
     def add_figure(self, figure):
         renderer = figure.patches(
@@ -105,13 +115,11 @@ class View(object):
 
 
 class Loader(object):
-    def __init__(self, paths):
-        self.paths = paths
-        self.dates = np.array([self.parse_date(p) for p in paths], dtype='datetime64[s]')
-        self.geojson = self.load(self.paths[0])
+    def __init__(self, pattern):
+        self.locator = Locator(pattern)
 
     def load_date(self, date):
-        return self.load(self.find_file(date))
+        return self.load(self.locator.find_file(date))
 
     @staticmethod
     def load(path):
@@ -131,14 +139,38 @@ class Loader(object):
         for i, feature in enumerate(rdt["features"]):
             p = feature['properties']['PhaseLife']
             copy["features"][i]['properties']['PhaseLife'] = str(p)
-
         return json.dumps(copy)
 
-    def find_file(self, date):
-        if isinstance(date, dt.datetime):
-            date = np.datetime64(date, 's')
-        i = np.argmin(np.abs(self.dates - date))
-        return self.paths[i]
+
+class Locator(object):
+    def __init__(self, pattern):
+        self.pattern = pattern
+
+    def find_file(self, valid_date):
+        paths = np.array(self.paths)  # Note: timeout cache in use
+        bounds = locate.bounds(
+                self.dates(paths),
+                dt.timedelta(minutes=15))
+        pts = locate.in_bounds(bounds, valid_date)
+        found = paths[pts]
+        if len(found) > 0:
+            return found[0]
+        else:
+            raise FileNotFound("RDT: '{}' not found in {}".format(valid_date, bounds))
+
+    @property
+    def paths(self):
+        return self.find(self.pattern)
+
+    @staticmethod
+    @timeout_cache(dt.timedelta(minutes=10))
+    def find(pattern):
+        return sorted(glob.glob(pattern))
+
+    def dates(self, paths):
+        return np.array([
+            self.parse_date(p) for p in paths],
+            dtype='datetime64[s]')
 
     def parse_date(self, path):
         groups = re.search(r"[0-9]{12}", os.path.basename(path))

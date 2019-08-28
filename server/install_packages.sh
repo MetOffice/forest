@@ -11,4 +11,5 @@ yum install -y \
     automake \
     openssl-devel \
     git \
-    docker
+    docker \
+    amazon-efs-utils

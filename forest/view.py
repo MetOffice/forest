@@ -1,5 +1,7 @@
+import datetime as dt
 import bokeh.models
 import geo
+from exceptions import FileNotFound, IndexNotFound
 
 
 class UMView(object):
@@ -93,9 +95,17 @@ class EIDA50(object):
         self.source = bokeh.models.ColumnDataSource(
                 self.empty)
 
+    def render(self, state):
+        print(state)
+        if state.valid_time is not None:
+            self.image(dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S'))
+
     def image(self, time):
         print("EIDA50: {}".format(time))
-        self.source.data = self.loader.image(time)
+        try:
+            self.source.data = self.loader.image(time)
+        except (FileNotFound, IndexNotFound):
+            self.source.data = self.empty
 
     def add_figure(self, figure):
         return figure.image(
