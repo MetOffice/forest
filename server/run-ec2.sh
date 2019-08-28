@@ -2,6 +2,7 @@
 REPO_DIR=$1
 BUCKET_DIR=$2
 bokeh serve \
+    --use-xheaders \
     --port 8080 \
     --allow-websocket-origin forest.informaticslab.co.uk \
      ${REPO_DIR}/forest \
