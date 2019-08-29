@@ -55,16 +55,12 @@
                 <div class="control-panel">
                 {{ embed(root) | indent(10) }}
                 </div>
-            {% endif %}
-            {% if root.name == "height" %}
-                <div class="height-panel">
-                {{ embed(root) | indent(10) }}
-                </div>
-            {% endif %}
-            {% if root.name == "series" %}
+            {% elif root.name == "series" %}
                 <div class="series-panel">
                 {{ embed(root) | indent(10) }}
                 </div>
+            {% else %}
+                {{ embed(root) | indent(10) }}
             {% endif %}
         {% endfor %}
     {% endfor %}
