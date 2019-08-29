@@ -55,18 +55,48 @@
                 <div class="control-panel">
                 {{ embed(root) | indent(10) }}
                 </div>
-            {% endif %}
-            {% if root.name == "height" %}
-                <div class="height-panel">
-                {{ embed(root) | indent(10) }}
-                </div>
-            {% endif %}
-            {% if root.name == "series" %}
+            {% elif root.name == "series" %}
                 <div class="series-panel">
                 {{ embed(root) | indent(10) }}
                 </div>
+            {% else %}
+                {{ embed(root) | indent(10) }}
             {% endif %}
         {% endfor %}
     {% endfor %}
-    {{ super() }}
+    <script>
+// Re-attach roots if WebSocket request served by different machine
+let reattachRoots = function() {
+    // Find template roots
+    let classNames = ["control-panel", "series-panel"];
+    let parents = classNames.reduce(function(data, className) {
+        data[className] = document.getElementsByClassName(className)[0];
+        return data
+    }, {})
+    if (parents[classNames[0]].children[0].innerHTML !== "") {
+        // First template root populated correctly
+        return
+    }
+
+    // Find orphan roots
+    let roots = document.getElementsByClassName('bk-root')
+    let orphans = [...roots].filter((r) => !('data-root-id' in r.attributes))
+    if (orphans.length === 0) {
+        // No orphans to re-home
+        return
+    }
+
+    // NOTE: Order important since orphaned roots have no data-root-id attr
+    parents['control-panel'].appendChild(orphans[0])
+    parents['series-panel'].appendChild(orphans[1])
+}
+
+oldLog = console.log;
+console.log = function(message) {
+    if (message.localeCompare('Bokeh items were rendered successfully') == 0) {
+        console.log = oldLog;
+        reattachRoots();
+    }
+}
+    </script>
 {% endblock %}
