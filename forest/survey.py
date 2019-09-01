@@ -15,6 +15,29 @@ class CSV(object):
 
 class Tool(Observable):
     def __init__(self):
+        self.welcome = Welcome()
+        self.welcome.subscribe(self.on_begin)
+        self.questions = Questions()
+        self.questions.subscribe(self.on_submit)
+        self.confirm = Confirm()
+        self.confirm.subscribe(self.on_save)
+        self.layout = bokeh.layouts.column(
+                *self.welcome.children)
+        super().__init__()
+
+    def on_save(self, action):
+        print(action)
+
+    def on_begin(self, action):
+        self.layout.children = self.questions.children
+
+    def on_submit(self, action):
+        answers = action["payload"]["answers"]
+        self.layout.children = self.confirm.render(answers)
+
+
+class Questions(Observable):
+    def __init__(self):
         texts = [
             "Does the model agree with observations?",
             "If not, explain why."
@@ -46,29 +69,19 @@ class Tool(Observable):
         }
         for key, on_click in self.callbacks.items():
             self.buttons[key].on_click(on_click)
-
-        self.welcome = Welcome()
-        self.welcome.subscribe(self.on_begin)
-        self.confirm = Confirm()
-        self.confirm.subscribe(self.on_save)
-        self.layout = bokeh.layouts.column(
-                *self.welcome.children)
-        super().__init__()
-
-    def on_save(self, action):
-        print(action)
-
-    def on_begin(self, action):
-        self.layout.children = self.widgets + [
+        self.children = self.widgets + [
             self.buttons["submit"]
         ]
+        super().__init__()
 
     def on_submit(self):
         answers = [
             self.dropdown.value,
             self.text_area_input.value
         ]
-        self.layout.children = self.confirm.render(answers)
+        self.notify({
+            "kind": "SUBMIT",
+            "payload": {"answers": answers}})
 
 
 class Welcome(Observable):

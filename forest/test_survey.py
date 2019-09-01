@@ -12,16 +12,6 @@ class TestSurvey(unittest.TestCase):
         document = bokeh.plotting.curdoc()
         document.add_root(self.tool.layout)
 
-    def test_on_submit_emits_action(self):
-        listener = unittest.mock.Mock()
-        self.tool.subscribe(listener)
-        self.tool.on_submit()
-        expect = {
-            "kind": "SUBMIT",
-            "payload": {}
-        }
-        listener.assert_called_once_with(expect)
-
 
 class TestCSV(unittest.TestCase):
     def test_constructor(self):
