@@ -8,6 +8,7 @@ import view
 import images
 import earth_networks
 import rdt
+import survey
 import geo
 import colors
 import db
@@ -262,6 +263,8 @@ def main():
     # Ensure all listeners are pointing to the current state
     controls.notify(controls.state)
 
+    survey_tool = survey.Survey()
+
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
@@ -281,7 +284,10 @@ def main():
                 bokeh.layouts.row(mapper_limits.high_input),
                 bokeh.layouts.row(mapper_limits.checkbox),
                 ),
-            title="Settings")
+            title="Settings"),
+        bokeh.models.Panel(
+            child=bokeh.layouts.column(survey_tool.layout),
+            title="Survey")
         ])
 
     # Series sub-figure widget
