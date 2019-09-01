@@ -5,6 +5,12 @@ from observe import Observable
 
 
 SUBMIT = "SUBMIT"
+BEGIN = "BEGIN"
+CONTACT_TEXT = """
+<p>If you have any queries related to the survey please
+<a href="mailto:andrew.hartley@metoffice.gov.uk">contact us</a>
+</p>
+"""
 
 
 class CSV(object):
@@ -16,24 +22,23 @@ class CSV(object):
 class Tool(Observable):
     def __init__(self):
         self.welcome = Welcome()
-        self.welcome.subscribe(self.on_begin)
+        self.welcome.subscribe(self.on_action)
         self.questions = Questions()
-        self.questions.subscribe(self.on_submit)
+        self.questions.subscribe(self.on_action)
         self.confirm = Confirm()
-        self.confirm.subscribe(self.on_save)
+        self.confirm.subscribe(self.on_action)
         self.layout = bokeh.layouts.column(
                 *self.welcome.children)
         super().__init__()
 
-    def on_save(self, action):
+    def on_action(self, action):
         print(action)
-
-    def on_begin(self, action):
-        self.layout.children = self.questions.children
-
-    def on_submit(self, action):
-        answers = action["payload"]["answers"]
-        self.layout.children = self.confirm.render(answers)
+        kind = action["kind"]
+        if kind == BEGIN:
+            self.layout.children = self.questions.children
+        elif kind == SUBMIT:
+            answers = action["payload"]["answers"]
+            self.layout.children = self.confirm.render(answers)
 
 
 class Questions(Observable):
@@ -88,28 +93,33 @@ class Welcome(Observable):
     def __init__(self):
         self.div = bokeh.models.Div(
                 text="""
-        <h1>User feedback</h1>
-        <p>Greetings! This survey aims to gather
+        <h1>Greetings!</h1>
+        <p>This survey aims to gather
         vital information on the quality of our
         forecasting systems. We are very pleased
         you've taken the time to fill it in.</p>
         """)
-        self.button =  bokeh.models.Button(
-                label="Begin")
+        self.buttons = {
+            "begin": bokeh.models.Button(
+                label="Begin"),
+            "results": bokeh.models.Button(
+                label="View results")}
         self.contact = bokeh.models.Div(
-                text="""
-        <p>If you have any queries related to the
-        survey please <a href="mailto:andrew.hartley"metoffice.gov.uk>contact us</a></p>
-        """)
-        self.button.on_click(self.on_begin)
+                text=CONTACT_TEXT)
+        self.buttons["begin"].on_click(self.on_begin)
+        self.buttons["results"].on_click(self.on_results)
         self.children = [
             self.div,
-            self.button,
+            self.buttons["begin"],
+            self.buttons["results"],
             self.contact]
         super().__init__()
 
     def on_begin(self):
-        self.notify({"kind": "BEGIN"})
+        self.notify({"kind": BEGIN})
+
+    def on_results(self):
+        self.notify({"kind": "RESULTS"})
 
 
 class Confirm(Observable):
@@ -117,9 +127,9 @@ class Confirm(Observable):
         self.template = """
         <h1>Thank you</h1>
         <p>Your feedback is very important to us. We
-        use the aggregated knowledge provided to
-        improve our understanding of our systems
-        beyond objective metrics.</p>
+        use the information provided to improve our
+        understanding of our systems beyond that
+        which can be derived by objective metrics.</p>
         <p>Your answers:</p>
         <ul>
             <li>Question 1: {}</li>
@@ -133,10 +143,7 @@ class Confirm(Observable):
         self.buttons["edit"].on_click(self.on_edit)
         self.buttons["save"].on_click(self.on_save)
         self.contact = bokeh.models.Div(
-                text="""
-        <p>If you have any queries related to the
-        survey please <a href="mailto:andrew.hartley"metoffice.gov.uk>contact us</a></p>
-        """)
+                text=CONTACT_TEXT)
         super().__init__()
 
     def render(self, answers):
