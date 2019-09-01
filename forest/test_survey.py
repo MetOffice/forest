@@ -12,20 +12,10 @@ class TestSurvey(unittest.TestCase):
         document = bokeh.plotting.curdoc()
         document.add_root(self.tool.layout)
 
-    def test_div(self):
-        result = self.tool.div.text
-        expect = "Survey"
-        self.assertEqual(expect, result)
-
-    def test_submit_button(self):
-        result = self.tool.buttons["submit"]
-        expect = bokeh.models.Button
-        self.assertIsInstance(result, expect)
-
-    def test_on_save_emits_action(self):
+    def test_on_submit_emits_action(self):
         listener = unittest.mock.Mock()
         self.tool.subscribe(listener)
-        self.tool.on_save()
+        self.tool.on_submit()
         expect = {
             "kind": "SUBMIT",
             "payload": {}
