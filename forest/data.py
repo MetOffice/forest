@@ -20,6 +20,7 @@ import shapely.geometry
 from util import timeout_cache, initial_time, coarsify
 from db.exceptions import SearchFail
 import disk
+import survey
 
 
 # Application data shared across documents
@@ -42,9 +43,11 @@ DISPUTED = {
     "xs": [],
     "ys": []
 }
+SURVEY_BACKEND = None
 
 
 def on_server_loaded():
+    global SURVEY_BACKEND
     global DISPUTED
     global COASTLINES
     global LAKES
@@ -67,6 +70,7 @@ def on_server_loaded():
             'cultural',
             'admin_0_boundary_lines_land',
             '50m').geometries()))
+    SURVEY_BACKEND = survey.CSV()
 
 
 def add_loader(name, loader):

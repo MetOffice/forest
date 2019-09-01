@@ -263,7 +263,8 @@ def main():
     # Ensure all listeners are pointing to the current state
     controls.notify(controls.state)
 
-    survey_tool = survey.Survey()
+    survey_tool = survey.Tool(
+            backend=data.SURVEY_BACKEND)
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
