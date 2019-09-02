@@ -13,6 +13,9 @@ CONFIRM = "CONFIRM"
 QUESTION = "QUESTION"
 SUBMIT = "SUBMIT"
 SAVE = "SAVE"
+SHOW_RESULTS = "SHOW_RESULTS"
+SHOW_WELCOME = "SHOW_WELCOME"
+RESULTS = "RESULTS"
 WELCOME = "WELCOME"
 CONTACT_TEXT = """
 <p>If you have any queries related to the survey please
@@ -40,9 +43,19 @@ def reducer(state, action):
     elif kind == SUBMIT:
         state["page"] = CONFIRM
         state["answers"] = action["payload"]["answers"]
-    elif kind == SAVE:
+    elif (kind == SAVE) or (kind == SHOW_WELCOME):
         state["page"] = WELCOME
+    elif kind == SHOW_RESULTS:
+        state["page"] = RESULTS
     return state
+
+
+def show_results():
+    return {"kind": SHOW_RESULTS}
+
+
+def show_welcome():
+    return {"kind": SHOW_WELCOME}
 
 
 class Database(object):
@@ -69,6 +82,8 @@ class Tool(Observable):
         self.welcome.subscribe(self.store.dispatch)
         self.questions = Questions()
         self.questions.subscribe(self.store.dispatch)
+        self.results = Results()
+        self.results.subscribe(self.store.dispatch)
         self.confirm = Confirm()
         self.confirm.subscribe(self.store.dispatch)
         self.layout = bokeh.layouts.column(
@@ -85,6 +100,8 @@ class Tool(Observable):
             self.layout.children = self.questions.children
         elif page == CONFIRM:
             self.layout.children = self.confirm.render(state["answers"])
+        elif page == RESULTS:
+            self.layout.children = self.results.children
 
 
 class Questions(Observable):
@@ -102,9 +119,10 @@ class Questions(Observable):
                     self.dropdown.label = label
         self.dropdown.on_change("value", on_change)
         self.text_area_input = bokeh.models.TextAreaInput(
-                title="Type some text",
+                placeholder="Type some text",
                 rows=5)
         self.widgets = [
+            bokeh.models.Spinner(low=0, high=1.0, step=0.1, value=0.5),
             bokeh.models.Div(text="<h1>Survey</h1>"),
             bokeh.models.Div(text=texts[0]),
             self.dropdown,
@@ -165,7 +183,22 @@ class Welcome(Observable):
         self.notify({"kind": BEGIN})
 
     def on_results(self):
-        self.notify({"kind": RESULTS})
+        self.notify(show_results())
+
+
+class Results(Observable):
+    def __init__(self):
+        self.button = bokeh.models.Button(label="Home")
+        self.button.on_click(self.on_welcome)
+        self.children = [
+            bokeh.models.Div(text="<h1>Survey results</h1>"),
+            bokeh.models.Div(text="Placeholder text"),
+            self.button
+        ]
+        super().__init__()
+
+    def on_welcome(self):
+        self.notify(show_welcome())
 
 
 class Confirm(Observable):
@@ -206,3 +239,4 @@ class Confirm(Observable):
 
     def on_save(self):
         self.notify({"kind": SAVE})
+        self.notify(show_results())

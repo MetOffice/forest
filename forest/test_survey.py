@@ -15,6 +15,42 @@ class TestSurvey(unittest.TestCase):
         document.add_root(self.tool.layout)
 
 
+class TestReducer(unittest.TestCase):
+    def test_reducer_given_show_results(self):
+        action = survey.show_results()
+        result = survey.reducer({}, action)
+        expect = {
+            "page": survey.RESULTS
+        }
+        self.assertEqual(expect, result)
+
+    def test_reducer_given_show_welcome(self):
+        action = survey.show_welcome()
+        result = survey.reducer({}, action)
+        expect = {
+            "page": survey.WELCOME
+        }
+        self.assertEqual(expect, result)
+
+
+class TestResultsPage(unittest.TestCase):
+    def test_constructor(self):
+        results = survey.Results()
+        div, p, button = results.children
+        self.assertEqual(
+                div.text, "<h1>Survey results</h1>")
+        self.assertEqual(p.text, "Placeholder text")
+        self.assertEqual(button.label, "Home")
+
+    def test_on_welcome(self):
+        listener = unittest.mock.Mock()
+        results = survey.Results()
+        results.subscribe(listener)
+        results.on_welcome()
+        expect = survey.show_welcome()
+        listener.assert_called_once_with(expect)
+
+
 class TestRecords(unittest.TestCase):
     def setUp(self):
         self.path = "test-survey.json"
