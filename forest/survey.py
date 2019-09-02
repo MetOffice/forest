@@ -181,11 +181,64 @@ class Tool(Observable):
         if page == WELCOME:
             self.layout.children = self.welcome.children
         elif page == QUESTION:
-            self.layout.children = self.questions.children
+            self.layout.children = self.questions.render(state)
         elif page == CONFIRM:
             self.layout.children = self.confirm.render(state["answers"])
         elif page == RESULTS:
             self.layout.children = self.results.render(state)
+
+
+class YesNo(object):
+    def __init__(self, text):
+        self.label = "Yes/No"
+        self.div = bokeh.models.Div(text=text)
+        self.dropdown = bokeh.models.Dropdown(
+                label=self.label,
+                menu=[("Yes", "y"), ("No", "n")])
+        def on_change(attr, old, new):
+            for label, value in self.dropdown.menu:
+                if value == new:
+                    self.dropdown.label = label
+        self.dropdown.on_change("value", on_change)
+        self.children = [
+            self.div,
+            self.dropdown
+        ]
+
+    def reset(self):
+        self.dropdown.label = self.label
+        self.dropdown.value = None
+
+    @property
+    def answer(self):
+        return self.dropdown.value
+
+    @answer.setter
+    def answer(self, value):
+        self.dropdown.value = value
+
+
+class LongAnswer(object):
+    def __init__(self, text):
+        self.div = bokeh.models.Div(text=text)
+        self.text_area_input = bokeh.models.TextAreaInput(
+                placeholder="Type some text",
+                rows=5)
+        self.children = [
+            self.div,
+            self.text_area_input
+        ]
+
+    def reset(self):
+        self.text_area_input.value = ""
+
+    @property
+    def answer(self):
+        return self.text_area_input.value
+
+    @answer.setter
+    def answer(self, value):
+        self.text_area_input.value = value
 
 
 class Questions(Observable):
@@ -194,25 +247,15 @@ class Questions(Observable):
             "Does the model agree with observations?",
             "If not, explain why."
         ]
-        self.dropdown = bokeh.models.Dropdown(
-                label="Yes/No",
-                menu=[("Yes", "y"), ("No", "n")])
-        def on_change(attr, old, new):
-            for label, value in self.dropdown.menu:
-                if value == new:
-                    self.dropdown.label = label
-        self.dropdown.on_change("value", on_change)
-        self.text_area_input = bokeh.models.TextAreaInput(
-                placeholder="Type some text",
-                rows=5)
+        self.questions = [
+            YesNo(texts[0]),
+            LongAnswer(texts[1])
+        ]
         self.widgets = [
             bokeh.models.Div(text="<h1>Survey</h1>"),
-            bokeh.models.Div(text=texts[0]),
-            self.dropdown,
-            bokeh.models.Div(text=texts[1]),
-            self.text_area_input,
-            bokeh.models.Spinner(low=0, high=10, step=1, value=5),
         ]
+        for q in self.questions:
+            self.widgets += q.children
         self.buttons = {
             "submit": bokeh.models.Button(
                 label="Submit"),
@@ -231,11 +274,21 @@ class Questions(Observable):
         ]
         super().__init__()
 
+    def render(self, state):
+        if "answers" in state:
+            answers = state["answers"]
+            if len(answers) == 0:
+                for question in self.questions:
+                    question.reset()
+            else:
+                for question, answer in zip(
+                        self.questions,
+                        answers):
+                    question.answer = answer
+        return self.children
+
     def on_submit(self):
-        answers = [
-            self.dropdown.value,
-            self.text_area_input.value
-        ]
+        answers = [q.answer for q in self.questions]
         self.notify({
             "kind": SUBMIT,
             "payload": {"answers": answers}})
