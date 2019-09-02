@@ -4,6 +4,7 @@ import bokeh.models
 import copy
 import json
 import datetime as dt
+import jinja2
 from observe import Observable
 from functools import wraps
 
@@ -188,7 +189,17 @@ class Tool(Observable):
             self.layout.children = self.results.render(state)
 
 
-class YesNo(object):
+class Question(object):
+    @classmethod
+    def pose(cls, kind, *args, **kwargs):
+        kind = kind.lower().replace(' ', '')
+        for sub_cls in cls.__subclasses__():
+            if sub_cls.__name__.lower() == kind:
+                return sub_cls(*args, **kwargs)
+        raise Exception("Unknown question: {}".format(kind))
+
+
+class YesNo(Question):
     def __init__(self, text):
         self.label = "Yes/No"
         self.div = bokeh.models.Div(text=text)
@@ -218,7 +229,7 @@ class YesNo(object):
         self.dropdown.value = value
 
 
-class LongAnswer(object):
+class LongAnswer(Question):
     def __init__(self, text):
         self.div = bokeh.models.Div(text=text)
         self.text_area_input = bokeh.models.TextAreaInput(
@@ -241,16 +252,35 @@ class LongAnswer(object):
         self.text_area_input.value = value
 
 
+class ShortAnswer(Question):
+    def __init__(self, text):
+        self.div = bokeh.models.Div(text=text)
+        self.text_input = bokeh.models.TextInput()
+        self.children = [
+            self.div,
+            self.text_input
+        ]
+
+    def reset(self):
+        self.text_input.value = ""
+
+    @property
+    def answer(self):
+        return self.text_input.value
+
+    @answer.setter
+    def answer(self, value):
+        self.text_input.value = value
+
+
 class Questions(Observable):
     def __init__(self):
-        texts = [
-            "Does the model agree with observations?",
-            "If not, explain why."
-        ]
-        self.questions = [
-            YesNo(texts[0]),
-            LongAnswer(texts[1])
-        ]
+        self.questions = []
+        for text, kind in ([
+                ("What's your name?", "ShortAnswer"),
+                ("Does the model agree with observations?", "YesNo"),
+                ("If not, explain why.", "LongAnswer")]):
+            self.questions.append(Question.pose(kind, text))
         self.widgets = [
             bokeh.models.Div(text="<h1>Survey</h1>"),
         ]
@@ -395,7 +425,7 @@ class Results(Observable):
         yes, no = 0, 0
         for result in state.get("results", []):
             answers = result["answers"]
-            if answers[0] == "y":
+            if answers[1] == "y":
                 yes += 1
             else:
                 no += 1
@@ -408,7 +438,7 @@ class Results(Observable):
         times, texts = [], []
         for result in state.get("results", []):
             times.append(result["timestamp"])
-            texts.append(result["answers"][1])
+            texts.append(result["answers"][2])
         self.table_source.data = {
             "timestamp": times,
             "answer": texts
@@ -424,7 +454,7 @@ class Results(Observable):
 
 class Confirm(Observable):
     def __init__(self):
-        self.template = """
+        self.template = jinja2.Template("""
         <h1>Thank you</h1>
         <p>Your feedback is very important to us. We
         use the information provided to improve our
@@ -432,13 +462,14 @@ class Confirm(Observable):
         which can be derived by objective metrics.</p>
         <p>Your answers:</p>
         <ul>
-            <li>Question 1: {}</li>
-            <li>Question 2: {}</li>
+            {% for answer in answers %}
+            <li>Q{{loop.index}}: {{answer}}</li>
+            {% endfor %}
         </ul>
         <p>If you would like to edit your answers
         please do so now, otherwise feel free to save
         your results.</p>
-        """
+        """)
         self.div = bokeh.models.Div(text="")
         self.buttons = {
             "edit": bokeh.models.Button(label="Edit"),
@@ -450,7 +481,7 @@ class Confirm(Observable):
         super().__init__()
 
     def render(self, answers):
-        self.div.text = self.template.format(*answers)
+        self.div.text = self.template.render(answers=answers)
         return [
             self.div,
             self.buttons["edit"],
