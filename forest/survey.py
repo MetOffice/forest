@@ -1,19 +1,48 @@
 """Capture feedback related to displayed data"""
 import bokeh.layouts
 import bokeh.models
+import copy
 import json
 import datetime as dt
 from observe import Observable
 
 
+EDIT = "EDIT"
 BEGIN = "BEGIN"
+CONFIRM = "CONFIRM"
+QUESTION = "QUESTION"
 SUBMIT = "SUBMIT"
 SAVE = "SAVE"
+WELCOME = "WELCOME"
 CONTACT_TEXT = """
 <p>If you have any queries related to the survey please
 <a href="mailto:andrew.hartley@metoffice.gov.uk">contact us</a>
 </p>
 """
+
+
+class Store(Observable):
+    def __init__(self, reducer, initial_state=None):
+        self.state = initial_state if initial_state is not None else {}
+        self.reducer = reducer
+        super().__init__()
+
+    def dispatch(self, action):
+        self.state = self.reducer(self.state, action)
+        self.notify(self.state)
+
+
+def reducer(state, action):
+    kind = action["kind"]
+    state = copy.copy(state)
+    if (kind == BEGIN) or (kind == EDIT):
+        state["page"] = QUESTION
+    elif kind == SUBMIT:
+        state["page"] = CONFIRM
+        state["answers"] = action["payload"]["answers"]
+    elif kind == SAVE:
+        state["page"] = WELCOME
+    return state
 
 
 class Database(object):
@@ -23,7 +52,6 @@ class Database(object):
         self.records = []
 
     def insert(self, record):
-        print(record["timestamp"], len(self.records))
         self.records.append(record)
 
     def flush(self):
@@ -34,30 +62,29 @@ class Database(object):
 class Tool(Observable):
     def __init__(self, database=None):
         self.database = database
+        self.store = Store(reducer, initial_state={"page": WELCOME})
+        self.store.subscribe(print)
+        self.store.subscribe(self.render)
         self.welcome = Welcome()
-        self.welcome.subscribe(self.on_action)
+        self.welcome.subscribe(self.store.dispatch)
         self.questions = Questions()
-        self.questions.subscribe(self.on_action)
+        self.questions.subscribe(self.store.dispatch)
         self.confirm = Confirm()
-        self.confirm.subscribe(self.on_action)
+        self.confirm.subscribe(self.store.dispatch)
         self.layout = bokeh.layouts.column(
                 *self.welcome.children)
         super().__init__()
 
-    def on_action(self, action):
-        print(action)
-        kind = action["kind"]
-        if kind == BEGIN:
+    def render(self, state):
+        if "page" not in state:
+            return
+        page = state["page"]
+        if page == WELCOME:
+            self.layout.children = self.welcome.children
+        elif page == QUESTION:
             self.layout.children = self.questions.children
-        elif kind == SUBMIT:
-            answers = action["payload"]["answers"]
-            self.layout.children = self.confirm.render(answers)
-        elif kind == SAVE:
-            if self.database is None:
-                return
-            self.database.insert({
-                    "timestamp": str(dt.datetime.now())
-            })
+        elif page == CONFIRM:
+            self.layout.children = self.confirm.render(state["answers"])
 
 
 class Questions(Observable):
@@ -104,7 +131,7 @@ class Questions(Observable):
             self.text_area_input.value
         ]
         self.notify({
-            "kind": "SUBMIT",
+            "kind": SUBMIT,
             "payload": {"answers": answers}})
 
 
@@ -138,7 +165,7 @@ class Welcome(Observable):
         self.notify({"kind": BEGIN})
 
     def on_results(self):
-        self.notify({"kind": "RESULTS"})
+        self.notify({"kind": RESULTS})
 
 
 class Confirm(Observable):
@@ -175,7 +202,7 @@ class Confirm(Observable):
         ]
 
     def on_edit(self):
-        self.notify({"kind": "EDIT"})
+        self.notify({"kind": EDIT})
 
     def on_save(self):
-        self.notify({"kind": "SAVE"})
+        self.notify({"kind": SAVE})
