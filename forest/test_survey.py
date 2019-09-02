@@ -58,7 +58,7 @@ class TestResultsPage(unittest.TestCase):
                 {
                     "timestamp": "2019-01-01 00:00:00",
                     "answers": [
-                        "y", "Some text"
+                        None, "y", "Some text"
                     ]
                 }
             ]
@@ -77,7 +77,7 @@ class TestResultsPage(unittest.TestCase):
                 {
                     "timestamp": "2019-01-01 00:00:00",
                     "answers": [
-                        "y", "Some text"
+                        None, "y", "Some text"
                     ]
                 }
             ]

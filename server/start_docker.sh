@@ -24,6 +24,8 @@ exec sudo -u ec2-user /bin/bash - <<EOF
     mkdir ~/database
     aws s3 cp s3://met-office-rmed-forest/forest-informaticslab.db ~/database/
 
+    mkdir ~/survey
+
     cd
     docker run \
       --name forest-container \
@@ -31,6 +33,7 @@ exec sudo -u ec2-user /bin/bash - <<EOF
       -p 80:8080 \
       -v /home/ec2-user/forest:/repo/forest \
       -v /home/ec2-user/database:/database \
+      -v /home/ec2-user/survey:/survey \
       -v /s3:/s3 \
       informaticslab/forest bash -c '. /repo/forest/server/run-ec2.sh /repo/forest /s3'
 EOF
