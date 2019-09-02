@@ -32,6 +32,14 @@ class TestReducer(unittest.TestCase):
         }
         self.assertEqual(expect, result)
 
+    def test_reducer_given_reset_answers(self):
+        action = survey.reset_answers()
+        initial = {"answers": ["y", "text"]}
+        state = survey.reducer(initial, action)
+        result = state["answers"]
+        expect = []
+        self.assertEqual(expect, result)
+
 
 class TestResultsPage(unittest.TestCase):
     def test_constructor(self):

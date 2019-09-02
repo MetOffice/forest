@@ -16,6 +16,7 @@ SUBMIT = "SUBMIT"
 SAVE = "SAVE"
 SHOW_RESULTS = "SHOW_RESULTS"
 SHOW_WELCOME = "SHOW_WELCOME"
+RESET_ANSWERS = "RESET_ANSWERS"
 RESULTS = "RESULTS"
 WELCOME = "WELCOME"
 CONTACT_TEXT = """
@@ -50,10 +51,12 @@ def reducer(state, action):
     elif kind == SUBMIT:
         state["page"] = CONFIRM
         state["answers"] = action["payload"]["answers"]
-    elif (kind == SAVE) or (kind == SHOW_WELCOME):
+    elif kind == SHOW_WELCOME:
         state["page"] = WELCOME
     elif kind == SHOW_RESULTS:
         state["page"] = RESULTS
+    elif kind == RESET_ANSWERS:
+        state["answers"] = []
     return state
 
 
@@ -73,6 +76,10 @@ def middleware(f):
     return outer
 
 
+def reset_answers():
+    return {"kind": RESET_ANSWERS}
+
+
 def show_results():
     return {"kind": SHOW_RESULTS}
 
@@ -89,6 +96,7 @@ class Database(object):
 
     def insert(self, record):
         self.records.append(record)
+        print(record["timestamp"], len(self.records))
 
     def flush(self):
         with open(self.path, "w") as stream:
@@ -102,10 +110,14 @@ class DatabaseMiddleware(object):
 
     @middleware
     def __call__(self, store, next_method, action):
-        print(store, action, next_method)
         kind = action["kind"]
         if kind == SAVE:
+            self.database.insert({
+                "timestamp": str(dt.datetime.now()),
+                "answers": copy.copy(store.state["answers"])
+            })
             next_method(show_results())
+            next_method(reset_answers())
         else:
             next_method(action)
 
