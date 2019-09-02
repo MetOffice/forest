@@ -263,13 +263,7 @@ def main():
     # Ensure all listeners are pointing to the current state
     controls.notify(controls.state)
 
-    def on_submit(action):
-        if action["kind"] == survey.SUBMIT:
-            data.SURVEY_BACKEND.insert_record(action["payload"])
-
-    survey_tool = survey.Tool()
-    survey_tool.subscribe(on_submit)
-
+    survey_tool = survey.Tool(database=data.SURVEY_DATABASE)
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(

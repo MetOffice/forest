@@ -1,11 +1,14 @@
 """Capture feedback related to displayed data"""
 import bokeh.layouts
 import bokeh.models
+import json
+import datetime as dt
 from observe import Observable
 
 
-SUBMIT = "SUBMIT"
 BEGIN = "BEGIN"
+SUBMIT = "SUBMIT"
+SAVE = "SAVE"
 CONTACT_TEXT = """
 <p>If you have any queries related to the survey please
 <a href="mailto:andrew.hartley@metoffice.gov.uk">contact us</a>
@@ -13,14 +16,24 @@ CONTACT_TEXT = """
 """
 
 
-class CSV(object):
+class Database(object):
     """Serialise survey results"""
-    def insert_record(self, record):
-        print("CSV: {}".format(record))
+    def __init__(self, path):
+        self.path = path
+        self.records = []
+
+    def insert(self, record):
+        print(record["timestamp"], len(self.records))
+        self.records.append(record)
+
+    def flush(self):
+        with open(self.path, "w") as stream:
+            json.dump({"records": self.records}, stream)
 
 
 class Tool(Observable):
-    def __init__(self):
+    def __init__(self, database=None):
+        self.database = database
         self.welcome = Welcome()
         self.welcome.subscribe(self.on_action)
         self.questions = Questions()
@@ -39,6 +52,12 @@ class Tool(Observable):
         elif kind == SUBMIT:
             answers = action["payload"]["answers"]
             self.layout.children = self.confirm.render(answers)
+        elif kind == SAVE:
+            if self.database is None:
+                return
+            self.database.insert({
+                    "timestamp": str(dt.datetime.now())
+            })
 
 
 class Questions(Observable):
