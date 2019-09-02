@@ -14,7 +14,9 @@ CONFIRM = "CONFIRM"
 QUESTION = "QUESTION"
 SUBMIT = "SUBMIT"
 SAVE = "SAVE"
+SET_RESULTS = "SET_RESULTS"
 SHOW_RESULTS = "SHOW_RESULTS"
+REFRESH_RESULTS = "REFRESH_RESULTS"
 SHOW_WELCOME = "SHOW_WELCOME"
 RESET_ANSWERS = "RESET_ANSWERS"
 RESULTS = "RESULTS"
@@ -57,6 +59,8 @@ def reducer(state, action):
         state["page"] = RESULTS
     elif kind == RESET_ANSWERS:
         state["answers"] = []
+    elif kind == SET_RESULTS:
+        state["results"] = action["payload"]["results"]
     return state
 
 
@@ -78,6 +82,19 @@ def middleware(f):
 
 def reset_answers():
     return {"kind": RESET_ANSWERS}
+
+
+def set_results(results):
+    return {
+            "kind": SET_RESULTS,
+            "payload": {
+                    "results": results
+                }
+            }
+
+
+def refresh_results():
+    return {"kind": REFRESH_RESULTS}
 
 
 def show_results():
@@ -116,8 +133,14 @@ class DatabaseMiddleware(object):
                 "timestamp": str(dt.datetime.now()),
                 "answers": copy.copy(store.state["answers"])
             })
+            next_method(set_results(self.database.records))
             next_method(show_results())
             next_method(reset_answers())
+        elif kind == SHOW_RESULTS:
+            next_method(set_results(self.database.records))
+            next_method(action)
+        elif kind == REFRESH_RESULTS:
+            next_method(set_results(self.database.records))
         else:
             next_method(action)
 
@@ -157,7 +180,7 @@ class Tool(Observable):
         elif page == CONFIRM:
             self.layout.children = self.confirm.render(state["answers"])
         elif page == RESULTS:
-            self.layout.children = self.results.children
+            self.layout.children = self.results.render(state)
 
 
 class Questions(Observable):
@@ -251,17 +274,94 @@ class Welcome(Observable):
 
 class Results(Observable):
     def __init__(self):
-        self.button = bokeh.models.Button(label="Home")
-        self.button.on_click(self.on_welcome)
+        width = 300
+        height = 100
+
+        # Question 1: Bar chart
+        x_labels = ["Yes", "No"]
+        self.figure = bokeh.plotting.figure(
+                plot_width=width,
+                plot_height=height,
+                x_range=x_labels,
+                title="Question 1",
+                toolbar_location=None,
+                tools="",
+                border_fill_alpha=0)
+        self.bar_source = bokeh.models.ColumnDataSource({
+            "x": x_labels,
+            "top": [0, 0]
+        })
+        self.figure.vbar(
+                x="x",
+                top="top",
+                width=0.9,
+                source=self.bar_source)
+        self.figure.y_range.start = 0
+
+        # Question 2: Data table
+        self.table_source = bokeh.models.ColumnDataSource(
+                {"timestamp": [], "answer": []})
+        columns = [
+            bokeh.models.TableColumn(field="timestamp", title="Time"),
+            bokeh.models.TableColumn(field="answer", title="Answer"),
+        ]
+        self.table = bokeh.models.DataTable(
+                editable=False,
+                source=self.table_source,
+                columns=columns,
+                width=width,
+                height=height)
+
+        self.buttons = {
+            "home": bokeh.models.Button(
+                label="Home",
+                width=140),
+            "refresh": bokeh.models.Button(
+                label="Refresh",
+                width=140),
+        }
+        self.buttons["home"].on_click(self.on_welcome)
+        self.buttons["refresh"].on_click(self.on_refresh)
         self.children = [
             bokeh.models.Div(text="<h1>Survey results</h1>"),
-            bokeh.models.Div(text="Placeholder text"),
-            self.button
+            self.figure,
+            self.table,
+            bokeh.layouts.row(
+                self.buttons["home"],
+                self.buttons["refresh"])
         ]
         super().__init__()
 
+    def render(self, state):
+        # Bar chart
+        yes, no = 0, 0
+        for result in state.get("results", []):
+            answers = result["answers"]
+            if answers[0] == "y":
+                yes += 1
+            else:
+                no += 1
+        self.bar_source.data = {
+            "x": ["Yes", "No"],
+            "top": [yes, no]
+        }
+
+        # Data table
+        times, texts = [], []
+        for result in state.get("results", []):
+            times.append(result["timestamp"])
+            texts.append(result["answers"][1])
+        self.table_source.data = {
+            "timestamp": times,
+            "answer": texts
+        }
+        return self.children
+
     def on_welcome(self):
         self.notify(show_welcome())
+
+    def on_refresh(self):
+        self.notify(refresh_results())
 
 
 class Confirm(Observable):

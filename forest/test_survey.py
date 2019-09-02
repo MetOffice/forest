@@ -42,21 +42,53 @@ class TestReducer(unittest.TestCase):
 
 
 class TestResultsPage(unittest.TestCase):
-    def test_constructor(self):
-        results = survey.Results()
-        div, p, button = results.children
-        self.assertEqual(
-                div.text, "<h1>Survey results</h1>")
-        self.assertEqual(p.text, "Placeholder text")
-        self.assertEqual(button.label, "Home")
+    def setUp(self):
+        self.results = survey.Results()
 
     def test_on_welcome(self):
         listener = unittest.mock.Mock()
-        results = survey.Results()
-        results.subscribe(listener)
-        results.on_welcome()
+        self.results.subscribe(listener)
+        self.results.on_welcome()
         expect = survey.show_welcome()
         listener.assert_called_once_with(expect)
+
+    def test_render_given_state(self):
+        state = {
+            "results": [
+                {
+                    "timestamp": "2019-01-01 00:00:00",
+                    "answers": [
+                        "y", "Some text"
+                    ]
+                }
+            ]
+        }
+        self.results.render(state)
+        result = self.results.bar_source.data
+        expect = {
+            "x": ["Yes", "No"],
+            "top": [1, 0]
+        }
+        self.assertEqual(expect, result)
+
+    def test_render_populates_data_table(self):
+        state = {
+            "results": [
+                {
+                    "timestamp": "2019-01-01 00:00:00",
+                    "answers": [
+                        "y", "Some text"
+                    ]
+                }
+            ]
+        }
+        self.results.render(state)
+        result = self.results.table_source.data
+        expect = {
+            "timestamp": ["2019-01-01 00:00:00"],
+            "answer": ["Some text"]
+        }
+        self.assertEqual(expect, result)
 
 
 class TestRecords(unittest.TestCase):
