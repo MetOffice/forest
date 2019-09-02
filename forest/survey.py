@@ -122,24 +122,28 @@ class Questions(Observable):
                 placeholder="Type some text",
                 rows=5)
         self.widgets = [
-            bokeh.models.Spinner(low=0, high=1.0, step=0.1, value=0.5),
             bokeh.models.Div(text="<h1>Survey</h1>"),
             bokeh.models.Div(text=texts[0]),
             self.dropdown,
             bokeh.models.Div(text=texts[1]),
-            self.text_area_input
+            self.text_area_input,
+            bokeh.models.Spinner(low=0, high=10, step=1, value=5),
         ]
         self.buttons = {
             "submit": bokeh.models.Button(
-                label="Submit")
+                label="Submit"),
+            "welcome": bokeh.models.Button(
+                label="Home")
         }
         self.callbacks = {
             "submit": self.on_submit,
+            "welcome": self.on_welcome
         }
         for key, on_click in self.callbacks.items():
             self.buttons[key].on_click(on_click)
         self.children = self.widgets + [
-            self.buttons["submit"]
+            self.buttons["submit"],
+            self.buttons["welcome"]
         ]
         super().__init__()
 
@@ -151,6 +155,9 @@ class Questions(Observable):
         self.notify({
             "kind": SUBMIT,
             "payload": {"answers": answers}})
+
+    def on_welcome(self):
+        self.notify(show_welcome())
 
 
 class Welcome(Observable):
@@ -214,6 +221,9 @@ class Confirm(Observable):
             <li>Question 1: {}</li>
             <li>Question 2: {}</li>
         </ul>
+        <p>If you would like to edit your answers
+        please do so now, otherwise feel free to save
+        your results.</p>
         """
         self.div = bokeh.models.Div(text="")
         self.buttons = {
