@@ -109,11 +109,16 @@ class Database(object):
     """Serialise survey results"""
     def __init__(self, path):
         self.path = path
-        self.records = []
+        try:
+            with open(self.path, "r") as stream:
+                records = json.load(stream)["records"]
+        except IOError:
+            records = []
+        self.records = records
 
     def insert(self, record):
         self.records.append(record)
-        print(record["timestamp"], len(self.records))
+        self.flush()
 
     def flush(self):
         with open(self.path, "w") as stream:
