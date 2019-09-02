@@ -5,6 +5,7 @@ import copy
 import json
 import datetime as dt
 from observe import Observable
+from functools import wraps
 
 
 EDIT = "EDIT"
@@ -25,9 +26,15 @@ CONTACT_TEXT = """
 
 
 class Store(Observable):
-    def __init__(self, reducer, initial_state=None):
-        self.state = initial_state if initial_state is not None else {}
+    def __init__(self, reducer, initial_state=None, middlewares=None):
         self.reducer = reducer
+        self.state = initial_state if initial_state is not None else {}
+        if middlewares is not None:
+            mws = [m(self) for m in middlewares]
+            f = self.dispatch
+            for mw in reversed(mws):
+                f = mw(f)
+            self.dispatch = f
         super().__init__()
 
     def dispatch(self, action):
@@ -48,6 +55,22 @@ def reducer(state, action):
     elif kind == SHOW_RESULTS:
         state["page"] = RESULTS
     return state
+
+
+def middleware(f):
+    """Decorator to curry middleware call signature
+
+    ..note:: Can decorate either a function or a method
+    on a class
+    """
+    @wraps(f)
+    def outer(*args):
+        def inner(next_method):
+            def inner_most(action):
+                f(*args, next_method, action)
+            return inner_most
+        return inner
+    return outer
 
 
 def show_results():
@@ -72,10 +95,31 @@ class Database(object):
             json.dump({"records": self.records}, stream)
 
 
+class DatabaseMiddleware(object):
+    """Intercept action(s) related to database operations"""
+    def __init__(self, database):
+        self.database = database
+
+    @middleware
+    def __call__(self, store, next_method, action):
+        print(store, action, next_method)
+        kind = action["kind"]
+        if kind == SAVE:
+            next_method(show_results())
+        else:
+            next_method(action)
+
+
 class Tool(Observable):
     def __init__(self, database=None):
         self.database = database
-        self.store = Store(reducer, initial_state={"page": WELCOME})
+        middlewares = []
+        if database is not None:
+            middlewares.append(DatabaseMiddleware(database))
+        self.store = Store(
+                reducer,
+                initial_state={"page": WELCOME},
+                middlewares=middlewares)
         self.store.subscribe(print)
         self.store.subscribe(self.render)
         self.welcome = Welcome()
@@ -249,4 +293,3 @@ class Confirm(Observable):
 
     def on_save(self):
         self.notify({"kind": SAVE})
-        self.notify(show_results())
