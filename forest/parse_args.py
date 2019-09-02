@@ -14,4 +14,7 @@ def parse_args(argv=None):
         "--config-file",
         required=True, metavar="YAML_FILE",
         help="YAML file to configure application")
+    parser.add_argument(
+        "--survey-db",
+        help="json file to store survey results")
     return parser.parse_args(args=argv)

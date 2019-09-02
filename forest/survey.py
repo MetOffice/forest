@@ -371,7 +371,6 @@ class Results(Observable):
                 plot_width=width,
                 plot_height=height,
                 x_range=x_labels,
-                title="Question 1",
                 toolbar_location=None,
                 tools="",
                 border_fill_alpha=0)

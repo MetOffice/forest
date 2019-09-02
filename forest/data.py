@@ -47,7 +47,6 @@ SURVEY_DATABASE = None
 
 
 def on_server_loaded():
-    global SURVEY_DATABASE
     global DISPUTED
     global COASTLINES
     global LAKES
@@ -70,7 +69,13 @@ def on_server_loaded():
             'cultural',
             'admin_0_boundary_lines_land',
             '50m').geometries()))
-    SURVEY_DATABASE = survey.Database("survey.json")
+
+
+def survey_database(path):
+    global SURVEY_DATABASE
+    if SURVEY_DATABASE is None:
+        SURVEY_DATABASE = survey.Database(path)
+    return SURVEY_DATABASE
 
 
 def add_loader(name, loader):
