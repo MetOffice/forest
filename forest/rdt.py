@@ -11,6 +11,22 @@ from util import timeout_cache
 from exceptions import FileNotFound
 
 
+class RenderGroup(object):
+    def __init__(self, renderers, visible=False):
+        self.renderers = renderers
+        self.visible = visible
+
+    @property
+    def visible(self):
+        return any(r.visible for r in self.renderers)
+
+    @visible.setter
+    def visible(self, value):
+        for r in self.renderers:
+            r.visible = value
+
+
+
 class View(object):
     def __init__(self, loader):
         self.loader = loader
@@ -62,6 +78,7 @@ class View(object):
                 factors=["0", "1", "2", "3", "4"])
         self.source = bokeh.models.GeoJSONDataSource(
                 geojson=self.empty_geojson)
+        self.circle_source = bokeh.models.ColumnDataSource(dict(x=[], y=[]))
 
     def render(self, state):
         print(state.valid_time)
@@ -70,11 +87,15 @@ class View(object):
             print(date)
             try:
                 self.source.geojson = self.loader.load_date(date)
+                self.circle_source.data = {'x': [1,2,], 'y':[]}
             except FileNotFound:
                 print('File not found - bug?')
                 self.source.geojson = self.empty_geojson
 
     def add_figure(self, figure):
+        circles = figure.circle(x=[3450904, 3651279], y=[-111325, -144727], size=5)
+        figure.circle(x="x", y="y", source=self.circle_source)
+        lines = figure.line(x=[3450904, 3651279], y=[-111325, -144727], line_width=3) # bokeh markers for more
         renderer = figure.patches(
             xs="xs",
             ys="ys",
@@ -84,6 +105,7 @@ class View(object):
                  'field': 'PhaseLife',
                  'transform': self.color_mapper},
             source=self.source)
+
         tool = bokeh.models.HoverTool(
                 tooltips=[
                     ('Cloud Type', '@CType'),
@@ -113,7 +135,7 @@ class View(object):
                     ('Phase life', '@PhaseLife')],
                 renderers=[renderer])
         figure.add_tools(tool)
-        return renderer
+        return RenderGroup([renderer, circles, lines])
 
 
 class Loader(object):

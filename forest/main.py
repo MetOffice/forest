@@ -205,14 +205,14 @@ def main():
         step=0.1,
         value=1.0,
         show_value=False)
-    custom_js = bokeh.models.CustomJS(
-            args=dict(renderers=renderers),
-            code="""
-            renderers.forEach(function (r) {
-                r.glyph.global_alpha = cb_obj.value
-            })
-            """)
-    slider.js_on_change("value", custom_js)
+    # custom_js = bokeh.models.CustomJS(
+    #         args=dict(renderers=renderers),
+    #         code="""
+    #         renderers.forEach(function (r) {
+    #             r.glyph.global_alpha = cb_obj.value
+    #         })
+    #         """)
+    # slider.js_on_change("value", custom_js)
 
     colors_controls = colors.Controls(
             color_mapper, "Plasma", 256)
