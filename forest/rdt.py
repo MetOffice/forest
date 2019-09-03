@@ -64,12 +64,14 @@ class View(object):
                 geojson=self.empty_geojson)
 
     def render(self, state):
+        print(state.valid_time)
         if state.valid_time is not None:
             date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
             print(date)
             try:
                 self.source.geojson = self.loader.load_date(date)
             except FileNotFound:
+                print('File not found - bug?')
                 self.source.geojson = self.empty_geojson
 
     def add_figure(self, figure):
@@ -84,8 +86,8 @@ class View(object):
             source=self.source)
         tool = bokeh.models.HoverTool(
                 tooltips=[
-                    ('CType', '@CType'),
-                    ('CRainRate', '@CRainRate'),
+                    ('Cloud Type', '@CType'),
+                    ('Convective Rainfall Rate', '@CRainRate'),
                     ('ConvTypeMethod', '@ConvTypeMethod'),
                     ('ConvType', '@ConvType'),
                     ('ConvTypeQuality', '@ConvTypeQuality'),
@@ -145,9 +147,11 @@ class Loader(object):
 class Locator(object):
     def __init__(self, pattern):
         self.pattern = pattern
+        print(pattern)
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
+        print(paths)
         bounds = locate.bounds(
                 self.dates(paths),
                 dt.timedelta(minutes=15))
