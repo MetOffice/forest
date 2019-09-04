@@ -361,12 +361,55 @@ class SeriesLoader(object):
             data["y"] += list(segment["y"])
         return data
 
-    def series_file(self,
-            path,
-            variable,
-            lon0,
-            lat0,
-            pressure=None):
+    def series_file(self, *args, **kwargs):
+        try:
+            times, values = self._load_netcdf4(*args, **kwargs)
+        except:
+            times, values = self._load_cube(*args, **kwargs)
+        return {
+            "x": times,
+            "y": values}
+
+    def _load_cube(self, path, variable, lon0, lat0, pressure=None):
+        import iris
+        cube = iris.load_cube(path, iris.Constraint(variable))
+        coord = cube.coord('time')
+        times = netCDF4.num2date(coord.points, units=str(coord.units))
+        lons = cube.coord('longitude').points
+        lats = cube.coord('latitude').points
+        if lons.ndim == 2:
+            lons = lons[0, :]
+        if lats.ndim == 2:
+            lats = lats[:, 0]
+        lons = geo.to_180(lons)
+        i = np.argmin(np.abs(lons - lon0))
+        j = np.argmin(np.abs(lats - lat0))
+        values = cube.data
+        values = values[..., i, j]
+        if self._has_dim(cube, 'pressure'):
+            pressures = cube.coord('pressure').points
+            if len(cube.ndim) == 3:
+                pts = self.search(pressures, pressure)
+                values = values[pts]
+                if isinstance(times, dt.datetime):
+                    times = [times]
+                else:
+                    times = times[pts]
+            else:
+                mask = self.search(pressures, pressure)
+                values = values[:, mask][:, 0]
+        return times, values
+
+    @staticmethod
+    def _has_dim(cube, label):
+        import iris
+        try:
+            cube.coord(label)
+        except iris.exceptions.CoordinateNotFoundError:
+            return False
+        return True
+
+    def _load_netcdf4(self, path, variable, lon0, lat0, pressure=None):
         with netCDF4.Dataset(path) as dataset:
             try:
                 var = dataset.variables[variable]
@@ -395,9 +438,7 @@ class SeriesLoader(object):
                 else:
                     mask = self.search(pressures, pressure)
                     values = values[:, mask][:, 0]
-        return {
-            "x": times,
-            "y": values}
+        return times, values
 
     @staticmethod
     def _times(dataset, variable):
@@ -564,8 +605,12 @@ class SeriesLocator(object):
         for path in paths:
             time = initial_time(path)
             if time is None:
-                # NOTE: Could read reference_time from file
-                continue
+                try:
+                    with netCDF4.Dataset(path) as dataset:
+                        var = dataset.variables["forecast_reference_time"]
+                        time = netCDF4.num2date(var[:], units=var.units)
+                except KeyError:
+                    continue
             self.table[self.key(time)].append(path)
 
     def initial_times(self):
