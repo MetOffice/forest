@@ -671,7 +671,11 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
     print(pts_3d, values.shape)
 
     # Coarsify images
-    fraction = 1 # 0.25
+    threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199
+    if values.size > threshold:
+        fraction = 0.25
+    else:
+        fraction = 1
     lons, lats, values = coarsify(
         lons, lats, values, fraction)
 
