@@ -9,6 +9,11 @@ files:
           locator: database
           file_type: unified_model
           directory: unified_model
+        - label: Tanzania WRF
+          pattern: '*wrf_sampledata.nc'
+          locator: database
+          file_type: unified_model
+          directory: tma_wrf
         - label: EIDA50
           pattern: 'eida50/EIDA50_takm4p4*.nc'
           locator: file_system
