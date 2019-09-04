@@ -647,10 +647,6 @@ def load_image(path, variable, itime, ipressure):
     return load_image_pts(path, variable, (itime,), (itime, ipressure))
 
 
-class FastLoadFailure(Exception):
-    pass
-
-
 def load_image_pts(path, variable, pts_3d, pts_4d):
     key = (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
     if key in IMAGES:
@@ -658,18 +654,18 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
         return IMAGES[key]
     else:
         try:
-            lons, lats, values = load_image_pts_fast(path, variable, pts_3d, pts_4d)
+            lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
         except:
-            lons, lats, values = load_image_pts_cube(path, variable, pts_3d, pts_4d)
+            lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
 
     # Units
-    # if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
-    #     if var.units == "mm h-1":
-    #         values = values
-    #     else:
-    #         values = convert_units(values, var.units, "kg m-2 hour-1")
-    # elif var.units == "K":
-    #     values = convert_units(values, "K", "Celsius")
+    if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
+        if units == "mm h-1":
+            values = values
+        else:
+            values = convert_units(values, units, "kg m-2 hour-1")
+    elif units == "K":
+        values = convert_units(values, "K", "Celsius")
 
     # DEBUG
     print(pts_3d, values.shape)
@@ -684,27 +680,24 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
     return image
 
 
-def load_image_pts_cube(path, variable, pts_3d, pts_4d):
-
+def _load_cube(path, variable, pts_3d, pts_4d):
     import iris
-    # Do something with cubes
     cube = iris.load_cube(path, iris.Constraint(variable))
-
+    units = cube.units
     lons = cube.coord('longitude').points
     if lons.ndim == 2:
         lons = lons[0, :]
     lats = cube.coord('latitude').points
     if lons.ndim == 2:
         lats = lats[:, 0]
-
     if cube.data.ndim == 4:
-        return lons, lats, cube.data[pts_4d]
+        values = cube.data[pts_4d]
     else:
-        return lons, lats, cube.data[pts_3d]
+        values = cube.data[pts_3d]
+    return lons, lats, values, units
 
 
-def load_image_pts_fast(path, variable, pts_3d, pts_4d):
-    print("loading: {}".format(key))
+def _load_netcdf4(path, variable, pts_3d, pts_4d):
     with netCDF4.Dataset(path) as dataset:
         try:
             var = dataset.variables[variable]
@@ -719,12 +712,11 @@ def load_image_pts_fast(path, variable, pts_3d, pts_4d):
             if "latitude" in d:
                 lats = dataset.variables[d][:]
         if len(var.dimensions) == 4:
-            return lons, lats, var[pts_4d]
+            values = var[pts_4d]
         else:
-            return lons, lats, var[pts_3d]
-
-
-
+            values = var[pts_3d]
+        units = var.units
+    return lons, lats, values, units
 
 
 def convert_units(values, old_unit, new_unit):
