@@ -385,7 +385,20 @@ class SeriesLoader(object):
         i = np.argmin(np.abs(lons - lon0))
         j = np.argmin(np.abs(lats - lat0))
         values = cube.data
-        values = values[..., i, j]
+
+        # Index array based on coordinate ordering
+        pts = []
+        for c in cube.coords():
+            if c.name() == 'longitude':
+                pts.append(i)
+            elif c.name() == 'latitude':
+                pts.append(j)
+            else:
+                pts.append(slice(None))
+        pts = tuple(pts)
+        values = values[pts]
+
+        # Filter time/pressure axes to select correct pressure
         if self._has_dim(cube, 'pressure'):
             pressures = cube.coord('pressure').points
             if len(cube.ndim) == 3:
