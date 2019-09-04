@@ -361,12 +361,68 @@ class SeriesLoader(object):
             data["y"] += list(segment["y"])
         return data
 
-    def series_file(self,
-            path,
-            variable,
-            lon0,
-            lat0,
-            pressure=None):
+    def series_file(self, *args, **kwargs):
+        try:
+            times, values = self._load_netcdf4(*args, **kwargs)
+        except:
+            times, values = self._load_cube(*args, **kwargs)
+        return {
+            "x": times,
+            "y": values}
+
+    def _load_cube(self, path, variable, lon0, lat0, pressure=None):
+        import iris
+        cube = iris.load_cube(path, iris.Constraint(variable))
+        coord = cube.coord('time')
+        times = netCDF4.num2date(coord.points, units=str(coord.units))
+        lons = cube.coord('longitude').points
+        lats = cube.coord('latitude').points
+        if lons.ndim == 2:
+            lons = lons[0, :]
+        if lats.ndim == 2:
+            lats = lats[:, 0]
+        lons = geo.to_180(lons)
+        i = np.argmin(np.abs(lons - lon0))
+        j = np.argmin(np.abs(lats - lat0))
+        values = cube.data
+
+        # Index array based on coordinate ordering
+        pts = []
+        for c in cube.coords():
+            if c.name() == 'longitude':
+                pts.append(i)
+            elif c.name() == 'latitude':
+                pts.append(j)
+            else:
+                pts.append(slice(None))
+        pts = tuple(pts)
+        values = values[pts]
+
+        # Filter time/pressure axes to select correct pressure
+        if self._has_dim(cube, 'pressure'):
+            pressures = cube.coord('pressure').points
+            if len(cube.ndim) == 3:
+                pts = self.search(pressures, pressure)
+                values = values[pts]
+                if isinstance(times, dt.datetime):
+                    times = [times]
+                else:
+                    times = times[pts]
+            else:
+                mask = self.search(pressures, pressure)
+                values = values[:, mask][:, 0]
+        return times, values
+
+    @staticmethod
+    def _has_dim(cube, label):
+        import iris
+        try:
+            cube.coord(label)
+        except iris.exceptions.CoordinateNotFoundError:
+            return False
+        return True
+
+    def _load_netcdf4(self, path, variable, lon0, lat0, pressure=None):
         with netCDF4.Dataset(path) as dataset:
             try:
                 var = dataset.variables[variable]
@@ -395,9 +451,7 @@ class SeriesLoader(object):
                 else:
                     mask = self.search(pressures, pressure)
                     values = values[:, mask][:, 0]
-        return {
-            "x": times,
-            "y": values}
+        return times, values
 
     @staticmethod
     def _times(dataset, variable):
@@ -564,8 +618,12 @@ class SeriesLocator(object):
         for path in paths:
             time = initial_time(path)
             if time is None:
-                # NOTE: Could read reference_time from file
-                continue
+                try:
+                    with netCDF4.Dataset(path) as dataset:
+                        var = dataset.variables["forecast_reference_time"]
+                        time = netCDF4.num2date(var[:], units=var.units)
+                except KeyError:
+                    continue
             self.table[self.key(time)].append(path)
 
     def initial_times(self):
@@ -653,44 +711,74 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
         print("already seen: {}".format(key))
         return IMAGES[key]
     else:
-        print("loading: {}".format(key))
-        with netCDF4.Dataset(path) as dataset:
-            try:
-                var = dataset.variables[variable]
-            except KeyError as e:
-                if variable == "precipitation_flux":
-                    var = dataset.variables["stratiform_rainfall_rate"]
-                else:
-                    raise e
-            for d in var.dimensions:
-                if "longitude" in d:
-                    lons = dataset.variables[d][:]
-                if "latitude" in d:
-                    lats = dataset.variables[d][:]
-            if len(var.dimensions) == 4:
-                values = var[pts_4d]
-            else:
-                values = var[pts_3d]
-            # Units
-            if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
-                if var.units == "mm h-1":
-                    values = values
-                else:
-                    values = convert_units(values, var.units, "kg m-2 hour-1")
-            elif var.units == "K":
-                values = convert_units(values, "K", "Celsius")
+        try:
+            lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
+        except:
+            lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
 
-        # DEBUG
-        print(pts_3d, values.shape)
+    # Units
+    if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
+        if units == "mm h-1":
+            values = values
+        else:
+            values = convert_units(values, units, "kg m-2 hour-1")
+    elif units == "K":
+        values = convert_units(values, "K", "Celsius")
 
-        # Coarsify images
+    # DEBUG
+    print(pts_3d, values.shape)
+
+    # Coarsify images
+    threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199
+    if values.size > threshold:
         fraction = 0.25
-        lons, lats, values = coarsify(
-                lons, lats, values, fraction)
+    else:
+        fraction = 1.
+    lons, lats, values = coarsify(
+        lons, lats, values, fraction)
 
-        image = geo.stretch_image(lons, lats, values)
-        IMAGES[key] = image
-        return image
+    image = geo.stretch_image(lons, lats, values)
+    IMAGES[key] = image
+    return image
+
+
+def _load_cube(path, variable, pts_3d, pts_4d):
+    import iris
+    cube = iris.load_cube(path, iris.Constraint(variable))
+    units = cube.units
+    lons = cube.coord('longitude').points
+    if lons.ndim == 2:
+        lons = lons[0, :]
+    lats = cube.coord('latitude').points
+    if lons.ndim == 2:
+        lats = lats[:, 0]
+    if cube.data.ndim == 4:
+        values = cube.data[pts_4d]
+    else:
+        values = cube.data[pts_3d]
+    return lons, lats, values, units
+
+
+def _load_netcdf4(path, variable, pts_3d, pts_4d):
+    with netCDF4.Dataset(path) as dataset:
+        try:
+            var = dataset.variables[variable]
+        except KeyError as e:
+            if variable == "precipitation_flux":
+                var = dataset.variables["stratiform_rainfall_rate"]
+            else:
+                raise e
+        for d in var.dimensions:
+            if "longitude" in d:
+                lons = dataset.variables[d][:]
+            if "latitude" in d:
+                lats = dataset.variables[d][:]
+        if len(var.dimensions) == 4:
+            values = var[pts_4d]
+        else:
+            values = var[pts_3d]
+        units = var.units
+    return lons, lats, values, units
 
 
 def convert_units(values, old_unit, new_unit):
