@@ -1,0 +1,28 @@
+git status
+# Saves changes to the local repo
+git commit -a -m 'Made tool tip readable'
+# Transmits local changes to the remote
+git push
+
+# Launches a gui to view revision history
+gitk
+
+# Shows what has recently been committed
+git log
+
+# Compares uncommitted changes to the local repo
+git diff
+
+# setup aliases so I don't need to type 'git checkout' loads of time!
+git alias
+
+## Run forest in this currrent setup
+# Setup database
+forestdb --database claretandy.db /data/users/hadhy/Projects/HIGHWAY/wrf_sampledata.nc
+# Add dataset to the yaml file (in a text editor)
+# check the database
+sqlite3 claretandy.db
+
+# Now run forest ...
+forest --dev --config claretandy.yaml --database claretandy.db --directory /scratch/hadhy/tafrica/CaseStudies/opfc/ --allow-websocket-origin vld389:5006
+forest --dev --config claretandy.yaml --database claretandy.db --directory /data/users/hadhy/Projects/HIGHWAY/ --allow-websocket-origin vld389:5006
