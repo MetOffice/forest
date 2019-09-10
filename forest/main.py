@@ -11,6 +11,7 @@ import rdt
 import geo
 import colors
 import db
+import fs
 import config as cfg
 import parse_args
 from util import Observable
@@ -20,10 +21,13 @@ import datetime as dt
 
 def main(argv=None):
     args = parse_args.parse_args(argv)
-    if args.database != ':memory:':
-        assert os.path.exists(args.database), "{} must exist".format(args.database)
-    database = db.Database.connect(args.database)
-    config = cfg.load_config(args.config_file)
+    if len(args.files) > 0:
+        config = cfg.from_files(args.files)
+    else:
+        if args.database != ':memory:':
+            assert os.path.exists(args.database), "{} must exist".format(args.database)
+        database = db.Database.connect(args.database)
+        config = cfg.load_config(args.config_file)
 
     # Full screen map
     lon_range = (0, 30)
@@ -243,24 +247,27 @@ def main(argv=None):
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
-    # Pre-select menu choices (if any)
-    state = None
-    for _, pattern in config.patterns:
-        state = db.initial_state(database, pattern=pattern)
-        break
+    if len(args.files) > 0:
+        controls = fs.Controls()
+    else:
+        # Pre-select menu choices (if any)
+        state = None
+        for _, pattern in config.patterns:
+            state = db.initial_state(database, pattern=pattern)
+            break
 
-    # Pre-select first layer
-    for name, _ in config.patterns:
-        image_controls.select(name)
-        break
+        # Pre-select first layer
+        for name, _ in config.patterns:
+            image_controls.select(name)
+            break
 
-    # Add prototype database controls
-    controls = db.Controls(database, patterns=config.patterns, state=state)
-    controls.subscribe(controls.render)
-    controls.subscribe(artist.on_state)
+        # Add prototype database controls
+        controls = db.Controls(database, patterns=config.patterns, state=state)
+        controls.subscribe(controls.render)
+        controls.subscribe(artist.on_state)
 
-    # Ensure all listeners are pointing to the current state
-    controls.notify(controls.state)
+        # Ensure all listeners are pointing to the current state
+        controls.notify(controls.state)
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(

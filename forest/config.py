@@ -34,6 +34,12 @@ class Config(object):
             data = yaml.load(stream)
         return cls(data)
 
+    @classmethod
+    def from_files(cls, files):
+        return cls({
+            "files": [dict(pattern=f, label=f)
+                for f in files]})
+
     @property
     def file_groups(self):
         return [FileGroup(**data)
@@ -94,3 +100,8 @@ class FileGroup(object):
 @export
 def load_config(path):
     return Config.load(path)
+
+
+@export
+def from_files(files):
+    return Config.from_files(files)
