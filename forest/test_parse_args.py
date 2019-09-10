@@ -1,23 +1,28 @@
 import unittest
-import parse_args
+from parse_args import parse_args
 
 
 class TestParseArgs(unittest.TestCase):
     def test_directory_returns_none_by_default(self):
-        args = parse_args.parse_args([
+        argv = [
             "--database", "file.db",
-            "--config-file", "file.yml"
-        ])
-        result = args.directory
-        expect = None
-        self.assertEqual(expect, result)
+            "--config-file", "file.yml"]
+        self.check(argv, "directory", None)
 
     def test_directory_returns_value(self):
-        args = parse_args.parse_args([
+        argv = [
             "--directory", "/some",
             "--database", "file.db",
-            "--config-file", "file.yml"
-        ])
-        result = args.directory
-        expect = "/some"
+            "--config-file", "file.yml"]
+        self.check(argv, "directory", "/some")
+
+    def test_files(self):
+        self.check(["file.json"], "files", ["file.json"])
+
+    def test_no_files_or_config_raises_system_exit(self):
+        with self.assertRaises(SystemExit):
+            parse_args([])
+
+    def check(self, argv, attr, expect):
+        result = getattr(parse_args(argv), attr)
         self.assertEqual(expect, result)

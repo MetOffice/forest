@@ -18,8 +18,8 @@ from db.util import autolabel
 import datetime as dt
 
 
-def main():
-    args = parse_args.parse_args()
+def main(argv=None):
+    args = parse_args.parse_args(argv)
     if args.database != ':memory:':
         assert os.path.exists(args.database), "{} must exist".format(args.database)
     database = db.Database.connect(args.database)
