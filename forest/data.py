@@ -427,10 +427,7 @@ class SeriesLoader(object):
             try:
                 var = dataset.variables[variable]
             except KeyError:
-                return {
-                    "x": [],
-                    "y": []
-                }
+                return [], []
             lons = geo.to_180(self._longitudes(dataset, var))
             lats = self._latitudes(dataset, var)
             i = np.argmin(np.abs(lons - lon0))
