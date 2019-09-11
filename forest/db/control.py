@@ -227,103 +227,18 @@ class Controls(Observable):
         if state is None:
             state = State()
         self.state = state
-        dropdown_width = 180
-        button_width = 75
-        self.dropdowns = {
-            "pattern": bokeh.models.Dropdown(
-                label="Model/observation",
-                menu=patterns),
-            "variable": bokeh.models.Dropdown(
-                label="Variable"),
-            "initial_time": bokeh.models.Dropdown(
-                label="Initial time",
-                width=dropdown_width),
-            "valid_time": bokeh.models.Dropdown(
-                label="Valid time",
-                width=dropdown_width),
-            "pressure": bokeh.models.Dropdown(
-                label="Pressure",
-                width=dropdown_width)
-        }
-        for key, dropdown in self.dropdowns.items():
-            util.autolabel(dropdown)
-            util.autowarn(dropdown)
-            dropdown.on_change("value", self.on_change(key))
-        self.rows = {}
-        self.buttons = {}
-        for key in ['pressure', 'valid_time', 'initial_time']:
-            self.buttons[key] = {
-                'next': bokeh.models.Button(
-                    label="Next",
-                    width=button_width),
-                'previous': bokeh.models.Button(
-                    label="Previous",
-                    width=button_width),
-            }
-            self.buttons[key]['next'].on_click(self.on_click(key, 'next'))
-            self.buttons[key]['previous'].on_click(self.on_click(key, 'previous'))
-            self.rows[key] = bokeh.layouts.row(
-                self.buttons[key]["previous"],
-                self.dropdowns[key],
-                self.buttons[key]["next"])
-
-        self.layout = bokeh.layouts.column(
-            self.dropdowns["pattern"],
-            self.dropdowns["variable"],
-            self.rows["initial_time"],
-            self.rows["valid_time"],
-            self.rows["pressure"])
-
+        self.view = View()
+        self.view.subscribe(self.on_message)
         super().__init__()
 
+    @property
+    def layout(self):
+        return self.view.layout
+
     def render(self, state):
-        """Configure dropdown menus"""
-        for key, values in [
-                ("variable", state.variables),
-                ("initial_time", state.initial_times),
-                ("valid_time", state.valid_times),
-                ("pressure", state.pressures)]:
-            if values is None:
-                disabled = True
-            else:
-                disabled = len(values) == 0
-                if key == "pressure":
-                    menu = [(self.hpa(p), str(p)) for p in state.pressures]
-                else:
-                    menu = self.menu(values)
-                self.dropdowns[key].menu = menu
-            self.dropdowns[key].disabled = disabled
-            if key in self.buttons:
-                self.buttons[key]["next"].disabled = disabled
-                self.buttons[key]["previous"].disabled = disabled
+        self.view.render(state)
 
-        if state.pattern is not None:
-            self.dropdowns['pattern'].value = state.pattern
-
-        if state.variable is not None:
-            self.dropdowns['variable'].value = state.variable
-
-        if state.initial_time is not None:
-            self.dropdowns['initial_time'].value = state.initial_time
-
-        if state.pressure is not None:
-            self.dropdowns["pressure"].value = str(state.pressure)
-
-        if state.valid_time is not None:
-            self.dropdowns['valid_time'].value = state.valid_time
-
-    def on_change(self, key):
-        """Wire up bokeh on_change callbacks to State changes"""
-        def callback(attr, old, new):
-            self.send(Message("dropdown", (key, new)))
-        return callback
-
-    def on_click(self, category, instruction):
-        def callback():
-            self.send(ButtonClick(category, instruction))
-        return callback
-
-    def send(self, message):
+    def on_message(self, message):
         state = self.modify(self.state, message)
         if state is not None:
             self.notify(state)
@@ -365,6 +280,102 @@ class Controls(Observable):
         if message.kind == 'button':
             state = button_reducer(state, message)
         return state
+
+
+class View(Observable):
+    def __init__(self):
+        dropdown_width = 180
+        button_width = 75
+        self.dropdowns = {
+            "pattern": bokeh.models.Dropdown(
+                label="Model/observation",
+                menu=patterns),
+            "variable": bokeh.models.Dropdown(
+                label="Variable"),
+            "initial_time": bokeh.models.Dropdown(
+                label="Initial time",
+                width=dropdown_width),
+            "valid_time": bokeh.models.Dropdown(
+                label="Valid time",
+                width=dropdown_width),
+            "pressure": bokeh.models.Dropdown(
+                label="Pressure",
+                width=dropdown_width)
+        }
+        for key, dropdown in self.dropdowns.items():
+            util.autolabel(dropdown)
+            util.autowarn(dropdown)
+            dropdown.on_change("value", self.on_change(key))
+        self.rows = {}
+        self.buttons = {}
+        for key in ['pressure', 'valid_time', 'initial_time']:
+            self.buttons[key] = {
+                'next': bokeh.models.Button(
+                    label="Next",
+                    width=button_width),
+                'previous': bokeh.models.Button(
+                    label="Previous",
+                    width=button_width),
+            }
+            self.buttons[key]['next'].on_click(self.on_click(key, 'next'))
+            self.buttons[key]['previous'].on_click(self.on_click(key, 'previous'))
+            self.rows[key] = bokeh.layouts.row(
+                self.buttons[key]["previous"],
+                self.dropdowns[key],
+                self.buttons[key]["next"])
+        self.layout = bokeh.layouts.column(
+            self.dropdowns["pattern"],
+            self.dropdowns["variable"],
+            self.rows["initial_time"],
+            self.rows["valid_time"],
+            self.rows["pressure"])
+
+    def on_change(self, key):
+        """Wire up bokeh on_change callbacks to State changes"""
+        def callback(attr, old, new):
+            self.notify(Message("dropdown", (key, new)))
+        return callback
+
+    def on_click(self, category, instruction):
+        def callback():
+            self.notify(ButtonClick(category, instruction))
+        return callback
+
+    def render(self, state):
+        """Configure dropdown menus"""
+        for key, values in [
+                ("variable", state.variables),
+                ("initial_time", state.initial_times),
+                ("valid_time", state.valid_times),
+                ("pressure", state.pressures)]:
+            if values is None:
+                disabled = True
+            else:
+                disabled = len(values) == 0
+                if key == "pressure":
+                    menu = [(self.hpa(p), str(p)) for p in state.pressures]
+                else:
+                    menu = self.menu(values)
+                self.dropdowns[key].menu = menu
+            self.dropdowns[key].disabled = disabled
+            if key in self.buttons:
+                self.buttons[key]["next"].disabled = disabled
+                self.buttons[key]["previous"].disabled = disabled
+
+        if state.pattern is not None:
+            self.dropdowns['pattern'].value = state.pattern
+
+        if state.variable is not None:
+            self.dropdowns['variable'].value = state.variable
+
+        if state.initial_time is not None:
+            self.dropdowns['initial_time'].value = state.initial_time
+
+        if state.pressure is not None:
+            self.dropdowns["pressure"].value = str(state.pressure)
+
+        if state.valid_time is not None:
+            self.dropdowns['valid_time'].value = state.valid_time
 
     @staticmethod
     def menu(values, formatter=str):
