@@ -288,8 +288,7 @@ class View(Observable):
         button_width = 75
         self.dropdowns = {
             "pattern": bokeh.models.Dropdown(
-                label="Model/observation",
-                menu=patterns),
+                label="Model/observation"),
             "variable": bokeh.models.Dropdown(
                 label="Variable"),
             "initial_time": bokeh.models.Dropdown(
@@ -329,6 +328,7 @@ class View(Observable):
             self.rows["initial_time"],
             self.rows["valid_time"],
             self.rows["pressure"])
+        super().__init__()
 
     def on_change(self, key):
         """Wire up bokeh on_change callbacks to State changes"""
