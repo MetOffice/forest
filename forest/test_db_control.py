@@ -13,32 +13,12 @@ class TestControls(unittest.TestCase):
     def tearDown(self):
         self.database.close()
 
-    @unittest.skip("waiting on green light")
-    def test_on_change_emits_state(self):
-        key = "k"
-        value = "*.nc"
-        controls = db.Controls(self.database, patterns=[(key, value)])
-        callback = unittest.mock.Mock()
-        controls.subscribe(callback)
-        controls.on_change('pattern')(None, None, value)
-        callback.assert_called_once_with(db.State(pattern=value))
-
     def test_on_variable_emits_state(self):
         value = "token"
         callback = unittest.mock.Mock()
         self.controls.subscribe(callback)
-        self.controls.on_change("variable")(None, None, value)
+        self.controls.view.on_change("variable")(None, None, value)
         callback.assert_called_once_with(db.State(variable=value))
-
-    @unittest.skip("refactoring test suite")
-    def test_on_variable_sets_initial_times_drop_down(self):
-        self.controls.on_variable("air_temperature")
-        result = self.controls.dropdowns["initial_time"].menu
-        expect = [
-            ("2019-01-01 00:00:00", "2019-01-01 00:00:00"),
-            ("2019-01-01 12:00:00", "2019-01-01 12:00:00"),
-        ]
-        self.assertEqual(expect, result)
 
     def test_next_state_given_kwargs(self):
         current = db.State(pattern="p")
@@ -53,86 +33,23 @@ class TestControls(unittest.TestCase):
         self.controls.notify(state)
         callback.assert_called_once_with(state)
 
-    def test_render_state_configures_variable_menu(self):
-        controls = db.Controls(self.database)
-        state = db.State(variables=["mslp"])
-        controls.render(state)
-        result = controls.dropdowns["variable"].menu
-        expect = ["mslp"]
-        self.assert_label_equal(expect, result)
-        self.assert_value_equal(expect, result)
-
-    @unittest.skip("test-driven reducer development")
-    def test_send_sets_state_variables(self):
-        self.database.insert_variable("a.nc", "air_temperature")
-        self.database.insert_variable("b.nc", "mslp")
-        controls = db.Controls(self.database)
-        controls.state = db.State(pattern="b.nc")
-        controls.send(self.blank_message)
-        result = controls.state.variables
-        expect = ["mslp"]
-        self.assertEqual(expect, result)
-
-    def test_render_state_configures_initial_time_menu(self):
-        initial_times = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
-        state = db.State(initial_times=initial_times)
-        self.controls.render(state)
-        result = self.controls.dropdowns["initial_time"].menu
-        expect = initial_times
-        self.assert_label_equal(expect, result)
-
-    @unittest.skip("test-driven reducer development")
-    def test_send_configures_initial_times(self):
-        for path, time in [
-                ("a_0.nc", dt.datetime(2019, 1, 1)),
-                ("a_3.nc", dt.datetime(2019, 1, 1, 12))]:
-            self.database.insert_file_name(path, time)
-        self.controls.state = db.State(pattern="a_?.nc")
-        self.controls.send(self.blank_message)
-        result = self.controls.state.initial_times
-        expect = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
-        self.assertEqual(expect, result)
-
-    def test_render_given_initial_time_populates_valid_time_menu(self):
+    def test_middleware_database_sets_initial_time(self):
         initial = dt.datetime(2019, 1, 1)
         valid = dt.datetime(2019, 1, 1, 3)
         self.database.insert_file_name("file.nc", initial)
         self.database.insert_time("file.nc", "variable", valid, 0)
         state = db.State()
         message = db.Message.dropdown("initial_time", "2019-01-01 00:00:00")
-        new_state = self.controls.modify(state, message)
-        self.controls.render(new_state)
-        result = self.controls.dropdowns["valid_time"].menu
-        expect = ["2019-01-01 03:00:00"]
-        self.assert_label_equal(expect, result)
-
-    def test_render_sets_pressure_levels(self):
-        pressures = [1000, 950, 850]
-        self.controls.render(db.State(pressures=pressures))
-        result = self.controls.dropdowns["pressure"].menu
-        expect = ["1000hPa", "950hPa", "850hPa"]
-        self.assert_label_equal(expect, result)
-
-    @unittest.skip("test-driven reducer development")
-    def test_modify_pressure_levels(self):
-        initial_time = "2019-01-01 00:00:00"
-        pressures = [1000., 950., 850.]
-        self.database.insert_file_name("file.nc", initial_time)
-        for i, value in enumerate(pressures):
-            self.database.insert_pressure("file.nc", "variable", value, i)
-        state = self.controls.modify(
-            db.State(initial_time=initial_time),
-            self.blank_message)
-        result = state.pressures
-        expect = pressures
-        self.assertEqual(expect, result)
+        state = self.controls.modify(state, message)
+        self.assertEqual(state.initial_time, str(initial))
+        self.assertEqual(state.valid_times, [str(valid)])
 
     def test_next_pressure_given_pressures_returns_first_element(self):
         value = 950
         controls = db.Controls(
             self.database,
             state=db.State(pressures=[value]))
-        controls.on_click('pressure', 'next')()
+        controls.view.on_click('pressure', 'next')()
         result = controls.state.pressure
         expect = value
         self.assertEqual(expect, result)
@@ -141,7 +58,7 @@ class TestControls(unittest.TestCase):
         controls = db.Controls(
             self.database,
             state=db.State())
-        controls.on_click('pressure', 'next')()
+        controls.view.on_click('pressure', 'next')()
         result = controls.state.pressure
         expect = None
         self.assertEqual(expect, result)
@@ -155,49 +72,92 @@ class TestControls(unittest.TestCase):
                 pressures=pressures,
                 pressure=pressure)
         )
-        controls.on_click('pressure', 'next')()
+        controls.view.on_click('pressure', 'next')()
         result = controls.state.pressure
         expect = 800
         self.assertEqual(expect, result)
 
+
+class TestControlView(unittest.TestCase):
+    def setUp(self):
+        self.view = db.ControlView()
+
+    def test_render_given_no_variables_disables_dropdown(self):
+        self.view.render(db.State(variables=[]))
+        result = self.view.dropdowns["variable"].disabled
+        expect = True
+        self.assertEqual(expect, result)
+
     def test_render_given_pressure(self):
-        self.controls.render(db.State(
+        self.view.render(db.State(
             pressures=[1000],
             pressure=1000))
-        result = self.controls.dropdowns["pressure"].label
+        result = self.view.dropdowns["pressure"].label
         expect = "1000hPa"
         self.assertEqual(expect, result)
 
-    def test_hpa_given_small_pressures(self):
-        result = db.Controls.hpa(0.001)
-        expect = "0.001hPa"
+    def test_render_sets_pressure_levels(self):
+        pressures = [1000, 950, 850]
+        self.view.render(db.State(pressures=pressures))
+        result = self.view.dropdowns["pressure"].menu
+        expect = ["1000hPa", "950hPa", "850hPa"]
+        self.assert_label_equal(expect, result)
+
+    def test_render_given_initial_time_populates_valid_time_menu(self):
+        state = db.State(valid_times=[dt.datetime(2019, 1, 1, 3)])
+        self.view.render(state)
+        result = self.view.dropdowns["valid_time"].menu
+        expect = ["2019-01-01 03:00:00"]
+        self.assert_label_equal(expect, result)
+
+    def test_render_state_configures_variable_menu(self):
+        state = db.State(variables=["mslp"])
+        self.view.render(state)
+        result = self.view.dropdowns["variable"].menu
+        expect = ["mslp"]
+        self.assert_label_equal(expect, result)
+        self.assert_value_equal(expect, result)
+
+    def test_render_state_configures_initial_time_menu(self):
+        initial_times = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
+        state = db.State(initial_times=initial_times)
+        self.view.render(state)
+        result = self.view.dropdowns["initial_time"].menu
+        expect = initial_times
+        self.assert_label_equal(expect, result)
+
+    def assert_label_equal(self, expect, result):
+        result = [l for l, _ in result]
         self.assertEqual(expect, result)
 
-    def test_render_given_no_variables_disables_dropdown(self):
-        self.controls.render(db.State(variables=[]))
-        result = self.controls.dropdowns["variable"].disabled
-        expect = True
-        self.assertEqual(expect, result)
-
-    def test_render_variables_given_none_disables_dropdown(self):
-        self.controls.render(db.State(variables=None))
-        result = self.controls.dropdowns["variable"].disabled
-        expect = True
+    def assert_value_equal(self, expect, result):
+        result = [v for _, v in result]
         self.assertEqual(expect, result)
 
     def test_render_initial_times_disables_buttons(self):
         key = "initial_time"
-        self.controls.render(db.State(initial_times=None))
-        self.assertEqual(self.controls.dropdowns[key].disabled, True)
-        self.assertEqual(self.controls.buttons[key]["next"].disabled, True)
-        self.assertEqual(self.controls.buttons[key]["previous"].disabled, True)
+        self.view.render(db.State(initial_times=None))
+        self.assertEqual(self.view.dropdowns[key].disabled, True)
+        self.assertEqual(self.view.buttons[key]["next"].disabled, True)
+        self.assertEqual(self.view.buttons[key]["previous"].disabled, True)
+
+    def test_hpa_given_small_pressures(self):
+        result = db.ControlView.hpa(0.001)
+        expect = "0.001hPa"
+        self.assertEqual(expect, result)
+
+    def test_render_variables_given_none_disables_dropdown(self):
+        self.view.render(db.State(variables=None))
+        result = self.view.dropdowns["variable"].disabled
+        expect = True
+        self.assertEqual(expect, result)
 
     def test_render_initial_times_enables_buttons(self):
         key = "initial_time"
-        self.controls.render(db.State(initial_times=["2019-01-01 00:00:00"]))
-        self.assertEqual(self.controls.dropdowns[key].disabled, False)
-        self.assertEqual(self.controls.buttons[key]["next"].disabled, False)
-        self.assertEqual(self.controls.buttons[key]["previous"].disabled, False)
+        self.view.render(db.State(initial_times=["2019-01-01 00:00:00"]))
+        self.assertEqual(self.view.dropdowns[key].disabled, False)
+        self.assertEqual(self.view.buttons[key]["next"].disabled, False)
+        self.assertEqual(self.view.buttons[key]["previous"].disabled, False)
 
     def test_render_valid_times_given_none_disables_buttons(self):
         state = db.State(valid_times=None)
@@ -224,18 +184,10 @@ class TestControls(unittest.TestCase):
         self.check_disabled("pressure", state, False)
 
     def check_disabled(self, key, state, expect):
-        self.controls.render(state)
-        self.assertEqual(self.controls.dropdowns[key].disabled, expect)
-        self.assertEqual(self.controls.buttons[key]["next"].disabled, expect)
-        self.assertEqual(self.controls.buttons[key]["previous"].disabled, expect)
-
-    def assert_label_equal(self, expect, result):
-        result = [l for l, _ in result]
-        self.assertEqual(expect, result)
-
-    def assert_value_equal(self, expect, result):
-        result = [v for _, v in result]
-        self.assertEqual(expect, result)
+        self.view.render(state)
+        self.assertEqual(self.view.dropdowns[key].disabled, expect)
+        self.assertEqual(self.view.buttons[key]["next"].disabled, expect)
+        self.assertEqual(self.view.buttons[key]["previous"].disabled, expect)
 
 
 class TestMessage(unittest.TestCase):

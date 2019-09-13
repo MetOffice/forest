@@ -227,7 +227,7 @@ class Controls(Observable):
         if state is None:
             state = State()
         self.state = state
-        self.view = View()
+        self.view = ControlView()
         self.view.subscribe(self.on_message)
         super().__init__()
 
@@ -282,7 +282,8 @@ class Controls(Observable):
         return state
 
 
-class View(Observable):
+@export
+class ControlView(Observable):
     def __init__(self):
         dropdown_width = 180
         button_width = 75
