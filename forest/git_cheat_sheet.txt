@@ -18,11 +18,25 @@ git alias
 
 ## Run forest in this currrent setup
 # Setup database
-forestdb --database claretandy.db /data/users/hadhy/Projects/HIGHWAY/wrf_sampledata.nc
+# Remember to remove databse file (by default it appends)
+# Visualise WRF sample data ...
+# forestdb --database claretandy.db /data/users/hadhy/Projects/HIGHWAY/wrf_sampledata.nc
+# Some sample files on a local disk ...
+forestdb --database claretandy.db /scratch/hadhy/tafrica/CaseStudies/opfc/20190904T0600Z_africa_prods_3236_0.nc #*africa_prods*.nc
+
 # Add dataset to the yaml file (in a text editor)
+
 # check the database
 sqlite3 claretandy.db
 
-# Now run forest ...
+## Now run forest
+# Note vld389 is my linux machine name - this allows other computers on the network to see the page
+# --dev means that any time a file in the repo is saved, the bokeh server restarts itself
 forest --dev --config claretandy.yaml --database claretandy.db --directory /scratch/hadhy/tafrica/CaseStudies/opfc/ --allow-websocket-origin vld389:5006
-forest --dev --config claretandy.yaml --database claretandy.db --directory /data/users/hadhy/Projects/HIGHWAY/ --allow-websocket-origin vld389:5006
+# For the TMA data ...
+#forest --dev --config claretandy.yaml --database claretandy.db --directory /data/users/hadhy/Projects/HIGHWAY/ --allow-websocket-origin vld389:5006
+
+# Now go to https://vld389:5006 in a web browser
+
+# Commit stuff back to the branch
+git status

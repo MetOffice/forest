@@ -134,6 +134,7 @@ def main():
     for name, loader in data.LOADERS.items():
         if isinstance(loader, rdt.Loader):
             viewer = rdt.View(loader)
+            # print(viewer.source)
         elif isinstance(loader, earth_networks.Loader):
             viewer = earth_networks.View(loader)
         elif isinstance(loader, data.GPM):
