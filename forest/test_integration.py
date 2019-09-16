@@ -2,9 +2,12 @@ import unittest
 import subprocess
 import signal
 import time
-from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.firefox.options import Options
+try:
+    from selenium import webdriver
+    from selenium.common.exceptions import WebDriverException
+    from selenium.webdriver.firefox.options import Options
+except ImportError:
+    pass
 
 
 @unittest.skip("integration test")
