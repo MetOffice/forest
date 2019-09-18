@@ -192,34 +192,15 @@ class Store(Observable):
 def reducer(state, action):
     state = copy.copy(state)
     kind = action["kind"]
-    if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
-        payload = action["payload"]
-        item_key = payload["item_key"]
-        items_key = payload["items_key"]
-        items = state[items_key]
-        if item_key in state:
-            if kind == NEXT_VALUE:
-                item = next_item(items, state[item_key])
-            else:
-                item = previous_item(items, state[item_key])
-        else:
-            if kind == NEXT_VALUE:
-                item = max(items)
-            else:
-                item = min(items)
-        state[item_key] = item
-        return state
-    elif kind == SET_VALUE:
+    if kind == SET_VALUE:
         payload = action["payload"]
         key, value = payload["key"], payload["value"]
         state[key] = value
-        return state
-    else:
-        return state
+    return state
 
 
 def middleware(f):
-    """Decorator that curries functions to satisfy middleware signature"""
+    """Curries functions to satisfy middleware signature"""
     @wraps(f)
     def outer(*args):
         def inner(next_dispatch):
@@ -231,16 +212,54 @@ def middleware(f):
 
 
 @export
-def inverse_coordinate(attr):
-    """Middleware to support inverted coordinates"""
+class Log(object):
+    """Logs actions"""
+    def __init__(self):
+        self.actions = []
+
+    @middleware
+    def __call__(self, store, next_dispatch, action):
+        value = next_dispatch(action)
+        self.actions.append(action)
+        return value
+
+
+@export
+def inverse_coordinate(name):
+    """Translate actions on inverted coordinates"""
     @middleware
     def wrapped(store, next_dispatch, action):
         kind = action["kind"]
         if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
-            if attr == action["payload"]["item_key"]:
+            if name == action["payload"]["item_key"]:
                 return next_dispatch(invert(action))
         next_dispatch(action)
     return wrapped
+
+
+@export
+@middleware
+def next_previous(store, next_dispatch, action):
+    """Translate NEXT/PREVIOUS action(s) into SET action"""
+    kind = action["kind"]
+    if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
+        payload = action["payload"]
+        item_key = payload["item_key"]
+        items_key = payload["items_key"]
+        items = store.state[items_key]
+        if item_key in store.state:
+            item = store.state[item_key]
+            if kind == NEXT_VALUE:
+                value = next_item(items, item)
+            else:
+                value = previous_item(items, item)
+        else:
+            if kind == NEXT_VALUE:
+                value = max(items)
+            else:
+                value = min(items)
+        return next_dispatch(set_value(item_key, value))
+    return next_dispatch(action)
 
 
 def invert(action):
@@ -330,6 +349,35 @@ class Controls(Observable):
         if state is not None:
             self.notify(state)
             self.state = state
+
+    @middleware
+    def __call__(self, store, next_dispatch, action):
+        if action["kind"] == SET_VALUE:
+            key = action["payload"]["key"]
+            value = action["payload"]["value"]
+            if key == "pressure":
+                return next_dispatch(set_value(key, float(value)))
+            elif key == "pattern":
+                variables = self.database.variables(pattern=value)
+                initial_times = self.database.initial_times(pattern=value)
+                initial_times = list(reversed(initial_times))
+                next_dispatch(action)
+                next_dispatch(set_value("variables", variables))
+                next_dispatch(set_value("initial_times", initial_times))
+                return
+            elif key == "initial_time":
+                for attr in ["pattern", "variable"]:
+                    if attr not in store.state:
+                        return next_dispatch(action)
+                valid_times = self.database.valid_times(
+                    pattern=store.state["pattern"],
+                    variable=store.state["variable"],
+                    initial_time=value)
+                valid_times = sorted(set(valid_times))
+                next_dispatch(action)
+                next_dispatch(set_value("valid_times", valid_times))
+                return
+        return next_dispatch(action)
 
     def modify(self, state, message):
         """Adjust state given message"""

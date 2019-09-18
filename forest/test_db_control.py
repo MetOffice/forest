@@ -4,6 +4,61 @@ import datetime as dt
 import db
 
 
+class TestDatabaseMiddleware(unittest.TestCase):
+    def setUp(self):
+        self.database = db.Database.connect(":memory:")
+        self.controls = db.Controls(self.database)
+        self.store = db.Store(db.reducer, middlewares=[self.controls])
+
+    def tearDown(self):
+        self.database.close()
+
+    def test_state_change_given_dropdown_message(self):
+        action = db.set_value("pressure", "1000")
+        self.store.dispatch(action)
+        result = self.store.state
+        expect = {"pressure": 1000.}
+        self.assertEqual(expect, result)
+
+    def test_set_initial_time(self):
+        initial = dt.datetime(2019, 1, 1)
+        valid = dt.datetime(2019, 1, 1, 3)
+        self.database.insert_file_name("file.nc", initial)
+        self.database.insert_time("file.nc", "variable", valid, 0)
+        action = db.set_value("initial_time", "2019-01-01 00:00:00")
+        initial_state={
+            "pattern": "file.nc",
+            "variable": "variable"}
+        store = db.Store(
+            db.reducer,
+            initial_state=initial_state,
+            middlewares=[self.controls])
+        store.dispatch(action)
+        result = store.state
+        expect = {
+            "pattern": "file.nc",
+            "variable": "variable",
+            "initial_time": str(initial),
+            "valid_times": [str(valid)]
+        }
+        self.assertEqual(expect, result)
+
+    def test_set_pattern(self):
+        initial = dt.datetime(2019, 1, 1)
+        valid = dt.datetime(2019, 1, 1, 3)
+        self.database.insert_file_name("file.nc", initial)
+        self.database.insert_time("file.nc", "variable", valid, 0)
+        action = db.set_value("pattern", "file.nc")
+        self.store.dispatch(action)
+        result = self.store.state
+        expect = {
+            "pattern": "file.nc",
+            "variables": ["variable"],
+            "initial_times": [str(initial)]
+        }
+        self.assertEqual(expect, result)
+
+
 class TestControls(unittest.TestCase):
     def setUp(self):
         self.database = db.Database.connect(":memory:")
@@ -32,17 +87,6 @@ class TestControls(unittest.TestCase):
         self.controls.subscribe(callback)
         self.controls.notify(state)
         callback.assert_called_once_with(state)
-
-    def test_middleware_database_sets_initial_time(self):
-        initial = dt.datetime(2019, 1, 1)
-        valid = dt.datetime(2019, 1, 1, 3)
-        self.database.insert_file_name("file.nc", initial)
-        self.database.insert_time("file.nc", "variable", valid, 0)
-        state = db.State()
-        message = db.Message.dropdown("initial_time", "2019-01-01 00:00:00")
-        state = self.controls.modify(state, message)
-        self.assertEqual(state.initial_time, str(initial))
-        self.assertEqual(state.valid_times, [str(valid)])
 
     def test_next_pressure_given_pressures_returns_first_element(self):
         value = 950
@@ -190,32 +234,6 @@ class TestControlView(unittest.TestCase):
         self.assertEqual(self.view.buttons[key]["previous"].disabled, expect)
 
 
-class TestMessage(unittest.TestCase):
-    def setUp(self):
-        self.database = db.Database.connect(":memory:")
-
-    def tearDown(self):
-        self.database.close()
-
-    def test_state_change_given_dropdown_message(self):
-        state = db.State()
-        message = db.Message.dropdown("pressure", "1000")
-        result = db.Controls(self.database).modify(state, message)
-        expect = db.State(pressure=1000.)
-        self.assertEqual(expect, result)
-
-    def test_state_change_given_previous_initial_time_message(self):
-        state = db.State(initial_times=["2019-01-01 00:00:00"])
-        message = db.Message.button("initial_time", "previous")
-        result = db.Controls(self.database).modify(state, message)
-        expect = db.State(
-            initial_times=["2019-01-01 00:00:00"],
-            initial_time="2019-01-01 00:00:00")
-        self.assertEqual(expect.initial_time, result.initial_time)
-        self.assertEqual(expect.initial_times, result.initial_times)
-        self.assertEqual(expect, result)
-
-
 class TestNextPrevious(unittest.TestCase):
     def setUp(self):
         self.initial_times = [
@@ -224,8 +242,27 @@ class TestNextPrevious(unittest.TestCase):
             "2019-01-04 00:00:00",
             "2019-01-03 00:00:00",
         ]
-        self.state = db.State(initial_times=self.initial_times)
-        self.store = db.Store(self.state)
+
+    def test_middleware_converts_next_value_to_set_value(self):
+        log = db.Log()
+        state = {
+            "k": 2,
+            "ks": [1, 2, 3]
+        }
+        store = db.Store(
+            db.reducer,
+            initial_state=state,
+            middlewares=[
+                db.next_previous,
+                log])
+        store.dispatch(db.next_value("k", "ks"))
+        result = store.state
+        expect = {
+            "k": 3,
+            "ks": [1, 2, 3]
+        }
+        self.assertEqual(expect, result)
+        self.assertEqual(log.actions, [db.set_value("k", 3)])
 
     def test_next_value_action_creator(self):
         result = db.next_value("initial_time", "initial_times")
@@ -260,7 +297,12 @@ class TestNextPrevious(unittest.TestCase):
     def test_next_given_none_selects_latest_time(self):
         action = db.next_value("initial_time", "initial_times")
         state = dict(initial_times=self.initial_times)
-        result = db.reducer(state, action)
+        store = db.Store(
+            db.reducer,
+            initial_state=state,
+            middlewares=[db.next_previous])
+        store.dispatch(action)
+        result = store.state
         expect = dict(
             initial_time="2019-01-04 00:00:00",
             initial_times=self.initial_times)
@@ -287,7 +329,12 @@ class TestNextPrevious(unittest.TestCase):
             "initial_time": "2019-01-01 00:00:00",
             "initial_times": initial_times
         }
-        result = db.reducer(state, action)
+        store = db.Store(
+            db.reducer,
+            initial_state=state,
+            middlewares=[db.next_previous])
+        store.dispatch(action)
+        result = store.state
         expect = {
             "initial_time": "2019-01-01 01:00:00",
             "initial_times": initial_times
@@ -297,7 +344,12 @@ class TestNextPrevious(unittest.TestCase):
     def test_previous_given_none_selects_earliest_time(self):
         action = db.previous_value("initial_time", "initial_times")
         state = {"initial_times": self.initial_times}
-        result = db.reducer(state, action)
+        store = db.Store(
+            db.reducer,
+            initial_state=state,
+            middlewares=[db.next_previous])
+        store.dispatch(action)
+        result = store.state
         expect = {
             "initial_time": "2019-01-01 00:00:00",
             "initial_times": self.initial_times
@@ -325,7 +377,9 @@ class TestPressureMiddleware(unittest.TestCase):
         store = db.Store(
             db.reducer,
             initial_state=state,
-            middlewares=[db.inverse_coordinate("pressure")])
+            middlewares=[
+                db.inverse_coordinate("pressure"),
+                db.next_previous])
         action = db.next_value("pressure", "pressures")
         store.dispatch(action)
         result = store.state
