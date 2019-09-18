@@ -246,6 +246,9 @@ def next_previous(store, next_dispatch, action):
         payload = action["payload"]
         item_key = payload["item_key"]
         items_key = payload["items_key"]
+        if items_key not in store.state:
+            # No further action to be taken
+            return
         items = store.state[items_key]
         if item_key in store.state:
             item = store.state[item_key]
@@ -443,7 +446,10 @@ class ControlView(Observable):
             dropdown.on_change("value", self.on_change(key))
         self.rows = {}
         self.buttons = {}
-        for key in ['pressure', 'valid_time', 'initial_time']:
+        for key, items_key in [
+                ('pressure', ''),
+                ('valid_time', 'valid_times'),
+                ('initial_time', 'initial_times')]:
             self.buttons[key] = {
                 'next': bokeh.models.Button(
                     label="Next",
@@ -452,8 +458,10 @@ class ControlView(Observable):
                     label="Previous",
                     width=button_width),
             }
-            self.buttons[key]['next'].on_click(self.on_click(key, 'next'))
-            self.buttons[key]['previous'].on_click(self.on_click(key, 'previous'))
+            self.buttons[key]['next'].on_click(
+                self.on_next(key, items_key))
+            self.buttons[key]['previous'].on_click(
+                self.on_previous(key, items_key))
             self.rows[key] = bokeh.layouts.row(
                 self.buttons[key]["previous"],
                 self.dropdowns[key],
@@ -472,9 +480,14 @@ class ControlView(Observable):
             self.notify(Message("dropdown", (key, new)))
         return callback
 
-    def on_click(self, category, instruction):
+    def on_next(self, item_key, items_key):
         def callback():
-            self.notify(ButtonClick(category, instruction))
+            self.notify(next_value(item_key, items_key))
+        return callback
+
+    def on_previous(self, item_key, items_key):
+        def callback():
+            self.notify(previous_value(item_key, items_key))
         return callback
 
     def render(self, state):

@@ -89,35 +89,56 @@ class TestControls(unittest.TestCase):
         callback.assert_called_once_with(state)
 
     def test_next_pressure_given_pressures_returns_first_element(self):
-        value = 950
-        controls = db.Controls(
-            self.database,
-            state=db.State(pressures=[value]))
-        controls.view.on_click('pressure', 'next')()
-        result = controls.state.pressure
-        expect = value
+        pressure = 950
+        store = db.Store(
+            db.reducer,
+            initial_state={"pressures": [pressure]},
+            middlewares=[
+                db.next_previous,
+                db.Controls(self.database)])
+        view = db.ControlView()
+        view.subscribe(store.dispatch)
+        view.on_next('pressure', 'pressures')()
+        result = store.state
+        expect = {
+            "pressure": pressure,
+            "pressures": [pressure]
+        }
         self.assertEqual(expect, result)
 
     def test_next_pressure_given_pressures_none(self):
-        controls = db.Controls(
-            self.database,
-            state=db.State())
-        controls.view.on_click('pressure', 'next')()
-        result = controls.state.pressure
-        expect = None
+        store = db.Store(
+            db.reducer,
+            middlewares=[
+                db.inverse_coordinate("pressure"),
+                db.next_previous,
+                db.Controls(self.database)
+            ])
+        view = db.ControlView()
+        view.subscribe(store.dispatch)
+        view.on_next('pressure', 'pressures')()
+        result = store.state
+        expect = {}
         self.assertEqual(expect, result)
 
     def test_next_pressure_given_current_pressure(self):
         pressure = 950
         pressures = [1000, 950, 800]
-        controls = db.Controls(
-            self.database,
-            state=db.State(
-                pressures=pressures,
-                pressure=pressure)
-        )
-        controls.view.on_click('pressure', 'next')()
-        result = controls.state.pressure
+        store = db.Store(
+            db.reducer,
+            initial_state={
+                "pressure": pressure,
+                "pressures": pressures
+            },
+            middlewares=[
+                db.inverse_coordinate("pressure"),
+                db.next_previous,
+                db.Controls(self.database)
+            ])
+        view = db.ControlView()
+        view.subscribe(store.dispatch)
+        view.on_next('pressure', 'pressures')()
+        result = store.state["pressure"]
         expect = 800
         self.assertEqual(expect, result)
 
@@ -125,6 +146,13 @@ class TestControls(unittest.TestCase):
 class TestControlView(unittest.TestCase):
     def setUp(self):
         self.view = db.ControlView()
+
+    def test_on_click_emits_action(self):
+        listener = unittest.mock.Mock()
+        self.view.subscribe(listener)
+        self.view.on_next("pressure", "pressures")()
+        expect = db.next_value("pressure", "pressures")
+        listener.assert_called_once_with(expect)
 
     def test_render_given_no_variables_disables_dropdown(self):
         self.view.render(db.State(variables=[]))
