@@ -285,14 +285,14 @@ class TestNextPrevious(unittest.TestCase):
         self.assertEqual(expect, result)
 
     def test_previous_given_none_selects_earliest_time(self):
-        message = db.Message.button("initial_time", "previous")
-        self.store.dispatch(message)
-        result = self.store.state
-        expect = db.State(
-            initial_time="2019-01-01 00:00:00",
-            initial_times=self.initial_times
-        )
-        self.assert_state_equal(expect, result)
+        action = db.previous_value("initial_time", "initial_times")
+        state = {"initial_times": self.initial_times}
+        result = db.reducer(state, action)
+        expect = {
+            "initial_time": "2019-01-01 00:00:00",
+            "initial_times": self.initial_times
+        }
+        self.assertEqual(expect, result)
 
     def test_next_item_given_last_item_returns_first_item(self):
         result = db.control.next_item([0, 1, 2], 2)
@@ -303,7 +303,3 @@ class TestNextPrevious(unittest.TestCase):
         result = db.control.previous_item([0, 1, 2], 0)
         expect = 2
         self.assertEqual(expect, result)
-
-    def assert_state_equal(self, expect, result):
-        for k, v in expect._asdict().items():
-            self.assertEqual(v, getattr(result, k), k)

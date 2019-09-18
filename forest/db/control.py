@@ -1,4 +1,5 @@
 """Control navigation of FOREST data"""
+import copy
 import bokeh.models
 import bokeh.layouts
 from . import util
@@ -183,18 +184,26 @@ class Store(Observable):
 @export
 def reducer(state, action):
     if isinstance(action, dict):
-        state = dict(state)
+        state = copy.copy(state)
         kind = action["kind"]
-        if kind == NEXT_VALUE:
+        if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
             payload = action["payload"]
             item_key = payload["item_key"]
             items_key = payload["items_key"]
             items = state[items_key]
             if item_key in state:
-                item = state[item_key]
-                state[item_key] = next_item(items, item)
+                if kind == NEXT_VALUE:
+                    item = next_item(items, state[item_key])
+                else:
+                    item = previous_item(items, state[item_key])
             else:
-                state[item_key] = max(items)
+                if kind == NEXT_VALUE:
+                    item = max(items)
+                else:
+                    item = min(items)
+            state[item_key] = item
+            return state
+        else:
             return state
     if action.kind == "button":
         return button_reducer(state, action)
