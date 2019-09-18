@@ -266,6 +266,16 @@ class TestNextPrevious(unittest.TestCase):
             initial_times=self.initial_times)
         self.assertEqual(expect, result)
 
+    def test_reducer_given_set_value_action_adds_key_value(self):
+        action = db.set_value("name", "value")
+        state = {"previous": "constant"}
+        result = db.reducer(state, action)
+        expect = {
+            "previous": "constant",
+            "name": "value"
+        }
+        self.assertEqual(expect, result)
+
     def test_reducer_next_given_time_moves_forward_in_time(self):
         initial_times = [
             "2019-01-01 00:00:00",

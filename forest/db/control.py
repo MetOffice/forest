@@ -203,6 +203,11 @@ def reducer(state, action):
                     item = min(items)
             state[item_key] = item
             return state
+        elif kind == SET_VALUE:
+            payload = action["payload"]
+            key, value = payload["key"], payload["value"]
+            state[key] = value
+            return state
         else:
             return state
     if action.kind == "button":
