@@ -62,18 +62,17 @@ class TestDatabaseMiddleware(unittest.TestCase):
 class TestControls(unittest.TestCase):
     def setUp(self):
         self.database = db.Database.connect(":memory:")
-        self.controls = db.Controls(self.database)
-        self.blank_message = db.Message('blank', None)
 
     def tearDown(self):
         self.database.close()
 
     def test_on_variable_emits_state(self):
         value = "token"
-        callback = unittest.mock.Mock()
-        self.controls.subscribe(callback)
-        self.controls.view.on_change("variable")(None, None, value)
-        callback.assert_called_once_with(db.State(variable=value))
+        listener = unittest.mock.Mock()
+        view = db.ControlView()
+        view.subscribe(listener)
+        view.on_change("variable")(None, None, value)
+        listener.assert_called_once_with(db.set_value("variable", value))
 
     def test_next_state_given_kwargs(self):
         current = db.State(pattern="p")
@@ -82,11 +81,11 @@ class TestControls(unittest.TestCase):
         self.assertEqual(expect, result)
 
     def test_observable(self):
-        state = db.State()
         callback = unittest.mock.Mock()
-        self.controls.subscribe(callback)
-        self.controls.notify(state)
-        callback.assert_called_once_with(state)
+        controls = db.Controls(self.database)
+        controls.subscribe(callback)
+        controls.notify({})
+        callback.assert_called_once_with({})
 
     def test_next_pressure_given_pressures_returns_first_element(self):
         pressure = 950

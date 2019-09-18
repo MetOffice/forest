@@ -447,9 +447,8 @@ class ControlView(Observable):
         super().__init__()
 
     def on_change(self, key):
-        """Wire up bokeh on_change callbacks to State changes"""
         def callback(attr, old, new):
-            self.notify(Message("dropdown", (key, new)))
+            self.notify(set_value(key, new))
         return callback
 
     def on_next(self, item_key, items_key):
