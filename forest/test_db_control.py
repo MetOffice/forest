@@ -227,28 +227,62 @@ class TestNextPrevious(unittest.TestCase):
         self.state = db.State(initial_times=self.initial_times)
         self.store = db.Store(self.state)
 
+    def test_next_value_action_creator(self):
+        result = db.next_value("initial_time", "initial_times")
+        expect = {
+            "kind": "NEXT_VALUE",
+            "payload": {
+                "item_key": "initial_time",
+                "items_key": "initial_times"
+            }
+        }
+        self.assertEqual(expect, result)
+
+    def test_previous_value_action_creator(self):
+        result = db.previous_value("initial_time", "initial_times")
+        expect = {
+            "kind": "PREVIOUS_VALUE",
+            "payload": {
+                "item_key": "initial_time",
+                "items_key": "initial_times"
+            }
+        }
+        self.assertEqual(expect, result)
+
+    def test_set_value_action_creator(self):
+        result = db.set_value("K", "V")
+        expect = {
+            "kind": "SET_VALUE",
+            "payload": dict(key="K", value="V")
+        }
+        self.assertEqual(expect, result)
+
     def test_next_given_none_selects_latest_time(self):
-        message = db.Message.button("initial_time", "next")
-        self.store.dispatch(message)
-        result = self.store.state
-        expect = db.State(
+        action = db.next_value("initial_time", "initial_times")
+        state = dict(initial_times=self.initial_times)
+        result = db.reducer(state, action)
+        expect = dict(
             initial_time="2019-01-04 00:00:00",
-            initial_times=self.initial_times
-        )
-        self.assert_state_equal(expect, result)
+            initial_times=self.initial_times)
+        self.assertEqual(expect, result)
 
     def test_reducer_next_given_time_moves_forward_in_time(self):
-        message = db.Message.button("initial_time", "next")
-        state = db.State(
-            initial_time="2019-01-01 00:00:00",
-            initial_times=[
-                "2019-01-01 00:00:00",
-                "2019-01-01 02:00:00",
-                "2019-01-01 01:00:00",
-            ])
-        result = db.reducer(state, message)
-        expect = db.next_state(state, initial_time="2019-01-01 01:00:00")
-        self.assert_state_equal(expect, result)
+        initial_times = [
+            "2019-01-01 00:00:00",
+            "2019-01-01 02:00:00",
+            "2019-01-01 01:00:00"
+        ]
+        action = db.next_value("initial_time", "initial_times")
+        state = {
+            "initial_time": "2019-01-01 00:00:00",
+            "initial_times": initial_times
+        }
+        result = db.reducer(state, action)
+        expect = {
+            "initial_time": "2019-01-01 01:00:00",
+            "initial_times": initial_times
+        }
+        self.assertEqual(expect, result)
 
     def test_previous_given_none_selects_earliest_time(self):
         message = db.Message.button("initial_time", "previous")

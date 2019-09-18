@@ -44,7 +44,7 @@ class Namespace(object):
 
 
 def load_config(stream):
-    data = yaml.load(stream)
+    data = yaml.load(stream, Loader=yaml.FullLoader)
     patterns = [(m["name"], m["pattern"]) for m in data["models"]]
     return Namespace(patterns=patterns)
 

@@ -22,6 +22,26 @@ def export(obj):
     return obj
 
 
+SET_VALUE = "SET_VALUE"
+NEXT_VALUE = "NEXT_VALUE"
+PREVIOUS_VALUE = "PREVIOUS_VALUE"
+
+
+@export
+def set_value(key, value):
+    return dict(kind=SET_VALUE, payload=locals())
+
+
+@export
+def next_value(item_key, items_key):
+    return dict(kind=NEXT_VALUE, payload=locals())
+
+
+@export
+def previous_value(item_key, items_key):
+    return dict(kind=PREVIOUS_VALUE, payload=locals())
+
+
 State = namedtuple("State", (
     "pattern",
     "variable",
@@ -162,6 +182,20 @@ class Store(Observable):
 
 @export
 def reducer(state, action):
+    if isinstance(action, dict):
+        state = dict(state)
+        kind = action["kind"]
+        if kind == NEXT_VALUE:
+            payload = action["payload"]
+            item_key = payload["item_key"]
+            items_key = payload["items_key"]
+            items = state[items_key]
+            if item_key in state:
+                item = state[item_key]
+                state[item_key] = next_item(items, item)
+            else:
+                state[item_key] = max(items)
+            return state
     if action.kind == "button":
         return button_reducer(state, action)
     return state

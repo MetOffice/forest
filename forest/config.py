@@ -31,7 +31,7 @@ class Config(object):
     @classmethod
     def load(cls, path):
         with open(path) as stream:
-            data = yaml.load(stream)
+            data = yaml.load(stream, Loader=yaml.FullLoader)
         return cls(data)
 
     @classmethod
