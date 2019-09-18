@@ -40,6 +40,7 @@ def previous_value(item_key, items_key):
 
 State = namedtuple("State", (
     "pattern",
+    "patterns",
     "variable",
     "variables",
     "initial_time",
@@ -159,12 +160,15 @@ def middleware(f):
 @export
 class Log(object):
     """Logs actions"""
-    def __init__(self):
+    def __init__(self, verbose=False):
+        self.verbose = verbose
         self.actions = []
 
     @middleware
     def __call__(self, store, next_dispatch, action):
         value = next_dispatch(action)
+        if self.verbose:
+            print(action)
         self.actions.append(action)
         return value
 
@@ -249,8 +253,12 @@ class Controls(object):
         if action["kind"] == SET_VALUE:
             key = action["payload"]["key"]
             value = action["payload"]["value"]
-            if key == "pressure":
-                return next_dispatch(set_value(key, float(value)))
+            if (key == "pressure"):
+                try:
+                    value = float(value)
+                except ValueError:
+                    print("{} is not a float".format(value))
+                return next_dispatch(set_value(key, value))
             elif key == "pattern":
                 variables = self.database.variables(pattern=value)
                 initial_times = self.database.initial_times(pattern=value)
@@ -330,13 +338,13 @@ class ControlView(Observable):
                 width=dropdown_width)
         }
         for key, dropdown in self.dropdowns.items():
-            util.autolabel(dropdown)
-            util.autowarn(dropdown)
+            # util.autolabel(dropdown)
+            # util.autowarn(dropdown)
             dropdown.on_change("value", self.on_change(key))
         self.rows = {}
         self.buttons = {}
         for key, items_key in [
-                ('pressure', ''),
+                ('pressure', 'pressures'),
                 ('valid_time', 'valid_times'),
                 ('initial_time', 'initial_times')]:
             self.buttons[key] = {
@@ -381,7 +389,9 @@ class ControlView(Observable):
     def render(self, state):
         """Configure dropdown menus"""
         assert isinstance(state, dict), "Only support dict"
+        print(state)
         for key, items_key in [
+                ("pattern", "patterns"),
                 ("variable", "variables"),
                 ("initial_time", "initial_times"),
                 ("valid_time", "valid_times"),
@@ -393,6 +403,8 @@ class ControlView(Observable):
                 disabled = len(values) == 0
                 if key == "pressure":
                     menu = [(self.hpa(p), str(p)) for p in values]
+                elif key == "pattern":
+                    menu = state["patterns"]
                 else:
                     menu = self.menu(values)
                 self.dropdowns[key].menu = menu
@@ -407,6 +419,8 @@ class ControlView(Observable):
                 "pressure",
                 "valid_time"]:
             if key in state:
+                if state[key] is None:
+                    continue
                 self.dropdowns[key].value = str(state[key])
 
     @staticmethod

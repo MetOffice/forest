@@ -248,7 +248,7 @@ def main(argv=None):
         bokeh.layouts.column(dropdown))
 
     if len(args.files) > 0:
-        controls = fs.Controls()
+        middleware = fs.Controls()
     else:
         # Pre-select menu choices (if any)
         state = None
@@ -262,12 +262,26 @@ def main(argv=None):
             break
 
         # Add prototype database controls
-        controls = db.Controls(database, patterns=config.patterns, state=state)
-        controls.subscribe(controls.render)
-        controls.subscribe(artist.on_state)
+        store = db.Store(
+            db.reducer,
+            initial_state=state,
+            middlewares=[
+                db.Log(verbose=True),
+                db.InverseCoordinate("pressure"),
+                db.next_previous,
+                db.Controls(database),
+            ])
+        controls = db.ControlView()
+        controls.subscribe(store.dispatch)
+        store.subscribe(controls.render)
+        old_states = (db.Stream()
+                        .listen_to(store)
+                        .map(lambda x: db.State(**x)))
+        old_states.subscribe(artist.on_state)
 
         # Ensure all listeners are pointing to the current state
-        controls.notify(controls.state)
+        store.notify(store.state)
+        store.dispatch(db.set_value("patterns", config.patterns))
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
@@ -322,7 +336,7 @@ def main(argv=None):
             series_figure,
             config.file_groups,
             directory=args.directory)
-    controls.subscribe(series.on_state)
+    old_states.subscribe(series.on_state)
     for f in figures:
         f.on_event(bokeh.events.Tap, series.on_tap)
         f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
