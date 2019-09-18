@@ -247,41 +247,41 @@ def main(argv=None):
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
+    # Pre-select first layer
+    for name, _ in config.patterns:
+        image_controls.select(name)
+        break
+
+    # Add prototype database controls
+    initial_state = {}
+    middlewares = [
+        db.Log(verbose=True),
+        db.InverseCoordinate("pressure"),
+        db.next_previous
+    ]
     if len(args.files) > 0:
-        middleware = fs.Controls()
+        middlewares.append(fs.Controls())
     else:
         # Pre-select menu choices (if any)
-        state = None
         for _, pattern in config.patterns:
-            state = db.initial_state(database, pattern=pattern)
+            initial_state = db.initial_state(database, pattern=pattern)
             break
+        middlewares.append(db.Controls(database))
+    store = db.Store(
+        db.reducer,
+        initial_state=initial_state,
+        middlewares=middlewares)
+    controls = db.ControlView()
+    controls.subscribe(store.dispatch)
+    store.subscribe(controls.render)
+    old_states = (db.Stream()
+                    .listen_to(store)
+                    .map(lambda x: db.State(**x)))
+    old_states.subscribe(artist.on_state)
 
-        # Pre-select first layer
-        for name, _ in config.patterns:
-            image_controls.select(name)
-            break
-
-        # Add prototype database controls
-        store = db.Store(
-            db.reducer,
-            initial_state=state,
-            middlewares=[
-                db.Log(verbose=True),
-                db.InverseCoordinate("pressure"),
-                db.next_previous,
-                db.Controls(database),
-            ])
-        controls = db.ControlView()
-        controls.subscribe(store.dispatch)
-        store.subscribe(controls.render)
-        old_states = (db.Stream()
-                        .listen_to(store)
-                        .map(lambda x: db.State(**x)))
-        old_states.subscribe(artist.on_state)
-
-        # Ensure all listeners are pointing to the current state
-        store.notify(store.state)
-        store.dispatch(db.set_value("patterns", config.patterns))
+    # Ensure all listeners are pointing to the current state
+    store.notify(store.state)
+    store.dispatch(db.set_value("patterns", config.patterns))
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
