@@ -9,7 +9,6 @@ from collections import namedtuple
 
 __all__ = [
     "State",
-    "ButtonClick",
     "Message",
     "Observable",
     "Controls",
@@ -70,10 +69,6 @@ class Message(object):
         self.payload = payload
 
     @classmethod
-    def button(cls, category, instruction):
-        return ButtonClick(category, instruction)
-
-    @classmethod
     def dropdown(cls, key, value):
         return cls("dropdown", (key, value))
 
@@ -90,31 +85,6 @@ class Message(object):
                 return str(value)
 
         args = (self.kind, self.payload)
-        return "{}({})".format(
-            ".".join(names),
-            ", ".join(map(stringify, args)))
-
-
-class ButtonClick(object):
-    kind = "button"
-
-    def __init__(self, category, instruction):
-        self.category = category
-        self.instruction = instruction
-
-    def __repr__(self):
-        if self.__class__.__module__ is not None:
-            names = (self.__class__.__module__, self.__class__.__name__)
-        else:
-            names = (self.__class__.__name__,)
-
-        def stringify(value):
-            if isinstance(value, str):
-                return "'{}'".format(value)
-            else:
-                return str(value)
-
-        args = (self.category, self.instruction)
         return "{}({})".format(
             ".".join(names),
             ", ".join(map(stringify, args)))
