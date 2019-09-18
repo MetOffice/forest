@@ -9,7 +9,6 @@ from collections import namedtuple
 
 __all__ = [
     "State",
-    "Message",
     "Observable",
     "Controls",
     "next_state",
@@ -61,33 +60,6 @@ def next_state(current, **kwargs):
     _kwargs = current._asdict()
     _kwargs.update(kwargs)
     return State(**_kwargs)
-
-
-class Message(object):
-    def __init__(self, kind, payload):
-        self.kind = kind
-        self.payload = payload
-
-    @classmethod
-    def dropdown(cls, key, value):
-        return cls("dropdown", (key, value))
-
-    def __repr__(self):
-        if self.__class__.__module__ is not None:
-            names = (self.__class__.__module__, self.__class__.__name__)
-        else:
-            names = (self.__class__.__name__,)
-
-        def stringify(value):
-            if isinstance(value, str):
-                return "'{}'".format(value)
-            else:
-                return str(value)
-
-        args = (self.kind, self.payload)
-        return "{}({})".format(
-            ".".join(names),
-            ", ".join(map(stringify, args)))
 
 
 class Observable(object):
