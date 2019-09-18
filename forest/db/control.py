@@ -64,6 +64,18 @@ class Observable(object):
         for callback in self.subscribers:
             callback(state)
 
+@export
+class Stream(Observable):
+    def listen_to(self, observable):
+        observable.subscribe(self.notify)
+        return self
+
+    def map(self, f):
+        stream = Stream()
+        def callback(x):
+            stream.notify(f(x))
+        self.subscribe(callback)
+        return stream
 
 @export
 def initial_state(database, pattern=None):
@@ -86,7 +98,7 @@ def initial_state(database, pattern=None):
     pressure = None
     if len(pressures) > 0:
         pressure = pressures[0]
-    state = State(
+    return dict(
         pattern=pattern,
         variable=variable,
         variables=variables,
@@ -96,7 +108,6 @@ def initial_state(database, pattern=None):
         valid_times=valid_times,
         pressures=pressures,
         pressure=pressure)
-    return state
 
 
 def first(items):
