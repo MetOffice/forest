@@ -195,16 +195,29 @@ class Log(object):
 
 
 @export
-def inverse_coordinate(name):
+class InverseCoordinate(object):
     """Translate actions on inverted coordinates"""
+    def __init__(self, name):
+        self.name = name
+
     @middleware
-    def wrapped(store, next_dispatch, action):
+    def __call__(self, store, next_dispatch, action):
         kind = action["kind"]
         if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
-            if name == action["payload"]["item_key"]:
-                return next_dispatch(invert(action))
-        next_dispatch(action)
-    return wrapped
+            if self.name == action["payload"]["item_key"]:
+                return next_dispatch(self.invert(action))
+        return next_dispatch(action)
+
+    @staticmethod
+    def invert(action):
+        kind = action["kind"]
+        payload = action["payload"]
+        item_key = payload["item_key"]
+        items_key = payload["items_key"]
+        if kind == NEXT_VALUE:
+            return previous_value(item_key, items_key)
+        else:
+            return next_value(item_key, items_key)
 
 
 @export
@@ -233,17 +246,6 @@ def next_previous(store, next_dispatch, action):
                 value = min(items)
         return next_dispatch(set_value(item_key, value))
     return next_dispatch(action)
-
-
-def invert(action):
-    kind = action["kind"]
-    payload = action["payload"]
-    item_key = payload["item_key"]
-    items_key = payload["items_key"]
-    if kind == NEXT_VALUE:
-        return previous_value(item_key, items_key)
-    else:
-        return next_value(item_key, items_key)
 
 
 def button_reducer(state, action):

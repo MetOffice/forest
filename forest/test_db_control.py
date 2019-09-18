@@ -110,7 +110,7 @@ class TestControls(unittest.TestCase):
         store = db.Store(
             db.reducer,
             middlewares=[
-                db.inverse_coordinate("pressure"),
+                db.InverseCoordinate("pressure"),
                 db.next_previous,
                 db.Controls(self.database)
             ])
@@ -131,7 +131,7 @@ class TestControls(unittest.TestCase):
                 "pressures": pressures
             },
             middlewares=[
-                db.inverse_coordinate("pressure"),
+                db.InverseCoordinate("pressure"),
                 db.next_previous,
                 db.Controls(self.database)
             ])
@@ -406,7 +406,7 @@ class TestPressureMiddleware(unittest.TestCase):
             db.reducer,
             initial_state=state,
             middlewares=[
-                db.inverse_coordinate("pressure"),
+                db.InverseCoordinate("pressure"),
                 db.next_previous])
         action = db.next_value("pressure", "pressures")
         store.dispatch(action)
