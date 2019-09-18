@@ -74,12 +74,6 @@ class TestControls(unittest.TestCase):
         view.on_change("variable")(None, None, value)
         listener.assert_called_once_with(db.set_value("variable", value))
 
-    def test_next_state_given_kwargs(self):
-        current = db.State(pattern="p")
-        result = db.next_state(current, variable="v")
-        expect = db.State(pattern="p", variable="v")
-        self.assertEqual(expect, result)
-
     def test_observable(self):
         callback = unittest.mock.Mock()
         controls = db.Controls(self.database)

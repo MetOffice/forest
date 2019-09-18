@@ -11,7 +11,6 @@ __all__ = [
     "State",
     "Observable",
     "Controls",
-    "next_state",
     "initial_state"
 ]
 
@@ -54,12 +53,6 @@ State = namedtuple("State", (
     "pressures",
     "valid_format"))
 State.__new__.__defaults__ = (None,) * len(State._fields)
-
-
-def next_state(current, **kwargs):
-    _kwargs = current._asdict()
-    _kwargs.update(kwargs)
-    return State(**_kwargs)
 
 
 class Observable(object):
@@ -220,37 +213,6 @@ def next_previous(store, next_dispatch, action):
     return next_dispatch(action)
 
 
-def button_reducer(state, action):
-    items, item = get_items(state, action)
-    if action.category == "pressure":
-        instruction = reverse(action.instruction)
-    else:
-        instruction = action.instruction
-    if instruction == "next":
-        item = next_item(items, item)
-    else:
-        item = previous_item(items, item)
-    return next_state(state, **{action.category: item})
-
-
-def reverse(instruction):
-    if instruction == "next":
-        return "previous"
-    else:
-        return "next"
-
-
-def get_items(state, action):
-    if action.category == 'initial_time':
-        return state.initial_times, state.initial_time
-    elif action.category == 'valid_time':
-        return state.valid_times, state.valid_time
-    elif action.category == 'pressure':
-        return state.pressures, state.pressure
-    else:
-        raise Exception("Unrecognised category: {}".format(action.category))
-
-
 def next_item(items, item):
     if items is None:
         return None
@@ -328,6 +290,7 @@ class Controls(Observable):
 
     def modify(self, state, message):
         """Adjust state given message"""
+        raise Exception("soon to be removed")
         print(message)
         if message.kind == 'dropdown':
             key, value = message.payload
@@ -358,9 +321,6 @@ class Controls(Observable):
                         initial_time=state.initial_time)
                     valid_times = sorted(set(valid_times))
                     state = next_state(state, valid_times=valid_times)
-
-        if message.kind == 'button':
-            state = button_reducer(state, message)
         return state
 
 
