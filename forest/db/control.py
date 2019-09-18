@@ -214,50 +214,24 @@ def next_previous(store, next_dispatch, action):
 
 
 def next_item(items, item):
-    if items is None:
-        return None
-    if item is None:
-        return max(items)
     items = list(sorted(items))
     i = items.index(item)
     return items[(i + 1) % len(items)]
 
 
 def previous_item(items, item):
-    if items is None:
-        return None
-    if item is None:
-        return min(items)
     items = list(sorted(items))
     i = items.index(item)
     return items[i - 1]
 
 
-class Controls(Observable):
-    def __init__(self, database, patterns=None, state=None):
+class Controls(object):
+    def __init__(self, database, patterns=None):
         if patterns is None:
             patterns = []
         self.patterns = patterns
         self.database = database
-        if state is None:
-            state = State()
-        self.state = state
-        self.view = ControlView()
-        self.view.subscribe(self.on_message)
         super().__init__()
-
-    @property
-    def layout(self):
-        return self.view.layout
-
-    def render(self, state):
-        self.view.render(state)
-
-    def on_message(self, message):
-        state = self.modify(self.state, message)
-        if state is not None:
-            self.notify(state)
-            self.state = state
 
     @middleware
     def __call__(self, store, next_dispatch, action):

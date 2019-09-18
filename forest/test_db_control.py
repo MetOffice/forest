@@ -74,13 +74,6 @@ class TestControls(unittest.TestCase):
         view.on_change("variable")(None, None, value)
         listener.assert_called_once_with(db.set_value("variable", value))
 
-    def test_observable(self):
-        callback = unittest.mock.Mock()
-        controls = db.Controls(self.database)
-        controls.subscribe(callback)
-        controls.notify({})
-        callback.assert_called_once_with({})
-
     def test_next_pressure_given_pressures_returns_first_element(self):
         pressure = 950
         store = db.Store(
