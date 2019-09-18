@@ -141,36 +141,37 @@ class TestControlView(unittest.TestCase):
         listener.assert_called_once_with(expect)
 
     def test_render_given_no_variables_disables_dropdown(self):
-        self.view.render(db.State(variables=[]))
+        self.view.render({"variables": []})
         result = self.view.dropdowns["variable"].disabled
         expect = True
         self.assertEqual(expect, result)
 
     def test_render_given_pressure(self):
-        self.view.render(db.State(
-            pressures=[1000],
-            pressure=1000))
+        state = {
+            "pressures": [1000],
+            "pressure": 1000
+        }
+        self.view.render(state)
         result = self.view.dropdowns["pressure"].label
         expect = "1000hPa"
         self.assertEqual(expect, result)
 
     def test_render_sets_pressure_levels(self):
         pressures = [1000, 950, 850]
-        self.view.render(db.State(pressures=pressures))
+        self.view.render({"pressures": pressures})
         result = self.view.dropdowns["pressure"].menu
         expect = ["1000hPa", "950hPa", "850hPa"]
         self.assert_label_equal(expect, result)
 
     def test_render_given_initial_time_populates_valid_time_menu(self):
-        state = db.State(valid_times=[dt.datetime(2019, 1, 1, 3)])
+        state = {"valid_times": [dt.datetime(2019, 1, 1, 3)]}
         self.view.render(state)
         result = self.view.dropdowns["valid_time"].menu
         expect = ["2019-01-01 03:00:00"]
         self.assert_label_equal(expect, result)
 
     def test_render_state_configures_variable_menu(self):
-        state = db.State(variables=["mslp"])
-        self.view.render(state)
+        self.view.render({"variables": ["mslp"]})
         result = self.view.dropdowns["variable"].menu
         expect = ["mslp"]
         self.assert_label_equal(expect, result)
@@ -178,7 +179,7 @@ class TestControlView(unittest.TestCase):
 
     def test_render_state_configures_initial_time_menu(self):
         initial_times = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
-        state = db.State(initial_times=initial_times)
+        state = {"initial_times": initial_times}
         self.view.render(state)
         result = self.view.dropdowns["initial_time"].menu
         expect = initial_times
@@ -194,7 +195,7 @@ class TestControlView(unittest.TestCase):
 
     def test_render_initial_times_disables_buttons(self):
         key = "initial_time"
-        self.view.render(db.State(initial_times=None))
+        self.view.render({})
         self.assertEqual(self.view.dropdowns[key].disabled, True)
         self.assertEqual(self.view.buttons[key]["next"].disabled, True)
         self.assertEqual(self.view.buttons[key]["previous"].disabled, True)
@@ -204,42 +205,37 @@ class TestControlView(unittest.TestCase):
         expect = "0.001hPa"
         self.assertEqual(expect, result)
 
-    def test_render_variables_given_none_disables_dropdown(self):
-        self.view.render(db.State(variables=None))
+    def test_render_variables_given_null_state_disables_dropdown(self):
+        self.view.render({})
         result = self.view.dropdowns["variable"].disabled
         expect = True
         self.assertEqual(expect, result)
 
     def test_render_initial_times_enables_buttons(self):
         key = "initial_time"
-        self.view.render(db.State(initial_times=["2019-01-01 00:00:00"]))
+        self.view.render({"initial_times": ["2019-01-01 00:00:00"]})
         self.assertEqual(self.view.dropdowns[key].disabled, False)
         self.assertEqual(self.view.buttons[key]["next"].disabled, False)
         self.assertEqual(self.view.buttons[key]["previous"].disabled, False)
 
-    def test_render_valid_times_given_none_disables_buttons(self):
-        state = db.State(valid_times=None)
-        self.check_disabled("valid_time", state, True)
+    def test_render_valid_times_given_null_state_disables_buttons(self):
+        self.check_disabled("valid_time", {}, True)
 
     def test_render_valid_times_given_empty_list_disables_buttons(self):
-        state = db.State(valid_times=[])
-        self.check_disabled("valid_time", state, True)
+        self.check_disabled("valid_time", {"valid_times": []}, True)
 
     def test_render_valid_times_given_values_enables_buttons(self):
-        state = db.State(valid_times=["2019-01-01 00:00:00"])
+        state = {"valid_times": ["2019-01-01 00:00:00"]}
         self.check_disabled("valid_time", state, False)
 
-    def test_render_pressures_given_none_disables_buttons(self):
-        state = db.State(pressures=None)
-        self.check_disabled("pressure", state, True)
+    def test_render_pressures_given_null_state_disables_buttons(self):
+        self.check_disabled("pressure", {}, True)
 
     def test_render_pressures_given_empty_list_disables_buttons(self):
-        state = db.State(pressures=[])
-        self.check_disabled("pressure", state, True)
+        self.check_disabled("pressure", {"pressures": []}, True)
 
     def test_render_pressures_given_values_enables_buttons(self):
-        state = db.State(pressures=[1000.00000001])
-        self.check_disabled("pressure", state, False)
+        self.check_disabled("pressure", {"pressures": [1000.00000001]}, False)
 
     def check_disabled(self, key, state, expect):
         self.view.render(state)

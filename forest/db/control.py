@@ -9,9 +9,6 @@ from collections import namedtuple
 
 __all__ = [
     "State",
-    "Observable",
-    "Controls",
-    "initial_state"
 ]
 
 
@@ -55,6 +52,7 @@ State = namedtuple("State", (
 State.__new__.__defaults__ = (None,) * len(State._fields)
 
 
+@export
 class Observable(object):
     def __init__(self):
         self.subscribers = []
@@ -67,6 +65,7 @@ class Observable(object):
             callback(state)
 
 
+@export
 def initial_state(database, pattern=None):
     """Find initial state given database"""
     variables = database.variables(pattern)
@@ -225,6 +224,7 @@ def previous_item(items, item):
     return items[i - 1]
 
 
+@export
 class Controls(object):
     def __init__(self, database, patterns=None):
         if patterns is None:
@@ -369,17 +369,19 @@ class ControlView(Observable):
 
     def render(self, state):
         """Configure dropdown menus"""
-        for key, values in [
-                ("variable", state.variables),
-                ("initial_time", state.initial_times),
-                ("valid_time", state.valid_times),
-                ("pressure", state.pressures)]:
-            if values is None:
+        assert isinstance(state, dict), "Only support dict"
+        for key, items_key in [
+                ("variable", "variables"),
+                ("initial_time", "initial_times"),
+                ("valid_time", "valid_times"),
+                ("pressure", "pressures")]:
+            if items_key not in state:
                 disabled = True
             else:
+                values = state[items_key]
                 disabled = len(values) == 0
                 if key == "pressure":
-                    menu = [(self.hpa(p), str(p)) for p in state.pressures]
+                    menu = [(self.hpa(p), str(p)) for p in values]
                 else:
                     menu = self.menu(values)
                 self.dropdowns[key].menu = menu
@@ -387,21 +389,14 @@ class ControlView(Observable):
             if key in self.buttons:
                 self.buttons[key]["next"].disabled = disabled
                 self.buttons[key]["previous"].disabled = disabled
-
-        if state.pattern is not None:
-            self.dropdowns['pattern'].value = state.pattern
-
-        if state.variable is not None:
-            self.dropdowns['variable'].value = state.variable
-
-        if state.initial_time is not None:
-            self.dropdowns['initial_time'].value = state.initial_time
-
-        if state.pressure is not None:
-            self.dropdowns["pressure"].value = str(state.pressure)
-
-        if state.valid_time is not None:
-            self.dropdowns['valid_time'].value = state.valid_time
+        for key in [
+                "pattern",
+                "variable",
+                "initial_time",
+                "pressure",
+                "valid_time"]:
+            if key in state:
+                self.dropdowns[key].value = str(state[key])
 
     @staticmethod
     def menu(values, formatter=str):
