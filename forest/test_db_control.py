@@ -313,3 +313,24 @@ class TestNextPrevious(unittest.TestCase):
         result = db.control.previous_item([0, 1, 2], 0)
         expect = 2
         self.assertEqual(expect, result)
+
+
+class TestPressureMiddleware(unittest.TestCase):
+    def test_pressure_middleware_reverses_pressure_coordinate(self):
+        pressures = [1000, 850, 500]
+        state = {
+            "pressure": 850,
+            "pressures": pressures
+        }
+        store = db.Store(
+            db.reducer,
+            initial_state=state,
+            middlewares=[db.inverse_coordinate("pressure")])
+        action = db.next_value("pressure", "pressures")
+        store.dispatch(action)
+        result = store.state
+        expect = {
+            "pressure": 500,
+            "pressures": pressures
+        }
+        self.assertEqual(expect, result)

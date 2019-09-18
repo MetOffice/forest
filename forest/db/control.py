@@ -1,5 +1,6 @@
 """Control navigation of FOREST data"""
 import copy
+from functools import wraps
 import bokeh.models
 import bokeh.layouts
 from . import util
@@ -171,48 +172,86 @@ def first(items):
 
 @export
 class Store(Observable):
-    def __init__(self, state=None):
-        if state is None:
-            state = State()
-        self.state = state
+    def __init__(self, reducer, initial_state=None, middlewares=None):
         self.reducer = reducer
+        self.state = initial_state if initial_state is not None else {}
+        if middlewares is not None:
+            mws = [m(self) for m in middlewares]
+            f = self.dispatch
+            for mw in reversed(mws):
+                f = mw(f)
+            self.dispatch = f
+        super().__init__()
 
     def dispatch(self, action):
         self.state = self.reducer(self.state, action)
+        self.notify(self.state)
 
 
 @export
 def reducer(state, action):
-    if isinstance(action, dict):
-        state = copy.copy(state)
+    state = copy.copy(state)
+    kind = action["kind"]
+    if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
+        payload = action["payload"]
+        item_key = payload["item_key"]
+        items_key = payload["items_key"]
+        items = state[items_key]
+        if item_key in state:
+            if kind == NEXT_VALUE:
+                item = next_item(items, state[item_key])
+            else:
+                item = previous_item(items, state[item_key])
+        else:
+            if kind == NEXT_VALUE:
+                item = max(items)
+            else:
+                item = min(items)
+        state[item_key] = item
+        return state
+    elif kind == SET_VALUE:
+        payload = action["payload"]
+        key, value = payload["key"], payload["value"]
+        state[key] = value
+        return state
+    else:
+        return state
+
+
+def middleware(f):
+    """Decorator that curries functions to satisfy middleware signature"""
+    @wraps(f)
+    def outer(*args):
+        def inner(next_dispatch):
+            def inner_most(action):
+                f(*args, next_dispatch, action)
+            return inner_most
+        return inner
+    return outer
+
+
+@export
+def inverse_coordinate(attr):
+    """Middleware to support inverted coordinates"""
+    @middleware
+    def wrapped(store, next_dispatch, action):
         kind = action["kind"]
         if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
-            payload = action["payload"]
-            item_key = payload["item_key"]
-            items_key = payload["items_key"]
-            items = state[items_key]
-            if item_key in state:
-                if kind == NEXT_VALUE:
-                    item = next_item(items, state[item_key])
-                else:
-                    item = previous_item(items, state[item_key])
-            else:
-                if kind == NEXT_VALUE:
-                    item = max(items)
-                else:
-                    item = min(items)
-            state[item_key] = item
-            return state
-        elif kind == SET_VALUE:
-            payload = action["payload"]
-            key, value = payload["key"], payload["value"]
-            state[key] = value
-            return state
-        else:
-            return state
-    if action.kind == "button":
-        return button_reducer(state, action)
-    return state
+            if attr == action["payload"]["item_key"]:
+                return next_dispatch(invert(action))
+        next_dispatch(action)
+    return wrapped
+
+
+def invert(action):
+    kind = action["kind"]
+    payload = action["payload"]
+    item_key = payload["item_key"]
+    items_key = payload["items_key"]
+    if kind == NEXT_VALUE:
+        return previous_value(item_key, items_key)
+    else:
+        return next_value(item_key, items_key)
 
 
 def button_reducer(state, action):
