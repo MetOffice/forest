@@ -251,12 +251,8 @@ class Navigator(object):
 
 @export
 class Controls(object):
-    def __init__(self, navigator, patterns=None):
-        if patterns is None:
-            patterns = []
-        self.patterns = patterns
+    def __init__(self, navigator):
         self.navigator = navigator
-        super().__init__()
 
     @middleware
     def __call__(self, store, next_dispatch, action):
@@ -288,6 +284,7 @@ class Controls(object):
                     pattern,
                     variable,
                     initial_time)
+                valid_times = sorted(set(valid_times))
                 pressures = self.navigator.pressures(
                     pattern,
                     variable,
