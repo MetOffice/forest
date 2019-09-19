@@ -97,6 +97,42 @@ class TestDatabaseMiddleware(unittest.TestCase):
         }
         self.assertEqual(expect, result)
 
+    def test_set_variable_given_initial_time_changes_times_and_pressure(self):
+        path = "some.nc"
+        initial_time = "2019-01-01 00:00:00"
+        self.database.insert_file_name(path, initial_time)
+        index = 0
+        for variable, valid_time, pressure in [
+                ("air_temperature", "2019-01-01 01:00:00", 1000.),
+                ("olr", "2019-01-01 01:03:00", 10.)]:
+            self.database.insert_time(path, variable, valid_time, index)
+            self.database.insert_pressure(path, variable, pressure, index)
+
+        store = db.Store(
+            db.reducer,
+            middlewares=[self.controls])
+        actions = [
+            db.set_value("pattern", path),
+            db.set_value("variable", "air_temperature"),
+            db.set_value("initial_time", initial_time),
+            db.set_value("variable", "olr")
+        ]
+        for action in actions:
+            store.dispatch(action)
+
+        result = store.state
+        expect = {
+            "pattern": path,
+            "variable": "olr",
+            "variables": ["air_temperature", "olr"],
+            "initial_time": initial_time,
+            "initial_times": [initial_time],
+            "valid_times": ["2019-01-01 01:03:00"],
+            "pressures": [0.0]
+        }
+        self.assertEqual(expect, result)
+
+
     def test_navigator_api(self):
         path = "file.nc"
         variable = "air_temperature"

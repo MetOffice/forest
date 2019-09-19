@@ -277,6 +277,26 @@ class Controls(object):
                 next_dispatch(set_value("variables", variables))
                 next_dispatch(set_value("initial_times", initial_times))
                 return
+            elif key == "variable":
+                for attr in ["pattern", "initial_time"]:
+                    if attr not in store.state:
+                        return next_dispatch(action)
+                pattern = store.state["pattern"]
+                variable = value
+                initial_time = store.state["initial_time"]
+                valid_times = self.navigator.valid_times(
+                    pattern,
+                    variable,
+                    initial_time)
+                pressures = self.navigator.pressures(
+                    pattern,
+                    variable,
+                    initial_time)
+                pressures = list(reversed(pressures))
+                next_dispatch(action)
+                next_dispatch(set_value("valid_times", valid_times))
+                next_dispatch(set_value("pressures", pressures))
+                return
             elif key == "initial_time":
                 for attr in ["pattern", "variable"]:
                     if attr not in store.state:
@@ -288,15 +308,6 @@ class Controls(object):
                 valid_times = sorted(set(valid_times))
                 next_dispatch(action)
                 next_dispatch(set_value("valid_times", valid_times))
-                return
-            elif key == "valid_time":
-                pressures = self.navigator.pressures(
-                    pattern=store.state["pattern"],
-                    variable=store.state["variable"],
-                    initial_time=store.state["initial_time"])
-                pressures = list(reversed(pressures))
-                next_dispatch(action)
-                next_dispatch(set_value("pressures", pressures))
                 return
         return next_dispatch(action)
 

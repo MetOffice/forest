@@ -57,7 +57,10 @@ class Navigator(object):
                 p = Locator._pressures(dataset, variable)
                 if p is None:
                     cube = iris.load_cube(path, variable)
-                    p = cube.coord('pressure').points
+                    try:
+                        p = cube.coord('pressure').points
+                    except iris.exceptions.CoordinateNotFoundError:
+                        return []
                 elif p.ndim == 0:
                     p = np.array([p])
                 arrays.append(p)
