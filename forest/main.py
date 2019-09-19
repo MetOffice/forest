@@ -120,18 +120,21 @@ def main(argv=None):
                     database.connection,
                     directory=replace_dir(args.directory, group.directory))
                 loader = data.DBLoader(group.label, group.pattern, locator)
-                data.add_loader(group.label, loader)
             elif group.locator == "file_system":
-                if args.directory is not None:
-                    pattern = os.path.join(args.directory, group.pattern)
+                if group.file_type == 'unified_model':
+                    locator = fs.Locator()
+                    loader = data.DBLoader(group.label, group.pattern, locator)
                 else:
-                    pattern = group.pattern
-                loader = data.file_loader(
-                        group.file_type,
-                        pattern)
-                data.add_loader(group.label, loader)
+                    if args.directory is not None:
+                        pattern = os.path.join(args.directory, group.pattern)
+                    else:
+                        pattern = group.pattern
+                    loader = data.file_loader(
+                            group.file_type,
+                            pattern)
             else:
                 raise Exception("Unknown locator: {}".format(group.locator))
+            data.add_loader(group.label, loader)
 
     renderers = {}
     viewers = {}

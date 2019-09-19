@@ -84,6 +84,8 @@ def file_loader(file_type, pattern):
         return earth_networks.Loader(pattern)
     elif file_type.lower() == 'eida50':
         return satellite.EIDA50(pattern)
+    else:
+        raise Exception("unrecognised file_type: {}".format(file_type))
 
 
 def load_coastlines():
