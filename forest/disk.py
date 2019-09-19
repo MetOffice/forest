@@ -119,7 +119,8 @@ class Locator(object):
             valid_time,
             pressure=None,
             tolerance=0.001):
-        raise SearchFail
+        print(pattern, variable, initial_time, valid_time, pressure)
+        raise NotImplementedError("File system search not supported")
 
     def path_index(self, variable, initial, valid, pressure):
         path, pts = self.path_points(variable, initial, valid, pressure)
