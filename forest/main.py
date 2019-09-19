@@ -252,21 +252,22 @@ def main(argv=None):
         image_controls.select(name)
         break
 
-    # Add prototype database controls
+    if len(args.files) > 0:
+        navigator = fs.Navigator(args.files)
+    else:
+        navigator = database
+
+    # Pre-select menu choices (if any)
     initial_state = {}
+    for _, pattern in config.patterns:
+        initial_state = db.initial_state(navigator, pattern=pattern)
+        break
     middlewares = [
         db.Log(verbose=True),
         db.InverseCoordinate("pressure"),
-        db.next_previous
+        db.next_previous,
+        db.Controls(navigator)
     ]
-    if len(args.files) > 0:
-        middlewares.append(fs.Controls())
-    else:
-        # Pre-select menu choices (if any)
-        for _, pattern in config.patterns:
-            initial_state = db.initial_state(database, pattern=pattern)
-            break
-        middlewares.append(db.Controls(database))
     store = db.Store(
         db.reducer,
         initial_state=initial_state,

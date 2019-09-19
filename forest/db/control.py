@@ -79,22 +79,22 @@ class Stream(Observable):
         return stream
 
 @export
-def initial_state(database, pattern=None):
-    """Find initial state given database"""
-    variables = database.variables(pattern)
+def initial_state(navigator, pattern=None):
+    """Find initial state given navigator"""
+    variables = navigator.variables(pattern)
     variable = first(variables)
-    initial_times = database.initial_times(pattern, variable)
+    initial_times = navigator.initial_times(pattern, variable)
     initial_time = None
     if len(initial_times) > 0:
         initial_time = max(initial_times)
-    valid_times = database.valid_times(
+    valid_times = navigator.valid_times(
         variable=variable,
         pattern=pattern,
         initial_time=initial_time)
     valid_time = None
     if len(valid_times) > 0:
         valid_time = min(valid_times)
-    pressures = database.pressures(variable, pattern, initial_time)
+    pressures = navigator.pressures(variable, pattern, initial_time)
     pressures = list(reversed(sorted(pressures)))
     pressure = None
     if len(pressures) > 0:
@@ -240,12 +240,28 @@ def previous_item(items, item):
 
 
 @export
+class Navigator(object):
+    """Interface for navigation menu system"""
+    def variables(self, pattern):
+        return ['air_temperature']
+
+    def initial_times(self, pattern):
+        return ['2019-01-01 00:00:00']
+
+    def valid_times(self, pattern, variable, initial_time):
+        return ['2019-01-01 12:00:00']
+
+    def pressures(self, pattern, variable, initial_time):
+        return [750.]
+
+
+@export
 class Controls(object):
-    def __init__(self, database, patterns=None):
+    def __init__(self, navigator, patterns=None):
         if patterns is None:
             patterns = []
         self.patterns = patterns
-        self.database = database
+        self.navigator = navigator
         super().__init__()
 
     @middleware
@@ -260,8 +276,8 @@ class Controls(object):
                     print("{} is not a float".format(value))
                 return next_dispatch(set_value(key, value))
             elif key == "pattern":
-                variables = self.database.variables(pattern=value)
-                initial_times = self.database.initial_times(pattern=value)
+                variables = self.navigator.variables(pattern=value)
+                initial_times = self.navigator.initial_times(pattern=value)
                 initial_times = list(reversed(initial_times))
                 next_dispatch(action)
                 next_dispatch(set_value("variables", variables))
@@ -271,7 +287,7 @@ class Controls(object):
                 for attr in ["pattern", "variable"]:
                     if attr not in store.state:
                         return next_dispatch(action)
-                valid_times = self.database.valid_times(
+                valid_times = self.navigator.valid_times(
                     pattern=store.state["pattern"],
                     variable=store.state["variable"],
                     initial_time=value)
@@ -280,7 +296,7 @@ class Controls(object):
                 next_dispatch(set_value("valid_times", valid_times))
                 return
             elif key == "valid_time":
-                pressures = self.database.pressures(
+                pressures = self.navigator.pressures(
                     pattern=store.state["pattern"],
                     variable=store.state["variable"],
                     initial_time=store.state["initial_time"])

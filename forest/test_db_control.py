@@ -97,6 +97,37 @@ class TestDatabaseMiddleware(unittest.TestCase):
         }
         self.assertEqual(expect, result)
 
+    def test_navigator_api(self):
+        path = "file.nc"
+        variable = "air_temperature"
+        initial_time = "2019-01-01 00:00:00"
+        valid_time = "2019-01-01 12:00:00"
+        pressure = 750.
+        navigator = db.Navigator()
+        controls = db.Controls(navigator)
+        store = db.Store(
+            db.reducer,
+            middlewares=[controls])
+        actions = [
+            db.set_value("pattern", path),
+            db.set_value("variable", variable),
+            db.set_value("initial_time", initial_time),
+            db.set_value("valid_time", valid_time)]
+        for action in actions:
+            store.dispatch(action)
+        result = store.state
+        expect = {
+            "pattern": path,
+            "variable": variable,
+            "variables": [variable],
+            "initial_time": initial_time,
+            "initial_times": [initial_time],
+            "valid_time": valid_time,
+            "valid_times": [valid_time],
+            "pressures": [pressure],
+        }
+        self.assertEqual(expect, result)
+
 
 class TestControls(unittest.TestCase):
     def setUp(self):
