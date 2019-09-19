@@ -338,8 +338,8 @@ class ControlView(Observable):
                 width=dropdown_width)
         }
         for key, dropdown in self.dropdowns.items():
-            # util.autolabel(dropdown)
-            # util.autowarn(dropdown)
+            util.autolabel(dropdown)
+            util.autowarn(dropdown)
             dropdown.on_change("value", self.on_change(key))
         self.rows = {}
         self.buttons = {}
