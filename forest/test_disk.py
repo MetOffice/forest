@@ -3,33 +3,8 @@ import datetime as dt
 import numpy as np
 import netCDF4
 import os
+import fnmatch
 import disk
-
-
-def full_path(name):
-    return os.path.join(os.path.dirname(__file__), name)
-
-
-def stash_variables(dataset):
-    """Find all variables with Stash codes"""
-    return [name for name, obj in dataset.variables.items()
-            if hasattr(obj, 'um_stash_source')]
-
-
-def pressures(dataset, name):
-    variable = dataset.variables[name]
-    dimensions = variable.dimensions
-    return dimensions
-
-
-class TestPattern(unittest.TestCase):
-    def test_pattern_given_initial_time_and_length(self):
-        initial = np.datetime64('2019-04-29 18:00', 's')
-        length = np.timedelta64(33, 'h')
-        pattern = "global_africa_{:%Y%m%dT%H%MZ}_umglaa_pa{:03d}.nc"
-        result = disk.file_name(pattern, initial, length)
-        expect = "global_africa_20190429T1800Z_umglaa_pa033.nc"
-        self.assertEqual(expect, result)
 
 
 class TestDateLocator(unittest.TestCase):
@@ -76,4 +51,141 @@ class TestDateLocator(unittest.TestCase):
             "c/prefix_20190101T1200Z_006.nc",
             "c/prefix_20190101T1200Z_009.nc",
         ]
+        np.testing.assert_array_equal(expect, result)
+
+
+class TestNavigator(unittest.TestCase):
+    def test_given_empty_unified_model_file(self):
+        self.path = "test-navigator.nc"
+        pattern = "*.nc"
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            pass
+        navigator = disk.Navigator([self.path])
+        result = navigator.variables(pattern)
+        expect = []
+        self.assertEqual(expect, result)
+
+    def test_initial_times_given_forecast_reference_time(self):
+        self.path = "test-navigator.nc"
+        pattern = "*.nc"
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            var = dataset.createVariable("forecast_reference_time", "d", ())
+            var.units = "hours since 1970-01-01 00:00:00"
+            var[:] = 0
+        navigator = disk.Navigator([self.path])
+        result = navigator.initial_times(pattern)
+        expect = [dt.datetime(1970, 1, 1)]
+        self.assertEqual(expect, result)
+
+    def test_valid_times_given_relative_humidity(self):
+        self.path = "test-navigator.nc"
+        pattern = "*.nc"
+        variable = "relative_humidity"
+        initial_time = dt.datetime(2019, 1, 1)
+        valid_times = [
+            dt.datetime(2019, 1, 1, 0),
+            dt.datetime(2019, 1, 1, 1),
+            dt.datetime(2019, 1, 1, 2)
+        ]
+        pressures = [1000., 1000., 1000.]
+        units = "hours since 1970-01-01 00:00:00"
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            # Dimensions
+            dataset.createDimension("dim0", 3)
+            dataset.createDimension("longitude", 1)
+            dataset.createDimension("latitude", 1)
+
+            # Forecast reference time
+            var = dataset.createVariable("forecast_reference_time", "d", ())
+            var.units = units
+            var[:] = netCDF4.date2num(initial_time, units=units)
+
+            # Time
+            var = dataset.createVariable("time", "d", ("dim0",))
+            var.units = units
+            var[:] = netCDF4.date2num(valid_times, units=units)
+
+            # Pressure
+            var = dataset.createVariable("pressure", "d", ("dim0",))
+            var[:] = pressures
+
+            # Relative humidity
+            var = dataset.createVariable(
+                variable, "f", ("dim0", "longitude", "latitude"))
+            var[:] = 100.
+            var.standard_name = "relative_humidity"
+            var.units = "%"
+            var.um_stash_source = "m01s16i256"
+            var.grid_mapping = "longitude_latitude"
+            var.coordinates = "forecast_period forecast_reference_time time"
+
+        navigator = disk.Navigator([self.path])
+        result = navigator.valid_times(pattern, variable, initial_time)
+        expect = valid_times
+        np.testing.assert_array_equal(expect, result)
+
+    def test_pressures_given_relative_humidity(self):
+        self.path = "test-navigator.nc"
+        pattern = "*.nc"
+        variable = "relative_humidity"
+        initial_time = dt.datetime(2019, 1, 1)
+        valid_times = [
+            dt.datetime(2019, 1, 1, 0),
+            dt.datetime(2019, 1, 1, 1),
+            dt.datetime(2019, 1, 1, 2)
+        ]
+        pressures = [1000., 1000., 1000.]
+        units = "hours since 1970-01-01 00:00:00"
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            # Dimensions
+            dataset.createDimension("pressure", 3)
+            dataset.createDimension("longitude", 1)
+            dataset.createDimension("latitude", 1)
+
+            # Forecast reference time
+            var = dataset.createVariable("forecast_reference_time", "d", ())
+            var.units = units
+            var[:] = netCDF4.date2num(initial_time, units=units)
+
+            # Time
+            var = dataset.createVariable("time", "d", ("pressure",))
+            var.units = units
+            var[:] = netCDF4.date2num(valid_times, units=units)
+
+            # Pressure
+            var = dataset.createVariable("pressure", "d", ("pressure",))
+            var[:] = pressures
+
+            # Relative humidity
+            var = dataset.createVariable(
+                variable, "f", ("pressure", "longitude", "latitude"))
+            var[:] = 100.
+            var.standard_name = "relative_humidity"
+            var.units = "%"
+            var.um_stash_source = "m01s16i256"
+            var.grid_mapping = "longitude_latitude"
+            var.coordinates = "forecast_period forecast_reference_time time"
+
+        navigator = disk.Navigator([self.path])
+        result = navigator.pressures(pattern, variable, initial_time)
+        expect = [1000.]
+        np.testing.assert_array_equal(expect, result)
+
+
+class TestFNMatch(unittest.TestCase):
+    def test_filter(self):
+        names = ["/some/file.json", "/other/file.nc"]
+        result = fnmatch.filter(names, "*.nc")
+        expect = ["/other/file.nc"]
+        self.assertEqual(expect, result)
+
+
+class TestNumpy(unittest.TestCase):
+    def test_concatenate(self):
+        arrays = [
+            np.array([1, 2, 3]),
+            np.array([4, 5])
+        ]
+        result = np.concatenate(arrays)
+        expect = np.array([1, 2, 3, 4, 5])
         np.testing.assert_array_equal(expect, result)

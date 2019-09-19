@@ -325,6 +325,8 @@ class DBLoader(object):
         if state.pressures is None:
             return False
         if len(state.pressures) > 0:
+            if state.pressure is None:
+                return False
             if not self.has_pressure(state.pressures, state.pressure):
                 return False
         return True

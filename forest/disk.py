@@ -3,6 +3,8 @@ import netCDF4
 import datetime as dt
 import numpy as np
 import util
+import fnmatch
+import iris
 from db.exceptions import SearchFail
 
 
@@ -11,71 +13,57 @@ class Navigator(object):
         self.paths = paths
 
     def variables(self, pattern):
-        return ['air_temperature']
+        paths = fnmatch.filter(self.paths, pattern)
+        names = []
+        for path in paths:
+            cubes = iris.load(path)
+            names += [cube.name() for cube in cubes]
+        return list(sorted(set(names)))
 
     def initial_times(self, pattern, variable=None):
-        return ['2019-01-01 00:00:00']
+        paths = fnmatch.filter(self.paths, pattern)
+        times = [self._initial_time(p) for p in paths]
+        times = [t for t in times if t is not None]
+        return list(sorted(set(times)))
+
+    def _initial_time(self, path):
+        with netCDF4.Dataset(path) as dataset:
+            try:
+                var = dataset.variables["forecast_reference_time" ]
+                return netCDF4.num2date(var[:], units=var.units)
+            except KeyError:
+                pass
 
     def valid_times(self, pattern, variable, initial_time):
-        return ['2019-01-01 12:00:00']
+        paths = fnmatch.filter(self.paths, pattern)
+        arrays = []
+        for path in paths:
+            with netCDF4.Dataset(path) as dataset:
+                t = Locator._valid_times(dataset, variable)
+                if t is None:
+                    cube = iris.load_cube(path, variable)
+                    t = np.array([c.point for c in cube.coord('time').cells()],
+                             dtype='datetime64[s]')
+                elif t.ndim == 0:
+                    t = np.array([t], dtype='datetime64[s]')
+                arrays.append(t)
+        return np.unique(np.concatenate(arrays))
 
     def pressures(self, pattern, variable, initial_time):
-        return [750.]
-
-
-def scrape(path):
-    """All meta-data in single transaction"""
-    scheme = {
-        'dimensions': [],
-        'variables': {}
-    }
-    with netCDF4.Dataset(path) as dataset:
-        for d in dataset.dimensions:
-            scheme['dimensions'].append(d)
-        for v, obj in dataset.variables.items():
-            scheme['variables'][v] = {
-                'dimensions': obj.dimensions,
-                'attrs': {a: getattr(obj, a) for a in obj.ncattrs()}
-            }
-    return scheme
-
-
-def coordinate_variables(scheme):
-    """In-memory coordinate variable detection"""
-    coords = set()
-    for item in scheme.items():
-        attrs = item['attrs']
-        if 'coordinates' not in attrs:
-            continue
-        for c in attrs['coordinates'].split():
-            coords.add(c)
-    return coords
-
-
-def dimension_variables(scheme):
-    """In-memory dimension variable detection"""
-    names = set()
-    for item in scheme.items():
-        for d in scheme['dimensions']:
-            if d in scheme['variables']:
-                names.add(d)
-    return names
-
-
-def load_variables(path, names):
-    values = {}
-    with netCDF4.Dataset(path) as dataset:
-        for name in names:
-            try:
-                var = dataset.variables[name]
-            except KeyError:
-                continue
-            if 'time' in name:
-                datetimes = netCDF4.num2date(var[:], units=var.units)
-                values[name] = np.array(datetimes, dtype='datetime64[s]')
-            else:
-                values[name] = var[:]
-    return values
+        paths = fnmatch.filter(self.paths, pattern)
+        arrays = []
+        for path in paths:
+            with netCDF4.Dataset(path) as dataset:
+                p = Locator._pressures(dataset, variable)
+                if p is None:
+                    cube = iris.load_cube(path, variable)
+                    p = cube.coord('pressure').points
+                elif p.ndim == 0:
+                    p = np.array([p])
+                arrays.append(p)
+        if len(arrays) == 0:
+            return []
+        return np.unique(np.concatenate(arrays))
 
 
 class DateLocator(object):
@@ -192,23 +180,6 @@ class Locator(object):
         return self.locator.search(initial)
 
 
-
-def file_name(pattern, initial, length):
-    if isinstance(initial, np.datetime64):
-        initial = initial.astype(dt.datetime)
-    if isinstance(length, np.timedelta64):
-        length = length / np.timedelta64(1, 'h')
-    return pattern.format(initial, int(length))
-
-
-def lengths(times, initial):
-    if isinstance(initial, dt.datetime):
-        initial = np.datetime64(initial, 's')
-    if times.dtype == 'O':
-        times = times.astype('datetime64[s]')
-    return (times - initial) / np.timedelta64(1, 'h')
-
-
 def points(times, pressures, time, pressure):
     """Locate slice of array for time/pressure"""
     return (
@@ -228,7 +199,3 @@ def time_points(times, time):
     if isinstance(time, dt.datetime):
         time = np.datetime64(time, 's')
     return np.abs(times - time) < ttol
-
-
-def pressure_index(pressures, pressure):
-    return np.argmin(np.abs(pressures - pressure))

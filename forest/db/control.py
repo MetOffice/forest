@@ -81,39 +81,33 @@ class Stream(Observable):
 @export
 def initial_state(navigator, pattern=None):
     """Find initial state given navigator"""
+    state = {}
+    state["pattern"] = pattern
     variables = navigator.variables(pattern)
-    variable = first(variables)
+    state["variables"] = variables
+    if len(variables) == 0:
+        return state
+    variable = variables[0]
+    state["variable"] = variable
     initial_times = navigator.initial_times(pattern, variable)
-    initial_time = None
-    if len(initial_times) > 0:
-        initial_time = max(initial_times)
+    state["initial_times"] = initial_times
+    if len(initial_times) == 0:
+        return state
+    initial_time = max(initial_times)
+    state["initial_time"] = initial_time
     valid_times = navigator.valid_times(
         variable=variable,
         pattern=pattern,
         initial_time=initial_time)
-    valid_time = None
+    state["valid_times"] = valid_times
     if len(valid_times) > 0:
-        valid_time = min(valid_times)
+        state["valid_time"] = min(valid_times)
     pressures = navigator.pressures(variable, pattern, initial_time)
     pressures = list(reversed(sorted(pressures)))
-    pressure = None
+    state["pressures"] = pressures
     if len(pressures) > 0:
-        pressure = pressures[0]
-    return dict(
-        pattern=pattern,
-        variable=variable,
-        variables=variables,
-        initial_time=initial_time,
-        initial_times=initial_times,
-        valid_time=valid_time,
-        valid_times=valid_times,
-        pressures=pressures,
-        pressure=pressure)
-
-
-def first(items):
-    for item in items:
-        return item
+        state["pressure"] = pressures[0]
+    return state
 
 
 @export
