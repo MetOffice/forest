@@ -3,10 +3,24 @@ import netCDF4
 import datetime as dt
 import numpy as np
 import util
+from db.exceptions import SearchFail
 
 
-class NoData(Exception):
-    pass
+class Navigator(object):
+    def __init__(self, paths):
+        self.paths = paths
+
+    def variables(self, pattern):
+        return ['air_temperature']
+
+    def initial_times(self, pattern, variable=None):
+        return ['2019-01-01 00:00:00']
+
+    def valid_times(self, pattern, variable, initial_time):
+        return ['2019-01-01 12:00:00']
+
+    def pressures(self, pattern, variable, initial_time):
+        return [750.]
 
 
 def scrape(path):
@@ -64,7 +78,7 @@ def load_variables(path, names):
     return values
 
 
-class Locator(object):
+class DateLocator(object):
     def __init__(self, paths):
         self.paths = np.asarray(paths)
         self.initial_times = np.array([
@@ -77,15 +91,17 @@ class Locator(object):
         return self.paths[self.initial_times == initial]
 
 
-class GlobalUM(object):
+class Locator(object):
     """Locator for collection of UM diagnostic files
 
     Uses file naming convention and meta-data stored in
     files to quickly look up file/index related to point
     in space/time
     """
-    def __init__(self, paths):
-        self.locator = Locator(paths)
+    def __init__(self, paths=None):
+        if paths is None:
+            paths = []
+        self.locator = DateLocator(paths)
         self.paths = np.asarray(paths)
         self.valid_times = {}
         self.pressures = {}
@@ -103,6 +119,16 @@ class GlobalUM(object):
 
     def search(self, *args, **kwargs):
         return self.path_points(*args, **kwargs)
+
+    def locate(
+            self,
+            pattern,
+            variable,
+            initial_time,
+            valid_time,
+            pressure=None,
+            tolerance=0.001):
+        raise SearchFail
 
     def path_index(self, variable, initial, valid, pressure):
         path, pts = self.path_points(variable, initial, valid, pressure)
@@ -128,7 +154,7 @@ class GlobalUM(object):
                             valid)
                 if pts.any():
                     return path, pts
-        raise NoData('initial: {} valid: {} pressure: {}'.format(initial, valid, pressure))
+        raise SearchFail('initial: {} valid: {} pressure: {}'.format(initial, valid, pressure))
 
     @staticmethod
     def _pressures(dataset, variable):

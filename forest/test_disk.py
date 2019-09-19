@@ -32,9 +32,9 @@ class TestPattern(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
-class TestLocator(unittest.TestCase):
+class TestDateLocator(unittest.TestCase):
     def test_paths_given_date_outside_range_returns_empty_list(self):
-        locator = disk.Locator([
+        locator = disk.DateLocator([
             "20190101T0000Z.nc",
             "20190101T0600Z.nc",
             "20190101T1200Z.nc",
@@ -46,7 +46,7 @@ class TestLocator(unittest.TestCase):
         self.assertEqual(result.tolist(), [])
 
     def test_paths_given_date_in_range_returns_list(self):
-        locator = disk.Locator([
+        locator = disk.DateLocator([
             "a/prefix_20190101T0000Z.nc",
             "b/prefix_20190101T0600Z.nc",
             "c/prefix_20190101T1200Z.nc",
@@ -59,7 +59,7 @@ class TestLocator(unittest.TestCase):
         np.testing.assert_array_equal(expect, result)
 
     def test_paths_given_date_matching_multiple_files(self):
-        locator = disk.Locator([
+        locator = disk.DateLocator([
             "a/prefix_20190101T0000Z.nc",
             "b/prefix_20190101T0600Z.nc",
             "c/prefix_20190101T1200Z_000.nc",

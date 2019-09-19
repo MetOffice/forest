@@ -11,7 +11,7 @@ import rdt
 import geo
 import colors
 import db
-import fs
+import disk
 import config as cfg
 import parse_args
 from util import Observable
@@ -122,7 +122,7 @@ def main(argv=None):
                 loader = data.DBLoader(group.label, group.pattern, locator)
             elif group.locator == "file_system":
                 if group.file_type == 'unified_model':
-                    locator = fs.Locator()
+                    locator = disk.Locator()
                     loader = data.DBLoader(group.label, group.pattern, locator)
                 else:
                     if args.directory is not None:
@@ -256,7 +256,7 @@ def main(argv=None):
         break
 
     if len(args.files) > 0:
-        navigator = fs.Navigator(args.files)
+        navigator = disk.Navigator(args.files)
     else:
         navigator = database
 
