@@ -279,42 +279,16 @@ class Controls(object):
                 next_dispatch(action)
                 next_dispatch(set_value("valid_times", valid_times))
                 return
+            elif key == "valid_time":
+                pressures = self.database.pressures(
+                    pattern=store.state["pattern"],
+                    variable=store.state["variable"],
+                    initial_time=store.state["initial_time"])
+                pressures = list(reversed(pressures))
+                next_dispatch(action)
+                next_dispatch(set_value("pressures", pressures))
+                return
         return next_dispatch(action)
-
-    def modify(self, state, message):
-        """Adjust state given message"""
-        raise Exception("soon to be removed")
-        print(message)
-        if message.kind == 'dropdown':
-            key, value = message.payload
-            if (key == 'pressure') and (value is not None):
-                value = float(value)
-            state = next_state(state, **{key: value})
-            if key != 'pressure':
-                if state.pattern is not None:
-                    variables = self.database.variables(pattern=state.pattern)
-                    state = next_state(state, variables=variables)
-
-                    initial_times = list(reversed(
-                        self.database.initial_times(pattern=state.pattern)))
-                    state = next_state(state, initial_times=initial_times)
-
-                if state.initial_time is not None:
-                    pressures = self.database.pressures(
-                        pattern=state.pattern,
-                        variable=state.variable,
-                        initial_time=state.initial_time)
-                    pressures = list(reversed(pressures))
-                    state = next_state(state, pressures=pressures)
-
-                if state.initial_time is not None:
-                    valid_times = self.database.valid_times(
-                        pattern=state.pattern,
-                        variable=state.variable,
-                        initial_time=state.initial_time)
-                    valid_times = sorted(set(valid_times))
-                    state = next_state(state, valid_times=valid_times)
-        return state
 
 
 @export

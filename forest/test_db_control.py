@@ -4,6 +4,12 @@ import datetime as dt
 import db
 
 
+def parameterize(*values):
+    def decorator(method):
+        for value in values:
+            pass
+
+
 class TestDatabaseMiddleware(unittest.TestCase):
     def setUp(self):
         self.database = db.Database.connect(":memory:")
@@ -55,6 +61,39 @@ class TestDatabaseMiddleware(unittest.TestCase):
             "pattern": "file.nc",
             "variables": ["variable"],
             "initial_times": [str(initial)]
+        }
+        self.assertEqual(expect, result)
+
+    def test_set_valid_time_sets_pressures(self):
+        path = "file.nc"
+        variable = "air_temperature"
+        initial_time = "2019-01-01 00:00:00"
+        valid_time = "2019-01-01 12:00:00"
+        pressure = 750.
+        index = 0
+        self.database.insert_file_name(path, initial_time)
+        self.database.insert_time(path, variable, valid_time, index)
+        self.database.insert_pressure(path, variable, pressure, index)
+        store = db.Store(
+            db.reducer,
+            middlewares=[self.controls])
+        actions = [
+            db.set_value("pattern", path),
+            db.set_value("variable", variable),
+            db.set_value("initial_time", initial_time),
+            db.set_value("valid_time", valid_time)]
+        for action in actions:
+            store.dispatch(action)
+        result = store.state
+        expect = {
+            "pattern": path,
+            "variable": variable,
+            "variables": [variable],
+            "initial_time": initial_time,
+            "initial_times": [initial_time],
+            "valid_time": valid_time,
+            "valid_times": [valid_time],
+            "pressures": [pressure],
         }
         self.assertEqual(expect, result)
 
