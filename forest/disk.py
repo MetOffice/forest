@@ -87,6 +87,25 @@ class Navigator(object):
             return []
 
 
+class NetCDF4Locator(object):
+    @staticmethod
+    def initial_time(path):
+        with netCDF4.Dataset(path) as dataset:
+            var = dataset.variables["forecast_reference_time" ]
+            values = netCDF4.num2date(var[:], units=var.units)
+        return values
+
+
+class IrisLocator(object):
+    @staticmethod
+    def initial_time(path):
+        cubes = iris.load(path)
+        if len(cubes) > 0:
+            cube = cubes[0]
+            return cube.coord('time').cells().next().point
+        raise InitialTimeNotFound("No initial time: '{}'".format(path))
+
+
 class Locator(object):
     """Locator for collection of UM diagnostic files
 
@@ -106,24 +125,9 @@ class Locator(object):
     @staticmethod
     def initial_time(path):
             try:
-                return Locator.netcdf4_initial_time(path)
+                return NetCDF4Locator.initial_time(path)
             except KeyError:
-                return Locator.iris_initial_time(path)
-
-    @staticmethod
-    def netcdf4_initial_time(path):
-        with netCDF4.Dataset(path) as dataset:
-            var = dataset.variables["forecast_reference_time" ]
-            values = netCDF4.num2date(var[:], units=var.units)
-        return values
-
-    @staticmethod
-    def iris_initial_time(path):
-        cubes = iris.load(path)
-        if len(cubes) > 0:
-            cube = cubes[0]
-            return cube.coord('time').cells().next().point
-        raise InitialTimeNotFound("No initial time: '{}'".format(path))
+                return IrisLocator.initial_time(path)
 
     def locate(
             self,
