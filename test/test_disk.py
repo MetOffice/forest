@@ -7,50 +7,128 @@ import fnmatch
 from forest import disk
 
 
-class TestDateLocator(unittest.TestCase):
-    def test_paths_given_date_outside_range_returns_empty_list(self):
-        locator = disk.DateLocator([
-            "20190101T0000Z.nc",
-            "20190101T0600Z.nc",
-            "20190101T1200Z.nc",
-            "20190101T1800Z.nc",
-            "20190102T0000Z.nc"
-        ])
-        after = np.datetime64('2019-01-02 06:00', 's')
-        result = locator.search(after)
-        self.assertEqual(result.tolist(), [])
+class Formatter(object):
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.units = "hours since 1970-01-01 00:00:00"
 
-    def test_paths_given_date_in_range_returns_list(self):
-        locator = disk.DateLocator([
-            "a/prefix_20190101T0000Z.nc",
-            "b/prefix_20190101T0600Z.nc",
-            "c/prefix_20190101T1200Z.nc",
-            "d/prefix_20190101T1800Z.nc",
-            "e/prefix_20190102T0000Z.nc"
-        ])
-        time = np.datetime64('2019-01-01 18:00', 's')
-        result = locator.search(time)
-        expect = ["d/prefix_20190101T1800Z.nc"]
+    def times(self, name, times):
+        dataset = self.dataset
+        if name not in dataset.dimensions:
+            dataset.createDimension(name, len(times))
+        var = dataset.createVariable(name, "d", (name,))
+        var.axis = "T"
+        var.units = self.units
+        var.standard_name = "time"
+        var.calendar = "gregorian"
+        var[:] = netCDF4.date2num(times, units=self.units)
+
+    def forecast_reference_time(self, time, name="forecast_reference_time"):
+        dataset = self.dataset
+        var = dataset.createVariable(name, "d", ())
+        var.units = self.units
+        var.standard_name = name
+        var.calendar = "gregorian"
+        var[:] = netCDF4.date2num(time, units=self.units)
+
+    def pressures(self, length=None, name="pressure"):
+        dataset = self.dataset
+        if name not in dataset.dimensions:
+            dataset.createDimension(name, length)
+        var = dataset.createVariable(name, "d", (name,))
+        var.axis = "Z"
+        var.units = "hPa"
+        var.long_name = "pressure"
+        return var
+
+    def longitudes(self, length=None, name="longitude"):
+        dataset = self.dataset
+        if name not in dataset.dimensions:
+            dataset.createDimension(name, length)
+        var = dataset.createVariable(name, "f", (name,))
+        var.axis = "X"
+        var.units = "degrees_east"
+        var.long_name = "longitude"
+        return var
+
+    def latitudes(self, length=None, name="latitude"):
+        dataset = self.dataset
+        if name not in dataset.dimensions:
+            dataset.createDimension(name, length)
+        var = dataset.createVariable(name, "f", (name,))
+        var.axis = "Y"
+        var.units = "degrees_north"
+        var.long_name = "latitude"
+        return var
+
+    def relative_humidity(self, dims, name="relative_humidity"):
+        dataset = self.dataset
+        var = dataset.createVariable(name, "f", dims)
+        var.standard_name = "relative_humidity"
+        var.units = "%"
+        var.um_stash_source = "m01s16i204"
+        var.grid_mapping = "latitude_longitude"
+        var.coordinates = "forecast_period_1 forecast_reference_time"
+        return var
+        var[:] = 100
+
+
+class TestLocator(unittest.TestCase):
+    def setUp(self):
+        self.path = "test-navigator.nc"
+
+    def tearDown(self):
+        if os.path.exists(self.path):
+            os.remove(self.path)
+
+    @unittest.skip("waiting")
+    def test_locator(self):
+        pattern = self.path
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            pass
+        variable = "relative_humidity"
+        initial_time = dt.datetime(2019, 1, 1)
+        valid_time = dt.datetime(2019, 1, 1)
+        locator = disk.Locator([self.path])
+        result = locator.locate(
+                pattern,
+                variable,
+                initial_time,
+                valid_time)
+        expect = (self.path, 0)
+        self.assertEqual(expect, result)
+
+    def test_initial_time(self):
+        time = dt.datetime(2019, 1, 1, 12)
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            formatter = Formatter(dataset)
+            formatter.forecast_reference_time(time)
+        result = disk.Locator.initial_time(self.path)
+        expect = time
         np.testing.assert_array_equal(expect, result)
 
-    def test_paths_given_date_matching_multiple_files(self):
-        locator = disk.DateLocator([
-            "a/prefix_20190101T0000Z.nc",
-            "b/prefix_20190101T0600Z.nc",
-            "c/prefix_20190101T1200Z_000.nc",
-            "c/prefix_20190101T1200Z_003.nc",
-            "c/prefix_20190101T1200Z_006.nc",
-            "c/prefix_20190101T1200Z_009.nc",
-            "d/prefix_20190101T1800Z.nc",
-            "e/prefix_20190102T0000Z.nc"
-        ])
-        result = locator.search('2019-01-01 12:00')
-        expect = [
-            "c/prefix_20190101T1200Z_000.nc",
-            "c/prefix_20190101T1200Z_003.nc",
-            "c/prefix_20190101T1200Z_006.nc",
-            "c/prefix_20190101T1200Z_009.nc",
-        ]
+    def test_valid_times(self):
+        units = "hours since 1970-01-01 00:00:00"
+        times = {
+                "time_0": [dt.datetime(2019, 1, 1)],
+                "time_1": [dt.datetime(2019, 1, 1, 3)]}
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            formatter = Formatter(dataset)
+            for name, values in times.items():
+                formatter.times(name, values)
+            var = formatter.pressures(length=1)
+            var[:] = 1000.
+            var = formatter.longitudes(length=1)
+            var[:] = 125.
+            var = formatter.latitudes(length=1)
+            var[:] = 45.
+            dims = ("time_1", "pressure", "longitude", "latitude")
+            var = formatter.relative_humidity(dims)
+            var[:] = 100.
+        variable = "relative_humidity"
+        locator = disk.Locator([self.path])
+        result = locator.valid_times(self.path, variable)
+        expect = times["time_1"]
         np.testing.assert_array_equal(expect, result)
 
 

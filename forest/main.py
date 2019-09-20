@@ -123,7 +123,7 @@ def main(argv=None):
                 loader = data.DBLoader(group.label, group.pattern, locator)
             elif group.locator == "file_system":
                 if group.file_type == 'unified_model':
-                    locator = disk.Locator()
+                    locator = disk.Locator(args.files)
                     loader = data.DBLoader(group.label, group.pattern, locator)
                 else:
                     if args.directory is not None:

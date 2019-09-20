@@ -8,7 +8,12 @@ import iris
 from forest.db.exceptions import SearchFail
 
 
+class InitialTimeNotFound(Exception):
+    pass
+
+
 class Navigator(object):
+    """Menu system given unified model files"""
     def __init__(self, paths):
         self.paths = paths
 
@@ -22,24 +27,13 @@ class Navigator(object):
 
     def initial_times(self, pattern, variable=None):
         paths = fnmatch.filter(self.paths, pattern)
-        times = [self._initial_time(p) for p in paths]
-        times = [t for t in times if t is not None]
-        return list(sorted(set(times)))
-
-    def _initial_time(self, path):
-        with netCDF4.Dataset(path) as dataset:
+        times = []
+        for p in paths:
             try:
-                var = dataset.variables["forecast_reference_time" ]
-                return netCDF4.num2date(var[:], units=var.units)
-            except KeyError:
-                cubes = iris.load(path)
-                if len(cubes) > 0:
-                    cube = cubes[0]
-                    return (
-                        cube.coord('time')
-                            .cells()
-                            .next()
-                            .point)
+                times.append(Locator.initial_time(p))
+            except InitialTimeNotFound:
+                pass
+        return list(sorted(set(times)))
 
     def valid_times(self, pattern, variable, initial_time):
         paths = fnmatch.filter(self.paths, pattern)
@@ -93,19 +87,6 @@ class Navigator(object):
             return []
 
 
-class DateLocator(object):
-    def __init__(self, paths):
-        self.paths = np.asarray(paths)
-        self.initial_times = np.array([
-                util.initial_time(p) for p in paths],
-                dtype='datetime64[s]')
-
-    def search(self, initial):
-        if isinstance(initial, str):
-            initial = np.datetime64(initial, 's')
-        return self.paths[self.initial_times == initial]
-
-
 class Locator(object):
     """Locator for collection of UM diagnostic files
 
@@ -113,27 +94,36 @@ class Locator(object):
     files to quickly look up file/index related to point
     in space/time
     """
-    def __init__(self, paths=None):
-        if paths is None:
-            paths = []
-        self.locator = DateLocator(paths)
-        self.paths = np.asarray(paths)
-        self.valid_times = {}
-        self.pressures = {}
+    def __init__(self, paths):
+        self.paths = {}
         for path in paths:
-            with netCDF4.Dataset(path) as dataset:
-                var = dataset.variables["time"]
-                dates = netCDF4.num2date(var[:],
-                        units=var.units)
-                if isinstance(dates, dt.datetime):
-                    dates = np.array([dates], dtype=object)
-                self.valid_times[path] = dates.astype(
-                        'datetime64[s]')
-                self.pressures[path] = dataset.variables[
-                        'pressure'][:]
+            key = str(self.initial_time(path))
+            if key in self.paths:
+                self.paths[key].append(path)
+            else:
+                self.paths[key] = [path]
 
-    def search(self, *args, **kwargs):
-        return self.path_points(*args, **kwargs)
+    @staticmethod
+    def initial_time(path):
+            try:
+                return Locator.netcdf4_initial_time(path)
+            except KeyError:
+                return Locator.iris_initial_time(path)
+
+    @staticmethod
+    def netcdf4_initial_time(path):
+        with netCDF4.Dataset(path) as dataset:
+            var = dataset.variables["forecast_reference_time" ]
+            values = netCDF4.num2date(var[:], units=var.units)
+        return values
+
+    @staticmethod
+    def iris_initial_time(path):
+        cubes = iris.load(path)
+        if len(cubes) > 0:
+            cube = cubes[0]
+            return cube.coord('time').cells().next().point
+        raise InitialTimeNotFound("No initial time: '{}'".format(path))
 
     def locate(
             self,
@@ -143,34 +133,28 @@ class Locator(object):
             valid_time,
             pressure=None,
             tolerance=0.001):
-        print(pattern, variable, initial_time, valid_time, pressure)
-        raise NotImplementedError("File system search not supported")
-
-    def path_index(self, variable, initial, valid, pressure):
-        path, pts = self.path_points(variable, initial, valid, pressure)
-        return path, np.argmax(pts)
-
-    def path_points(self, variable, initial, valid, pressure):
-        if isinstance(valid, str):
-            valid = np.datetime64(valid, 's')
-        paths = self.run_paths(initial)
+        if isinstance(valid_time, str):
+            valid_time = np.datetime64(valid_time, 's')
+        paths = self.paths[str(initial_time)]
+        paths = fnmatch.filter(paths, pattern)
         for path in paths:
-            with netCDF4.Dataset(path) as dataset:
-                valid_times = self._valid_times(dataset, variable)
-                pressures = self._pressures(dataset, variable)
-                if pressures is not None:
-                    pts = points(
-                            valid_times,
-                            pressures,
-                            valid,
-                            pressure)
-                else:
-                    pts = time_points(
-                            valid_times,
-                            valid)
-                if pts.any():
-                    return path, pts
-        raise SearchFail('initial: {} valid: {} pressure: {}'.format(initial, valid, pressure))
+            valid_times = self.valid_times(path, variable)
+            if self.has_pressure(path, variable):
+                pressures = self.pressures(path, variable)
+                t_pts = self.time_points(
+                        valid_times,
+                        valid_time)
+                p_pts = self.pressure_points(
+                        pressures,
+                        pressure)
+                pts = t_pts & p_pts
+            else:
+                pts = self.time_points(
+                        valid_times,
+                        valid_time)
+            if pts.any():
+                return path, pts
+        raise SearchFail('initial: {} valid: {} pressure: {}'.format(initial_time, valid_time, pressure))
 
     @staticmethod
     def _pressures(dataset, variable):
@@ -184,6 +168,11 @@ class Locator(object):
         for c in coords:
             if c.startswith('pressure'):
                 return dataset.variables[c][:]
+
+    def valid_times(self, path, variable):
+        with netCDF4.Dataset(path) as dataset:
+            values = self._valid_times(dataset, variable)
+        return values
 
     @staticmethod
     def _valid_times(dataset, variable):
@@ -204,26 +193,16 @@ class Locator(object):
                     netCDF4.num2date(tvar[:], units=tvar.units),
                     dtype='datetime64[s]')
 
-    def run_paths(self, initial):
-        return self.locator.search(initial)
+    @staticmethod
+    def pressure_points(pressures, pressure):
+        ptol = 1
+        return np.abs(pressures - pressure) < ptol
 
-
-def points(times, pressures, time, pressure):
-    """Locate slice of array for time/pressure"""
-    return (
-            pressure_points(pressures, pressure) &
-            time_points(times, time))
-
-
-def pressure_points(pressures, pressure):
-    ptol = 1
-    return np.abs(pressures - pressure) < ptol
-
-
-def time_points(times, time):
-    ttol = np.timedelta64(15 * 60, 's')
-    if times.dtype == 'O':
-        times = times.astype('datetime64[s]')
-    if isinstance(time, dt.datetime):
-        time = np.datetime64(time, 's')
-    return np.abs(times - time) < ttol
+    @staticmethod
+    def time_points(times, time):
+        ttol = np.timedelta64(15 * 60, 's')
+        if times.dtype == 'O':
+            times = times.astype('datetime64[s]')
+        if isinstance(time, dt.datetime):
+            time = np.datetime64(time, 's')
+        return np.abs(times - time) < ttol
