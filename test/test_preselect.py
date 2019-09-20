@@ -1,6 +1,7 @@
 import unittest
-import db
-import images
+from forest import (
+        db,
+        images)
 
 
 class TestInitialState(unittest.TestCase):

@@ -5,10 +5,11 @@ import numpy as np
 import os
 import glob
 from functools import lru_cache
-import geo
-import locate
-from util import coarsify
-from exceptions import FileNotFound, IndexNotFound
+from forest import (
+        geo,
+        locate)
+from forest.util import coarsify
+from forest.exceptions import FileNotFound, IndexNotFound
 
 
 class EIDA50(object):

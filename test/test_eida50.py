@@ -2,8 +2,8 @@ import unittest
 import os
 import datetime as dt
 import netCDF4
-import satellite
-from exceptions import FileNotFound, IndexNotFound
+from forest import satellite
+from forest.exceptions import FileNotFound, IndexNotFound
 
 
 class TestLocator(unittest.TestCase):

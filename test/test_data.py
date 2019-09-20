@@ -3,9 +3,10 @@ import os
 import datetime as dt
 import netCDF4
 import numpy as np
-import satellite
-import data
-import db
+from forest import (
+        satellite,
+        data,
+        db)
 
 
 @unittest.skip("green light")

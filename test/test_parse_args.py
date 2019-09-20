@@ -1,5 +1,5 @@
 import unittest
-from parse_args import parse_args
+from forest.parse_args import parse_args
 
 
 class TestParseArgs(unittest.TestCase):

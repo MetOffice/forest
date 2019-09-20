@@ -1,8 +1,8 @@
 import bokeh.models
 import bokeh.layouts
 import numpy as np
-from util import Observable
-from db.util import autolabel
+from forest.util import Observable
+from forest.db.util import autolabel
 
 
 class Controls(Observable):

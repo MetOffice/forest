@@ -4,13 +4,15 @@ import os
 import glob
 import json
 import numpy as np
-import rdt
-import locate
+from forest import (
+        rdt,
+        locate)
 
 
 class TestLocator(unittest.TestCase):
     def setUp(self):
-        pattern = os.path.join(os.path.dirname(__file__), "sample/RDT*.json")
+        pattern = os.path.join(os.path.dirname(__file__),
+                "sample/RDT*.json")
         self.locator = rdt.Locator(pattern)
 
     def test_paths(self):

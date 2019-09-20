@@ -1,6 +1,6 @@
 import unittest
 import cartopy
-import data
+from forest import data
 
 
 class TestLakes(unittest.TestCase):

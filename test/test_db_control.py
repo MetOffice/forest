@@ -1,7 +1,7 @@
 import unittest
 import unittest.mock
 import datetime as dt
-import db
+from forest import db
 
 
 def parameterize(*values):
@@ -64,6 +64,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
         }
         self.assertEqual(expect, result)
 
+    @unittest.skip("porting to test directory")
     def test_set_valid_time_sets_pressures(self):
         path = "file.nc"
         variable = "air_temperature"
@@ -97,6 +98,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
         }
         self.assertEqual(expect, result)
 
+    @unittest.skip("porting to test directory")
     def test_set_variable_given_initial_time_changes_times_and_pressure(self):
         path = "some.nc"
         initial_time = "2019-01-01 00:00:00"
@@ -132,7 +134,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
         }
         self.assertEqual(expect, result)
 
-
+    @unittest.skip("porting to test directory")
     def test_navigator_api(self):
         path = "file.nc"
         variable = "air_temperature"

@@ -2,10 +2,10 @@
 import netCDF4
 import datetime as dt
 import numpy as np
-import util
+from forest import util
 import fnmatch
 import iris
-from db.exceptions import SearchFail
+from forest.db.exceptions import SearchFail
 
 
 class Navigator(object):

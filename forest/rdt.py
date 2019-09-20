@@ -5,10 +5,11 @@ import datetime as dt
 import bokeh
 import json
 import numpy as np
-import geo
-import locate
-from util import timeout_cache
-from exceptions import FileNotFound
+from forest import (
+        geo,
+        locate)
+from forest.util import timeout_cache
+from forest.exceptions import FileNotFound
 
 
 class View(object):

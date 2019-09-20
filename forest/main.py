@@ -2,20 +2,21 @@ import bokeh.plotting
 import bokeh.events
 import numpy as np
 import os
-import satellite
-import data
-import view
-import images
-import earth_networks
-import rdt
-import geo
-import colors
-import db
-import disk
-import config as cfg
-import parse_args
-from util import Observable
-from db.util import autolabel
+from forest import (
+        satellite,
+        data,
+        view,
+        images,
+        earth_networks,
+        rdt,
+        geo,
+        colors,
+        db,
+        disk,
+        parse_args)
+import forest.config as cfg
+from forest.util import Observable
+from forest.db.util import autolabel
 import datetime as dt
 
 

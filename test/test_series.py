@@ -4,7 +4,7 @@ import netCDF4
 import numpy as np
 import numpy.testing as npt
 import datetime as dt
-import data
+from forest import data
 
 
 def variable_dim0(

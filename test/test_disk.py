@@ -4,7 +4,7 @@ import numpy as np
 import netCDF4
 import os
 import fnmatch
-import disk
+from forest import disk
 
 
 class TestDateLocator(unittest.TestCase):

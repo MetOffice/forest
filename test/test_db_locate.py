@@ -1,7 +1,7 @@
 import unittest
 import sqlite3
 import datetime as dt
-import db
+from forest import db
 
 
 class TestLocate(unittest.TestCase):
