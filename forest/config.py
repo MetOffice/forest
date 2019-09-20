@@ -31,7 +31,11 @@ class Config(object):
     @classmethod
     def load(cls, path):
         with open(path) as stream:
-            data = yaml.load(stream, Loader=yaml.FullLoader)
+            try:
+                # PyYaml 5.1 onwards
+                data = yaml.full_load(stream)
+            except AttributeError:
+                data = yaml.load(stream)
         return cls(data)
 
     @classmethod
