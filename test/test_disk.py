@@ -55,8 +55,14 @@ class TestDateLocator(unittest.TestCase):
 
 
 class TestNavigator(unittest.TestCase):
-    def test_given_empty_unified_model_file(self):
+    def setUp(self):
         self.path = "test-navigator.nc"
+
+    def tearDown(self):
+        if os.path.exists(self.path):
+            os.remove(self.path)
+
+    def test_given_empty_unified_model_file(self):
         pattern = "*.nc"
         with netCDF4.Dataset(self.path, "w") as dataset:
             pass
@@ -66,7 +72,6 @@ class TestNavigator(unittest.TestCase):
         self.assertEqual(expect, result)
 
     def test_initial_times_given_forecast_reference_time(self):
-        self.path = "test-navigator.nc"
         pattern = "*.nc"
         with netCDF4.Dataset(self.path, "w") as dataset:
             var = dataset.createVariable("forecast_reference_time", "d", ())
@@ -78,7 +83,6 @@ class TestNavigator(unittest.TestCase):
         self.assertEqual(expect, result)
 
     def test_valid_times_given_relative_humidity(self):
-        self.path = "test-navigator.nc"
         pattern = "*.nc"
         variable = "relative_humidity"
         initial_time = dt.datetime(2019, 1, 1)
@@ -125,7 +129,6 @@ class TestNavigator(unittest.TestCase):
         np.testing.assert_array_equal(expect, result)
 
     def test_pressures_given_relative_humidity(self):
-        self.path = "test-navigator.nc"
         pattern = "*.nc"
         variable = "relative_humidity"
         initial_time = dt.datetime(2019, 1, 1)
