@@ -12,6 +12,14 @@ class InitialTimeNotFound(Exception):
     pass
 
 
+class ValidTimesNotFound(Exception):
+    pass
+
+
+class PressuresNotFound(Exception):
+    pass
+
+
 class Navigator(object):
     """Menu system given unified model files"""
     def __init__(self, paths):
@@ -28,9 +36,9 @@ class Navigator(object):
     def initial_times(self, pattern, variable=None):
         paths = fnmatch.filter(self.paths, pattern)
         times = []
-        for p in paths:
+        for path in paths:
             try:
-                times.append(Locator.initial_time(p))
+                times.append(load_initial_time(path))
             except InitialTimeNotFound:
                 pass
         return list(sorted(set(times)))
@@ -40,56 +48,64 @@ class Navigator(object):
         arrays = []
         for path in paths:
             try:
-                t = NetCDF4Locator.valid_times(path, variable)
-            except KeyError:
-                t = IrisLocator.valid_times(path, variable)
-            if t is None:
-                t = IrisLocator.valid_times(path, variable)
-            elif t.ndim == 0:
-                t = np.array([t], dtype='datetime64[s]')
-            arrays.append(t)
+                arrays.append(load_valid_times(path, variable))
+            except ValidTimesNotFound:
+                pass
+        if len(arrays) == 0:
+            return []
         return np.unique(np.concatenate(arrays))
 
     def pressures(self, pattern, variable, initial_time):
         paths = fnmatch.filter(self.paths, pattern)
         arrays = []
         for path in paths:
-            with netCDF4.Dataset(path) as dataset:
-                try:
-                    p = Locator._pressures(dataset, variable)
-                except KeyError:
-                    cube = iris.load_cube(path, variable)
-                    p = self._cube_pressures(cube)
-                if p is None:
-                    cube = iris.load_cube(path, variable)
-                    p = self._cube_pressures(cube)
-                elif np.ndim(p) == 0:
-                    p = np.array([p])
-                arrays.append(p)
+            try:
+                arrays.append(load_pressures(path, variable))
+            except PressuresNotFound:
+                pass
         if len(arrays) == 0:
             return []
         return np.unique(np.concatenate(arrays))
 
-    @staticmethod
-    def _cube_pressures(cube):
+
+class InitialTimeLocator(object):
+    def __call__(self, path):
         try:
-            return cube.coord('pressure').points
-        except iris.exceptions.CoordinateNotFoundError:
-            return []
+            return self.netcdf4_strategy(path)
+        except KeyError:
+            return self.cube_strategy(path)
 
-
-class NetCDF4Locator(object):
     @staticmethod
-    def initial_time(path):
+    def netcdf4_strategy(path):
         with netCDF4.Dataset(path) as dataset:
             var = dataset.variables["forecast_reference_time" ]
             values = netCDF4.num2date(var[:], units=var.units)
         return values
 
     @staticmethod
-    def valid_times(path, variable):
+    def cube_strategy(path):
+        cubes = iris.load(path)
+        if len(cubes) > 0:
+            cube = cubes[0]
+            return cube.coord('time').cells().next().point
+        raise InitialTimeNotFound("No initial time: '{}'".format(path))
+
+
+class ValidTimesLocator(object):
+    def __call__(self, path, variable):
+        try:
+            t = self.netcdf4_strategy(path, variable)
+        except KeyError:
+            t = self.cube_strategy(path, variable)
+        if t is None:
+            t = self.cube_strategy(path, variable)
+        elif t.ndim == 0:
+            t = np.array([t], dtype='datetime64[s]')
+        return t
+
+    def netcdf4_strategy(self, path, variable):
         with netCDF4.Dataset(path) as dataset:
-            values = NetCDF4Locator._valid_times(dataset, variable)
+            values = self._valid_times(dataset, variable)
         return values
 
     @staticmethod
@@ -111,22 +127,53 @@ class NetCDF4Locator(object):
                     netCDF4.num2date(tvar[:], units=tvar.units),
                     dtype='datetime64[s]')
 
-
-class IrisLocator(object):
     @staticmethod
-    def initial_time(path):
-        cubes = iris.load(path)
-        if len(cubes) > 0:
-            cube = cubes[0]
-            return cube.coord('time').cells().next().point
-        raise InitialTimeNotFound("No initial time: '{}'".format(path))
-
-    @staticmethod
-    def valid_times(path, variable):
+    def cube_strategy(path, variable):
         cube = iris.load_cube(path, variable)
         return np.array([
             c.point for c in cube.coord('time').cells()],
                  dtype='datetime64[s]')
+
+
+class PressuresLocator(object):
+    def __call__(self, path, variable):
+        p = []
+        with netCDF4.Dataset(path) as dataset:
+            try:
+                p = self.netcdf4_pressures(dataset, variable)
+            except KeyError:
+                cube = iris.load_cube(path, variable)
+                p = self.cube_pressures(cube)
+            if p is None:
+                cube = iris.load_cube(path, variable)
+                p = self._cube_pressures(cube)
+            elif np.ndim(p) == 0:
+                p = np.array([p])
+        return p
+
+    @staticmethod
+    def cube_pressures(cube):
+        try:
+            return cube.coord('pressure').points
+        except iris.exceptions.CoordinateNotFoundError:
+            return []
+
+    @staticmethod
+    def netcdf4_pressures(dataset, variable):
+        """Search dataset for pressure axis"""
+        var = dataset.variables[variable]
+        for d in var.dimensions:
+            if d.startswith('pressure'):
+                if d in dataset.variables:
+                    return dataset.variables[d][:]
+        coords = var.coordinates.split()
+        for c in coords:
+            if c.startswith('pressure'):
+                return dataset.variables[c][:]
+
+load_pressures = PressuresLocator()
+load_valid_times = ValidTimesLocator()
+load_initial_time = InitialTimeLocator()
 
 
 class Locator(object):
@@ -139,18 +186,11 @@ class Locator(object):
     def __init__(self, paths):
         self.paths = {}
         for path in paths:
-            key = str(self.initial_time(path))
+            key = str(load_initial_time(path))
             if key in self.paths:
                 self.paths[key].append(path)
             else:
                 self.paths[key] = [path]
-
-    @staticmethod
-    def initial_time(path):
-        try:
-            return NetCDF4Locator.initial_time(path)
-        except KeyError:
-            return IrisLocator.initial_time(path)
 
     def locate(
             self,
@@ -165,42 +205,20 @@ class Locator(object):
         paths = self.paths[str(initial_time)]
         paths = fnmatch.filter(paths, pattern)
         for path in paths:
-            valid_times = self.valid_times(path, variable)
-            if self.has_pressure(path, variable):
-                pressures = self.pressures(path, variable)
-                t_pts = self.time_points(
-                        valid_times,
-                        valid_time)
-                p_pts = self.pressure_points(
+            valid_times = load_valid_times(path, variable)
+            pts = self.time_points(
+                    valid_times,
+                    valid_time)
+            try:
+                pressures = load_pressures(path, variable)
+                pts = pts & self.pressure_points(
                         pressures,
                         pressure)
-                pts = t_pts & p_pts
-            else:
-                pts = self.time_points(
-                        valid_times,
-                        valid_time)
+            except PressuresNotFound:
+                pass
             if pts.any():
                 return path, pts
         raise SearchFail('initial: {} valid: {} pressure: {}'.format(initial_time, valid_time, pressure))
-
-    @staticmethod
-    def _pressures(dataset, variable):
-        """Search dataset for pressure axis"""
-        var = dataset.variables[variable]
-        for d in var.dimensions:
-            if d.startswith('pressure'):
-                if d in dataset.variables:
-                    return dataset.variables[d][:]
-        coords = var.coordinates.split()
-        for c in coords:
-            if c.startswith('pressure'):
-                return dataset.variables[c][:]
-
-    def valid_times(self, path, variable):
-        try:
-            return NetCDF4Locator.valid_times(path, variable)
-        except KeyError:
-            return IrisLocator.valid_times(path, variable)
 
     @staticmethod
     def pressure_points(pressures, pressure):
