@@ -7,7 +7,46 @@ import fnmatch
 from forest import disk
 
 
-class Formatter(object):
+class EIDA50(object):
+    """EIDA50 satellite formatter"""
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def define(self, times):
+        dataset = self.dataset
+        dataset.createDimension("time", len(times))
+        dataset.createDimension("longitude", 1)
+        dataset.createDimension("latitude", 1)
+        units = "hours since 1970-01-01 00:00:00"
+        var = dataset.createVariable(
+                "time", "d", ("time",))
+        var.axis = "T"
+        var.units = units
+        var.standard_name = "time"
+        var.calendar = "gregorian"
+        var[:] = netCDF4.date2num(times, units=units)
+        var = dataset.createVariable(
+                "longitude", "f", ("longitude",))
+        var.axis = "X"
+        var.units = "degrees_east"
+        var.standard_name = "longitude"
+        var[:] = 0
+        var = dataset.createVariable(
+                "latitude", "f", ("latitude",))
+        var.axis = "Y"
+        var.units = "degrees_north"
+        var.standard_name = "latitude"
+        var[:] = 0
+        var = dataset.createVariable(
+                "data", "f", ("time", "latitude", "longitude"))
+        var.standard_name = "toa_brightness_temperature"
+        var.long_name = "toa_brightness_temperature"
+        var.units = "K"
+        var[:] = 0
+
+
+class UM(object):
+    """Unified model diagnostics formatter"""
     def __init__(self, dataset):
         self.dataset = dataset
         self.units = "hours since 1970-01-01 00:00:00"
@@ -98,11 +137,11 @@ class TestLocator(unittest.TestCase):
         expect = (self.path, 0)
         self.assertEqual(expect, result)
 
-    def test_initial_time(self):
+    def test_initial_time_given_forecast_reference_time(self):
         time = dt.datetime(2019, 1, 1, 12)
         with netCDF4.Dataset(self.path, "w") as dataset:
-            formatter = Formatter(dataset)
-            formatter.forecast_reference_time(time)
+            um = UM(dataset)
+            um.forecast_reference_time(time)
         result = disk.Locator.initial_time(self.path)
         expect = time
         np.testing.assert_array_equal(expect, result)
@@ -113,23 +152,34 @@ class TestLocator(unittest.TestCase):
                 "time_0": [dt.datetime(2019, 1, 1)],
                 "time_1": [dt.datetime(2019, 1, 1, 3)]}
         with netCDF4.Dataset(self.path, "w") as dataset:
-            formatter = Formatter(dataset)
+            um = UM(dataset)
             for name, values in times.items():
-                formatter.times(name, values)
-            var = formatter.pressures(length=1)
+                um.times(name, values)
+            var = um.pressures(length=1)
             var[:] = 1000.
-            var = formatter.longitudes(length=1)
+            var = um.longitudes(length=1)
             var[:] = 125.
-            var = formatter.latitudes(length=1)
+            var = um.latitudes(length=1)
             var[:] = 45.
             dims = ("time_1", "pressure", "longitude", "latitude")
-            var = formatter.relative_humidity(dims)
+            var = um.relative_humidity(dims)
             var[:] = 100.
         variable = "relative_humidity"
         locator = disk.Locator([self.path])
         result = locator.valid_times(self.path, variable)
         expect = times["time_1"]
         np.testing.assert_array_equal(expect, result)
+
+    def test_valid_times_given_eida50_toa_brightness_temperature(self):
+        times = [dt.datetime(2019, 1, 1)]
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            eida50 = EIDA50(dataset)
+            eida50.define(times)
+
+        locator = disk.Locator([self.path])
+        result = locator.valid_times(self.path, "toa_brightness_temperature")
+        expect = times
+        self.assertEqual(expect, result)
 
 
 class TestNavigator(unittest.TestCase):
@@ -270,14 +320,16 @@ class TestEIDA50(unittest.TestCase):
 
     def test_initial_times(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            self.define(dataset, self.times)
+            eida50 = EIDA50(dataset)
+            eida50.define(self.times)
         result = self.navigator.initial_times(self.path)
         expect = [self.times[0]]
         self.assertEqual(expect, result)
 
     def test_valid_times(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            self.define(dataset, self.times)
+            eida50 = EIDA50(dataset)
+            eida50.define(self.times)
         result = self.navigator.valid_times(
                 self.path,
                 "toa_brightness_temperature",
@@ -287,44 +339,14 @@ class TestEIDA50(unittest.TestCase):
 
     def test_pressures(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            self.define(dataset, self.times)
+            eida50 = EIDA50(dataset)
+            eida50.define(self.times)
         result = self.navigator.pressures(
                 self.path,
                 "toa_brightness_temperature",
                 self.times[0])
         expect = []
         np.testing.assert_array_equal(expect, result)
-
-    def define(self, dataset, times):
-        dataset.createDimension("time", len(times))
-        dataset.createDimension("longitude", 1)
-        dataset.createDimension("latitude", 1)
-        units = "hours since 1970-01-01 00:00:00"
-        var = dataset.createVariable(
-                "time", "d", ("time",))
-        var.axis = "T"
-        var.units = units
-        var.standard_name = "time"
-        var.calendar = "gregorian"
-        var[:] = netCDF4.date2num(times, units=units)
-        var = dataset.createVariable(
-                "longitude", "f", ("longitude",))
-        var.axis = "X"
-        var.units = "degrees_east"
-        var.standard_name = "longitude"
-        var[:] = 0
-        var = dataset.createVariable(
-                "latitude", "f", ("latitude",))
-        var.axis = "Y"
-        var.units = "degrees_north"
-        var.standard_name = "latitude"
-        var[:] = 0
-        var = dataset.createVariable(
-                "data", "f", ("time", "latitude", "longitude"))
-        var.standard_name = "toa_brightness_temperature"
-        var.long_name = "toa_brightness_temperature"
-        var.units = "K"
-        var[:] = 0
 
 
 class TestFNMatch(unittest.TestCase):

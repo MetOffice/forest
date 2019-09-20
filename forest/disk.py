@@ -39,25 +39,16 @@ class Navigator(object):
         paths = fnmatch.filter(self.paths, pattern)
         arrays = []
         for path in paths:
-            with netCDF4.Dataset(path) as dataset:
-                try:
-                    t = Locator._valid_times(dataset, variable)
-                except KeyError:
-                    cube = iris.load_cube(path, variable)
-                    t = self._cube_times(cube)
-                if t is None:
-                    cube = iris.load_cube(path, variable)
-                    t = self._cube_times(cube)
-                elif t.ndim == 0:
-                    t = np.array([t], dtype='datetime64[s]')
-                arrays.append(t)
+            try:
+                t = NetCDF4Locator.valid_times(path, variable)
+            except KeyError:
+                t = IrisLocator.valid_times(path, variable)
+            if t is None:
+                t = IrisLocator.valid_times(path, variable)
+            elif t.ndim == 0:
+                t = np.array([t], dtype='datetime64[s]')
+            arrays.append(t)
         return np.unique(np.concatenate(arrays))
-
-    @staticmethod
-    def _cube_times(cube):
-        return np.array([
-            c.point for c in cube.coord('time').cells()],
-                 dtype='datetime64[s]')
 
     def pressures(self, pattern, variable, initial_time):
         paths = fnmatch.filter(self.paths, pattern)
@@ -95,6 +86,31 @@ class NetCDF4Locator(object):
             values = netCDF4.num2date(var[:], units=var.units)
         return values
 
+    @staticmethod
+    def valid_times(path, variable):
+        with netCDF4.Dataset(path) as dataset:
+            values = NetCDF4Locator._valid_times(dataset, variable)
+        return values
+
+    @staticmethod
+    def _valid_times(dataset, variable):
+        """Search dataset for time axis"""
+        var = dataset.variables[variable]
+        for d in var.dimensions:
+            if d.startswith('time'):
+                if d in dataset.variables:
+                    tvar = dataset.variables[d]
+                    return np.array(
+                        netCDF4.num2date(tvar[:], units=tvar.units),
+                        dtype='datetime64[s]')
+        coords = var.coordinates.split()
+        for c in coords:
+            if c.startswith('time'):
+                tvar = dataset.variables[c]
+                return np.array(
+                    netCDF4.num2date(tvar[:], units=tvar.units),
+                    dtype='datetime64[s]')
+
 
 class IrisLocator(object):
     @staticmethod
@@ -104,6 +120,13 @@ class IrisLocator(object):
             cube = cubes[0]
             return cube.coord('time').cells().next().point
         raise InitialTimeNotFound("No initial time: '{}'".format(path))
+
+    @staticmethod
+    def valid_times(path, variable):
+        cube = iris.load_cube(path, variable)
+        return np.array([
+            c.point for c in cube.coord('time').cells()],
+                 dtype='datetime64[s]')
 
 
 class Locator(object):
@@ -124,10 +147,10 @@ class Locator(object):
 
     @staticmethod
     def initial_time(path):
-            try:
-                return NetCDF4Locator.initial_time(path)
-            except KeyError:
-                return IrisLocator.initial_time(path)
+        try:
+            return NetCDF4Locator.initial_time(path)
+        except KeyError:
+            return IrisLocator.initial_time(path)
 
     def locate(
             self,
@@ -174,28 +197,10 @@ class Locator(object):
                 return dataset.variables[c][:]
 
     def valid_times(self, path, variable):
-        with netCDF4.Dataset(path) as dataset:
-            values = self._valid_times(dataset, variable)
-        return values
-
-    @staticmethod
-    def _valid_times(dataset, variable):
-        """Search dataset for time axis"""
-        var = dataset.variables[variable]
-        for d in var.dimensions:
-            if d.startswith('time'):
-                if d in dataset.variables:
-                    tvar = dataset.variables[d]
-                    return np.array(
-                        netCDF4.num2date(tvar[:], units=tvar.units),
-                        dtype='datetime64[s]')
-        coords = var.coordinates.split()
-        for c in coords:
-            if c.startswith('time'):
-                tvar = dataset.variables[c]
-                return np.array(
-                    netCDF4.num2date(tvar[:], units=tvar.units),
-                    dtype='datetime64[s]')
+        try:
+            return NetCDF4Locator.valid_times(path, variable)
+        except KeyError:
+            return IrisLocator.valid_times(path, variable)
 
     @staticmethod
     def pressure_points(pressures, pressure):
