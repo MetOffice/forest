@@ -1,7 +1,7 @@
 #!/bin/bash
 REPO_DIR=$1
 BUCKET_DIR=$2
-bokeh serve \
+PYTHONPATH=${REPO_DIR}:$PYTHONPATH bokeh serve \
     --use-xheaders \
     --port 8080 \
     --allow-websocket-origin forest.informaticslab.co.uk \
