@@ -175,6 +175,80 @@ class TestNavigator(unittest.TestCase):
         np.testing.assert_array_equal(expect, result)
 
 
+class TestEIDA50(unittest.TestCase):
+    def setUp(self):
+        self.path = "test-navigate-eida50.nc"
+        self.navigator = disk.Navigator([self.path])
+        self.times = [
+            dt.datetime(2019, 1, 1, 0),
+            dt.datetime(2019, 1, 1, 0, 15),
+            dt.datetime(2019, 1, 1, 0, 30),
+            dt.datetime(2019, 1, 1, 0, 45),
+        ]
+
+    def tearDown(self):
+        if os.path.exists(self.path):
+            os.remove(self.path)
+
+    def test_initial_times(self):
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            self.define(dataset, self.times)
+        result = self.navigator.initial_times(self.path)
+        expect = [self.times[0]]
+        self.assertEqual(expect, result)
+
+    def test_valid_times(self):
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            self.define(dataset, self.times)
+        result = self.navigator.valid_times(
+                self.path,
+                "toa_brightness_temperature",
+                self.times[0])
+        expect = self.times
+        np.testing.assert_array_equal(expect, result)
+
+    def test_pressures(self):
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            self.define(dataset, self.times)
+        result = self.navigator.pressures(
+                self.path,
+                "toa_brightness_temperature",
+                self.times[0])
+        expect = []
+        np.testing.assert_array_equal(expect, result)
+
+    def define(self, dataset, times):
+        dataset.createDimension("time", len(times))
+        dataset.createDimension("longitude", 1)
+        dataset.createDimension("latitude", 1)
+        units = "hours since 1970-01-01 00:00:00"
+        var = dataset.createVariable(
+                "time", "d", ("time",))
+        var.axis = "T"
+        var.units = units
+        var.standard_name = "time"
+        var.calendar = "gregorian"
+        var[:] = netCDF4.date2num(times, units=units)
+        var = dataset.createVariable(
+                "longitude", "f", ("longitude",))
+        var.axis = "X"
+        var.units = "degrees_east"
+        var.standard_name = "longitude"
+        var[:] = 0
+        var = dataset.createVariable(
+                "latitude", "f", ("latitude",))
+        var.axis = "Y"
+        var.units = "degrees_north"
+        var.standard_name = "latitude"
+        var[:] = 0
+        var = dataset.createVariable(
+                "data", "f", ("time", "latitude", "longitude"))
+        var.standard_name = "toa_brightness_temperature"
+        var.long_name = "toa_brightness_temperature"
+        var.units = "K"
+        var[:] = 0
+
+
 class TestFNMatch(unittest.TestCase):
     def test_filter(self):
         names = ["/some/file.json", "/other/file.nc"]

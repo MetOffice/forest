@@ -32,41 +32,65 @@ class Navigator(object):
                 var = dataset.variables["forecast_reference_time" ]
                 return netCDF4.num2date(var[:], units=var.units)
             except KeyError:
-                pass
+                cubes = iris.load(path)
+                if len(cubes) > 0:
+                    cube = cubes[0]
+                    return (
+                        cube.coord('time')
+                            .cells()
+                            .next()
+                            .point)
 
     def valid_times(self, pattern, variable, initial_time):
         paths = fnmatch.filter(self.paths, pattern)
         arrays = []
         for path in paths:
             with netCDF4.Dataset(path) as dataset:
-                t = Locator._valid_times(dataset, variable)
+                try:
+                    t = Locator._valid_times(dataset, variable)
+                except KeyError:
+                    cube = iris.load_cube(path, variable)
+                    t = self._cube_times(cube)
                 if t is None:
                     cube = iris.load_cube(path, variable)
-                    t = np.array([c.point for c in cube.coord('time').cells()],
-                             dtype='datetime64[s]')
+                    t = self._cube_times(cube)
                 elif t.ndim == 0:
                     t = np.array([t], dtype='datetime64[s]')
                 arrays.append(t)
         return np.unique(np.concatenate(arrays))
+
+    @staticmethod
+    def _cube_times(cube):
+        return np.array([
+            c.point for c in cube.coord('time').cells()],
+                 dtype='datetime64[s]')
 
     def pressures(self, pattern, variable, initial_time):
         paths = fnmatch.filter(self.paths, pattern)
         arrays = []
         for path in paths:
             with netCDF4.Dataset(path) as dataset:
-                p = Locator._pressures(dataset, variable)
+                try:
+                    p = Locator._pressures(dataset, variable)
+                except KeyError:
+                    cube = iris.load_cube(path, variable)
+                    p = self._cube_pressures(cube)
                 if p is None:
                     cube = iris.load_cube(path, variable)
-                    try:
-                        p = cube.coord('pressure').points
-                    except iris.exceptions.CoordinateNotFoundError:
-                        return []
-                elif p.ndim == 0:
+                    p = self._cube_pressures(cube)
+                elif np.ndim(p) == 0:
                     p = np.array([p])
                 arrays.append(p)
         if len(arrays) == 0:
             return []
         return np.unique(np.concatenate(arrays))
+
+    @staticmethod
+    def _cube_pressures(cube):
+        try:
+            return cube.coord('pressure').points
+        except iris.exceptions.CoordinateNotFoundError:
+            return []
 
 
 class DateLocator(object):
