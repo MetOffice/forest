@@ -17,6 +17,9 @@ git diff
 git alias
 
 ## Run forest in this currrent setup
+## Now run forest
+conda activate forest
+python setup.py install
 # Setup database
 # Remember to remove databse file (by default it appends)
 # Visualise WRF sample data ...
@@ -29,7 +32,6 @@ forestdb --database claretandy.db /scratch/hadhy/tafrica/CaseStudies/opfc/201909
 # check the database
 sqlite3 claretandy.db
 
-## Now run forest
 # Note vld389 is my linux machine name - this allows other computers on the network to see the page
 # --dev means that any time a file in the repo is saved, the bokeh server restarts itself
 forest --dev --config claretandy.yaml --database claretandy.db --directory /scratch/hadhy/tafrica/CaseStudies/opfc/ --allow-websocket-origin vld389:5006
@@ -40,3 +42,9 @@ forest --dev --config claretandy.yaml --database claretandy.db --directory /scra
 
 # Commit stuff back to the branch
 git status
+
+# This commits all changed files to the local branch
+git commit -a -m 'Desription here'
+
+# Send the branch commits to git hub
+git push

@@ -41,10 +41,6 @@ class View(object):
                         "coordinates": [[[0, 0]]]
                     },
                     "properties": {
-                        'LatG': 0,
-                        'LonG': 0,
-                        'CType': 0,
-                        'CRainRate': 0,
                         'CType': 0,
                         'CRainRate': 0,
                         'ConvTypeMethod': 0,
@@ -73,33 +69,23 @@ class View(object):
             ]
         }
 
-        empty_tail = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "LineString",
-                        "coordinates": [[[0, 0]]]
-                    },
-                    "properties": {
-                        'NumIdCell': 0,
-                        'NumIdBirth': 0
-                    }
-                }
-            ]
-        }
-        self.empty_tail_line_source = json.dumps(empty_tail)
+        self.empty_tail_line_source = dict(xs=[], ys=[], LonTrajCellCG=[], LatTrajCellCG=[], NumIdCell=[], NumIdBirth=[], DTimeTraj=[], BTempTraj=[], BTminTraj=[], BaseAreaTraj=[], TopAreaTraj=[], CoolingRateTraj=[], ExpanRateTraj=[], SpeedTraj=[], DirTraj=[])
+        self.empty_tail_point_source = dict(x=[], y=[], LonTrajCellCG=[], LatTrajCellCG=[], NumIdCell=[], NumIdBirth=[], DTimeTraj=[], BTempTraj=[], BTminTraj=[], BaseAreaTraj=[], TopAreaTraj=[], CoolingRateTraj=[], ExpanRateTraj=[], SpeedTraj=[], DirTraj=[])
+        self.empty_centre_point_source = dict(x1=[], y1=[], x2=[], y2=[], xs=[], ys=[], Arrowxs=[], Arrowys=[], LonG=[], LatG=[], NumIdCell=[], NumIdBirth=[], MvtSpeed=[], MvtDirection=[])
         self.empty_geojson = json.dumps(empty)
 
         # print(self.empty_geojson)
+        from bokeh.palettes import GnBu3, OrRd3
         self.color_mapper = bokeh.models.CategoricalColorMapper(
-                palette=bokeh.palettes.Spectral6,
-                factors=["0", "1", "2", "3", "4"])
-        ## TODO setup new ColumnDataSource here for other objects (tails, other polygons and points)
+                # palette=bokeh.palettes.Spectral6,
+                palette=['#fee8c8', '#fdbb84', '#e34a33', '#43a2ca', '#a8ddb5'],
+                factors=["0", "1", "2", "3", "4"]) # "Triggering", "Triggering from split", "Growing", "Mature", "Decaying"
+
+
         self.source = bokeh.models.GeoJSONDataSource(geojson=self.empty_geojson)
-        self.tail_line_source = bokeh.models.GeoJSONDataSource(geojson=self.empty_tail_line_source)
-        # self.tail_point_source = bokeh.models.ColumnDataSource(dict(x=[], y=[]))
+        self.tail_line_source = bokeh.models.ColumnDataSource(self.empty_tail_line_source)
+        self.tail_point_source = bokeh.models.ColumnDataSource(self.empty_tail_point_source)
+        self.centre_point_source = bokeh.models.ColumnDataSource(self.empty_centre_point_source)
 
     # Gets called when a menu button is clicked (or when application state changes)
     def render(self, state):
@@ -108,28 +94,32 @@ class View(object):
             date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
             print('This is:',date)
             try:
-                ## TODO Renderer changes data depending on date
-                self.source.geojson, self.tail_line_source.geojson = self.loader.load_date(date)
-                print(self.tail_line_source.geojson)
-                # print(self.source.geojson)
-                #self.circle_source.data = {'x': [1,2,3], 'y':[4,5,6]} # Need to put in smthg like self.tail_loader.load_date(date)
+                self.source.geojson, self.tail_line_source.data, self.tail_point_source.data, self.centre_point_source.data = self.loader.load_date(date)
             except FileNotFound:
                 print('File not found - bug?')
                 self.source.geojson = self.empty_geojson
-                self.tail_line_source.geojson = self.empty_tail_line_source
+                self.tail_line_source.data = self.tail_line_source
+                self.tail_point_source.data = self.tail_point_source
+                self.centre_point_source.data = self.centre_point_source
 
     def add_figure(self, figure):
+
         # This is where all the plotting happens (e.g. when the applciation is loaded)
         ## TODO Add in multi-line plotting method for the tails, polygons and points
         print('Adding figure')
 
-        # circles = figure.circle(x=[3450904, 3651279], y=[-111325, -144727], size=5)
-        lines = figure.multi_line(xs="xs", ys="ys", source=self.tail_line_source)
-        #lines = figure.line(x=[3450904, 3651279], y=[-111325, -144727], line_width=3) # bokeh markers for more
+        circles = figure.circle(x="x", y="y", size=3, source=self.tail_point_source)
+        cntr_circles = figure.circle_cross(x="x1", y="y1", size=10, line_color='black', fill_color=None, source=self.centre_point_source)
+        future_lines = figure.multi_line(xs="xs", ys="ys", line_color='black', source=self.centre_point_source)
+        lines = figure.multi_line(xs="xs", ys="ys", line_dash='dashed', source=self.tail_line_source)
+        arrows = figure.patches(xs='Arrowxs', ys='Arrowys', fill_color='black', line_color='black', source=self.centre_point_source)
         renderer = figure.patches(
             xs="xs",
             ys="ys",
             fill_alpha=0,
+            # hatch_scale=5,
+            # hatch_weight=0.1,
+            # hatch_pattern='dot',
             line_width=2,
             line_color={
                  'field': 'PhaseLife',
@@ -150,8 +140,6 @@ class View(object):
                     ('CTPressure', '@CTPressure'),
                     ('CTPhase', '@CTPhase'),
                     ('CTReff', '@CTReff'),
-                    ('LonG', '@LonG'),
-                    ('LatG', '@LatG'),
                     ('ExpansionRate', '@ExpansionRate'),
                     ('BTmin', '@BTmin'),
                     ('BTmoy', '@BTmoy'),
@@ -165,12 +153,9 @@ class View(object):
                     ('Phase life', '@PhaseLife')], ## TODO Convert to human readable results. This will involve adding a PhaseLifeLabel to the geojson file
                 renderers=[renderer])
         figure.add_tools(tool)
-        return RenderGroup([renderer, lines, circles])
+        return RenderGroup([renderer, lines, circles, cntr_circles, future_lines, arrows])
 
-class TailLoader(object):
-
-    ## TODO: Add another way of reading the geojson so that we can add in tails (replicate the Loader class) and copy again for other data types (such as polygons, points etc)
-    # If I get stuck, I could write this as a function
+class TailLineLoader(object):
 
     def __init__(self, locator):
         self.locator = locator # Locator(pattern)
@@ -180,53 +165,226 @@ class TailLoader(object):
 
     @staticmethod
     def load(path):
-        print(path)
-
-        pt_fields = ['NumIdCell', 'NumIdBirth', 'DTimeTraj', 'LatTrajCellCG', 'LonTrajCellCG', 'BTempTraj', 'BTminTraj', 'BaseAreaTraj', 'TopAreaTraj', 'CoolingRateTraj', 'ExpanRateTraj', 'SpeedTraj', 'DirTraj']
-        line_fields = ['NumIdCell', 'NumIdBirth']
+        # print(path)
 
         with open(path) as stream:
             rdt = json.load(stream)
 
-        copy = dict(rdt)
-        cds = bokeh.models.ColumnDataSource(dict(xs=[], ys=[], NumIdCell=[], NumIdBirth=[]))
-        xs, ys = [], []
+        # Create an empty dictionary
+        mydict = dict(xs=[], ys=[], LonTrajCellCG=[], LatTrajCellCG=[], NumIdCell=[], NumIdBirth=[], DTimeTraj=[], BTempTraj=[], BTminTraj=[], BaseAreaTraj=[], TopAreaTraj=[], CoolingRateTraj=[], ExpanRateTraj=[], SpeedTraj=[], DirTraj=[])
+
+        # Loop through features
         for i, feature in enumerate(rdt["features"]):
+            # Append data from the feature properties to the dictionary
+            for k in mydict.keys():
+                try:
+                    thisdata, units = descale_rdt(k, feature['properties'][k])
+                    mydict[k].append(thisdata)
+                except:
+                    # Do nothing at the moment with the xs and ys
+                    if not k in ['xs', 'ys']:
+                        mydict[k].append(None)
+                    else:
+                        continue
+            # Takes the trajectory lat/lons, reprojects and puts them in a list within a list
+            lons = feature['properties']['LonTrajCellCG']
+            lats = feature['properties']['LatTrajCellCG']
+            xs, ys = geo.web_mercator(lons, lats)
+            mydict['xs'].append(xs)
+            mydict['ys'].append(ys)
+
+        return mydict
+
+
+class TailPointLoader(object):
+
+    def __init__(self, locator):
+        self.locator = locator
+
+    def load_date(self, date):
+        return self.load(self.locator.find_file(date))
+
+    @staticmethod
+    def load(path):
+        import itertools
+        # print(path)
+
+        with open(path) as stream:
+            rdt = json.load(stream)
+
+        # Create an empty dictionary
+        mydict = dict(x=[], y=[], LonTrajCellCG=[], LatTrajCellCG=[], NumIdCell=[], NumIdBirth=[], DTimeTraj=[], BTempTraj=[], BTminTraj=[], BaseAreaTraj=[], TopAreaTraj=[], CoolingRateTraj=[], ExpanRateTraj=[], SpeedTraj=[], DirTraj=[])
+
+        # Loop through features
+        for i, feature in enumerate(rdt["features"]):
+            # Append data from the feature properties to the dictionary
+            # First though, how many points do we have in the trajectory tail?
+            npts = len(feature['properties']['LonTrajCellCG'])
+            mykeys = [k for k in mydict.keys() if k not in ['x', 'y']]
+            for k in mykeys:
+                # print(k, type(feature['properties'][k]), sep=':')
+                try:
+                    if not isinstance(feature['properties'][k], list):
+                        datalist = [i for i in itertools.repeat(feature['properties'][k],npts)]
+                        thisdata, units = descale_rdt(k, datalist)
+                        mydict[k].extend(datalist)
+                    else:
+                        thisdata, units = descale_rdt(k, feature['properties'][k])
+                        mydict[k].extend(thisdata)
+                except:
+                    datalist = [i for i in itertools.repeat(None, npts)]
+                    mydict[k].extend(datalist)
+            # Takes the trajectory lat/lons, reprojects and puts them in a list within a list
             lons = feature['properties']['LonTrajCellCG']
             lats = feature['properties']['LatTrajCellCG']
             x, y = geo.web_mercator(lons, lats)
-            c = np.array([x, y]).T.tolist() # Conveniently, a LineString has the same structure as a MultiPoint
-            xs.append(x)
-            ys.append(y)
-            copy["features"][i]['geometry'] = {'type': 'LineString', 'coordinates': c}
-            # copy["features"][i]['geometries'] = [ {'type': 'LineString', 'coordinates': c}, {'type': 'MultiPoint', 'coordinates': c} ]
+            mydict['x'].extend(x)
+            mydict['y'].extend(y)
 
-        # Hack to use Categorical mapper
-        # ## TODO Add in PhaseLifeLabel to properties dictionary
-        # for i, feature in enumerate(rdt["features"]):
-        #     p = feature['properties']['PhaseLife']
-        #     copy["features"][i]['properties']['PhaseLife'] = fieldValueLUT('PhaseLife', p)
+        return mydict
 
-        print('Line load complete')
-        # print([feat["geometry"]['coordinates'] for feat in copy["features"]])
-        return json.dumps(copy)
-        # return {"xs": xs, "ys": ys}
+def calc_dst_point(x1d, y1d, speed, angle):
 
-# def example_bokeh():
-#     source = bokeh.models.ColumnDataSource({"x": [])
-#     figure.circle(x="x", fill_color="BTmin", source=source, color_mapper=)
+    import math
+
+    # NB: X and Y need to be lat/lons
+
+    # Distance travelled (m) = speed (m/s) * 60 seconds * 60 minutes
+    # NB: 60 mins may change depending on the time frequency of the display (currently 1 hour)
+    d = (speed * 60 * 60)
+
+    # Radius of the earth (m)
+    R = 6378137
+
+    x1 = math.radians(x1d)
+    y1 = math.radians(y1d)
+
+    # Convert degrees to radians
+    direction = math.radians(angle)
+
+    y2 = math.asin(math.sin(y1) * math.cos(d / R) +
+                   math.cos(y1) * math.sin(d / R) * math.cos(direction))
+
+    x2 = x1 + math.atan2(math.sin(direction) * math.sin(d / R) * math.cos(y1),
+                         math.cos(d / R) - math.sin(y1) * math.sin(y2))
+
+    x2d = math.degrees(x2)
+    y2d = math.degrees(y2)
+
+    # print('d:',d, 'angle:', angle, 'x1:',x1d, 'x2:', x2d, 'y1:', y1d, 'y2:', y2d)
+
+    return x2d, y2d
+
+def get_arrow_poly(x2,y2, speed, direction):
+
+    import math
+
+    timestep = 60 # See above function re: 60 mins
+    mvt_line_len = speed * 60 * timestep
+    mvt_line_dir = direction
+    arrow_angl = 20
+    arrow_linefrac = 1./5
+
+    # First point
+    pt1_dir = (mvt_line_dir - 180) % 360 - arrow_angl
+    pt1_len = math.sqrt(3. * math.pow( mvt_line_len * arrow_linefrac, 2 ) / 2) # Metres
+    # Convert len back to speed for the function
+    pt1_speed = pt1_len / (timestep * 60)
+    # Calculate x3, y3
+    x3, y3 = calc_dst_point(x2, y2, pt1_speed, pt1_dir)
+
+    # Second point
+    pt2_dir = (mvt_line_dir - 180) % 360 + arrow_angl
+    pt2_len = math.sqrt(3.* math.pow( mvt_line_len * arrow_linefrac, 2 ) / 2) # Metres
+    # Convert len back to speed for the function
+    pt2_speed = pt2_len / (timestep * 60)
+    # Calculate x3, y3
+    x4, y4 = calc_dst_point(x2, y2, pt2_speed, pt2_dir)
+
+    return x3, y3, x4, y4
+
+
+
+class CentrePointLoader(object):
+
+    # Holds a centre point, future point and future movement line
+
+    def __init__(self, locator):
+        self.locator = locator
+
+    def load_date(self, date):
+        cntr_point = self.load(self.locator.find_file(date))
+
+        return cntr_point
+
+
+    @staticmethod
+    def load(path):
+
+        # print(path)
+
+        with open(path) as stream:
+            rdt = json.load(stream)
+
+        # Create an empty dictionary
+        mydict = dict(x1=[], y1=[], x2=[], y2=[], xs=[], ys=[], Arrowxs=[], Arrowys=[], LonG=[], LatG=[], NumIdCell=[], NumIdBirth=[], MvtSpeed=[], MvtDirection=[])
+
+        # Loop through features
+        for i, feature in enumerate(rdt["features"]):
+            # Append data from the feature properties to the dictionary
+            mykeys = [k for k in mydict.keys() if not (('x' in k) or ('y' in k))]
+            for k in mykeys:
+                try:
+                    thisdata, units = descale_rdt(k, feature['properties'][k])
+                    mydict[k].append(thisdata)
+                except:
+                    mydict[k].append(None)
+            # Takes the trajectory lat/lons, reprojects and puts them in a list within a list
+            lon = feature['properties']['LonG']
+            lat = feature['properties']['LatG']
+            x1, y1 = geo.web_mercator(lon, lat)
+            mydict['x1'].extend(x1)
+            mydict['y1'].extend(y1)
+
+            # Now calculate future point and line
+            lon2, lat2 = calc_dst_point(lon, lat, feature['properties']['MvtSpeed'], feature['properties']['MvtDirection'])
+            x2, y2 = geo.web_mercator(lon2, lat2)
+            mydict['x2'].extend(x2)
+            mydict['y2'].extend(y2)
+            mydict['xs'].append([x1, x2])
+            mydict['ys'].append([y1, y2])
+
+            # Now calculate arrow polygon
+            x3d, y3d, x4d, y4d = get_arrow_poly(lon2, lat2, feature['properties']['MvtSpeed'], feature['properties']['MvtDirection'])
+            [x3, x4], [y3, y4] = geo.web_mercator([x3d, x4d], [y3d, y4d])
+            # print(x2, y2, x3, y3, x4, y4)
+
+            mydict['Arrowxs'].append([x2[0], x3, x4])
+            mydict['Arrowys'].append([y2[0], y3, y4])
+
+        # print(mydict)
+
+        return mydict
+
 
 class Loader(object):
+
     def __init__(self, pattern):
         self.locator = Locator(pattern)
         self.poly_loader = PolygonLoader(self.locator)
-        self.tail_loader = TailLoader(self.locator)
-
+        self.tail_line_loader = TailLineLoader(self.locator)
+        self.tail_point_loader = TailPointLoader(self.locator)
+        self.centre_point_loader = CentrePointLoader(self.locator)
 
     def load_date(self, date):
         geojson_poly = self.poly_loader.load_date(date)
-        geojson_tail = self.tail_loader.load_date(date)
-        return [geojson_poly, geojson_tail]
+        cds_tail_line = self.tail_line_loader.load_date(date)
+        cds_tail_point = self.tail_point_loader.load_date(date)
+        cds_centre_point = self.centre_point_loader.load_date(date)
+
+        # print(cds_centre_point.data)
+
+        return [geojson_poly, cds_tail_line, cds_tail_point, cds_centre_point]
 
 
 class PolygonLoader(object):
@@ -240,8 +398,8 @@ class PolygonLoader(object):
 
     @staticmethod
     def load(path, date):
-        print(path)
-        print(date)
+        # print(path)
+        # print(date)
 
         with open(path) as stream:
             rdt = json.load(stream)
@@ -257,24 +415,30 @@ class PolygonLoader(object):
         # Hack to use Categorical mapper
         ## TODO Add in PhaseLifeLabel to properties dictionary
         for i, feature in enumerate(rdt["features"]):
+            # for k in feature['properties'].keys():
+                # try:
+                #     thisdata, units = descale_rdt(k, feature['properties'][k])
+                #     copy['features'][i]['properties'][k] = str(thisdata)
+                # except:
+                #     continue
             p = feature['properties']['PhaseLife']
             copy["features"][i]['properties']['PhaseLifeLabel'] = fieldValueLUT('PhaseLife', p)
             copy["features"][i]['properties']['PhaseLife'] = str(p)
             # print(p, fieldValueLUT('PhaseLife', p))
 
-        print('Polygon load complete')
+        # print('Polygon load complete')
         return json.dumps(copy)
 
 
-def rdtUnits(fn, data):
+def descale_rdt(fn, data):
     # Converts units according to netcdf files definition
     rdtUnitsLUT = {
-        'DecTime': {'scale': 1.0, 'offset': 0.0, 'Units': 's'},
-        'LeadTime': {'scale': 1.0, 'offset': 0.0, 'Units': 's'},
-        'Duration': {'scale': 1.0, 'offset': 0.0, 'Units': 's'},
-        'MvtSpeed': {'scale': 0.001, 'offset': 0.0, 'Units': 'm s-1'},
-        'MvtDirection': {'scale': 1.0, 'offset': 0.0, 'Units': 'degree'},
-        'DtTimeRate': {'scale': 1.0, 'offset': 0.0, 'Units': 's'},
+        'DecTime': {'scale': 1, 'offset': 0, 'Units': 's'},
+        'LeadTime': {'scale': 1, 'offset': 0, 'Units': 's'},
+        'Duration': {'scale': 1, 'offset': 0, 'Units': 's'},
+        'MvtSpeed': {'scale': 0.001, 'offset': 0, 'Units': 'm s-1'},
+        'MvtDirection': {'scale': 1, 'offset': 0, 'Units': 'degree'},
+        'DtTimeRate': {'scale': 1, 'offset': 0, 'Units': 's'},
         'ExpansionRate': {'scale': 2e-07, 'offset': -0.005, 'Units': 's-1'},
         'CoolingRate': {'scale': 2e-06, 'offset': -0.05, 'Units': 'K s-1'},
         'LightningRate': {'scale': 1e-04, 'offset': -2.0, 'Units': 's-1'},
@@ -282,30 +446,30 @@ def rdtUnits(fn, data):
         'BTemp': {'scale': 0.01, 'offset': 130.0, 'Units': 'K'},
         'BTmoy': {'scale': 0.01, 'offset': 130.0, 'Units': 'K'},
         'BTmin': {'scale': 0.01, 'offset': 130.0, 'Units': 'K'},
-        'Surface': {'scale': 5000000.0, 'offset': 0.0, 'Units': 'm2'},
-        'EllipseGaxe': {'scale': 20.0, 'offset': 0.0, 'Units': 'm'},
-        'EllipsePaxe': {'scale': 20.0, 'offset': 0.0, 'Units': 'm'},
-        'EllipseAngle': {'scale': 1.0, 'offset': 0.0, 'Units': 'degrees_north'},
-        'DtLightning': {'scale': 1.0, 'offset': 0.0, 'Units': 's'},
-        'CTPressure': {'scale': 10.0, 'offset': 0.0, 'Units': 'Pa'},
-        'CTCot': {'scale': 0.01, 'offset': 0.0, 'Units': '1'},
-        'CTReff': {'scale': 1e-08, 'offset': 0.0, 'Units': 'm'},
-        'CTCwp': {'scale': 0.001, 'offset': 0.0, 'Units': 'kg m-2'},
-        'CRainRate': {'scale': 0.1, 'offset': 0.0, 'Units': 'mm/h'},
+        'Surface': {'scale': 5000000.0, 'offset': 0, 'Units': 'm2'},
+        'EllipseGaxe': {'scale': 20.0, 'offset': 0, 'Units': 'm'},
+        'EllipsePaxe': {'scale': 20.0, 'offset': 0, 'Units': 'm'},
+        'EllipseAngle': {'scale': 1, 'offset': 0, 'Units': 'degrees_north'},
+        'DtLightning': {'scale': 1, 'offset': 0, 'Units': 's'},
+        'CTPressure': {'scale': 10.0, 'offset': 0, 'Units': 'Pa'},
+        'CTCot': {'scale': 0.01, 'offset': 0, 'Units': '1'},
+        'CTReff': {'scale': 1e-08, 'offset': 0, 'Units': 'm'},
+        'CTCwp': {'scale': 0.001, 'offset': 0, 'Units': 'kg m-2'},
+        'CRainRate': {'scale': 0.1, 'offset': 0, 'Units': 'mm/h'},
         'BTempSlice': {'scale': 0.01, 'offset': 130.0, 'Units': 'K'},
-        'SurfaceSlice': {'scale': 5000000.0, 'offset': 0.0, 'Units': 'm2'},
-        'DTimeTraj': {'scale': 1.0, 'offset': 0.0, 'Units': 's'},
+        'SurfaceSlice': {'scale': 5000000.0, 'offset': 0, 'Units': 'm2'},
+        'DTimeTraj': {'scale': 1, 'offset': 0, 'Units': 's'},
         'BTempTraj': {'scale': 0.01, 'offset': 130.0, 'Units': 'K'},
         'BTminTraj': {'scale': 0.01, 'offset': 130.0, 'Units': 'K'},
-        'BaseAreaTraj': {'scale': 5000000.0, 'offset': 0.0, 'Units': 'm2'},
-        'TopAreaTraj': {'scale': 5000000.0, 'offset': 0.0, 'Units': 'm2'},
+        'BaseAreaTraj': {'scale': 5000000.0, 'offset': 0, 'Units': 'm2'},
+        'TopAreaTraj': {'scale': 5000000.0, 'offset': 0, 'Units': 'm2'},
         'CoolingRateTraj': {'scale': 2e-06, 'offset': -0.05, 'Units': 'K s-1'},
         'ExpanRateTraj': {'scale': 2e-07, 'offset': -0.005, 'Units': 's-1'},
-        'SpeedTraj': {'scale': 0.001, 'offset': 0.0, 'Units': 'm s-1'},
-        'DirTraj': {'scale': 1.0, 'offset': 0.0, 'Units': 'degree'}
+        'SpeedTraj': {'scale': 0.001, 'offset': 0, 'Units': 'm s-1'},
+        'DirTraj': {'scale': 1, 'offset': 0, 'Units': 'degree'}
     }
 
-    dict = rdtUnitsLUT.get(fn, {'scale': 1.0, 'offset': 1.0, 'units': '-'})
+    dict = rdtUnitsLUT.get(fn, {'scale': 1, 'offset': 0, 'units': '-'})
     scale, offset, units = dict.values()
 
     conv_data = ( data / scale ) + offset
@@ -512,11 +676,11 @@ def fieldValueLUT(fn, uid):
 class Locator(object):
     def __init__(self, pattern):
         self.pattern = pattern
-        print(pattern)
+        # print(pattern)
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
-        print(paths)
+        # print(paths)
         bounds = locate.bounds(
                 self.dates(paths),
                 dt.timedelta(minutes=15))
