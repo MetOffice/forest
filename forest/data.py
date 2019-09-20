@@ -299,8 +299,14 @@ class DBLoader(object):
         except SearchFail:
             return self.empty_image
 
-        valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%d %H:%M:%S")
-        initial = dt.datetime.strptime(state.initial_time, "%Y-%m-%d %H:%M:%S")
+        try:
+            valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%dT%H:%M:%S")
+        try:
+            initial = dt.datetime.strptime(state.initial_time, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            initial = dt.datetime.strptime(state.initial_time, "%Y-%m-%dT%H:%M:%S")
         hours = (valid - initial).total_seconds() / (60*60)
         length = "T{:+}".format(int(hours))
         data = load_image_pts(

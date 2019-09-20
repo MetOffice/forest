@@ -137,39 +137,36 @@ class ValidTimesLocator(object):
 
 class PressuresLocator(object):
     def __call__(self, path, variable):
-        p = []
-        with netCDF4.Dataset(path) as dataset:
-            try:
-                p = self.netcdf4_pressures(dataset, variable)
-            except KeyError:
-                cube = iris.load_cube(path, variable)
-                p = self.cube_pressures(cube)
-            if p is None:
-                cube = iris.load_cube(path, variable)
-                p = self._cube_pressures(cube)
-            elif np.ndim(p) == 0:
-                p = np.array([p])
-        return p
-
-    @staticmethod
-    def cube_pressures(cube):
         try:
-            return cube.coord('pressure').points
+            return self.netcdf4_strategy(path, variable)
+        except KeyError:
+            return self.cube_strategy(path, variable)
+
+    def cube_strategy(self, path, variable):
+        try:
+            cube = iris.load_cube(path, variable)
+            points = cube.coord('pressure').points
+            if np.ndim(points) == 0:
+                points = np.array([points])
+            return points
         except iris.exceptions.CoordinateNotFoundError:
-            return []
+            raise PressuresNotFound("'{}' '{}'".format(path, variable))
 
     @staticmethod
-    def netcdf4_pressures(dataset, variable):
+    def netcdf4_strategy(path, variable):
         """Search dataset for pressure axis"""
-        var = dataset.variables[variable]
-        for d in var.dimensions:
-            if d.startswith('pressure'):
-                if d in dataset.variables:
-                    return dataset.variables[d][:]
-        coords = var.coordinates.split()
-        for c in coords:
-            if c.startswith('pressure'):
-                return dataset.variables[c][:]
+        with netCDF4.Dataset(path) as dataset:
+            var = dataset.variables[variable]
+            for d in var.dimensions:
+                if d.startswith('pressure'):
+                    if d in dataset.variables:
+                        return dataset.variables[d][:]
+            coords = var.coordinates.split()
+            for c in coords:
+                if c.startswith('pressure'):
+                    return dataset.variables[c][:]
+        # NOTE: refactor needed
+        raise KeyError
 
 load_pressures = PressuresLocator()
 load_valid_times = ValidTimesLocator()
@@ -217,6 +214,8 @@ class Locator(object):
             except PressuresNotFound:
                 pass
             if pts.any():
+                pts = np.where(pts)[0]  # HACK: consider revision
+                print(path, pts)
                 return path, pts
         raise SearchFail('initial: {} valid: {} pressure: {}'.format(initial_time, valid_time, pressure))
 
