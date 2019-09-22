@@ -142,7 +142,7 @@ class TestLocator(unittest.TestCase):
         with netCDF4.Dataset(self.path, "w") as dataset:
             um = UM(dataset)
             um.forecast_reference_time(time)
-        result = disk.Locator.initial_time(self.path)
+        result = disk.load_initial_time(self.path)
         expect = time
         np.testing.assert_array_equal(expect, result)
 
@@ -165,8 +165,7 @@ class TestLocator(unittest.TestCase):
             var = um.relative_humidity(dims)
             var[:] = 100.
         variable = "relative_humidity"
-        locator = disk.Locator([self.path])
-        result = locator.valid_times(self.path, variable)
+        result = disk.load_valid_times(self.path, variable)
         expect = times["time_1"]
         np.testing.assert_array_equal(expect, result)
 
@@ -176,8 +175,7 @@ class TestLocator(unittest.TestCase):
             eida50 = EIDA50(dataset)
             eida50.define(times)
 
-        locator = disk.Locator([self.path])
-        result = locator.valid_times(self.path, "toa_brightness_temperature")
+        result = disk.load_valid_times(self.path, "toa_brightness_temperature")
         expect = times
         self.assertEqual(expect, result)
 
