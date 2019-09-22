@@ -1,7 +1,7 @@
 import datetime as dt
 import bokeh.models
-import geo
-from exceptions import FileNotFound, IndexNotFound
+import forest.geo as geo
+from forest.exceptions import FileNotFound, IndexNotFound
 
 
 class UMView(object):

@@ -2,7 +2,7 @@
 import netCDF4
 import datetime as dt
 import numpy as np
-import util
+import forest.util as util
 
 
 class NoData(Exception):

@@ -1,6 +1,6 @@
 import unittest
 import yaml
-import app.main
+import forest.app.main as main
 
 
 class TestMain(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestMain(unittest.TestCase):
                  "pattern": "*.nc"}
             ]
         })
-        config = app.main.load_config(content)
+        config = main.load_config(content)
         result = config.patterns
         expect = [("Label", "*.nc")]
         self.assertEqual(expect, result)
