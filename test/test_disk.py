@@ -4,6 +4,7 @@ import numpy as np
 import netCDF4
 import os
 import fnmatch
+import pytest
 from forest import disk
 
 
@@ -100,16 +101,16 @@ class UM(object):
         var.long_name = "latitude"
         return var
 
-    def relative_humidity(self, dims, name="relative_humidity"):
+    def relative_humidity(self, dims, name="relative_humidity",
+            coordinates="forecast_period_1 forecast_reference_time"):
         dataset = self.dataset
         var = dataset.createVariable(name, "f", dims)
         var.standard_name = "relative_humidity"
         var.units = "%"
         var.um_stash_source = "m01s16i204"
         var.grid_mapping = "latitude_longitude"
-        var.coordinates = "forecast_period_1 forecast_reference_time"
+        var.coordinates = coordinates
         return var
-        var[:] = 100
 
 
 class TestLocator(unittest.TestCase):
@@ -177,6 +178,52 @@ class TestLocator(unittest.TestCase):
 
         result = disk.load_valid_times(self.path, "toa_brightness_temperature")
         expect = times
+        self.assertEqual(expect, result)
+
+    def test_pressure_axis_given_time_pressure_lon_lat_dimensions(self):
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            um = UM(dataset)
+            dims = ("time_1", "pressure_0", "longitude", "latitude")
+            for dim in dims:
+                dataset.createDimension(dim, 1)
+            var = um.relative_humidity(dims)
+        result = disk.pressure_axis(self.path, "relative_humidity")
+        expect = 1
+        self.assertEqual(expect, result)
+
+    def test_pressure_axis_given_dim0_format(self):
+        coordinates = "forecast_period_1 forecast_reference_time pressure time"
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            um = UM(dataset)
+            dims = ("dim0", "longitude", "latitude")
+            for dim in dims:
+                dataset.createDimension(dim, 1)
+            var = um.relative_humidity(dims, coordinates=coordinates)
+        result = disk.pressure_axis(self.path, "relative_humidity")
+        expect = 0
+        self.assertEqual(expect, result)
+
+    def test_time_axis_given_time_pressure_lon_lat_dimensions(self):
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            um = UM(dataset)
+            dims = ("time_1", "pressure_0", "longitude", "latitude")
+            for dim in dims:
+                dataset.createDimension(dim, 1)
+            var = um.relative_humidity(dims)
+        result = disk.time_axis(self.path, "relative_humidity")
+        expect = 0
+        self.assertEqual(expect, result)
+
+    def test_time_axis_given_dim0_format(self):
+        coordinates = "forecast_period_1 forecast_reference_time pressure time"
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            um = UM(dataset)
+            dims = ("dim0", "longitude", "latitude")
+            for dim in dims:
+                dataset.createDimension(dim, 1)
+            var = um.relative_humidity(dims, coordinates=coordinates)
+        result = disk.time_axis(self.path, "relative_humidity")
+        expect = 0
         self.assertEqual(expect, result)
 
 
@@ -347,6 +394,34 @@ class TestEIDA50(unittest.TestCase):
         np.testing.assert_array_equal(expect, result)
 
 
+def test_ndindex_given_dim0_format():
+    times = [
+        dt.datetime(2019, 1, 1, 0),
+        dt.datetime(2019, 1, 1, 3),
+        dt.datetime(2019, 1, 1, 6),
+        dt.datetime(2019, 1, 1, 0),
+        dt.datetime(2019, 1, 1, 3),
+        dt.datetime(2019, 1, 1, 6),
+    ]
+    pressures = [
+        1000.0001,
+        1000.0001,
+        1000.0001,
+        0.0001,
+        0.0001,
+        0.0001,
+    ]
+    time = times[1]
+    pressure = pressures[1]
+    masks = [
+        disk.time_mask(times, time),
+        disk.pressure_mask(pressures, pressure)]
+    axes = [0, 0]
+    result = disk.ndindex(masks, axes)
+    expect = (1,)
+    np.testing.assert_array_equal(expect, result)
+
+
 class TestFNMatch(unittest.TestCase):
     def test_filter(self):
         names = ["/some/file.json", "/other/file.nc"]
@@ -364,3 +439,10 @@ class TestNumpy(unittest.TestCase):
         result = np.concatenate(arrays)
         expect = np.array([1, 2, 3, 4, 5])
         np.testing.assert_array_equal(expect, result)
+
+    def test_fancy_indexing(self):
+        x = np.zeros((3, 5, 2, 2))
+        pts = (0, 2)
+        result = x[pts].shape
+        expect = (2, 2)
+        self.assertEqual(expect, result)
