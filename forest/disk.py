@@ -269,13 +269,14 @@ class Locator(object):
             valid_times = load_valid_times(path, variable)
             axes = [time_axis(path, variable)]
             masks = [time_mask(valid_times, valid_time)]
-            try:
-                pressures = load_pressures(path, variable)
-                axis = pressure_axis(path, variable)
-                masks.append(pressure_mask(pressures, pressure))
-                axes.append(axis)
-            except PressuresNotFound:
-                pass
+            if pressure is not None:
+                try:
+                    pressures = load_pressures(path, variable)
+                    axis = pressure_axis(path, variable)
+                    masks.append(pressure_mask(pressures, pressure))
+                    axes.append(axis)
+                except PressuresNotFound:
+                    pass
             pts = ndindex(masks, axes)
             print(path, pts)
             return path, pts
