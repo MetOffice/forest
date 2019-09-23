@@ -432,8 +432,13 @@ class ControlView(Observable):
             if key in self.buttons:
                 self.buttons[key]["next"].disabled = disabled
                 self.buttons[key]["previous"].disabled = disabled
+
+        if ("pattern" in state) and ("patterns" in state):
+            for label, pattern in state["patterns"]:
+                if pattern == state["pattern"]:
+                    self.dropdowns["pattern"].value = label
+
         for key in [
-                "pattern",
                 "variable",
                 "initial_time",
                 "pressure",
