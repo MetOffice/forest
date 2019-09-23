@@ -1,13 +1,31 @@
 import unittest
 import unittest.mock
 import datetime as dt
+import numpy as np
 from forest import db
 
 
-def parameterize(*values):
-    def decorator(method):
-        for value in values:
-            pass
+def test_convert_datetime64_array_to_strings():
+    times = np.array(
+            [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)],
+            dtype="datetime64[s]")
+    result = db.stamps(times)
+    expect = ["2019-01-01 00:00:00", "2019-01-02 00:00:00"]
+    assert expect == result
+
+
+def test_type_system_middleware():
+    times = np.array(
+            [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)],
+            dtype="datetime64[s]")
+    converter = db.Converter({"valid_times": db.stamps})
+    store = db.Store(db.reducer, middlewares=[converter])
+    store.dispatch(db.set_value("valid_times", times))
+    result = store.state
+    expect = {
+        "valid_times": ["2019-01-01 00:00:00", "2019-01-02 00:00:00"]
+    }
+    assert expect == result
 
 
 class TestDatabaseMiddleware(unittest.TestCase):

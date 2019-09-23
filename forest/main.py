@@ -13,6 +13,7 @@ from forest import (
         colors,
         db,
         disk,
+        navigate,
         parse_args)
 import forest.config as cfg
 from forest.util import Observable
@@ -23,7 +24,7 @@ import datetime as dt
 def main(argv=None):
     args = parse_args.parse_args(argv)
     if len(args.files) > 0:
-        config = cfg.from_files(args.files)
+        config = cfg.from_files(args.files, args.file_type)
     else:
         if args.database != ':memory:':
             assert os.path.exists(args.database), "{} must exist".format(args.database)
@@ -257,7 +258,9 @@ def main(argv=None):
         break
 
     if len(args.files) > 0:
-        navigator = disk.Navigator(args.files)
+        navigator = navigate.FileSystem.file_type(
+                args.files,
+                args.file_type)
     else:
         navigator = database
 
@@ -270,7 +273,11 @@ def main(argv=None):
         db.Log(verbose=True),
         db.InverseCoordinate("pressure"),
         db.next_previous,
-        db.Controls(navigator)
+        db.Controls(navigator),
+        db.Converter({
+            "valid_times": db.stamps,
+            "inital_times": db.stamps
+        })
     ]
     store = db.Store(
         db.reducer,

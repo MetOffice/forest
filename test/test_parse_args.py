@@ -19,6 +19,9 @@ class TestParseArgs(unittest.TestCase):
     def test_files(self):
         self.check(["file.json"], "files", ["file.json"])
 
+    def test_file_type(self):
+        self.check(["--file-type", "rdt", "file.json"], "file_type", "rdt")
+
     def test_no_files_or_config_raises_system_exit(self):
         with self.assertRaises(SystemExit):
             parse_args([])

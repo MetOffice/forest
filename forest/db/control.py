@@ -1,5 +1,7 @@
 """Control navigation of FOREST data"""
 import copy
+import datetime as dt
+import numpy as np
 from functools import wraps
 import bokeh.models
 import bokeh.layouts
@@ -108,6 +110,16 @@ def initial_state(navigator, pattern=None):
     if len(pressures) > 0:
         state["pressure"] = pressures[0]
     return state
+
+
+@export
+def stamps(times):
+    labels = []
+    for t in times:
+        if isinstance(t, np.datetime64):
+            t = t.astype(dt.datetime)
+        labels.append(str(t))
+    return labels
 
 
 @export
@@ -247,6 +259,22 @@ class Navigator(object):
 
     def pressures(self, pattern, variable, initial_time):
         return [750.]
+
+
+@export
+class Converter(object):
+    def __init__(self, maps):
+        self.maps = maps
+
+    @middleware
+    def __call__(self, store, next_dispatch, action):
+        if action["kind"] == SET_VALUE:
+            key = action["payload"]["key"]
+            value = action["payload"]["value"]
+            if key in self.maps:
+                value = self.maps[key](value)
+            return next_dispatch(set_value(key, value))
+        return next_dispatch(action)
 
 
 @export

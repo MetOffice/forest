@@ -4,6 +4,7 @@ Command line interface to FOREST application
 import os
 import argparse
 import bokeh.command.bootstrap
+from forest.parse_args import add_arguments
 
 
 APP_PATH = os.path.join(os.path.dirname(__file__), "..")
@@ -14,18 +15,7 @@ def parse_args(args=None):
 
     # FOREST specific arguments
     group = parser.add_argument_group('forest arguments')
-    group.add_argument(
-        "files", nargs="*", metavar="FILE",
-        help="zero or more files to display")
-    group.add_argument(
-        "--config",
-        help="file to configure forest in addition to file(s)")
-    group.add_argument(
-        "--database",
-        help="sql file to enhance navigation")
-    group.add_argument(
-        "--directory",
-        help="replace directory of database files")
+    add_arguments(group)
 
     # Bokeh serve pass-through arguments
     group = parser.add_argument_group('bokeh serve arguments')
@@ -43,8 +33,8 @@ def parse_args(args=None):
         help="public hostnames that may connect to the websocket")
 
     args = parser.parse_args(args=args)
-    if len(args.files) == 0 and args.config is None:
-        parser.error("please specify file(s) or a valid --config file")
+    if len(args.files) == 0 and args.config_file is None:
+        parser.error("please specify file(s) or a valid --config-file file")
     return args
 
 
@@ -65,12 +55,14 @@ def bokeh_args(app_path, args):
     if args.allow_websocket_origin:
         opts += ["--allow-websocket-origin", str(args.allow_websocket_origin)]
     extra = []
-    if args.config is not None:
-        extra += ["--config-file", str(args.config)]
+    if args.config_file is not None:
+        extra += ["--config-file", str(args.config_file)]
     if args.database is not None:
         extra += ["--database", str(args.database)]
     if args.directory is not None:
         extra += ["--directory", str(args.directory)]
+    if args.file_type != "unified_model":
+        extra += ["--file-type", str(args.file_type)]
     if len(args.files) > 0:
         extra += args.files
     if len(extra) > 0:

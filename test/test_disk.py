@@ -5,45 +5,12 @@ import netCDF4
 import os
 import fnmatch
 import pytest
-from forest import disk
+from forest import (
+        disk,
+        navigate,
+        unified_model)
 
 
-class EIDA50(object):
-    """EIDA50 satellite formatter"""
-    def __init__(self, dataset):
-        self.dataset = dataset
-
-    def define(self, times):
-        dataset = self.dataset
-        dataset.createDimension("time", len(times))
-        dataset.createDimension("longitude", 1)
-        dataset.createDimension("latitude", 1)
-        units = "hours since 1970-01-01 00:00:00"
-        var = dataset.createVariable(
-                "time", "d", ("time",))
-        var.axis = "T"
-        var.units = units
-        var.standard_name = "time"
-        var.calendar = "gregorian"
-        var[:] = netCDF4.date2num(times, units=units)
-        var = dataset.createVariable(
-                "longitude", "f", ("longitude",))
-        var.axis = "X"
-        var.units = "degrees_east"
-        var.standard_name = "longitude"
-        var[:] = 0
-        var = dataset.createVariable(
-                "latitude", "f", ("latitude",))
-        var.axis = "Y"
-        var.units = "degrees_north"
-        var.standard_name = "latitude"
-        var[:] = 0
-        var = dataset.createVariable(
-                "data", "f", ("time", "latitude", "longitude"))
-        var.standard_name = "toa_brightness_temperature"
-        var.long_name = "toa_brightness_temperature"
-        var.units = "K"
-        var[:] = 0
 
 
 class UM(object):
@@ -143,7 +110,8 @@ class TestLocator(unittest.TestCase):
         with netCDF4.Dataset(self.path, "w") as dataset:
             um = UM(dataset)
             um.forecast_reference_time(time)
-        result = disk.load_initial_time(self.path)
+        coords = unified_model.Coordinates()
+        result = coords.initial_time(self.path)
         expect = time
         np.testing.assert_array_equal(expect, result)
 
@@ -166,19 +134,10 @@ class TestLocator(unittest.TestCase):
             var = um.relative_humidity(dims)
             var[:] = 100.
         variable = "relative_humidity"
-        result = disk.load_valid_times(self.path, variable)
+        coord = unified_model.Coordinates()
+        result = coord.valid_times(self.path, variable)
         expect = times["time_1"]
         np.testing.assert_array_equal(expect, result)
-
-    def test_valid_times_given_eida50_toa_brightness_temperature(self):
-        times = [dt.datetime(2019, 1, 1)]
-        with netCDF4.Dataset(self.path, "w") as dataset:
-            eida50 = EIDA50(dataset)
-            eida50.define(times)
-
-        result = disk.load_valid_times(self.path, "toa_brightness_temperature")
-        expect = times
-        self.assertEqual(expect, result)
 
     def test_pressure_axis_given_time_pressure_lon_lat_dimensions(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
@@ -239,7 +198,7 @@ class TestNavigator(unittest.TestCase):
         pattern = "*.nc"
         with netCDF4.Dataset(self.path, "w") as dataset:
             pass
-        navigator = disk.Navigator([self.path])
+        navigator = navigate.FileSystem.file_type([self.path], "unified_model")
         result = navigator.variables(pattern)
         expect = []
         self.assertEqual(expect, result)
@@ -250,7 +209,7 @@ class TestNavigator(unittest.TestCase):
             var = dataset.createVariable("forecast_reference_time", "d", ())
             var.units = "hours since 1970-01-01 00:00:00"
             var[:] = 0
-        navigator = disk.Navigator([self.path])
+        navigator = navigate.FileSystem.file_type([self.path], "unified_model")
         result = navigator.initial_times(pattern)
         expect = [dt.datetime(1970, 1, 1)]
         self.assertEqual(expect, result)
@@ -296,7 +255,7 @@ class TestNavigator(unittest.TestCase):
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        navigator = disk.Navigator([self.path])
+        navigator = navigate.FileSystem([self.path])
         result = navigator.valid_times(pattern, variable, initial_time)
         expect = valid_times
         np.testing.assert_array_equal(expect, result)
@@ -342,55 +301,9 @@ class TestNavigator(unittest.TestCase):
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        navigator = disk.Navigator([self.path])
+        navigator = navigate.FileSystem([self.path])
         result = navigator.pressures(pattern, variable, initial_time)
         expect = [1000.]
-        np.testing.assert_array_equal(expect, result)
-
-
-class TestEIDA50(unittest.TestCase):
-    def setUp(self):
-        self.path = "test-navigate-eida50.nc"
-        self.navigator = disk.Navigator([self.path])
-        self.times = [
-            dt.datetime(2019, 1, 1, 0),
-            dt.datetime(2019, 1, 1, 0, 15),
-            dt.datetime(2019, 1, 1, 0, 30),
-            dt.datetime(2019, 1, 1, 0, 45),
-        ]
-
-    def tearDown(self):
-        if os.path.exists(self.path):
-            os.remove(self.path)
-
-    def test_initial_times(self):
-        with netCDF4.Dataset(self.path, "w") as dataset:
-            eida50 = EIDA50(dataset)
-            eida50.define(self.times)
-        result = self.navigator.initial_times(self.path)
-        expect = [self.times[0]]
-        self.assertEqual(expect, result)
-
-    def test_valid_times(self):
-        with netCDF4.Dataset(self.path, "w") as dataset:
-            eida50 = EIDA50(dataset)
-            eida50.define(self.times)
-        result = self.navigator.valid_times(
-                self.path,
-                "toa_brightness_temperature",
-                self.times[0])
-        expect = self.times
-        np.testing.assert_array_equal(expect, result)
-
-    def test_pressures(self):
-        with netCDF4.Dataset(self.path, "w") as dataset:
-            eida50 = EIDA50(dataset)
-            eida50.define(self.times)
-        result = self.navigator.pressures(
-                self.path,
-                "toa_brightness_temperature",
-                self.times[0])
-        expect = []
         np.testing.assert_array_equal(expect, result)
 
 

@@ -2,7 +2,8 @@ import unittest
 import os
 import datetime as dt
 import netCDF4
-from forest import satellite
+import numpy as np
+from forest import (eida50, satellite, navigate)
 from forest.exceptions import FileNotFound, IndexNotFound
 
 
@@ -90,3 +91,106 @@ class TestLocator(unittest.TestCase):
         var = dataset.createVariable("time", "d", ("time",))
         var.units = units
         var[:] = netCDF4.date2num(times, units=units)
+
+
+class Formatter(object):
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def define(self, times):
+        dataset = self.dataset
+        dataset.createDimension("time", len(times))
+        dataset.createDimension("longitude", 1)
+        dataset.createDimension("latitude", 1)
+        units = "hours since 1970-01-01 00:00:00"
+        var = dataset.createVariable(
+                "time", "d", ("time",))
+        var.axis = "T"
+        var.units = units
+        var.standard_name = "time"
+        var.calendar = "gregorian"
+        var[:] = netCDF4.date2num(times, units=units)
+        var = dataset.createVariable(
+                "longitude", "f", ("longitude",))
+        var.axis = "X"
+        var.units = "degrees_east"
+        var.standard_name = "longitude"
+        var[:] = 0
+        var = dataset.createVariable(
+                "latitude", "f", ("latitude",))
+        var.axis = "Y"
+        var.units = "degrees_north"
+        var.standard_name = "latitude"
+        var[:] = 0
+        var = dataset.createVariable(
+                "data", "f", ("time", "latitude", "longitude"))
+        var.standard_name = "toa_brightness_temperature"
+        var.long_name = "toa_brightness_temperature"
+        var.units = "K"
+        var[:] = 0
+
+
+class TestCoordinates(unittest.TestCase):
+    def setUp(self):
+        self.path = "test-navigate-eida50.nc"
+
+    def tearDown(self):
+        if os.path.exists(self.path):
+            os.remove(self.path)
+
+    def test_valid_times_given_eida50_toa_brightness_temperature(self):
+        times = [dt.datetime(2019, 1, 1)]
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            writer = Formatter(dataset)
+            writer.define(times)
+
+        coord = eida50.Coordinates()
+        result = coord.valid_times(self.path, "toa_brightness_temperature")
+        expect = times
+        self.assertEqual(expect, result)
+
+
+class TestEIDA50(unittest.TestCase):
+    def setUp(self):
+        self.path = "test-navigate-eida50.nc"
+        self.navigator = navigate.FileSystem.file_type([self.path], "eida50")
+        self.times = [
+            dt.datetime(2019, 1, 1, 0),
+            dt.datetime(2019, 1, 1, 0, 15),
+            dt.datetime(2019, 1, 1, 0, 30),
+            dt.datetime(2019, 1, 1, 0, 45),
+        ]
+
+    def tearDown(self):
+        if os.path.exists(self.path):
+            os.remove(self.path)
+
+    def test_initial_times(self):
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            writer = Formatter(dataset)
+            writer.define(self.times)
+        result = self.navigator.initial_times(self.path)
+        expect = [self.times[0]]
+        self.assertEqual(expect, result)
+
+    def test_valid_times(self):
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            writer = Formatter(dataset)
+            writer.define(self.times)
+        result = self.navigator.valid_times(
+                self.path,
+                "toa_brightness_temperature",
+                self.times[0])
+        expect = self.times
+        np.testing.assert_array_equal(expect, result)
+
+    def test_pressures(self):
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            writer = Formatter(dataset)
+            writer.define(self.times)
+        result = self.navigator.pressures(
+                self.path,
+                "toa_brightness_temperature",
+                self.times[0])
+        expect = []
+        np.testing.assert_array_equal(expect, result)

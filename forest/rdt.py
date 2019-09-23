@@ -173,7 +173,29 @@ class Locator(object):
             self.parse_date(p) for p in paths],
             dtype='datetime64[s]')
 
-    def parse_date(self, path):
+    @staticmethod
+    def parse_date(path):
         groups = re.search(r"[0-9]{12}", os.path.basename(path))
         if groups is not None:
             return dt.datetime.strptime(groups[0], "%Y%m%d%H%M")
+
+
+class Coordinates(object):
+    """Menu system interface"""
+    def initial_time(self, path):
+        times = self.valid_times(path, None)
+        if len(times) > 0:
+            return times[0]
+        return None
+
+    def variables(self, path):
+        return ["RDT"]
+
+    def valid_times(self, path, variable):
+        date = Locator.parse_date(path)
+        if date is None:
+            return []
+        return [str(date)]
+
+    def pressures(self, path, variable):
+        return None

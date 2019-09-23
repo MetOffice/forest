@@ -39,9 +39,9 @@ class Config(object):
         return cls(data)
 
     @classmethod
-    def from_files(cls, files):
+    def from_files(cls, files, file_type="unified_model"):
         return cls({
-            "files": [dict(pattern=f, label=f)
+            "files": [dict(pattern=f, label=f, file_type=file_type)
                 for f in files]})
 
     @property
@@ -107,5 +107,5 @@ def load_config(path):
 
 
 @export
-def from_files(files):
-    return Config.from_files(files)
+def from_files(files, file_type):
+    return Config.from_files(files, file_type)

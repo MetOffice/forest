@@ -5,19 +5,11 @@ import numpy as np
 from forest import util
 import fnmatch
 import iris
+from forest.exceptions import (
+        InitialTimeNotFound,
+        PressuresNotFound,
+        ValidTimesNotFound)
 from forest.db.exceptions import SearchFail
-
-
-class InitialTimeNotFound(Exception):
-    pass
-
-
-class ValidTimesNotFound(Exception):
-    pass
-
-
-class PressuresNotFound(Exception):
-    pass
 
 
 class AxisNotFound(Exception):
@@ -82,159 +74,6 @@ def _axis(name, path, variable):
                 return 0
     msg = "{} axis not found: '{}' '{}'".format(name.capitalize(), path, variable)
     raise AxisNotFound(msg)
-
-
-class Navigator(object):
-    """Menu system given unified model files"""
-    def __init__(self, paths):
-        self.paths = paths
-
-    def variables(self, pattern):
-        paths = fnmatch.filter(self.paths, pattern)
-        names = []
-        for path in paths:
-            cubes = iris.load(path)
-            names += [cube.name() for cube in cubes]
-        return list(sorted(set(names)))
-
-    def initial_times(self, pattern, variable=None):
-        paths = fnmatch.filter(self.paths, pattern)
-        times = []
-        for path in paths:
-            try:
-                times.append(load_initial_time(path))
-            except InitialTimeNotFound:
-                pass
-        return list(sorted(set(times)))
-
-    def valid_times(self, pattern, variable, initial_time):
-        paths = fnmatch.filter(self.paths, pattern)
-        arrays = []
-        for path in paths:
-            try:
-                arrays.append(load_valid_times(path, variable))
-            except ValidTimesNotFound:
-                pass
-        if len(arrays) == 0:
-            return []
-        return np.unique(np.concatenate(arrays))
-
-    def pressures(self, pattern, variable, initial_time):
-        paths = fnmatch.filter(self.paths, pattern)
-        arrays = []
-        for path in paths:
-            try:
-                arrays.append(load_pressures(path, variable))
-            except PressuresNotFound:
-                pass
-        if len(arrays) == 0:
-            return []
-        return np.unique(np.concatenate(arrays))
-
-
-class InitialTimeLocator(object):
-    def __call__(self, path):
-        try:
-            return self.netcdf4_strategy(path)
-        except KeyError:
-            return self.cube_strategy(path)
-
-    @staticmethod
-    def netcdf4_strategy(path):
-        with netCDF4.Dataset(path) as dataset:
-            var = dataset.variables["forecast_reference_time" ]
-            values = netCDF4.num2date(var[:], units=var.units)
-        return values
-
-    @staticmethod
-    def cube_strategy(path):
-        cubes = iris.load(path)
-        if len(cubes) > 0:
-            cube = cubes[0]
-            return cube.coord('time').cells().next().point
-        raise InitialTimeNotFound("No initial time: '{}'".format(path))
-
-
-class ValidTimesLocator(object):
-    def __call__(self, path, variable):
-        try:
-            t = self.netcdf4_strategy(path, variable)
-        except KeyError:
-            t = self.cube_strategy(path, variable)
-        if t is None:
-            t = self.cube_strategy(path, variable)
-        elif t.ndim == 0:
-            t = np.array([t], dtype='datetime64[s]')
-        return t
-
-    def netcdf4_strategy(self, path, variable):
-        with netCDF4.Dataset(path) as dataset:
-            values = self._valid_times(dataset, variable)
-        return values
-
-    @staticmethod
-    def _valid_times(dataset, variable):
-        """Search dataset for time axis"""
-        var = dataset.variables[variable]
-        for d in var.dimensions:
-            if d.startswith('time'):
-                if d in dataset.variables:
-                    tvar = dataset.variables[d]
-                    return np.array(
-                        netCDF4.num2date(tvar[:], units=tvar.units),
-                        dtype='datetime64[s]')
-        coords = var.coordinates.split()
-        for c in coords:
-            if c.startswith('time'):
-                tvar = dataset.variables[c]
-                return np.array(
-                    netCDF4.num2date(tvar[:], units=tvar.units),
-                    dtype='datetime64[s]')
-
-    @staticmethod
-    def cube_strategy(path, variable):
-        cube = iris.load_cube(path, variable)
-        return np.array([
-            c.point for c in cube.coord('time').cells()],
-                 dtype='datetime64[s]')
-
-
-class PressuresLocator(object):
-    def __call__(self, path, variable):
-        try:
-            return self.netcdf4_strategy(path, variable)
-        except KeyError:
-            return self.cube_strategy(path, variable)
-
-    def cube_strategy(self, path, variable):
-        try:
-            cube = iris.load_cube(path, variable)
-            points = cube.coord('pressure').points
-            if np.ndim(points) == 0:
-                points = np.array([points])
-            return points
-        except iris.exceptions.CoordinateNotFoundError:
-            raise PressuresNotFound("'{}' '{}'".format(path, variable))
-
-    @staticmethod
-    def netcdf4_strategy(path, variable):
-        """Search dataset for pressure axis"""
-        with netCDF4.Dataset(path) as dataset:
-            var = dataset.variables[variable]
-            for d in var.dimensions:
-                if d.startswith('pressure'):
-                    if d in dataset.variables:
-                        return dataset.variables[d][:]
-            coords = var.coordinates.split()
-            for c in coords:
-                if c.startswith('pressure'):
-                    return dataset.variables[c][:]
-        # NOTE: refactor needed
-        raise KeyError
-
-load_pressures = PressuresLocator()
-load_valid_times = ValidTimesLocator()
-load_initial_time = InitialTimeLocator()
 
 
 class Locator(object):
