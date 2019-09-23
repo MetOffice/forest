@@ -57,7 +57,7 @@ class FileSystem(object):
     def valid_times(self, pattern, variable, initial_time):
         paths = fnmatch.filter(self.paths, pattern)
         arrays = []
-        for path in self.paths:
+        for path in paths:
             try:
                 array = self.coordinates.valid_times(path, variable)
                 if array is None:
