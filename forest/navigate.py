@@ -1,5 +1,7 @@
 import numpy as np
 import fnmatch
+import glob
+import os
 from .exceptions import (
         InitialTimeNotFound,
         ValidTimesNotFound,
@@ -11,23 +13,34 @@ from . import (
 
 
 class Config(object):
-    """File system navigation using config file"""
+    """File system navigation using config file
+
+    This implementation performs a glob and then delegates to
+    FileSystem navigators
+    """
     def __init__(self, config):
         self.config = config
+        self.navigators = {}
         for group in self.config.file_groups:
-            print(group)
+            if group.directory is None:
+                pattern = group.pattern
+            else:
+                pattern = os.path.join(group.directory, group.pattern)
+            paths = glob.glob(os.path.expanduser(pattern))
+            self.navigators[group.pattern] = FileSystem.file_type(paths, group.file_type)
 
     def variables(self, pattern):
-        return []
+        print(pattern)
+        return self.navigators[pattern].variables(pattern)
 
     def initial_times(self, pattern, variable=None):
-        return ["2019-01-01 00:00:00"]
+        return self.navigators[pattern].initial_times(pattern, variable=variable)
 
     def valid_times(self, pattern, variable, initial_time):
-        return ["2019-01-01 00:00:00"]
+        return self.navigators[pattern].valid_times(pattern, variable, initial_time)
 
     def pressures(self, pattern, variable, initial_time):
-        return [1000.]
+        return self.navigators[pattern].pressures(pattern, variable, initial_time)
 
 
 class FileSystem(object):

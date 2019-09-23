@@ -67,10 +67,11 @@ class View(object):
     def render(self, state):
         if state.valid_time is not None:
             date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
-            print(date)
+            print("rdt.View.render", date)
             try:
                 self.source.geojson = self.loader.load_date(date)
             except FileNotFound:
+                print("rdt.View.render caught FileNotFound", date)
                 self.source.geojson = self.empty_geojson
 
     def add_figure(self, figure):
@@ -145,6 +146,7 @@ class Loader(object):
 
 class Locator(object):
     def __init__(self, pattern):
+        print("rdt.Locator('{}')".format(pattern))
         self.pattern = pattern
 
     def find_file(self, valid_date):

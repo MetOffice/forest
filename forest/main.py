@@ -132,7 +132,12 @@ def main(argv=None):
                     if args.directory is not None:
                         pattern = os.path.join(args.directory, group.pattern)
                     else:
-                        pattern = group.pattern
+                        if group.directory is None:
+                            pattern = group.pattern
+                        else:
+                            pattern = os.path.join(
+                                    os.path.expanduser(group.directory),
+                                    group.pattern)
                     loader = data.file_loader(
                             group.file_type,
                             pattern)

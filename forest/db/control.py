@@ -104,7 +104,10 @@ def initial_state(navigator, pattern=None):
     state["valid_times"] = valid_times
     if len(valid_times) > 0:
         state["valid_time"] = min(valid_times)
-    pressures = navigator.pressures(variable, pattern, initial_time)
+    pressures = navigator.pressures(
+            variable=variable,
+            pattern=pattern,
+            initial_time=initial_time)
     pressures = list(reversed(sorted(pressures)))
     state["pressures"] = pressures
     if len(pressures) > 0:
@@ -309,14 +312,14 @@ class Controls(object):
                 variable = value
                 initial_time = store.state["initial_time"]
                 valid_times = self.navigator.valid_times(
-                    pattern,
-                    variable,
-                    initial_time)
+                    pattern=pattern,
+                    variable=variable,
+                    initial_time=initial_time)
                 valid_times = sorted(set(valid_times))
                 pressures = self.navigator.pressures(
-                    pattern,
-                    variable,
-                    initial_time)
+                    pattern=pattern,
+                    variable=variable,
+                    initial_time=initial_time)
                 pressures = list(reversed(pressures))
                 next_dispatch(action)
                 next_dispatch(set_value("valid_times", valid_times))
@@ -434,9 +437,9 @@ class ControlView(Observable):
                 self.buttons[key]["previous"].disabled = disabled
 
         if ("pattern" in state) and ("patterns" in state):
-            for label, pattern in state["patterns"]:
+            for _, pattern in state["patterns"]:
                 if pattern == state["pattern"]:
-                    self.dropdowns["pattern"].value = label
+                    self.dropdowns["pattern"].value = pattern
 
         for key in [
                 "variable",
