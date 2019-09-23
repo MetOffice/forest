@@ -26,10 +26,12 @@ def main(argv=None):
     if len(args.files) > 0:
         config = cfg.from_files(args.files, args.file_type)
     else:
+        config = cfg.load_config(args.config_file)
+
+    if args.database is not None:
         if args.database != ':memory:':
             assert os.path.exists(args.database), "{} must exist".format(args.database)
         database = db.Database.connect(args.database)
-        config = cfg.load_config(args.config_file)
 
     # Full screen map
     lon_range = (0, 30)
@@ -261,8 +263,10 @@ def main(argv=None):
         navigator = navigate.FileSystem.file_type(
                 args.files,
                 args.file_type)
-    else:
+    elif args.database is not None:
         navigator = database
+    else:
+        navigator = navigate.Config(config)
 
     # Pre-select menu choices (if any)
     initial_state = {}

@@ -10,6 +10,26 @@ from . import (
         rdt)
 
 
+class Config(object):
+    """File system navigation using config file"""
+    def __init__(self, config):
+        self.config = config
+        for group in self.config.file_groups:
+            print(group)
+
+    def variables(self, pattern):
+        return []
+
+    def initial_times(self, pattern, variable=None):
+        return ["2019-01-01 00:00:00"]
+
+    def valid_times(self, pattern, variable, initial_time):
+        return ["2019-01-01 00:00:00"]
+
+    def pressures(self, pattern, variable, initial_time):
+        return [1000.]
+
+
 class FileSystem(object):
     """Navigates collections of file(s)
 
