@@ -20,16 +20,18 @@ class UM(object):
         self.dataset = dataset
         self.units = "hours since 1970-01-01 00:00:00"
 
-    def times(self, name, times):
+    def times(self, name, length=None, dim_name=None):
+        if dim_name is None:
+            dim_name = name
         dataset = self.dataset
-        if name not in dataset.dimensions:
-            dataset.createDimension(name, len(times))
-        var = dataset.createVariable(name, "d", (name,))
+        if dim_name not in dataset.dimensions:
+            dataset.createDimension(dim_name, length)
+        var = dataset.createVariable(name, "d", (dim_name,))
         var.axis = "T"
         var.units = self.units
         var.standard_name = "time"
         var.calendar = "gregorian"
-        var[:] = netCDF4.date2num(times, units=self.units)
+        return var
 
     def forecast_reference_time(self, time, name="forecast_reference_time"):
         dataset = self.dataset
@@ -39,11 +41,13 @@ class UM(object):
         var.calendar = "gregorian"
         var[:] = netCDF4.date2num(time, units=self.units)
 
-    def pressures(self, length=None, name="pressure"):
+    def pressures(self, name, length=None, dim_name=None):
+        if dim_name is None:
+            dim_name = name
         dataset = self.dataset
-        if name not in dataset.dimensions:
-            dataset.createDimension(name, length)
-        var = dataset.createVariable(name, "d", (name,))
+        if dim_name not in dataset.dimensions:
+            dataset.createDimension(dim_name, length)
+        var = dataset.createVariable(name, "d", (dim_name,))
         var.axis = "Z"
         var.units = "hPa"
         var.long_name = "pressure"
@@ -81,6 +85,19 @@ class UM(object):
         return var
 
 
+class TestLocatorScalability(unittest.TestCase):
+    def test_locate_given_one_thousand_files(self):
+        N = 10**4
+        k = np.random.randint(N)
+        start = dt.datetime(2019, 1, 10)
+        times = [start + dt.timedelta(hours=i) for i in range(N)]
+        paths = ["test-locate-{:%Y%m%dT%H%MZ}.nc".format(time) for time in times]
+        locator = unified_model.Locator(paths)
+        result = locator.find_paths(times[k])
+        expect = [paths[k]]
+        self.assertEqual(expect, result)
+
+
 class TestLocator(unittest.TestCase):
     def setUp(self):
         self.path = "test-navigator.nc"
@@ -104,6 +121,99 @@ class TestLocator(unittest.TestCase):
                     initial_time,
                     valid_time)
 
+    def test_locator_given_dim0_format(self):
+        pattern = self.path
+        times = [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)]
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            um = UM(dataset)
+            dataset.createDimension("longitude", 1)
+            dataset.createDimension("latitude", 1)
+            var = um.times("time", length=len(times), dim_name="dim0")
+            var[:] = netCDF4.date2num(times, units=var.units)
+            um.forecast_reference_time(times[0])
+            var = um.pressures("pressure", length=len(times), dim_name="dim0")
+            var[:] = 1000.
+            dims = ("dim0", "longitude", "latitude")
+            coordinates = "forecast_period_1 forecast_reference_time pressure time"
+            var = um.relative_humidity(dims, coordinates=coordinates)
+            var[:] = 100.
+        variable = "relative_humidity"
+        initial_time = dt.datetime(2019, 1, 1)
+        valid_time = dt.datetime(2019, 1, 2)
+        locator = unified_model.Locator([self.path])
+        _, result = locator.locate(
+                    pattern,
+                    variable,
+                    initial_time,
+                    valid_time,
+                    pressure=1000.0001)
+        expect = (1,)
+        self.assertEqual(expect, result)
+
+    def test_locator_given_time_pressure_format(self):
+        pattern = self.path
+        reference_time = dt.datetime(2019, 1, 1)
+        times = [dt.datetime(2019, 1, 2), dt.datetime(2019, 1, 2, 3)]
+        pressures = [1000, 950, 850]
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            um = UM(dataset)
+            dataset.createDimension("longitude", 1)
+            dataset.createDimension("latitude", 1)
+            var = um.times("time", length=len(times))
+            var[:] = netCDF4.date2num(times, units=var.units)
+            um.forecast_reference_time(reference_time)
+            var = um.pressures("pressure", length=len(pressures))
+            var[:] = pressures
+            dims = ("time", "pressure", "longitude", "latitude")
+            coordinates = "forecast_period_1 forecast_reference_time"
+            var = um.relative_humidity(dims, coordinates=coordinates)
+            var[:] = 100.
+        variable = "relative_humidity"
+        initial_time = reference_time
+        valid_time = times[1]
+        pressure = pressures[2]
+        locator = unified_model.Locator([self.path])
+        _, result = locator.locate(
+                    pattern,
+                    variable,
+                    initial_time,
+                    valid_time,
+                    pressure)
+        expect = (1, 2)
+        self.assertEqual(expect, result)
+
+    def test_locator_given_time_outside_time_axis(self):
+        pattern = self.path
+        reference_time = dt.datetime(2019, 1, 1)
+        times = [dt.datetime(2019, 1, 2), dt.datetime(2019, 1, 2, 3)]
+        future = dt.datetime(2019, 1, 4)
+        pressures = [1000, 950, 850]
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            um = UM(dataset)
+            dataset.createDimension("longitude", 1)
+            dataset.createDimension("latitude", 1)
+            var = um.times("time", length=len(times))
+            var[:] = netCDF4.date2num(times, units=var.units)
+            um.forecast_reference_time(reference_time)
+            var = um.pressures("pressure", length=len(pressures))
+            var[:] = pressures
+            dims = ("time", "pressure", "longitude", "latitude")
+            coordinates = "forecast_period_1 forecast_reference_time"
+            var = um.relative_humidity(dims, coordinates=coordinates)
+            var[:] = 100.
+        variable = "relative_humidity"
+        initial_time = reference_time
+        valid_time = future
+        pressure = pressures[2]
+        locator = unified_model.Locator([self.path])
+        with self.assertRaises(SearchFail):
+            locator.locate(
+                    pattern,
+                    variable,
+                    initial_time,
+                    valid_time,
+                    pressure)
+
     def test_initial_time_given_forecast_reference_time(self):
         time = dt.datetime(2019, 1, 1, 12)
         with netCDF4.Dataset(self.path, "w") as dataset:
@@ -122,8 +232,9 @@ class TestLocator(unittest.TestCase):
         with netCDF4.Dataset(self.path, "w") as dataset:
             um = UM(dataset)
             for name, values in times.items():
-                um.times(name, values)
-            var = um.pressures(length=1)
+                var = um.times(name, length=len(values))
+                var[:] = netCDF4.date2num(values, units=var.units)
+            var = um.pressures("pressure", length=1)
             var[:] = 1000.
             var = um.longitudes(length=1)
             var[:] = 125.

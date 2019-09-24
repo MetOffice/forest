@@ -18,16 +18,26 @@ def ndindex(masks, axes):
     """
     joint = {}
     for mask, axis in zip(masks, axes):
-        print(mask, axis)
         if axis in joint:
             joint[axis] = joint[axis] & mask
         else:
             joint[axis] = mask
+    rank = max(joint.keys()) + 1  # find highest dimension
+    return axes_pts([joint[i] for i in range(rank)])
+
+
+def axes_pts(masks):
     slices = []
-    for i in range(max(joint.keys()) + 1):
-        pts = np.where(joint[i])[0][0]
+    for mask in masks:
+        pts = np.where(mask)[0][0]
         slices.append(pts)
     return tuple(slices)
+
+
+def coord_mask(name, values, value):
+    return {
+        "time": time_mask,
+        "pressure": pressure_mask}[name](values, value)
 
 
 def time_mask(times, time):
@@ -55,14 +65,40 @@ def time_axis(path, variable):
 
 
 def _axis(name, path, variable):
+    dims, coords = load_dim_coords(path, variable)
+    value = axis(name, dims, coords)
+    if value is None:
+        msg = "{} axis not found: '{}' '{}'".format(name.capitalize(), path, variable)
+        raise AxisNotFound(msg)
+    else:
+        return value
+
+
+def load_dim_coords(path, variable):
     with netCDF4.Dataset(path) as dataset:
         var = dataset.variables[variable]
-        for i, d in enumerate(var.dimensions):
-            if d.startswith(name):
-                return i
-        coords = var.coordinates.split()
-        for c in coords:
-            if c.startswith(name):
-                return 0
-    msg = "{} axis not found: '{}' '{}'".format(name.capitalize(), path, variable)
-    raise AxisNotFound(msg)
+        dims = var.dimensions
+        coords = getattr(var, "coordinates", "")
+    return dims, coords
+
+
+def has_coord(coord, dims, coords):
+    return coord_var(coord, dims, coords) is not None
+
+
+def coord_var(coord, dims, coords):
+    for d in dims:
+        if d.startswith(coord):
+            return d
+    for c in coords.split():
+        if c.startswith(coord):
+            return c
+
+
+def axis(name, dims, coords):
+    for i, d in enumerate(dims):
+        if d.startswith(name):
+            return i
+    for c in coords.split():
+        if c.startswith(name):
+            return 0
