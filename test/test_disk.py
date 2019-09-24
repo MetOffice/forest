@@ -9,6 +9,7 @@ from forest import (
         disk,
         navigate,
         unified_model)
+from forest.exceptions import SearchFail
 
 
 
@@ -88,22 +89,20 @@ class TestLocator(unittest.TestCase):
         if os.path.exists(self.path):
             os.remove(self.path)
 
-    @unittest.skip("waiting")
-    def test_locator(self):
+    def test_locator_given_empty_file_raises_exception(self):
         pattern = self.path
         with netCDF4.Dataset(self.path, "w") as dataset:
             pass
         variable = "relative_humidity"
         initial_time = dt.datetime(2019, 1, 1)
         valid_time = dt.datetime(2019, 1, 1)
-        locator = disk.Locator([self.path])
-        result = locator.locate(
-                pattern,
-                variable,
-                initial_time,
-                valid_time)
-        expect = (self.path, 0)
-        self.assertEqual(expect, result)
+        locator = unified_model.Locator([self.path])
+        with self.assertRaises(SearchFail):
+            locator.locate(
+                    pattern,
+                    variable,
+                    initial_time,
+                    valid_time)
 
     def test_initial_time_given_forecast_reference_time(self):
         time = dt.datetime(2019, 1, 1, 12)

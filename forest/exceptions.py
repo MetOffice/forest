@@ -16,3 +16,7 @@ class InitialTimeNotFound(Exception):
 
 class ValidTimesNotFound(Exception):
     pass
+
+
+class SearchFail(Exception):
+    pass

@@ -23,7 +23,7 @@ from forest.util import (
         timeout_cache,
         initial_time,
         coarsify)
-from forest.db.exceptions import SearchFail
+from forest.exceptions import SearchFail
 
 
 # Application data shared across documents

@@ -1,6 +1,7 @@
 import iris
 import numpy as np
 import netCDF4
+from forest.exceptions import SearchFail
 
 
 class Coordinates(object):
@@ -16,6 +17,23 @@ class Coordinates(object):
 
     def pressures(self, path, variable):
         return PressuresLocator()(path, variable)
+
+
+class Locator(object):
+    def __init__(self, paths):
+        self.paths = paths
+
+    def locate(
+            self,
+            pattern,
+            variable,
+            initial_time,
+            valid_time,
+            pressure=None,
+            tolerance=0.001):
+        msg = " ".join([str(value) for value in
+            [pattern, variable, initial_time, valid_time, pressure]])
+        raise SearchFail(msg)
 
 
 class InitialTimeLocator(object):

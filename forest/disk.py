@@ -2,14 +2,6 @@
 import netCDF4
 import datetime as dt
 import numpy as np
-from forest import util
-import fnmatch
-import iris
-from forest.exceptions import (
-        InitialTimeNotFound,
-        PressuresNotFound,
-        ValidTimesNotFound)
-from forest.db.exceptions import SearchFail
 
 
 class AxisNotFound(Exception):
@@ -74,50 +66,3 @@ def _axis(name, path, variable):
                 return 0
     msg = "{} axis not found: '{}' '{}'".format(name.capitalize(), path, variable)
     raise AxisNotFound(msg)
-
-
-class Locator(object):
-    """Locator for collection of UM diagnostic files
-
-    Uses file naming convention and meta-data stored in
-    files to quickly look up file/index related to point
-    in space/time
-    """
-    def __init__(self, paths):
-        self.paths = {}
-        for path in paths:
-            key = str(load_initial_time(path))
-            if key in self.paths:
-                self.paths[key].append(path)
-            else:
-                self.paths[key] = [path]
-
-    def locate(
-            self,
-            pattern,
-            variable,
-            initial_time,
-            valid_time,
-            pressure=None,
-            tolerance=0.001):
-        if isinstance(valid_time, str):
-            valid_time = np.datetime64(valid_time, 's')
-        paths = self.paths[str(initial_time)]
-        paths = fnmatch.filter(paths, pattern)
-        for path in paths:
-            valid_times = load_valid_times(path, variable)
-            axes = [time_axis(path, variable)]
-            masks = [time_mask(valid_times, valid_time)]
-            if pressure is not None:
-                try:
-                    pressures = load_pressures(path, variable)
-                    axis = pressure_axis(path, variable)
-                    masks.append(pressure_mask(pressures, pressure))
-                    axes.append(axis)
-                except PressuresNotFound:
-                    pass
-            pts = ndindex(masks, axes)
-            print(path, pts)
-            return path, pts
-        raise SearchFail('initial: {} valid: {} pressure: {}'.format(
-            initial_time, valid_time, pressure))
