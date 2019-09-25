@@ -1,4 +1,5 @@
-# FOREST - Forecast and Observation Research and Evaluation Tool
+![FOREST logo](forest_logo_640x320.png)
+## Forecast and Observation Research and Evaluation Tool
 
 [![Build Status](https://travis-ci.com/informatics-lab/forest.svg?branch=master)](https://travis-ci.com/informatics-lab/forest)
 
