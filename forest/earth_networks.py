@@ -1,6 +1,6 @@
 import datetime as dt
 import pandas as pd
-import geo
+import forest.geo as geo
 import bokeh.models
 
 

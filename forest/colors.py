@@ -4,7 +4,7 @@ Helpers to choose color palette(s), limits etc.
 import bokeh.palettes
 import bokeh.colors
 import bokeh.layouts
-from db.util import autolabel
+from forest.db.util import autolabel
 
 
 class Controls(object):

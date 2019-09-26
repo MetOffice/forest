@@ -1,4 +1,4 @@
-import data
+import forest.data as data
 
 
 def on_server_loaded(server_context):
