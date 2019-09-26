@@ -23,6 +23,7 @@ class TestLocator(unittest.TestCase):
         expect = dt.datetime(2019, 1, 1)
         self.assertEqual(expect, result)
 
+    @unittest.skip('awaiting development')
     def test_find_given_no_files_raises_notfound(self):
         any_date = dt.datetime.now()
         with self.assertRaises(FileNotFound):
@@ -71,6 +72,7 @@ class TestLocator(unittest.TestCase):
         expect = 2
         self.assertEqual(expect, result)
 
+    @unittest.skip('awaiting development')
     def test_find_index_outside_range_raises_exception(self):
         time = dt.datetime(2019, 1, 4, 16)
         times = [
