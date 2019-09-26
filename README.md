@@ -2,6 +2,7 @@
 ## Forecast and Observation Research and Evaluation Survey Tool
 
 [![Build Status](https://travis-ci.com/informatics-lab/forest.svg?branch=master)](https://travis-ci.com/informatics-lab/forest)
+[![Coverage Status](https://coveralls.io/repos/github/informatics-lab/forest/badge.svg?branch=master)](https://coveralls.io/github/informatics-lab/forest?branch=master)
 
 This repository hosts the code to visualise forecast model output and observation data in a web portal, as well as the scripts and configuration files to deploy the server infrastructure.
 
