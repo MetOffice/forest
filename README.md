@@ -1,4 +1,9 @@
-![FOREST logo](forest_logo_640x320.png)
+<h1 align="center">
+  <a href="https://forest-informaticslab.readthedocs.io/en/latest/" style="display: block; margin: 0 auto;">
+   <img src="https://raw.githubusercontent.com/informatics-lab/forest/master/forest_logo_640x320.png"
+        style="max-width: 40%;" alt="FOREST"></a>
+</h1>
+
 ## Forecast and Observation Research and Evaluation Survey Tool
 
 [![Build Status](https://travis-ci.com/informatics-lab/forest.svg?branch=master)](https://travis-ci.com/informatics-lab/forest)
