@@ -8,6 +8,7 @@
 
 [![Build Status](https://travis-ci.com/informatics-lab/forest.svg?branch=master)](https://travis-ci.com/informatics-lab/forest)
 [![Coverage Status](https://coveralls.io/repos/github/informatics-lab/forest/badge.svg?branch=master)](https://coveralls.io/github/informatics-lab/forest?branch=master)
+[![Docs Latest](https://img.shields.io/badge/docs-latest-blue)](https://forest-informaticslab.readthedocs.io/en/latest/)
 
 This repository hosts the code to visualise forecast model output and observation data in a web portal, as well as the scripts and configuration files to deploy the server infrastructure.
 
