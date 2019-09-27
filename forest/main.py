@@ -118,6 +118,7 @@ def main(argv=None):
                 return os.path.join(args_dir, group_dir)
 
     for group in config.file_groups:
+        print(group)
         if group.label not in data.LOADERS:
             if group.locator == "database":
                 locator = db.Locator(

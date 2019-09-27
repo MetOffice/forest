@@ -8,4 +8,6 @@ __version__ = '0.3.0'
 from .config import *
 from . import (
         navigate,
-        unified_model)
+        unified_model,
+        sample)
+from .db import Database

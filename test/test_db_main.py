@@ -4,6 +4,7 @@ import os
 import sqlite3
 import netCDF4
 import forest.db.main as main
+import forest
 
 
 class TestMain(unittest.TestCase):

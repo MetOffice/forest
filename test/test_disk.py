@@ -8,81 +8,9 @@ import pytest
 from forest import (
         disk,
         navigate,
-        unified_model)
+        unified_model,
+        sample)
 from forest.exceptions import SearchFail
-
-
-
-
-class UM(object):
-    """Unified model diagnostics formatter"""
-    def __init__(self, dataset):
-        self.dataset = dataset
-        self.units = "hours since 1970-01-01 00:00:00"
-
-    def times(self, name, length=None, dim_name=None):
-        if dim_name is None:
-            dim_name = name
-        dataset = self.dataset
-        if dim_name not in dataset.dimensions:
-            dataset.createDimension(dim_name, length)
-        var = dataset.createVariable(name, "d", (dim_name,))
-        var.axis = "T"
-        var.units = self.units
-        var.standard_name = "time"
-        var.calendar = "gregorian"
-        return var
-
-    def forecast_reference_time(self, time, name="forecast_reference_time"):
-        dataset = self.dataset
-        var = dataset.createVariable(name, "d", ())
-        var.units = self.units
-        var.standard_name = name
-        var.calendar = "gregorian"
-        var[:] = netCDF4.date2num(time, units=self.units)
-
-    def pressures(self, name, length=None, dim_name=None):
-        if dim_name is None:
-            dim_name = name
-        dataset = self.dataset
-        if dim_name not in dataset.dimensions:
-            dataset.createDimension(dim_name, length)
-        var = dataset.createVariable(name, "d", (dim_name,))
-        var.axis = "Z"
-        var.units = "hPa"
-        var.long_name = "pressure"
-        return var
-
-    def longitudes(self, length=None, name="longitude"):
-        dataset = self.dataset
-        if name not in dataset.dimensions:
-            dataset.createDimension(name, length)
-        var = dataset.createVariable(name, "f", (name,))
-        var.axis = "X"
-        var.units = "degrees_east"
-        var.long_name = "longitude"
-        return var
-
-    def latitudes(self, length=None, name="latitude"):
-        dataset = self.dataset
-        if name not in dataset.dimensions:
-            dataset.createDimension(name, length)
-        var = dataset.createVariable(name, "f", (name,))
-        var.axis = "Y"
-        var.units = "degrees_north"
-        var.long_name = "latitude"
-        return var
-
-    def relative_humidity(self, dims, name="relative_humidity",
-            coordinates="forecast_period_1 forecast_reference_time"):
-        dataset = self.dataset
-        var = dataset.createVariable(name, "f", dims)
-        var.standard_name = "relative_humidity"
-        var.units = "%"
-        var.um_stash_source = "m01s16i204"
-        var.grid_mapping = "latitude_longitude"
-        var.coordinates = coordinates
-        return var
 
 
 class TestLocatorScalability(unittest.TestCase):
@@ -125,7 +53,7 @@ class TestLocator(unittest.TestCase):
         pattern = self.path
         times = [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)]
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = UM(dataset)
+            um = sample.UM(dataset)
             dataset.createDimension("longitude", 1)
             dataset.createDimension("latitude", 1)
             var = um.times("time", length=len(times), dim_name="dim0")
@@ -156,7 +84,7 @@ class TestLocator(unittest.TestCase):
         times = [dt.datetime(2019, 1, 2), dt.datetime(2019, 1, 2, 3)]
         pressures = [1000, 950, 850]
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = UM(dataset)
+            um = sample.UM(dataset)
             dataset.createDimension("longitude", 1)
             dataset.createDimension("latitude", 1)
             var = um.times("time", length=len(times))
@@ -189,7 +117,7 @@ class TestLocator(unittest.TestCase):
         future = dt.datetime(2019, 1, 4)
         pressures = [1000, 950, 850]
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = UM(dataset)
+            um = sample.UM(dataset)
             dataset.createDimension("longitude", 1)
             dataset.createDimension("latitude", 1)
             var = um.times("time", length=len(times))
@@ -217,7 +145,7 @@ class TestLocator(unittest.TestCase):
     def test_initial_time_given_forecast_reference_time(self):
         time = dt.datetime(2019, 1, 1, 12)
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = UM(dataset)
+            um = sample.UM(dataset)
             um.forecast_reference_time(time)
         coords = unified_model.Coordinates()
         result = coords.initial_time(self.path)
@@ -230,7 +158,7 @@ class TestLocator(unittest.TestCase):
                 "time_0": [dt.datetime(2019, 1, 1)],
                 "time_1": [dt.datetime(2019, 1, 1, 3)]}
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = UM(dataset)
+            um = sample.UM(dataset)
             for name, values in times.items():
                 var = um.times(name, length=len(values))
                 var[:] = netCDF4.date2num(values, units=var.units)
@@ -251,7 +179,7 @@ class TestLocator(unittest.TestCase):
 
     def test_pressure_axis_given_time_pressure_lon_lat_dimensions(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = UM(dataset)
+            um = sample.UM(dataset)
             dims = ("time_1", "pressure_0", "longitude", "latitude")
             for dim in dims:
                 dataset.createDimension(dim, 1)
@@ -263,7 +191,7 @@ class TestLocator(unittest.TestCase):
     def test_pressure_axis_given_dim0_format(self):
         coordinates = "forecast_period_1 forecast_reference_time pressure time"
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = UM(dataset)
+            um = sample.UM(dataset)
             dims = ("dim0", "longitude", "latitude")
             for dim in dims:
                 dataset.createDimension(dim, 1)
@@ -274,7 +202,7 @@ class TestLocator(unittest.TestCase):
 
     def test_time_axis_given_time_pressure_lon_lat_dimensions(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = UM(dataset)
+            um = sample.UM(dataset)
             dims = ("time_1", "pressure_0", "longitude", "latitude")
             for dim in dims:
                 dataset.createDimension(dim, 1)
@@ -286,7 +214,7 @@ class TestLocator(unittest.TestCase):
     def test_time_axis_given_dim0_format(self):
         coordinates = "forecast_period_1 forecast_reference_time pressure time"
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = UM(dataset)
+            um = sample.UM(dataset)
             dims = ("dim0", "longitude", "latitude")
             for dim in dims:
                 dataset.createDimension(dim, 1)

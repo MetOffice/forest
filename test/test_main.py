@@ -1,8 +1,9 @@
-import unittest
+import os
 from forest.main import main
 
 
-class TestMain(unittest.TestCase):
-    @unittest.skip("waiting for green light")
-    def test_main_given_files(self):
-        main(argv=["file.json"])
+def test_main_given_rdt_files(tmp_path):
+    rdt_file = tmp_path / "file.json"
+    with rdt_file.open("w"):
+        pass
+    main(argv=["--file-type", "rdt", str(rdt_file)])

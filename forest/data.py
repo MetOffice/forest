@@ -310,6 +310,7 @@ class DBLoader(object):
                 state.initial_time,
                 state.valid_time,
                 state.pressure)
+            print("{}() {} {}".format(self.__class__.__name__, path, pts))
         except SearchFail:
             return self.empty_image
 
