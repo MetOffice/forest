@@ -10,7 +10,13 @@ observations.
 Installation
 ============
 
-FOREST is distributed via conda through the conda-forge channel
+FOREST is distributed via conda through the `conda-forge` channel
+
+.. code-block:: sh
+
+  :> conda install -c conda-forge forest -y
+
+Full documentation for conda can be found here: https://docs.conda.io/en/latest/
 
 Who is FOREST for?
 ==================
@@ -21,8 +27,7 @@ users should be able to easily compare, interrogate and report on the
 quality of forecasts.
 
 While the primary intention of FOREST is to support research-mode activities
-it should be easy to transition to an operational context.
-
+it should be trivial to use in an operational context.
 
 Example - Unified model output
 ==============================
