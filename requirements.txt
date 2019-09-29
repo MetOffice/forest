@@ -1,2 +1,2 @@
 bokeh
-iris
+scitools-iris
