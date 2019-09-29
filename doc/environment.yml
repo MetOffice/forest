@@ -102,5 +102,4 @@ dependencies:
   - zict=1.0.0=py_0
   - zlib=1.2.11=h1de35cc_3
   - zstd=1.4.0=ha9f0a20_0
-prefix: /Users/andrewryan/miniconda3/envs/forest-doc
 
