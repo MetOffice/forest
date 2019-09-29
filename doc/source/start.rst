@@ -2,7 +2,7 @@
 Getting started
 ===============
 
-Welcome to the complete guide to using FOREST. Learn how
+Welcome to the complete guide to FOREST. Learn how
 to integrate FOREST into your existing work flow, build a
 web portal or quickly view your model diagnostics alongside
 observations.
