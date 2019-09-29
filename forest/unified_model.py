@@ -1,12 +1,16 @@
 import os
 import re
-import iris
 import fnmatch
 import datetime as dt
 import numpy as np
 import netCDF4
 from forest import disk
 from forest.exceptions import SearchFail
+try:
+    import iris
+except ImportError:
+    # ReadTheDocs can't install iris
+    pass
 
 
 class NotFound(Exception):

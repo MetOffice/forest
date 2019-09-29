@@ -1,4 +1,8 @@
-import iris
+try:
+    import iris
+except ImportError:
+    # ReadTheDocs can't install iris
+    pass
 import netCDF4
 import jinja2
 from .connection import Connection
