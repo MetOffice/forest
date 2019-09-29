@@ -3,5 +3,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - iris=2.2.1
-
+  - bokeh
+  - netCDF4
+  - numpy
