@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Forest - forecast evaluation tools
+FOREST - Forecast evaluation tools
 ==================================
 
-Forest is a framework for evaluating geophysical numerical models. Forecast
+FOREST is a framework for evaluating geophysical numerical models. Forecast
 and nowcast fields can be compared to equivalent observations
 using a simple user interface.
 
@@ -16,6 +16,7 @@ The code is available on `GitHub <https://github.com/informatics-lab/forest>`_ a
    :maxdepth: 2
    :caption: Contents:
 
+   start
    user
    guide
    api
