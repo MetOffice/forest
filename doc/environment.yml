@@ -1,9 +1,0 @@
-name: forest-doc
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - bokeh
-  - netCDF4
-  - numpy
-  - cartopy
