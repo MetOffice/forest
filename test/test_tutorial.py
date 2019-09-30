@@ -39,6 +39,14 @@ def test_build_all_makes_global_um_output(tmpdir):
         var = dataset.variables["relative_humidity"]
 
 
+def test_build_all_makes_eida50_example(tmpdir):
+    build_dir = str(tmpdir)
+    forest.tutorial.build_all(build_dir)
+    path = os.path.join(build_dir, forest.tutorial.EIDA50_FILE)
+    with netCDF4.Dataset(path) as dataset:
+        var = dataset.variables["data"]
+
+
 def test_build_all_makes_sample_database(tmpdir):
     build_dir = str(tmpdir)
     forest.tutorial.build_all(build_dir)

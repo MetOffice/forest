@@ -12,6 +12,7 @@ CFG_FILE = "config.yaml"
 UM_FILE = "unified_model.nc"
 DB_FILE = "database.db"
 RDT_FILE = "rdt_201904171245.json"
+EIDA50_FILE = "eida50_20190417.nc"
 
 
 def build_all(build_dir):
@@ -19,14 +20,23 @@ def build_all(build_dir):
     for builder in [
             build_config,
             build_rdt,
+            build_eida50,
             build_um,
             build_database]:
         builder(build_dir)
 
 
-def build_rdt(directory):
-    src = os.path.join(SOURCE_DIR, RDT_FILE)
-    dst = os.path.join(directory, RDT_FILE)
+def build_rdt(build_dir):
+    build_file(build_dir, RDT_FILE)
+
+
+def build_eida50(build_dir):
+    build_file(build_dir, EIDA50_FILE)
+
+
+def build_file(directory, file_name):
+    src = os.path.join(SOURCE_DIR, file_name)
+    dst = os.path.join(directory, file_name)
     print("copying: {} to {}".format(src, dst))
     shutil.copy2(src, dst)
 
