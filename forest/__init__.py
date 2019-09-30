@@ -9,5 +9,5 @@ from .config import *
 from . import (
         navigate,
         unified_model,
-        example)
+        tutorial)
 from .db import Database

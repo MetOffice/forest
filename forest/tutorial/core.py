@@ -1,4 +1,5 @@
 import os
+import shutil
 import datetime as dt
 import netCDF4
 import yaml
@@ -6,47 +7,57 @@ import numpy as np
 import forest.db
 
 
-SAMPLE_CFG = os.path.join(os.path.dirname(__file__), "sample.yaml")
-SAMPLE_NC = os.path.join(os.path.dirname(__file__), "sample.nc")
-SAMPLE_DB = os.path.join(os.path.dirname(__file__), "sample.db")
-FILES = {
-        "SAMPLE_CFG": SAMPLE_CFG,
-        "SAMPLE_DB": SAMPLE_DB,
-        "SAMPLE_NC": SAMPLE_NC
-}
+SOURCE_DIR = os.path.dirname(__file__)
+CFG_FILE = "config.yaml"
+UM_FILE = "unified_model.nc"
+DB_FILE = "database.db"
+RDT_FILE = "rdt_201904171245.json"
 
 
-def build_all():
+def build_all(build_dir):
     """Build sample files"""
     for builder in [
             build_config,
-            build_netcdf,
+            build_rdt,
+            build_um,
             build_database]:
-        builder()
+        builder(build_dir)
 
 
-def build_config():
+def build_rdt(directory):
+    src = os.path.join(SOURCE_DIR, RDT_FILE)
+    dst = os.path.join(directory, RDT_FILE)
+    print("copying: {} to {}".format(src, dst))
+    shutil.copy2(src, dst)
+
+
+def build_config(build_dir):
+    path = os.path.join(build_dir, CFG_FILE)
     data = {
         "files": [
             {
-                "label": "SAMPLE",
-                "pattern": SAMPLE_NC,
+                "label": "Unified Model",
+                "pattern": UM_FILE,
+                "directory": build_dir,
                 "locator": "database"
             }
         ]
     }
-    with open(SAMPLE_CFG, "w") as stream:
+    print("writing: {}".format(path))
+    with open(path, "w") as stream:
         yaml.dump(data, stream)
 
 
-def build_netcdf():
+def build_um(build_dir):
     nx, ny = 100, 100
     x = np.linspace(0, 45, nx)
     y = np.linspace(0, 45, ny)
     X, Y = np.meshgrid(x, y)
     Z = np.sqrt(X**2 + Y**2)
     times = [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)]
-    with netCDF4.Dataset(SAMPLE_NC, "w") as dataset:
+    path = os.path.join(build_dir, UM_FILE)
+    print("writing: {}".format(path))
+    with netCDF4.Dataset(path, "w") as dataset:
         formatter = UM(dataset)
         var = formatter.longitudes(nx)
         var[:] = x
@@ -63,9 +74,14 @@ def build_netcdf():
         var[:] = Z.T
 
 
-def build_database():
-    database = forest.db.Database.connect(SAMPLE_DB)
-    database.insert_netcdf(SAMPLE_NC)
+def build_database(build_dir):
+    db_path = os.path.join(build_dir, DB_FILE)
+    um_path = os.path.join(build_dir, UM_FILE)
+    if not os.path.exists(um_path):
+        build_um(build_dir)
+    print("building: {}".format(db_path))
+    database = forest.db.Database.connect(db_path)
+    database.insert_netcdf(um_path)
     database.close()
 
 
