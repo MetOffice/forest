@@ -2,7 +2,6 @@ import os
 import shutil
 import datetime as dt
 import netCDF4
-import yaml
 import numpy as np
 import forest.db
 
@@ -43,19 +42,16 @@ def build_file(directory, file_name):
 
 def build_config(build_dir):
     path = os.path.join(build_dir, CFG_FILE)
-    data = {
-        "files": [
-            {
-                "label": "Unified Model",
-                "pattern": UM_FILE,
-                "directory": build_dir,
-                "locator": "database"
-            }
-        ]
-    }
+    content = """
+    files:
+       - label: Unified Model
+         pattern: "*{}"
+         directory: {}
+         locator: database
+""".format(UM_FILE, build_dir)
     print("writing: {}".format(path))
     with open(path, "w") as stream:
-        yaml.dump(data, stream)
+        stream.write(content)
 
 
 def build_um(build_dir):

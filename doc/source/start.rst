@@ -19,7 +19,7 @@ FOREST is distributed via conda through the `conda-forge` channel
 Full documentation for conda can be found here: https://docs.conda.io/en/latest/
 
 Who is FOREST for?
-------------------
+~~~~~~~~~~~~~~~~~~
 
 FOREST is intended to provide a step change in exploration and
 monitoring of forecasting systems. Technical and non-technical
@@ -32,7 +32,7 @@ technologies scale seemlessly from a single user running on a laptop
 up to a fleet of EC2 instances running on AWS.
 
 Tutorial
-========
+--------
 
 FOREST comes with example cases intended to get users off the ground
 quickly, reading about a tool is all well and good but nothing compares
@@ -136,11 +136,15 @@ To generate a database from scratch use the `forestdb` command.
 .. note:: To switch on database-powered menu systems change `locator` to
           `database` in the config file
 
+.. note:: Database support is only available for unified_model file types
+
+.. note:: Prefix pattern with wildcard `*` to enable SQL queries to find files
+
 .. code-block:: yaml
 
   files:
      - label: UM
-       pattern: unified_model.nc
+       pattern: "*unified_model.nc"
        locator: database
      - label: RDT
        pattern: rdt*.json

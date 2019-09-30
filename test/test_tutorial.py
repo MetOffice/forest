@@ -76,7 +76,7 @@ def test_build_all_builds_config_file(tmpdir):
     expect = {
         "files": [{
             "label": "Unified Model",
-            "pattern": forest.tutorial.UM_FILE,
+            "pattern": "*" + forest.tutorial.UM_FILE,
             "directory": build_dir,
             "locator": "database"
         }]
