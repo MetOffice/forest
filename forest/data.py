@@ -1,7 +1,11 @@
 import os
 import datetime as dt
 import re
-import cartopy
+try:
+    import cartopy
+except ImportError:
+    # ReadTheDocs unable to pip install cartopy
+    pass
 import glob
 import json
 import pandas as pd

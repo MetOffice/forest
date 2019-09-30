@@ -1,4 +1,3 @@
 bokeh
 netCDF4
 numpy
-cartopy
