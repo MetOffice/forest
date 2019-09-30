@@ -31,8 +31,18 @@ class Config(object):
     @classmethod
     def load(cls, path):
         with open(path) as stream:
-            data = yaml.load(stream)
+            try:
+                # PyYaml 5.1 onwards
+                data = yaml.full_load(stream)
+            except AttributeError:
+                data = yaml.load(stream)
         return cls(data)
+
+    @classmethod
+    def from_files(cls, files, file_type="unified_model"):
+        return cls({
+            "files": [dict(pattern=f, label=f, file_type=file_type)
+                for f in files]})
 
     @property
     def file_groups(self):
@@ -94,3 +104,8 @@ class FileGroup(object):
 @export
 def load_config(path):
     return Config.load(path)
+
+
+@export
+def from_files(files, file_type):
+    return Config.from_files(files, file_type)

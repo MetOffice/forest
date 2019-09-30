@@ -1,6 +1,6 @@
 import unittest
 import datetime as dt
-import data
+from forest import data
 
 
 class TestInitialTimes(unittest.TestCase):

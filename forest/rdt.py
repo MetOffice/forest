@@ -5,8 +5,9 @@ import datetime as dt
 import bokeh
 import json
 import numpy as np
-import forest.geo as geo
-import forest.locate as locate
+from forest import (
+        geo,
+        locate)
 from forest.util import timeout_cache
 from forest.exceptions import FileNotFound
 
@@ -66,10 +67,11 @@ class View(object):
     def render(self, state):
         if state.valid_time is not None:
             date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
-            print(date)
+            print("rdt.View.render", date)
             try:
                 self.source.geojson = self.loader.load_date(date)
             except FileNotFound:
+                print("rdt.View.render caught FileNotFound", date)
                 self.source.geojson = self.empty_geojson
 
     def add_figure(self, figure):
@@ -144,6 +146,7 @@ class Loader(object):
 
 class Locator(object):
     def __init__(self, pattern):
+        print("rdt.Locator('{}')".format(pattern))
         self.pattern = pattern
 
     def find_file(self, valid_date):
@@ -172,7 +175,29 @@ class Locator(object):
             self.parse_date(p) for p in paths],
             dtype='datetime64[s]')
 
-    def parse_date(self, path):
+    @staticmethod
+    def parse_date(path):
         groups = re.search(r"[0-9]{12}", os.path.basename(path))
         if groups is not None:
             return dt.datetime.strptime(groups[0], "%Y%m%d%H%M")
+
+
+class Coordinates(object):
+    """Menu system interface"""
+    def initial_time(self, path):
+        times = self.valid_times(path, None)
+        if len(times) > 0:
+            return times[0]
+        return None
+
+    def variables(self, path):
+        return ["RDT"]
+
+    def valid_times(self, path, variable):
+        date = Locator.parse_date(path)
+        if date is None:
+            return []
+        return [str(date)]
+
+    def pressures(self, path, variable):
+        return None

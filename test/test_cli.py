@@ -1,8 +1,15 @@
 import unittest
 import forest.cli.main
+from forest.cli.main import parse_args
 
 
 class TestForestCLI(unittest.TestCase):
+    def test_files(self):
+        paths = ["file.json"]
+        result = getattr(parse_args(paths), "files")
+        expect = paths
+        self.assertEqual(expect, result)
+
     def test_parse_args(self):
         namespace = forest.cli.main.parse_args(["file.nc"])
         result = namespace.files

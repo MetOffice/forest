@@ -31,11 +31,12 @@ setuptools.setup(
         author_email="andrew.ryan@metoffice.gov.uk",
         description="Forecast visualisation and survey tool",
         packages=setuptools.find_packages(),
-        test_suite=NAME,
+        test_suite="test",
         tests_require=load("requirements-dev.txt"),
         entry_points={
             'console_scripts': [
                 'forest=forest.cli.main:main',
-                'forestdb=forest.db.main:main'
+                'forestdb=forest.db.main:main',
+                'forest-tutorial=forest.tutorial.main:main'
             ]
         })

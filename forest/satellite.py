@@ -5,8 +5,9 @@ import numpy as np
 import os
 import glob
 from functools import lru_cache
-import forest.geo as geo
-import forest.locate as locate
+from forest import (
+        geo,
+        locate)
 from forest.util import coarsify
 from forest.exceptions import FileNotFound, IndexNotFound
 

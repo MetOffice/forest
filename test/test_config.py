@@ -6,7 +6,7 @@ import forest
 
 class TestIntegration(unittest.TestCase):
     def setUp(self):
-        path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+        path = os.path.join(os.path.dirname(__file__), '../forest/config.yaml')
         self.config = forest.load_config(path)
 
     def test_load_server_config_first_group(self):

@@ -1,5 +1,5 @@
 import unittest
-import images
+from forest import images
 
 
 class TestControls(unittest.TestCase):

@@ -1,6 +1,7 @@
 import unittest
-import db
-import images
+from forest import (
+        db,
+        images)
 
 
 class TestInitialState(unittest.TestCase):
@@ -46,28 +47,28 @@ class TestInitialState(unittest.TestCase):
         variable = "relative_humidity"
         self.database.insert_variable(path, variable)
         state = db.initial_state(self.database, pattern="*.nc")
-        result = state.variable
+        result = state["variable"]
         expect = variable
         self.assertEqual(expect, result)
 
     def test_initial_state(self):
         self.make_database()
         state = db.initial_state(self.database)
-        self.assertEqual(state.initial_times, [
+        self.assertEqual(state["initial_times"], [
             "2019-01-01 00:00:00",
             "2019-01-01 12:00:00",
         ])
-        self.assertEqual(state.initial_time, "2019-01-01 12:00:00")
-        self.assertEqual(state.valid_times, [
+        self.assertEqual(state["initial_time"], "2019-01-01 12:00:00")
+        self.assertEqual(state["valid_times"], [
             "2019-01-01 12:00:02",
             "2019-01-01 13:00:02"
         ])
-        self.assertEqual(state.valid_time, "2019-01-01 12:00:02")
-        self.assertEqual(state.pressures, [
+        self.assertEqual(state["valid_time"], "2019-01-01 12:00:02")
+        self.assertEqual(state["pressures"], [
             1000,
             950
         ])
-        self.assertEqual(state.pressure, 1000)
+        self.assertEqual(state["pressure"], 1000)
 
 
 class TestImageControls(unittest.TestCase):

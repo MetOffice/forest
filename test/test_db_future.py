@@ -3,7 +3,7 @@ import os
 import netCDF4
 import datetime as dt
 import sqlite3
-import db.future as db
+import forest.db.future as db
 
 
 class TestDatabase(unittest.TestCase):

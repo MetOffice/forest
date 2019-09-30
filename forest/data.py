@@ -1,25 +1,33 @@
 import os
 import datetime as dt
 import re
-import cartopy
+try:
+    import cartopy
+except ImportError:
+    # ReadTheDocs unable to pip install cartopy
+    pass
 import glob
 import json
 import pandas as pd
 import numpy as np
 import netCDF4
 import cf_units
-import forest.satellite as satellite
-import forest.rdt as rdt
-import forest.earth_networks as earth_networks
-import forest.geo as geo
+from forest import (
+        satellite,
+        rdt,
+        earth_networks,
+        geo,
+        disk)
 import bokeh.models
 from collections import OrderedDict, defaultdict
 from functools import partial
 import scipy.ndimage
 import shapely.geometry
-from forest.util import timeout_cache, initial_time, coarsify
-from forest.db.exceptions import SearchFail
-import forest.disk as disk
+from forest.util import (
+        timeout_cache,
+        initial_time,
+        coarsify)
+from forest.exceptions import SearchFail
 
 
 # Application data shared across documents
@@ -84,6 +92,8 @@ def file_loader(file_type, pattern):
         return earth_networks.Loader(pattern)
     elif file_type.lower() == 'eida50':
         return satellite.EIDA50(pattern)
+    else:
+        raise Exception("unrecognised file_type: {}".format(file_type))
 
 
 def load_coastlines():
@@ -279,6 +289,20 @@ class DBLoader(object):
             "level": []
         }
 
+    @staticmethod
+    def to_datetime(d):
+        if isinstance(d, dt.datetime):
+            return d
+        elif isinstance(d, str):
+            try:
+                return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
+        elif isinstance(d, np.datetime64):
+            return d.astype(dt.datetime)
+        else:
+            raise Exception("Unknown value: {}".format(d))
+
     def image(self, state):
         if not self.valid(state):
             return self.empty_image
@@ -290,11 +314,12 @@ class DBLoader(object):
                 state.initial_time,
                 state.valid_time,
                 state.pressure)
+            print("{}() {} {}".format(self.__class__.__name__, path, pts))
         except SearchFail:
             return self.empty_image
 
-        valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%d %H:%M:%S")
-        initial = dt.datetime.strptime(state.initial_time, "%Y-%m-%d %H:%M:%S")
+        valid = self.to_datetime(state.valid_time)
+        initial = self.to_datetime(state.initial_time)
         hours = (valid - initial).total_seconds() / (60*60)
         length = "T{:+}".format(int(hours))
         data = load_image_pts(
@@ -323,6 +348,8 @@ class DBLoader(object):
         if state.pressures is None:
             return False
         if len(state.pressures) > 0:
+            if state.pressure is None:
+                return False
             if not self.has_pressure(state.pressures, state.pressure):
                 return False
         return True
@@ -427,10 +454,7 @@ class SeriesLoader(object):
             try:
                 var = dataset.variables[variable]
             except KeyError:
-                return {
-                    "x": [],
-                    "y": []
-                }
+                return [], []
             lons = geo.to_180(self._longitudes(dataset, var))
             lats = self._latitudes(dataset, var)
             i = np.argmin(np.abs(lons - lon0))

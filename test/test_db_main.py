@@ -3,7 +3,8 @@ import datetime as dt
 import os
 import sqlite3
 import netCDF4
-import db.main as main
+import forest.db.main as main
+import forest
 
 
 class TestMain(unittest.TestCase):

@@ -1,7 +1,8 @@
 import unittest
 import sqlite3
 import datetime as dt
-import db
+from forest import db
+from forest.exceptions import SearchFail
 
 
 class TestLocate(unittest.TestCase):
@@ -49,7 +50,7 @@ class TestLocate(unittest.TestCase):
         initial_time = dt.datetime(2019, 1, 1, 0)
         valid_time = dt.datetime(2019, 1, 1, 2)
 
-        with self.assertRaises(db.SearchFail):
+        with self.assertRaises(SearchFail):
             self.locator.locate(pattern, variable, initial_time, valid_time)
 
 

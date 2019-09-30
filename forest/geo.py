@@ -1,4 +1,8 @@
-import cartopy
+try:
+    import cartopy
+except ImportError:
+    # ReadTheDocs unable to pip install cartopy
+    pass
 import numpy as np
 import scipy.interpolate
 import scipy.ndimage
