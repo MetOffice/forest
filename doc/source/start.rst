@@ -92,7 +92,7 @@ nice if we could store our settings and use them in a reproducible way!
 Example - Multiple data sources
 -------------------------------
 
-Open up `sample-config.yml` for an example of the settings that can be adjusted
+Open up `config.yml` for an example of the settings that can be adjusted
 to suit your particular use case.
 
 .. code-block:: yaml
@@ -125,7 +125,7 @@ files and indices.
 
 .. code-block:: sh
 
-  :> forest --show --config-file sample-config.yml --database sample-database.db
+  :> forest --show --config-file config.yml --database database.db
 
 To generate a database from scratch use the `forestdb` command.
 
@@ -140,13 +140,13 @@ To generate a database from scratch use the `forestdb` command.
 
   files:
      - label: UM
-       pattern: sample-um.nc
+       pattern: unified_model.nc
        locator: database
      - label: RDT
-       pattern: sample-rdt.json
+       pattern: rdt*.json
        locator: file_system
      - label: EIDA50
-       pattern: sample-eida50.nc
+       pattern: eida50*.nc
        locator: file_system
 
 With the updated config file and correctly populated database, the server running
