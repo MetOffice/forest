@@ -21,10 +21,9 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(
             description=__doc__,
             formatter_class=HelpFormatter)
-    parser.add_argument("--build-dir",
-            metavar="DIR",
-            default=os.getcwd(),
-            help="directory in which to build sample files")
+    parser.add_argument("build_dir",
+            metavar="BUILD_DIR",
+            help="directory in which to build sample files, e.g. '.'")
     return parser.parse_args(args=argv)
 
 

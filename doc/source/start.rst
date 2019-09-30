@@ -42,13 +42,13 @@ to hands on experience.
 
    ~: forest-tutorial -h
 
-By default `forest-tutorial` builds sample files in the directory from
-which is was invoked. Go ahead and run the tutorial command to
+The only argument `forest-tutorial` needs is a directory to place
+files. Go ahead and run the tutorial command to
 get your hands on some files that `forest` can analyse.
 
 .. code-block:: bash
 
-  ~: forest-tutorial
+  ~: forest-tutorial .
 
 The above snippet can be used to populate the current working directory with
 all of the inputs needed to run the `forest` command line interface

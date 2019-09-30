@@ -9,14 +9,14 @@ import yaml
 import forest
 
 
-def test_parse_args_default_build_dir_is_cwd():
-    args = forest.tutorial.main.parse_args([])
-    assert args.build_dir == os.getcwd()
+def test_parse_args_build_dir():
+    args = forest.tutorial.main.parse_args(["build"])
+    assert args.build_dir == "build"
 
 
 def test_main_calls_build_all_with_build_dir(tmpdir):
     build_dir = str(tmpdir)
-    forest.tutorial.main.main(["--build-dir", build_dir])
+    forest.tutorial.main.main([build_dir])
     assert os.path.exists(os.path.join(build_dir, forest.tutorial.RDT_FILE))
 
 
