@@ -31,27 +31,37 @@ it should be trivial to use in an operational context. The underlying
 technologies scale seemlessly from a single user running on a laptop
 up to a fleet of EC2 instances running on AWS.
 
-Example - Unified model output
-------------------------------
+Tutorial
+========
 
 FOREST comes with example cases intended to get users off the ground
 quickly, reading about a tool is all well and good but nothing compares
 to hands on experience.
 
-.. code-block:: python
+.. code-block:: bash
 
-   >>> import forest.example
-   ... forest.example.build_all()
+   ~: forest-tutorial -h
+
+By default `forest-tutorial` builds sample files in the directory from
+which is was invoked. Go ahead and run the tutorial command to
+get your hands on some files that `forest` can analyse.
+
+.. code-block:: bash
+
+  ~: forest-tutorial
 
 The above snippet can be used to populate the current working directory with
 all of the inputs needed to run the `forest` command line interface
 
+Example - Unified model output
+------------------------------
+
 To display the unified model without any additional configuration simply
 run the following command inside a shell prompt
 
-.. code-block:: sh
+.. code-block:: bash
 
-  :> forest --show sample-um.nc
+  ~: forest --show unified_model.nc
 
 
 Example - Rapidly developing thunderstorms
@@ -63,18 +73,18 @@ server running and the power of Python at our finger tips it would be
 criminal to curtail our application. To go beyond vanilla `ncview` behaviour
 try the following command:
 
-.. code-block:: sh
+.. code-block:: bash
 
-  :> forest --show --file-type rdt sample-rdt.json
+  ~: forest --show --file-type rdt rdt_*.json
 
 This should bring up a novel polygon geojson visualisation of satellite
 RDT (rapidly developing thunderstorms). But wait, without the underlying
 OLR (outgoing longwave radiation) layer the polygons by themselves are
 of little value
 
-.. code-block:: sh
+.. code-block:: bash
 
-  :> forest --show --file-type eida50 sample-eida50.nc
+  ~: forest --show --file-type eida50 eida50*.nc
 
 It seems we are beginning to outgrow the command line, wouldn't it be
 nice if we could store our settings and use them in a reproducible way!
@@ -89,13 +99,13 @@ to suit your particular use case.
 
   files:
      - label: UM
-       pattern: sample-um.nc
+       pattern: unified_model*.nc
        locator: file_system
      - label: RDT
-       pattern: sample-rdt.json
+       pattern: rdt*.json
        locator: file_system
      - label: EIDA50
-       pattern: sample-eida50.nc
+       pattern: eida50*.nc
        locator: file_system
 
 Running the following command should load FOREST with a model diagnostic,
