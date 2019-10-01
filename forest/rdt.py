@@ -53,17 +53,17 @@ class View(object):
                         'CTPressure': 0,
                         'CTPhase': '',
                         'CTReff': '',
-                        'ExpansionRate': '',
+                        'ExpansionRate': '-',
                         'BTmin': 0,
                         'BTmoy': 0,
-                        'CTCot': '',
-                        'CTCwp': '',
+                        'CTCot': '-',
+                        'CTCwp': '-',
                         'NbPosLightning': 0,
                         'SeverityType': '',
                         'Surface': '',
                         'Duration': 0,
                         'CoolingRate': 0,
-                        'PhaseLife': "0"
+                        'PhaseLife': "Triggering"
                     }
                 }
             ]
@@ -79,7 +79,8 @@ class View(object):
         self.color_mapper = bokeh.models.CategoricalColorMapper(
                 # palette=bokeh.palettes.Spectral6,
                 palette=['#fee8c8', '#fdbb84', '#e34a33', '#43a2ca', '#a8ddb5'],
-                factors=["0", "1", "2", "3", "4"]) # "Triggering", "Triggering from split", "Growing", "Mature", "Decaying"
+                factors=["Triggering", "Triggering from split", "Growing", "Mature", "Decaying"])
+                # factors=["0", "1", "2", "3", "4"]) # "Triggering", "Triggering from split", "Growing", "Mature", "Decaying"
 
 
         self.source = bokeh.models.GeoJSONDataSource(geojson=self.empty_geojson)
@@ -128,29 +129,25 @@ class View(object):
 
         tool = bokeh.models.HoverTool(
                 tooltips=[
-                    ('Cloud Type', '@CType'),
-                    ('Convective Rainfall Rate', '@CRainRate'),
-                    ('ConvTypeMethod', '@ConvTypeMethod'),
-                    ('ConvType', '@ConvType'),
-                    ('ConvTypeQuality', '@ConvTypeQuality'),
-                    ('SeverityIntensity', '@SeverityIntensity'),
-                    ('MvtSpeed', '@MvtSpeed'),
-                    ('MvtDirection', '@MvtDirection'),
                     ('NumIdCell', '@NumIdCell'),
-                    ('CTPressure', '@CTPressure'),
-                    ('CTPhase', '@CTPhase'),
-                    ('CTReff', '@CTReff'),
-                    ('ExpansionRate', '@ExpansionRate'),
-                    ('BTmin', '@BTmin'),
-                    ('BTmoy', '@BTmoy'),
-                    ('CTCot', '@CTCot'),
-                    ('CTCwp', '@CTCwp'),
-                    ('NbPosLightning', '@NbPosLightning'),
-                    ('SeverityType', '@SeverityType'),
-                    ('Surface', '@Surface'),
-                    ('Duration', '@Duration'),
-                    ('CoolingRate', '@CoolingRate'),
-                    ('Phase life', '@PhaseLife')], ## TODO Convert to human readable results. This will involve adding a PhaseLifeLabel to the geojson file
+                    ('Duration (Since Birth)', '@Duration{00:00:00}'),
+                    ('Phase life', '@PhaseLife'), # Categorical
+                    ('Cloud Type', '@CType'), # Categorical
+                    ('Convective Rainfall Rate', '@CRainRate{0.0}' + ' mm/hr'),
+                    ('Cloud System', '@ConvType'), # Categorical
+                    ('Severity Type', '@SeverityType'), # Categorical
+                    ('Severity Intensity', '@SeverityIntensity'), # Categorical
+                    ('Cloud Top Phase', '@CTPhase'), # Categorical
+                    ('Min. Cloud Top Pressure', '@CTPressure' + ' hPa'),
+                    # ('Max. Cloud Top Effective Radius', '@CTReff' + ' metres'),
+                    ('Expansion Rate (Past)', '@ExpansionRate{+0.0}' + ' m-2/sec'),
+                    ('Rate of Temp. Change', '@CoolingRate{+0.0}' + ' K/15mins'),
+                    ('Min. Brightness Temp', '@BTmin{0.0}' + ' K'),
+                    ('Average Brightness Temp', '@BTmoy{0.0}' + ' K'),
+                    ('Max. Cloud Optical Thickness', '@CTCot'),
+                    # ('Max. Cloud Condensed Water Path', '@CTCwp' + ' Kg/m-2'),
+                    ('No. of Cloud-Ground Positive Lightning Strokes', '@NbPosLightning')
+                ],
                 renderers=[renderer])
         figure.add_tools(tool)
         return RenderGroup([renderer, lines, circles, cntr_circles, future_lines, arrows])
@@ -357,7 +354,6 @@ class CentrePointLoader(object):
             # Now calculate arrow polygon
             x3d, y3d, x4d, y4d = get_arrow_poly(lon2, lat2, feature['properties']['MvtSpeed'], feature['properties']['MvtDirection'])
             [x3, x4], [y3, y4] = geo.web_mercator([x3d, x4d], [y3d, y4d])
-            # print(x2, y2, x3, y3, x4, y4)
 
             mydict['Arrowxs'].append([x2[0], x3, x4])
             mydict['Arrowys'].append([y2[0], y3, y4])
@@ -404,6 +400,12 @@ class PolygonLoader(object):
         with open(path) as stream:
             rdt = json.load(stream)
 
+        # Convert units from the netcdf / geojson data file units into something more readable (e.g. could be Kelvin to degrees C or Pa to hPa)
+        unitsToRescale = {'Pa' : {'scale':100, 'offset':0, 'Units': 'hPa'} }
+                          # 'K'  : {'scale':1, 'offset':-273.15, 'Units': 'degC'}
+        # Get text labels instead of numbers for certain fields
+        fieldsToLookup = ['PhaseLife', 'SeverityType', 'SeverityIntensity', 'ConvType', 'CType']
+
         copy = dict(rdt)
         for i, feature in enumerate(rdt["features"]):
             coordinates = feature['geometry']['coordinates'][0]
@@ -412,21 +414,25 @@ class PolygonLoader(object):
             c = np.array([x, y]).T.tolist()
             copy["features"][i]['geometry']['coordinates'][0] = c
 
-        # Hack to use Categorical mapper
-        ## TODO Add in PhaseLifeLabel to properties dictionary
-        for i, feature in enumerate(rdt["features"]):
-            # for k in feature['properties'].keys():
-                # try:
-                #     thisdata, units = descale_rdt(k, feature['properties'][k])
-                #     copy['features'][i]['properties'][k] = str(thisdata)
-                # except:
-                #     continue
-            p = feature['properties']['PhaseLife']
-            copy["features"][i]['properties']['PhaseLifeLabel'] = fieldValueLUT('PhaseLife', p)
-            copy["features"][i]['properties']['PhaseLife'] = str(p)
-            # print(p, fieldValueLUT('PhaseLife', p))
+            for k in feature['properties'].keys():
 
-        # print('Polygon load complete')
+                # Might be easier to have a units lookup instead of this ...
+                deldata, myunits = descale_rdt(k, feature['properties'][k])
+                if myunits in unitsToRescale.keys():
+                    try:
+                        mydict = unitsToRescale.get(myunits)
+                        scale, offset, units = mydict.values()
+                        conv_data = (feature['properties'][k] / scale) + offset
+                        copy['features'][i]['properties'][k] = conv_data
+                    except:
+                        continue
+
+                if k in fieldsToLookup:
+                    try:
+                        copy['features'][i]['properties'][k] = fieldValueLUT(k, feature['properties'][k])
+                    except:
+                        continue
+
         return json.dumps(copy)
 
 
@@ -469,13 +475,16 @@ def descale_rdt(fn, data):
         'DirTraj': {'scale': 1, 'offset': 0, 'Units': 'degree'}
     }
 
-    dict = rdtUnitsLUT.get(fn, {'scale': 1, 'offset': 0, 'units': '-'})
-    scale, offset, units = dict.values()
+    try:
+        dict = rdtUnitsLUT.get(fn, {'scale': 1, 'offset': 0, 'units': '-'})
+        scale, offset, units = dict.values()
 
-    conv_data = ( data / scale ) + offset
+        conv_data = ( data / scale ) + offset
 
-    return(conv_data, units)
+        return(conv_data, units)
 
+    except:
+        return(data, '-')
 
 def fieldNameLUT(fn):
 
@@ -592,11 +601,11 @@ def fieldValueLUT(fn, uid):
             9: "Not defined"
         },
         'ConvTypeMethod': {
-            1: "discrimination statistical scheme",
-            2: "electric",
-            3: "overshoot",
-            4: "convective rain rate",
-            5: "tropical"
+            1: "Discrimination statistical scheme",
+            2: "Electric",
+            3: "Overshoot",
+            4: "Convective rain rate",
+            5: "Tropical"
         },
         'ConvTypeQuality': {
             1: "High quality",
@@ -618,21 +627,21 @@ def fieldValueLUT(fn, uid):
             4: "Very low quality"
         },
         'SeverityType' : {
-            0: "no activity",
-            1: "turbulence",
-            2: "lightning",
-            3: "icing",
-            4: "high altitude icing",
-            5: "hail",
-            6: "heavy rainfall",
-            7: "type not defined"
+            0: "No activity",
+            1: "Turbulence",
+            2: "Lightning",
+            3: "Icing",
+            4: "High altitude icing",
+            5: "Hail",
+            6: "Heavy rainfall",
+            7: "not defined"
         },
         'SeverityIntensity' : {
-            0: "severity not defined",
-            1: "low severity",
-            2: "moderate severity",
-            3: "high severity",
-            4: "very high severity"
+            0: "not defined",
+            1: "Low",
+            2: "Moderate",
+            3: "High",
+            4: "Very high"
         },
         'CType' : {
             1: "Cloud-free land",
@@ -659,11 +668,11 @@ def fieldValueLUT(fn, uid):
             5: "Undefined separability problems"
         },
         'CTHicgHzd' : {
-            0: "Risk not defined",
-            1: "low risk",
-            2: "moderate risk",
-            3: "high risk-free",
-            4: "very high risk"
+            0: "not defined",
+            1: "Low risk",
+            2: "Moderate risk",
+            3: "High risk-free",
+            4: "Very high risk"
         }
     }
 
