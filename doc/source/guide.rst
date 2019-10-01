@@ -6,7 +6,7 @@ Contributing to FOREST should be simple. Building, testing and documenting
 the code should be as easy as falling off a log, pardon the pun.
 
 To get ideas on how to contribute, first take a look at
-the existing issues_ list available. If an
+the existing issues_ list. If an
 issue exists that you would like to work on, go ahead and
 assign yourself to it or drop a comment so that one of our
 developers can get in touch. 
@@ -110,7 +110,7 @@ Advice
 
 Remember to commit and push code regularly, the granularity of commits is a personal
 preference but we recommend small, orthogonal changes to ease the burden
-on our developers. We also appreciate documentation the describes your
+on our developers. We also appreciate documentation that describes your
 changes and tests that cover your code will go a long way to making
 sure we don't accidentally deprecate your feature.
 
