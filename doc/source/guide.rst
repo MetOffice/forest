@@ -86,9 +86,8 @@ to set the code base to development mode.
 
    python setup.py develop
    
-Of course, if you are used to developing Python projects using some
-other IDE or are unable to use virtual environments, feel free to
-edit the code as you see fit.
+Of course, if you develop Python projects using an IDE or if you can't use virtual environments,
+go ahead and use the tools that are most comfortable to you.
 
 Running tests
 -------------
