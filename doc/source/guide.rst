@@ -45,7 +45,7 @@ work.
 .. note::
 
    If you don't have permissions to work directly on the repository, please fork
-   it under your own user account.
+   it under your own GitHub user account.
 
 .. code::
 
