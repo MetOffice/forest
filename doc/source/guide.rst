@@ -94,7 +94,7 @@ go ahead and use the tools that are most comfortable to you.
 Running tests
 -------------
 
-The test suite runs using the pytest_, to run all of the tests navigate to the root directory
+The test suite uses pytest_, to run all of the tests navigate to the root directory
 of your working copy and run the ``pytest`` command. This should produce
 a lot of output but hopefully should indicate to you that all tests
 have passed.
