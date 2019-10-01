@@ -42,14 +42,16 @@ Getting set up
 Clone the github_ repository into a sensible location on your machine to begin
 work.
 
-.. note::
-
-   If you don't have permissions to work directly on the repository, please fork
-   it under your own GitHub user account.
 
 .. code::
 
    git clone git@github.com:informatics-lab/forest.git
+   
+
+.. note::
+
+   If you don't have permissions to work directly on the repository, please fork
+   it under your own GitHub user account.
 
 
 Branch
