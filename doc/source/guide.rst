@@ -78,8 +78,9 @@ to set an upstream branch. For example,
 Development environment
 -----------------------
 
-It is recommended to develop FOREST in a virtual environment of some kind.
-The repository ships with a ``setup.py`` that should be suitable to
+It is recommended to develop FOREST in a virtual environment of some kind,
+we recommend miniconda_ since it's fairly light weight. The repository ships with
+a ``setup.py`` that should be suitable to
 use inside a virtual environment, either ``venv`` or ``conda``. Once
 you've created and activated an environment it should be possible
 to set the code base to development mode.
@@ -119,3 +120,4 @@ sure we don't accidentally deprecate your feature.
 .. _issues: https://github.com/informatics-lab/forest/issues
 .. _projects: https://github.com/informatics-lab/forest/projects
 .. _pytest: https://docs.pytest.org/en/latest
+.. _miniconda: https://docs.conda.io/en/latest/miniconda.html
