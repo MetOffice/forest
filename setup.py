@@ -31,6 +31,13 @@ setuptools.setup(
         author_email="andrew.ryan@metoffice.gov.uk",
         description="Forecast visualisation and survey tool",
         packages=setuptools.find_packages(),
+        package_data={
+            "forest": [
+                "templates/index.html",
+                "tutorial/*.json",
+                "tutorial/*.nc"
+            ]
+        },
         test_suite="test",
         tests_require=load("requirements-dev.txt"),
         entry_points={
