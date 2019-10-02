@@ -1,0 +1,19 @@
+files:
+        - label: Operational Global Africa
+          pattern: '*global_africa*.nc'
+          locator: database
+          file_type: unified_model
+        - label: Operational Global SE Asia
+          pattern: '*global_south_east_asia*.nc'
+          locator: database
+          file_type: unified_model
+        - label: RDT
+          pattern: '/scratch/frrn/highway/rdt/*.json'
+          locator: file_system
+          directory: /scratch/frrn/highway/rdt
+          file_type: rdt
+        - label: EIDA50
+          pattern: '/scratch/frrn/highway/eida50/EIDA50_takm4p4*.nc'
+          locator: file_system
+          directory: /scratch/frrn/highway/eida50
+          file_type: eida50
