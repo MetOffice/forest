@@ -27,7 +27,7 @@ def test_throttle_middleware_given_plain_actions():
     assert store.state == {"key": "b"}
 
 
-def test_throttle_middleware_given_throttled_actions():
+def test_throttle_middleware_given_actions_with_different_meta():
     times = [
         dt.datetime(2019, 1, 1, 12, 0, 0),
         dt.datetime(2019, 1, 1, 12, 0, 1),
@@ -40,7 +40,48 @@ def test_throttle_middleware_given_throttled_actions():
         forest.db.set_value("key", "a"),
         forest.db.set_value("key", "b"),
     ]
-    actions = [forest.throttled(a, 1000) for a in actions]
+    for action in actions:
+        action["meta"] = {
+            "irrelevant": "setting"
+        }
+    for action in actions:
+        store.dispatch(action)
+    assert store.state == {"key": "b"}
+
+
+def test_throttle_middleware_given_throttled_fast_actions():
+    times = [
+        dt.datetime(2019, 1, 1, 12, 0, 0),
+        dt.datetime(2019, 1, 1, 12, 0, 1),
+    ]
+    store = forest.redux.Store(forest.db.reducer,
+            middlewares=[
+                forest.Throttle(now=fake_now(times))
+            ])
+    actions = [
+        forest.db.set_value("key", "a"),
+        forest.db.set_value("key", "b"),
+    ]
+    actions = [forest.throttled(a, 2000) for a in actions]
     for action in actions:
         store.dispatch(action)
     assert store.state == {"key": "a"}
+
+
+def test_throttle_middleware_given_throttled_slow_actions():
+    times = [
+        dt.datetime(2019, 1, 1, 12, 0, 0),
+        dt.datetime(2019, 1, 1, 12, 0, 2),
+    ]
+    store = forest.redux.Store(forest.db.reducer,
+            middlewares=[
+                forest.Throttle(now=fake_now(times))
+            ])
+    actions = [
+        forest.db.set_value("key", "a"),
+        forest.db.set_value("key", "b"),
+    ]
+    actions = [forest.throttled(a, 1000) for a in actions]
+    for action in actions:
+        store.dispatch(action)
+    assert store.state == {"key": "b"}
