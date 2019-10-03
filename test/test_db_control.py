@@ -2,7 +2,7 @@ import unittest
 import unittest.mock
 import datetime as dt
 import numpy as np
-from forest import db
+from forest import db, redux
 
 
 def test_convert_datetime64_array_to_strings():
@@ -19,7 +19,7 @@ def test_type_system_middleware():
             [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)],
             dtype="datetime64[s]")
     converter = db.Converter({"valid_times": db.stamps})
-    store = db.Store(db.reducer, middlewares=[converter])
+    store = redux.Store(db.reducer, middlewares=[converter])
     store.dispatch(db.set_value("valid_times", times))
     result = store.state
     expect = {
@@ -32,7 +32,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
     def setUp(self):
         self.database = db.Database.connect(":memory:")
         self.controls = db.Controls(self.database)
-        self.store = db.Store(db.reducer, middlewares=[self.controls])
+        self.store = redux.Store(db.reducer, middlewares=[self.controls])
 
     def tearDown(self):
         self.database.close()
@@ -53,7 +53,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
         initial_state={
             "pattern": "file.nc",
             "variable": "variable"}
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             initial_state=initial_state,
             middlewares=[self.controls])
@@ -93,7 +93,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
         self.database.insert_file_name(path, initial_time)
         self.database.insert_time(path, variable, valid_time, index)
         self.database.insert_pressure(path, variable, pressure, index)
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             middlewares=[self.controls])
         actions = [
@@ -128,7 +128,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
             self.database.insert_time(path, variable, valid_time, index)
             self.database.insert_pressure(path, variable, pressure, index)
 
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             middlewares=[self.controls])
         actions = [
@@ -161,7 +161,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
         pressure = 750.
         navigator = db.Navigator()
         controls = db.Controls(navigator)
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             middlewares=[controls])
         actions = [
@@ -202,7 +202,7 @@ class TestControls(unittest.TestCase):
 
     def test_next_pressure_given_pressures_returns_first_element(self):
         pressure = 950
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             initial_state={"pressures": [pressure]},
             middlewares=[
@@ -219,7 +219,7 @@ class TestControls(unittest.TestCase):
         self.assertEqual(expect, result)
 
     def test_next_pressure_given_pressures_none(self):
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             middlewares=[
                 db.InverseCoordinate("pressure"),
@@ -236,7 +236,7 @@ class TestControls(unittest.TestCase):
     def test_next_pressure_given_current_pressure(self):
         pressure = 950
         pressures = [1000, 950, 800]
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             initial_state={
                 "pressure": pressure,
@@ -385,7 +385,7 @@ class TestNextPrevious(unittest.TestCase):
             "k": 2,
             "ks": [1, 2, 3]
         }
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             initial_state=state,
             middlewares=[
@@ -433,7 +433,7 @@ class TestNextPrevious(unittest.TestCase):
     def test_next_given_none_selects_latest_time(self):
         action = db.next_value("initial_time", "initial_times")
         state = dict(initial_times=self.initial_times)
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             initial_state=state,
             middlewares=[db.next_previous])
@@ -465,7 +465,7 @@ class TestNextPrevious(unittest.TestCase):
             "initial_time": "2019-01-01 00:00:00",
             "initial_times": initial_times
         }
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             initial_state=state,
             middlewares=[db.next_previous])
@@ -480,7 +480,7 @@ class TestNextPrevious(unittest.TestCase):
     def test_previous_given_none_selects_earliest_time(self):
         action = db.previous_value("initial_time", "initial_times")
         state = {"initial_times": self.initial_times}
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             initial_state=state,
             middlewares=[db.next_previous])
@@ -510,7 +510,7 @@ class TestPressureMiddleware(unittest.TestCase):
             "pressure": 850,
             "pressures": pressures
         }
-        store = db.Store(
+        store = redux.Store(
             db.reducer,
             initial_state=state,
             middlewares=[
@@ -530,7 +530,7 @@ class TestStateStream(unittest.TestCase):
     def test_support_old_style_state(self):
         """Not all components are ready to accept dict() states"""
         listener = unittest.mock.Mock()
-        store = db.Store(db.reducer)
+        store = redux.Store(db.reducer)
         old_states = (db.Stream()
                   .listen_to(store)
                   .map(lambda x: db.State(**x)))

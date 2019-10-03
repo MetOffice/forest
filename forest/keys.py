@@ -1,5 +1,6 @@
 """Key press interactivity"""
 import bokeh.models
+from forest.redux import middleware
 from forest.observe import Observable
 from forest.export import export
 
@@ -52,3 +53,9 @@ class KeyPress(Observable):
     def on_change(self, attr, old, new):
         code = self.source.data['keys'][0]
         self.notify(press(code))
+
+
+@middleware
+def navigate(store, next_dispatch, action):
+    """Middleware to interpret key press events"""
+    return next_dispatch(action)

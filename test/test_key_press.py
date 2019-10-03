@@ -10,3 +10,11 @@ def test_on_change_emits_action():
     key_press.source.data = {'keys': [code]}
     action = forest.keys.press(code)
     listener.assert_called_once_with(action)
+
+
+def test_key_press_middleware():
+    middlewares = [forest.keys.navigate]
+    store = forest.redux.Store(
+            forest.db.reducer,
+            middlewares=middlewares)
+    store.dispatch(forest.keys.press("OSLeft"))

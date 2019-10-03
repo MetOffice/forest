@@ -13,6 +13,7 @@ from forest import (
         colors,
         db,
         keys,
+        redux,
         unified_model,
         navigate,
         parse_args)
@@ -290,7 +291,7 @@ def main(argv=None):
             "inital_times": db.stamps
         })
     ]
-    store = db.Store(
+    store = redux.Store(
         db.reducer,
         initial_state=initial_state,
         middlewares=middlewares)
