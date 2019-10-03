@@ -66,8 +66,10 @@ def navigate(store, next_dispatch, action):
         return next_dispatch(action)
     code = action["payload"]["code"]
     if code.lower() == "arrowright":
-        action = db.next_value("valid_time", "valid_times")
-        return next_dispatch(action)
+        return next_dispatch(db.next_valid_time())
     elif code.lower() == "arrowleft":
-        action = db.previous_value("valid_time", "valid_times")
-        return next_dispatch(action)
+        return next_dispatch(db.previous_valid_time())
+    elif code.lower() == "arrowup":
+        return next_dispatch(db.next_initial_time())
+    elif code.lower() == "arrowdown":
+        return next_dispatch(db.previous_initial_time())

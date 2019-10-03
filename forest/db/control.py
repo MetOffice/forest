@@ -27,8 +27,28 @@ def set_value(key, value):
 
 
 @export
+def next_valid_time():
+    return next_value("valid_time", "valid_times")
+
+
+@export
+def next_initial_time():
+    return next_value("initial_time", "initial_times")
+
+
+@export
 def next_value(item_key, items_key):
     return dict(kind=NEXT_VALUE, payload=locals())
+
+
+@export
+def previous_valid_time():
+    return previous_value("valid_time", "valid_times")
+
+
+@export
+def previous_initial_time():
+    return previous_value("initial_time", "initial_times")
 
 
 @export

@@ -13,20 +13,22 @@ def test_on_change_emits_action():
 
 
 def test_navigate_maps_arrow_right_to_next_valid_time():
-    log = forest.db.Log()
-    middlewares = [
-            forest.keys.navigate,
-            log]
-    store = forest.redux.Store(
-            forest.db.reducer,
-            middlewares=middlewares)
-    store.dispatch(forest.keys.press("ArrowRight"))
-    actual = log.actions[0]
-    expected = forest.db.next_value("valid_time", "valid_times")
-    assert actual == expected
+    check_key("ArrowRight", forest.db.next_value("valid_time", "valid_times"))
 
 
 def test_navigate_maps_arrow_left_to_previous_valid_time():
+    check_key("ArrowLeft", forest.db.previous_value("valid_time", "valid_times"))
+
+
+def test_navigate_maps_arrow_up_to_next_initial_time():
+    check_key("ArrowUp", forest.db.next_value("initial_time", "initial_times"))
+
+
+def test_navigate_maps_arrow_down_to_previous_initial_time():
+    check_key("ArrowDown", forest.db.previous_value("initial_time", "initial_times"))
+
+
+def check_key(code, action):
     log = forest.db.Log()
     middlewares = [
             forest.keys.navigate,
@@ -34,7 +36,7 @@ def test_navigate_maps_arrow_left_to_previous_valid_time():
     store = forest.redux.Store(
             forest.db.reducer,
             middlewares=middlewares)
-    store.dispatch(forest.keys.press("ArrowLeft"))
+    store.dispatch(forest.keys.press(code))
     actual = log.actions[0]
-    expected = forest.db.previous_value("valid_time", "valid_times")
+    expected = action
     assert actual == expected
