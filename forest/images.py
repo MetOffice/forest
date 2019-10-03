@@ -1,7 +1,7 @@
 import bokeh.models
 import bokeh.layouts
 import numpy as np
-from forest.util import Observable
+from forest.observe import Observable
 from forest.db.util import autolabel
 
 
@@ -102,7 +102,7 @@ class Controls(Observable):
         return wrapper
 
     def render(self):
-        self.announce(self.combine(self.models, self.flags))
+        self.notify(self.combine(self.models, self.flags))
 
     @staticmethod
     def combine(models, flags):

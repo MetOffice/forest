@@ -16,7 +16,7 @@ from forest import (
         navigate,
         parse_args)
 import forest.config as cfg
-from forest.util import Observable
+from forest.observe import Observable
 from forest.db.util import autolabel
 import datetime as dt
 
