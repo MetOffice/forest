@@ -46,6 +46,9 @@
         width: auto;
         z-index: 2;
     }
+    .keypress-hidden-btn {
+        display: none !important;
+    }
 </style>
 {% endblock %}
 {% block contents %}
@@ -91,11 +94,21 @@ let reattachRoots = function() {
     parents['series-panel'].appendChild(orphans[1])
 }
 
+// Trigger KeyPress.hidden_button if present
+let triggerHiddenButton = function() {
+    let els = document.getElementsByClassName('keypress-hidden-btn')
+    if (els.length > 0) {
+        btns = els[0].getElementsByTagName('button')
+        btns[0].click()
+    }
+}
+
 oldLog = console.log;
 console.log = function(message) {
     if (message.localeCompare('Bokeh items were rendered successfully') == 0) {
         console.log = oldLog;
         reattachRoots();
+        triggerHiddenButton();
     }
 }
     </script>
