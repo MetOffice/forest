@@ -12,9 +12,29 @@ def test_on_change_emits_action():
     listener.assert_called_once_with(action)
 
 
-def test_key_press_middleware():
-    middlewares = [forest.keys.navigate]
+def test_navigate_maps_arrow_right_to_next_valid_time():
+    log = forest.db.Log()
+    middlewares = [
+            forest.keys.navigate,
+            log]
     store = forest.redux.Store(
             forest.db.reducer,
             middlewares=middlewares)
-    store.dispatch(forest.keys.press("OSLeft"))
+    store.dispatch(forest.keys.press("ArrowRight"))
+    actual = log.actions[0]
+    expected = forest.db.next_value("valid_time", "valid_times")
+    assert actual == expected
+
+
+def test_navigate_maps_arrow_left_to_previous_valid_time():
+    log = forest.db.Log()
+    middlewares = [
+            forest.keys.navigate,
+            log]
+    store = forest.redux.Store(
+            forest.db.reducer,
+            middlewares=middlewares)
+    store.dispatch(forest.keys.press("ArrowLeft"))
+    actual = log.actions[0]
+    expected = forest.db.previous_value("valid_time", "valid_times")
+    assert actual == expected

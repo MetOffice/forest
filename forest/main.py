@@ -283,6 +283,7 @@ def main(argv=None):
         break
     middlewares = [
         db.Log(verbose=True),
+        keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,
         db.Controls(navigator),
@@ -405,7 +406,7 @@ def main(argv=None):
 
     # Add key press support
     key_press = keys.KeyPress()
-    key_press.subscribe(print)
+    key_press.subscribe(store.dispatch)
 
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"

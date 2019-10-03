@@ -1,5 +1,6 @@
 """Key press interactivity"""
 import bokeh.models
+from forest import db
 from forest.redux import middleware
 from forest.observe import Observable
 from forest.export import export
@@ -36,8 +37,10 @@ class KeyPress(Observable):
         custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""
             if (typeof keyPressOn === 'undefined') {
                 document.onkeydown = function(e) {
+                    let keys = source.data['keys']
+                    keys.push(e.code)
                     source.data = {
-                        'keys': [e.code]
+                        'keys': keys
                     }
                     source.change.emit()
                 }
@@ -51,11 +54,20 @@ class KeyPress(Observable):
         super().__init__()
 
     def on_change(self, attr, old, new):
-        code = self.source.data['keys'][0]
+        code = self.source.data['keys'][-1]
         self.notify(press(code))
 
 
 @middleware
 def navigate(store, next_dispatch, action):
     """Middleware to interpret key press events"""
-    return next_dispatch(action)
+    kind = action["kind"]
+    if kind != KEY_PRESS:
+        return next_dispatch(action)
+    code = action["payload"]["code"]
+    if code.lower() == "arrowright":
+        action = db.next_value("valid_time", "valid_times")
+        return next_dispatch(action)
+    elif code.lower() == "arrowleft":
+        action = db.previous_value("valid_time", "valid_times")
+        return next_dispatch(action)
