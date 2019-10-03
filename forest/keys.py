@@ -64,12 +64,12 @@ def navigate(store, next_dispatch, action):
     kind = action["kind"]
     if kind != KEY_PRESS:
         return next_dispatch(action)
-    code = action["payload"]["code"]
-    if code.lower() == "arrowright":
+    code = action["payload"]["code"].lower()
+    if code == "arrowright":
         return next_dispatch(db.next_valid_time())
-    elif code.lower() == "arrowleft":
+    elif code == "arrowleft":
         return next_dispatch(db.previous_valid_time())
-    elif code.lower() == "arrowup":
+    elif code == "arrowup":
         return next_dispatch(db.next_initial_time())
-    elif code.lower() == "arrowdown":
+    elif code == "arrowdown":
         return next_dispatch(db.previous_initial_time())
