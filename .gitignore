@@ -7,3 +7,4 @@ kubeconfig
 *.swp
 node_modules
 *.egg-info
+.coverage
