@@ -28,11 +28,11 @@ class KeyPress(Observable):
               document to allow JS hack to initialise callbacks
     """
     def __init__(self):
-        source = bokeh.models.ColumnDataSource({
+        self.source = bokeh.models.ColumnDataSource({
             'keys': []
         })
-        source.on_change('data', self.on_change)
-        custom_js = bokeh.models.CustomJS(args=dict(source=source), code="""
+        self.source.on_change('data', self.on_change)
+        custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""
             if (typeof keyPressOn === 'undefined') {
                 document.onkeydown = function(e) {
                     source.data = {
@@ -50,5 +50,5 @@ class KeyPress(Observable):
         super().__init__()
 
     def on_change(self, attr, old, new):
-        code = new[0]
+        code = self.source.data['keys'][0]
         self.notify(press(code))

@@ -12,6 +12,7 @@ from forest import (
         geo,
         colors,
         db,
+        keys,
         unified_model,
         navigate,
         parse_args)
@@ -401,11 +402,16 @@ def main(argv=None):
 
     compact_button.on_click(on_compact)
 
+    # Add key press support
+    key_press = keys.KeyPress()
+    key_press.subscribe(print)
+
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"
     document.add_root(control_root)
     document.add_root(series_row)
     document.add_root(figure_row)
+    document.add_root(key_press.hidden_button)
 
 
 from itertools import cycle
