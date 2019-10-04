@@ -14,7 +14,6 @@ from forest import (
         db,
         keys,
         redux,
-        throttle,
         unified_model,
         navigate,
         parse_args)
@@ -284,7 +283,6 @@ def main(argv=None):
         break
     middlewares = [
         db.Log(verbose=True),
-        throttle.Throttle(),
         keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,
@@ -408,10 +406,7 @@ def main(argv=None):
 
     # Add key press support
     key_press = keys.KeyPress()
-    key_events = (db.Stream()
-              .listen_to(key_press)
-              .map(lambda a: throttle.throttled(a, 100)))
-    key_events.subscribe(store.dispatch)
+    key_press.subscribe(store.dispatch)
 
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"
