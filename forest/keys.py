@@ -36,7 +36,19 @@ class KeyPress(Observable):
         self.source.on_change('data', self.on_change)
         custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""
             if (typeof keyPressOn === 'undefined') {
-                document.onkeydown = function(e) {
+                let interval = 150  // Key hold is about 30ms, double-click is about 200ms
+                let throttle = function(callback, miliseconds) {
+                    var waiting = false
+                    return function() {
+                        if (!waiting) {
+                            callback.apply(null, arguments)
+                            waiting = true
+                            setTimeout(function() { waiting = false } , miliseconds)
+                        }
+                    }
+                }
+
+                let onkeydown = function(e) {
                     let keys = source.data['keys']
                     keys.push(e.code)
                     source.data = {
@@ -44,6 +56,8 @@ class KeyPress(Observable):
                     }
                     source.change.emit()
                 }
+                document.onkeydown = throttle(onkeydown, interval)
+
                 // Global to prevent multiple onkeydown callbacks
                 keyPressOn = true
             }
