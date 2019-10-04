@@ -102,6 +102,23 @@ def test_build_loader_given_database_and_directory(tmpdir):
     assert loader.locator.directory == directory
 
 
+def test_build_loader_given_config_file_pattern(tmpdir):
+    config_file = str(tmpdir / "config.yml")
+    path = str(tmpdir / "file_20190101T0000Z.nc")
+    args = main.parse_args.parse_args([
+        "--config-file", config_file])
+    label = "UM"
+    pattern = "*.nc"
+    directory = str(tmpdir)
+    group = forest.config.FileGroup(
+            label,
+            pattern,
+            directory=directory,
+            locator="file_system")
+    loader = main.build_loader(group, args)
+    assert loader.locator.paths == [path]
+
+
 def test_replace_dir_given_args_dir_only():
     check_replace_dir("args/dir", None, "args/dir")
 
