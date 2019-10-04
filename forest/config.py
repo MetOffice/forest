@@ -1,15 +1,10 @@
 """Application configuration"""
 import os
 import yaml
+from forest.export import export
 
 
 __all__ = []
-
-
-def export(obj):
-    if obj.__name__ not in __all__:
-        __all__.append(obj.__name__)
-    return obj
 
 
 class Config(object):

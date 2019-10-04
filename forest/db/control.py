@@ -2,22 +2,18 @@
 import copy
 import datetime as dt
 import numpy as np
-from functools import wraps
 import bokeh.models
 import bokeh.layouts
 from . import util
 from collections import namedtuple
+from forest.redux import middleware
+from forest.observe import Observable
+from forest.export import export
 
 
 __all__ = [
     "State",
 ]
-
-
-def export(obj):
-    if obj.__name__ not in __all__:
-        __all__.append(obj.__name__)
-    return obj
 
 
 SET_VALUE = "SET_VALUE"
@@ -31,8 +27,28 @@ def set_value(key, value):
 
 
 @export
+def next_valid_time():
+    return next_value("valid_time", "valid_times")
+
+
+@export
+def next_initial_time():
+    return next_value("initial_time", "initial_times")
+
+
+@export
 def next_value(item_key, items_key):
     return dict(kind=NEXT_VALUE, payload=locals())
+
+
+@export
+def previous_valid_time():
+    return previous_value("valid_time", "valid_times")
+
+
+@export
+def previous_initial_time():
+    return previous_value("initial_time", "initial_times")
 
 
 @export
@@ -54,18 +70,6 @@ State = namedtuple("State", (
     "valid_format"))
 State.__new__.__defaults__ = (None,) * len(State._fields)
 
-
-@export
-class Observable(object):
-    def __init__(self):
-        self.subscribers = []
-
-    def subscribe(self, callback):
-        self.subscribers.append(callback)
-
-    def notify(self, state):
-        for callback in self.subscribers:
-            callback(state)
 
 @export
 class Stream(Observable):
@@ -126,24 +130,6 @@ def stamps(times):
 
 
 @export
-class Store(Observable):
-    def __init__(self, reducer, initial_state=None, middlewares=None):
-        self.reducer = reducer
-        self.state = initial_state if initial_state is not None else {}
-        if middlewares is not None:
-            mws = [m(self) for m in middlewares]
-            f = self.dispatch
-            for mw in reversed(mws):
-                f = mw(f)
-            self.dispatch = f
-        super().__init__()
-
-    def dispatch(self, action):
-        self.state = self.reducer(self.state, action)
-        self.notify(self.state)
-
-
-@export
 def reducer(state, action):
     state = copy.copy(state)
     kind = action["kind"]
@@ -152,18 +138,6 @@ def reducer(state, action):
         key, value = payload["key"], payload["value"]
         state[key] = value
     return state
-
-
-def middleware(f):
-    """Curries functions to satisfy middleware signature"""
-    @wraps(f)
-    def outer(*args):
-        def inner(next_dispatch):
-            def inner_most(action):
-                f(*args, next_dispatch, action)
-            return inner_most
-        return inner
-    return outer
 
 
 @export

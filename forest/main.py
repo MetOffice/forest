@@ -12,11 +12,13 @@ from forest import (
         geo,
         colors,
         db,
+        keys,
+        redux,
         unified_model,
         navigate,
         parse_args)
 import forest.config as cfg
-from forest.util import Observable
+from forest.observe import Observable
 from forest.db.util import autolabel
 import datetime as dt
 
@@ -281,6 +283,7 @@ def main(argv=None):
         break
     middlewares = [
         db.Log(verbose=True),
+        keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,
         db.Controls(navigator),
@@ -289,7 +292,7 @@ def main(argv=None):
             "inital_times": db.stamps
         })
     ]
-    store = db.Store(
+    store = redux.Store(
         db.reducer,
         initial_state=initial_state,
         middlewares=middlewares)
@@ -401,11 +404,16 @@ def main(argv=None):
 
     compact_button.on_click(on_compact)
 
+    # Add key press support
+    key_press = keys.KeyPress()
+    key_press.subscribe(store.dispatch)
+
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"
     document.add_root(control_root)
     document.add_root(series_row)
     document.add_root(figure_row)
+    document.add_root(key_press.hidden_button)
 
 
 from itertools import cycle
