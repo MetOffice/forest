@@ -1,4 +1,5 @@
 import os
+import glob
 import re
 import fnmatch
 import datetime as dt
@@ -48,6 +49,10 @@ class Locator(object):
                 self.catalogue[key] = [path]
             else:
                 self.catalogue[key].append(path)
+
+    @classmethod
+    def pattern(cls, text):
+        return cls(sorted(glob.glob(os.path.expanduser(text))))
 
     def locate(
             self,

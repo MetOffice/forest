@@ -2,6 +2,7 @@ import bokeh.plotting
 import bokeh.events
 import numpy as np
 import os
+import glob
 from forest import (
         satellite,
         data,
@@ -31,24 +32,32 @@ def build_loader(group, args, database=None):
             directory=replace_dir(args.directory, group.directory))
         return data.DBLoader(group.label, group.pattern, locator)
     elif group.locator == "file_system":
+        pattern = full_pattern(group.pattern, group.directory, args.directory)
         if group.file_type == 'unified_model':
-            locator = unified_model.Locator(args.files)
-            return data.DBLoader(group.label, group.pattern, locator)
-        else:
-            if args.directory is not None:
-                pattern = os.path.join(args.directory, group.pattern)
+            if args.config_file is None:
+                locator = unified_model.Locator(args.files)
+                return data.DBLoader(group.label, group.pattern, locator)
             else:
-                if group.directory is None:
-                    pattern = group.pattern
-                else:
-                    pattern = os.path.join(
-                            os.path.expanduser(group.directory),
-                            group.pattern)
+                locator = unified_model.Locator.pattern(pattern)
+                return data.DBLoader(group.label, pattern, locator)
+        else:
             return data.file_loader(
                     group.file_type,
                     pattern)
     else:
         raise Exception("Unknown locator: {}".format(group.locator))
+
+
+def full_pattern(group_pattern, group_directory, args_directory):
+    if args_directory is not None:
+        return os.path.join(args_directory, group_pattern)
+    else:
+        if group_directory is None:
+            return group_pattern
+        else:
+            return os.path.join(
+                    os.path.expanduser(group_directory),
+                    group_pattern)
 
 
 def replace_dir(args_dir, group_dir):

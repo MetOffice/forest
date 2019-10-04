@@ -105,6 +105,8 @@ def test_build_loader_given_database_and_directory(tmpdir):
 def test_build_loader_given_config_file_pattern(tmpdir):
     config_file = str(tmpdir / "config.yml")
     path = str(tmpdir / "file_20190101T0000Z.nc")
+    with open(path, "w"):
+        pass
     args = main.parse_args.parse_args([
         "--config-file", config_file])
     label = "UM"
