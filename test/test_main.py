@@ -147,18 +147,25 @@ def check_replace_dir(args_dir, group_dir, expected):
 
 
 def test_full_pattern_given_name_only():
-    actual = forest.main.full_pattern("file.nc", None, None)
-    expected = "file.nc"
-    assert actual == expected
+    check_full_pattern("file.nc", None, None, "file.nc")
 
 
 def test_full_pattern_given_relative_prefix_dir():
-    actual = forest.main.full_pattern("file.nc", None, "prefix")
-    expected = "prefix/file.nc"
-    assert actual == expected
+    check_full_pattern("file.nc", None, "prefix", "prefix/file.nc")
 
 
 def test_full_pattern_given_relative_leaf_and_prefix_dir():
-    actual = forest.main.full_pattern("file.nc", "leaf", "prefix")
-    expected = "prefix/leaf/file.nc"
+    check_full_pattern("file.nc", "leaf", "prefix", "prefix/leaf/file.nc")
+
+
+def test_full_pattern_given_absolute_leaf_ignores_relative_prefix():
+    check_full_pattern("file.nc", "/leaf", "prefix", "/leaf/file.nc")
+
+
+def test_full_pattern_given_absolute_leaf_ignores_absolute_prefix():
+    check_full_pattern("file.nc", "/leaf", "/prefix", "/leaf/file.nc")
+
+
+def check_full_pattern(name, leaf, prefix, expected):
+    actual = forest.main.full_pattern(name, leaf, prefix)
     assert actual == expected

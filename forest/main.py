@@ -52,28 +52,30 @@ def build_loader(group, args, database=None):
 def full_pattern(pattern, leaf_dir, prefix_dir):
     """Combine user specified patterns to files on disk
 
+    .. note:: absolute path leaf directory takes precedence over prefix
+              directory
+
     :param pattern: str representing file name wildcard pattern
+    :param leaf_dir: leaf directory to add after prefix directory
+    :param prefix_dir: directory to place before leaf and pattern
     """
-    if (prefix_dir is None) and (leaf_dir is None):
-        return pattern
-    elif leaf_dir is None:
-        return os.path.join(prefix_dir, pattern)
-    elif prefix_dir is None:
-        return os.path.join(leaf_dir, pattern)
-    else:
-        return os.path.join(prefix_dir, leaf_dir, pattern)
+    dirs = [d for d in [prefix_dir, leaf_dir] if d is not None]
+    return os.path.join(*dirs, pattern)
 
 
-def replace_dir(args_dir, group_dir):
-    if args_dir is None:
-        return group_dir
-    elif group_dir is None:
-        return args_dir
-    else:
-        if os.path.isabs(group_dir):
-            return group_dir
-        else:
-            return os.path.join(args_dir, group_dir)
+def replace_dir(prefix_dir, leaf_dir):
+    """Replacement directory for SQL queries
+
+    Combine two user defined directories to allow flexible
+    approach to directory specification
+
+    :param prefix_dir: directory to put before relative leaf directory
+    :param leaf_dir: directory to append to prefix
+    """
+    dirs = [d for d in [prefix_dir, leaf_dir] if d is not None]
+    if len(dirs) == 0:
+        return
+    return os.path.join(*dirs)
 
 
 def main(argv=None):
