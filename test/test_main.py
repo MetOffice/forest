@@ -19,7 +19,8 @@ def test_build_loader_given_files():
     args = main.parse_args.parse_args(files)
     config = forest.config.from_files(args.files, args.file_type)
     group = config.file_groups[0]
-    loader = main.build_loader(group, args)
+    builder = main.LoaderBuilder.group_args(group, args)
+    loader = builder.loader()
     assert isinstance(loader, forest.data.DBLoader)
     assert loader.locator.paths == files
 
@@ -47,7 +48,9 @@ def test_build_loader_given_database(tmpdir):
     config = forest.config.load_config(args.config_file)
     group = config.file_groups[0]
     database = forest.db.Database.connect(database_file)
-    loader = main.build_loader(group, args, database)
+    builder = main.LoaderBuilder.group_args(group, args)
+    builder.add_database(database)
+    loader = builder.loader()
     database.close()
     assert hasattr(loader.locator, "connection")
     assert loader.locator.directory is None
@@ -96,7 +99,9 @@ def test_build_loader_given_database_and_directory(tmpdir):
             directory=directory,
             locator="database")
     database = forest.db.Database.connect(database_file)
-    loader = main.build_loader(group, args, database)
+    builder = main.LoaderBuilder.group_args(group, args)
+    builder.add_database(database)
+    loader = builder.loader()
     database.close()
     assert hasattr(loader.locator, "connection")
     assert loader.locator.directory == directory
@@ -117,15 +122,18 @@ def test_build_loader_given_config_file_pattern(tmpdir):
             pattern,
             directory=directory,
             locator="file_system")
-    loader = main.build_loader(group, args)
+    builder = main.LoaderBuilder.group_args(group, args)
+    loader = builder.loader()
     assert loader.locator.paths == [path]
 
 
 def test_build_loader_given_eida50_file_type():
-    loader = main.build_loader_facade(
+    label = "EIDA50"
+    builder = main.LoaderBuilder(
+            label,
             file_pattern="*.nc",
-            file_type="eida50",
-            locator_type="file_system")
+            file_type="eida50")
+    loader = builder.loader()
     assert isinstance(loader, forest.satellite.EIDA50)
     assert isinstance(loader.locator, forest.satellite.Locator)
 
@@ -158,7 +166,7 @@ def test_replace_dir_given_absolute_group_dir_overrides_abs_args_dir():
 
 
 def check_replace_dir(args_dir, group_dir, expected):
-    actual = main.replace_dir(args_dir, group_dir)
+    actual = main.LoaderBuilder.replace_dir(args_dir, group_dir)
     assert actual == expected
 
 
@@ -183,5 +191,5 @@ def test_full_pattern_given_absolute_leaf_ignores_absolute_prefix():
 
 
 def check_full_pattern(name, leaf, prefix, expected):
-    actual = forest.main.full_pattern(name, leaf, prefix)
+    actual = forest.main.LoaderBuilder.full_pattern(name, leaf, prefix)
     assert actual == expected

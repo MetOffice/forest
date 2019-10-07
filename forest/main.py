@@ -24,92 +24,6 @@ from forest.db.util import autolabel
 import datetime as dt
 
 
-def build_loader(group, args, database=None):
-    """Builder that assembles file/database loaders"""
-    # Translate from FileGroup/args to keyword arguments
-    return build_loader_facade(
-            database=database,
-            label=group.label,
-            file_pattern=group.pattern,
-            file_names=args.files,
-            file_type=group.file_type,
-            prefix_dir=args.directory,
-            leaf_dir=group.directory,
-            locator_type=group.locator,
-            use_file_names=args.config_file is None)
-
-
-def build_loader_facade(
-        database=None,
-        label=None,
-        file_pattern=None,
-        file_names=None,
-        file_type=None,
-        prefix_dir=None,
-        leaf_dir=None,
-        locator_type=None,
-        use_file_names=False):
-    """Facade to make builder easier to test"""
-    # Define search pattern
-    if locator_type == "database":
-        pattern = file_pattern
-    else:
-        pattern = os.path.expanduser(
-                full_pattern(file_pattern, leaf_dir, prefix_dir))
-
-    # Construct Locator
-    if locator_type == "database":
-        locator = db.Locator(
-            database.connection,
-            directory=replace_dir(prefix_dir, leaf_dir))
-    elif locator_type == "file_system":
-        if file_type == 'unified_model':
-            if use_file_names:
-                locator = unified_model.Locator(file_names)
-            else:
-                locator = unified_model.Locator.pattern(pattern)
-        else:
-            # Locator constructed inside RDT, EIDA50, GPM etc.
-            locator = None
-    else:
-        raise Exception("Unknown locator type: {}".format(locator_type))
-
-    return data.file_loader(
-            file_type,
-            pattern,
-            label=label,
-            locator=locator)
-
-
-def full_pattern(pattern, leaf_dir, prefix_dir):
-    """Combine user specified patterns to files on disk
-
-    .. note:: absolute path leaf directory takes precedence over prefix
-              directory
-
-    :param pattern: str representing file name wildcard pattern
-    :param leaf_dir: leaf directory to add after prefix directory
-    :param prefix_dir: directory to place before leaf and pattern
-    """
-    dirs = [d for d in [prefix_dir, leaf_dir] if d is not None]
-    return os.path.join(*dirs, pattern)
-
-
-def replace_dir(prefix_dir, leaf_dir):
-    """Replacement directory for SQL queries
-
-    Combine two user defined directories to allow flexible
-    approach to directory specification
-
-    :param prefix_dir: directory to put before relative leaf directory
-    :param leaf_dir: directory to append to prefix
-    """
-    dirs = [d for d in [prefix_dir, leaf_dir] if d is not None]
-    if len(dirs) == 0:
-        return
-    return os.path.join(*dirs)
-
-
 def main(argv=None):
     args = parse_args.parse_args(argv)
     if len(args.files) > 0:
@@ -198,12 +112,10 @@ def main(argv=None):
     for group in config.file_groups:
         print(group)
         if group.label not in data.LOADERS:
+            builder = LoaderBuilder.group_args(group, args)
             if group.locator == "database":
-                loader = build_loader(group, args, database)
-            elif group.locator == "file_system":
-                loader = build_loader(group, args)
-            else:
-                raise Exception("Unknown locator: {}".format(group.locator))
+                builder.add_database(database)
+            loader = builder.loader()
             data.add_loader(group.label, loader)
 
     renderers = {}
@@ -472,6 +384,123 @@ def main(argv=None):
     document.add_root(series_row)
     document.add_root(figure_row)
     document.add_root(key_press.hidden_button)
+
+
+class LoaderBuilder(object):
+    """Encapsulates complex Loader construction logic"""
+    def __init__(self,
+            label,
+            file_type,
+            file_pattern=None,
+            files=None,
+            prefix_dir=None,
+            leaf_dir=None,
+            locator_type="file_system",
+            use_files=False):
+        self.label = label
+        self.locator_type = locator_type
+        self.file_type = file_type
+        self.file_pattern = file_pattern
+        self.files = files
+        self.prefix_dir = prefix_dir
+        self.leaf_dir = leaf_dir
+        self.use_files = use_files
+
+    def add_database(self, database):
+        self.database = database
+
+    @classmethod
+    def group_args(cls, group, args):
+        """Construct builder from FileGroup and argparse.Namespace
+
+        :param group: FileGroup instance
+        :param args: argparse.Namespace instance
+        """
+        return cls(
+                group.label,
+                group.file_type,
+                file_pattern=group.pattern,
+                files=args.files,
+                prefix_dir=args.directory,
+                leaf_dir=group.directory,
+                locator_type=group.locator,
+                use_files=args.config_file is None)
+
+    def loader(self):
+        """Construct Loader related to file_type"""
+        return data.file_loader(
+                    self.file_type,
+                    self.pattern(),
+                    label=self.label,
+                    locator=self.locator())
+
+    def locator(self):
+        """Helper method to construct locator"""
+        if self.locator_type == "database":
+            # Search using SQL database
+            return db.Locator(
+                self.database.connection,
+                directory=self.replace_dir(self.prefix_dir, self.leaf_dir))
+        elif self.locator_type == "file_system":
+            if self.use_files:
+                # Search using list of files
+                locator = None  # RDT, EIDA50 etc. have built-in locators
+                if self.file_type == 'unified_model':
+                    locator = unified_model.Locator(self.files)
+                return locator
+            else:
+                # Search using prefix, leaf and pattern
+                locator = None  # RDT, EIDA50 etc. have built-in locators
+                if self.file_type == 'unified_model':
+                    locator = unified_model.Locator.pattern(self.pattern())
+                return locator
+        else:
+            raise Exception("Unknown locator: {}".format(self.locator_type))
+
+    def pattern(self):
+        """Helper method to construct Loader"""
+        if self.locator_type == "database":
+            return self.file_pattern
+        elif self.locator_type == "file_system":
+            if self.use_files:
+                return self.file_pattern
+            else:
+                return os.path.expanduser(
+                        self.full_pattern(
+                            self.file_pattern,
+                            self.leaf_dir,
+                            self.prefix_dir))
+        else:
+            raise Exception("Unknown locator: {}".format(self.locator_type))
+
+    @staticmethod
+    def full_pattern(pattern, leaf_dir, prefix_dir):
+        """Combine user specified patterns to files on disk
+
+        .. note:: absolute path leaf directory takes precedence over prefix
+                  directory
+
+        :param pattern: str representing file name wildcard pattern
+        :param leaf_dir: leaf directory to add after prefix directory
+        :param prefix_dir: directory to place before leaf and pattern
+        """
+        dirs = [d for d in [prefix_dir, leaf_dir] if d is not None]
+        return os.path.join(*dirs, pattern)
+
+    @staticmethod
+    def replace_dir(prefix_dir, leaf_dir):
+        """Replacement directory for SQL queries
+
+        Combine two user defined directories to allow flexible
+        approach to directory specification
+
+        :param prefix_dir: directory to put before relative leaf directory
+        :param leaf_dir: directory to append to prefix
+        """
+        dirs = [d for d in [prefix_dir, leaf_dir] if d is not None]
+        if len(dirs) == 0:
+            return
+        return os.path.join(*dirs)
 
 
 from itertools import cycle
