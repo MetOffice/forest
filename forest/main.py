@@ -32,7 +32,8 @@ def build_loader(group, args, database=None):
             directory=replace_dir(args.directory, group.directory))
         return data.DBLoader(group.label, group.pattern, locator)
     elif group.locator == "file_system":
-        pattern = full_pattern(group.pattern, group.directory, args.directory)
+        pattern = os.path.expanduser(
+                full_pattern(group.pattern, group.directory, args.directory))
         if group.file_type == 'unified_model':
             if args.config_file is None:
                 locator = unified_model.Locator(args.files)
@@ -48,16 +49,19 @@ def build_loader(group, args, database=None):
         raise Exception("Unknown locator: {}".format(group.locator))
 
 
-def full_pattern(group_pattern, group_directory, args_directory):
-    if args_directory is not None:
-        return os.path.join(args_directory, group_pattern)
+def full_pattern(pattern, leaf_dir, prefix_dir):
+    """Combine user specified patterns to files on disk
+
+    :param pattern: str representing file name wildcard pattern
+    """
+    if (prefix_dir is None) and (leaf_dir is None):
+        return pattern
+    elif leaf_dir is None:
+        return os.path.join(prefix_dir, pattern)
+    elif prefix_dir is None:
+        return os.path.join(leaf_dir, pattern)
     else:
-        if group_directory is None:
-            return group_pattern
-        else:
-            return os.path.join(
-                    os.path.expanduser(group_directory),
-                    group_pattern)
+        return os.path.join(prefix_dir, leaf_dir, pattern)
 
 
 def replace_dir(args_dir, group_dir):

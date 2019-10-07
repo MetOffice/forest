@@ -144,3 +144,21 @@ def test_replace_dir_given_absolute_group_dir_overrides_abs_args_dir():
 def check_replace_dir(args_dir, group_dir, expected):
     actual = main.replace_dir(args_dir, group_dir)
     assert actual == expected
+
+
+def test_full_pattern_given_name_only():
+    actual = forest.main.full_pattern("file.nc", None, None)
+    expected = "file.nc"
+    assert actual == expected
+
+
+def test_full_pattern_given_relative_prefix_dir():
+    actual = forest.main.full_pattern("file.nc", None, "prefix")
+    expected = "prefix/file.nc"
+    assert actual == expected
+
+
+def test_full_pattern_given_relative_leaf_and_prefix_dir():
+    actual = forest.main.full_pattern("file.nc", "leaf", "prefix")
+    expected = "prefix/leaf/file.nc"
+    assert actual == expected
