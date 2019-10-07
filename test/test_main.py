@@ -121,6 +121,22 @@ def test_build_loader_given_config_file_pattern(tmpdir):
     assert loader.locator.paths == [path]
 
 
+def test_build_loader_given_eida50_file_type():
+    loader = main.build_loader_facade(
+            file_pattern="*.nc",
+            file_type="eida50",
+            locator_type="file_system")
+    assert isinstance(loader, forest.satellite.EIDA50)
+    assert isinstance(loader.locator, forest.satellite.Locator)
+
+
+def test_build_loader_given_rdt_file_type():
+    loader = forest.data.file_loader(
+            "rdt", "*.json", "file_system")
+    assert isinstance(loader, forest.rdt.Loader)
+    assert isinstance(loader.locator, forest.rdt.Locator)
+
+
 def test_replace_dir_given_args_dir_only():
     check_replace_dir("args/dir", None, "args/dir")
 

@@ -26,27 +26,59 @@ import datetime as dt
 
 def build_loader(group, args, database=None):
     """Builder that assembles file/database loaders"""
-    if group.locator == "database":
+    # Translate from FileGroup/args to keyword arguments
+    return build_loader_facade(
+            database=database,
+            label=group.label,
+            file_pattern=group.pattern,
+            file_names=args.files,
+            file_type=group.file_type,
+            prefix_dir=args.directory,
+            leaf_dir=group.directory,
+            locator_type=group.locator,
+            use_file_names=args.config_file is None)
+
+
+def build_loader_facade(
+        database=None,
+        label=None,
+        file_pattern=None,
+        file_names=None,
+        file_type=None,
+        prefix_dir=None,
+        leaf_dir=None,
+        locator_type=None,
+        use_file_names=False):
+    """Facade to make builder easier to test"""
+    # Define search pattern
+    if locator_type == "database":
+        pattern = file_pattern
+    else:
+        pattern = os.path.expanduser(
+                full_pattern(file_pattern, leaf_dir, prefix_dir))
+
+    # Construct Locator
+    if locator_type == "database":
         locator = db.Locator(
             database.connection,
-            directory=replace_dir(args.directory, group.directory))
-        return data.DBLoader(group.label, group.pattern, locator)
-    elif group.locator == "file_system":
-        pattern = os.path.expanduser(
-                full_pattern(group.pattern, group.directory, args.directory))
-        if group.file_type == 'unified_model':
-            if args.config_file is None:
-                locator = unified_model.Locator(args.files)
-                return data.DBLoader(group.label, group.pattern, locator)
+            directory=replace_dir(prefix_dir, leaf_dir))
+    elif locator_type == "file_system":
+        if file_type == 'unified_model':
+            if use_file_names:
+                locator = unified_model.Locator(file_names)
             else:
                 locator = unified_model.Locator.pattern(pattern)
-                return data.DBLoader(group.label, pattern, locator)
         else:
-            return data.file_loader(
-                    group.file_type,
-                    pattern)
+            # Locator constructed inside RDT, EIDA50, GPM etc.
+            locator = None
     else:
-        raise Exception("Unknown locator: {}".format(group.locator))
+        raise Exception("Unknown locator type: {}".format(locator_type))
+
+    return data.file_loader(
+            file_type,
+            pattern,
+            label=label,
+            locator=locator)
 
 
 def full_pattern(pattern, leaf_dir, prefix_dir):

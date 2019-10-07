@@ -83,7 +83,7 @@ def add_loader(name, loader):
         LOADERS[name] = loader
 
 
-def file_loader(file_type, pattern):
+def file_loader(file_type, pattern, label=None, locator=None):
     if file_type.lower() == 'rdt':
         return rdt.Loader(pattern)
     elif file_type.lower() == 'gpm':
@@ -92,6 +92,8 @@ def file_loader(file_type, pattern):
         return earth_networks.Loader(pattern)
     elif file_type.lower() == 'eida50':
         return satellite.EIDA50(pattern)
+    elif file_type.lower() == 'unified_model':
+        return DBLoader(label, pattern, locator)
     else:
         raise Exception("unrecognised file_type: {}".format(file_type))
 
