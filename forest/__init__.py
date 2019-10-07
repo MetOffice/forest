@@ -8,6 +8,8 @@ forecasts alongside observations.
 
 .. automodule:: forest.keys
 
+.. automodule:: forest.config
+
 """
 __version__ = '0.4.2'
 

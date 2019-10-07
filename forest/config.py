@@ -1,4 +1,25 @@
-"""Application configuration"""
+"""
+Configure application
+---------------------
+
+This module implements parsers and data structures
+needed to configure the application. It supports
+richer settings than those that can be easily
+represented on the command line by leveraging file formats
+such as YAML and JSON that are widely used to configure
+applications.
+
+.. autoclass:: Config
+   :members:
+
+.. autoclass:: FileGroup
+   :members:
+
+.. autofunction:: load_config
+
+.. autofunction:: from_files
+
+"""
 import os
 import yaml
 from forest.export import export
@@ -8,6 +29,20 @@ __all__ = []
 
 
 class Config(object):
+    """Configuration data structure
+
+    This high-level object represents the application configuration.
+    It is file format agnostic but has helper methods to initialise
+    itself from disk or memory.
+
+    .. note:: This class is intended to provide the top-level
+              configuration with low-level details implemented
+              by specialist classes, e.g. :class:`FileGroup`
+              which contains meta-data for files
+
+    :param data: native Python data structure representing application
+                 settings
+    """
     def __init__(self, data):
         self.data = data
 
@@ -25,6 +60,32 @@ class Config(object):
 
     @classmethod
     def load(cls, path):
+        """Parse settings from either YAML or JSON file on disk
+
+        The configuration can be controlled elegantly
+        through a text file. Groups of files can
+        be specified in a list.
+
+        .. note:: Relative or absolute directories are
+                  declared through the use of a leading /
+
+        .. code-block:: yaml
+
+            files:
+                - label: Trial
+                  pattern: "*.nc"
+                  directory: trial/output
+                - label: Control
+                  pattern: "*.nc"
+                  directory: control/output
+                - label: RDT
+                  pattern: "*.json"
+                  directory: /satellite/rdt/json
+                  file_type: rdt
+
+        :param path: JSON/YAML file to load
+        :returns: instance of :class:`Config`
+        """
         with open(path) as stream:
             try:
                 # PyYaml 5.1 onwards
@@ -35,6 +96,12 @@ class Config(object):
 
     @classmethod
     def from_files(cls, files, file_type="unified_model"):
+        """Configure using list of file names and a file type
+
+        :param files: list of file names
+        :param file_type: keyword to apply to all files
+        :returns: instance of :class:`Config`
+        """
         return cls({
             "files": [dict(pattern=f, label=f, file_type=file_type)
                 for f in files]})
@@ -46,6 +113,19 @@ class Config(object):
 
 
 class FileGroup(object):
+    """Meta-data needed to describe group of files
+
+    To describe a collection of related files extra
+    meta-data is needed. For example, the type of data
+    contained within the files or how data is catalogued
+    and searched.
+
+    :param label: decription used by buttons and tooltips
+    :param pattern: wildcard pattern used by either SQL or glob
+    :param locator: keyword describing search method (default: 'file_system')
+    :param file_type: keyword describing file contents (default: 'unified_model')
+    :param directory: leaf/absolute directory where file(s) are stored (default: None)
+    """
     def __init__(self,
             label,
             pattern,
@@ -98,9 +178,11 @@ class FileGroup(object):
 
 @export
 def load_config(path):
+    """Load configuration from a file"""
     return Config.load(path)
 
 
 @export
 def from_files(files, file_type):
+    """Define configuration with a list of files"""
     return Config.from_files(files, file_type)

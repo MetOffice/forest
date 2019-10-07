@@ -114,12 +114,30 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
-def test_config_parser(tmpdir):
+def test_config_parser_given_yaml(tmpdir):
     config_file = str(tmpdir / "test-config.yml")
     content = """
 files:
     - label: Hello
       pattern: "*.nc"
+    """
+    with open(config_file, "w") as stream:
+        stream.write(content)
+    config = forest.config.Config.load(config_file)
+    actual = config.file_groups[0]
+    expected = forest.config.FileGroup(
+            "Hello", "*.nc",
+            locator="file_system",
+            directory=None)
+    assert actual == expected
+
+
+def test_config_parser_given_json(tmpdir):
+    config_file = str(tmpdir / "test-config.json")
+    content = """
+"files": [
+   {"label": "Hello", "pattern": "*.nc"}
+]
     """
     with open(config_file, "w") as stream:
         stream.write(content)
