@@ -79,7 +79,16 @@ Development environment
 -----------------------
 
 It is recommended to develop FOREST in a virtual environment of some kind,
-we recommend miniconda_ since it's fairly light weight. The repository ships with
+we recommend miniconda_ since it's fairly light weight. To make sure
+all of the various dependencies and development tools are installed
+in your environment run the following command with your chosen
+environment activated.
+
+.. code::
+
+   conda install -c conda-forge --file requirements.txt --file requirements-dev.txt
+
+The repository ships with
 a ``setup.py`` that should be suitable to
 use inside a virtual environment, either ``venv`` or ``conda``. Once
 you've created and activated an environment it should be possible
