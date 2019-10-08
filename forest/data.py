@@ -11,7 +11,11 @@ import json
 import pandas as pd
 import numpy as np
 import netCDF4
-import cf_units
+try:
+    import cf_units
+except ImportError:
+    # ReadTheDocs unable to pip install cf-units
+    pass
 from forest import (
         satellite,
         rdt,
