@@ -21,3 +21,4 @@ from . import (
         tutorial)
 from .db import Database
 from .keys import *
+from .load import *

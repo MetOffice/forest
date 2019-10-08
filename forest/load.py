@@ -1,10 +1,17 @@
+"""Factory methods for building Loader classes
+"""
 import os
+from forest.export import export
 from forest import (
         data,
         db,
         unified_model)
 
 
+__all__ = []
+
+
+@export
 class Loader(object):
     """Encapsulates complex Loader construction logic"""
     @classmethod
