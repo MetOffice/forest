@@ -72,7 +72,7 @@ to set an upstream branch. For example,
 
 .. code::
 
-   git checkout --set-upstream origin name_of_branch
+   git push --set-upstream origin name_of_branch
    
 
 Development environment
