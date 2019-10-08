@@ -99,17 +99,17 @@ to suit your particular use case.
 
   files:
      - label: UM
-       pattern: unified_model*.nc
+       pattern: "unified_model*.nc"
        locator: file_system
        file_type: unified_model
-     - label: RDT
-       pattern: rdt*.json
-       locator: file_system
-       file_type: rdt
      - label: EIDA50
-       pattern: eida50*.nc
+       pattern: "eida50*.nc"
        locator: file_system
        file_type: eida50
+     - label: RDT
+       pattern: "rdt*.json"
+       locator: file_system
+       file_type: rdt
 
 Running the following command should load FOREST with a model diagnostic,
 satellite image and derived polygon product at the same time that can be
