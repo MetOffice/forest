@@ -1,11 +1,33 @@
-"""Factory methods for building Loader classes
+"""
+Loader factory
+--------------
+
+To make it simpler to construct a Loader, a factory class
+has been written with ``@classmethods`` designed to build
+loaders appropriate for each supported visualisation/file type
+
+>>> loader = forest.Loader.from_pattern("Label", "*.json", "rdt")
+>>> isinstance(loader, forest.rdt.Loader)
+... True
+
+Abstracting the construction of various Loader classes away
+from ``main.py`` allows re-usability and finer grained
+testing.
+
+
+.. autoclass:: Loader
+   :members:
+
 """
 import os
 from forest.export import export
 from forest import (
         data,
         db,
-        unified_model)
+        earth_networks,
+        unified_model,
+        rdt,
+        satellite)
 
 
 __all__ = []
@@ -18,17 +40,20 @@ class Loader(object):
     def group_args(cls, group, args, database=None):
         """Construct builder from FileGroup and argparse.Namespace
 
+        Simplifies construction of Loaders given command line
+        and configuration settings
+
         :param group: FileGroup instance
         :param args: argparse.Namespace instance
         """
         if group.locator == "database":
             return cls.from_database(
-                    database,
+                    database.connection,
                     group.file_type,
                     group.label,
                     group.pattern,
-                    prefix_dir=args.directory,
-                    leaf_dir=group.directory)
+                    replacement_dir=cls.replace_dir(
+                        args.directory, group.directory))
         elif group.locator == "file_system":
             if args.config_file is None:
                 return cls.from_files(
@@ -51,16 +76,25 @@ class Loader(object):
 
     @classmethod
     def from_database(cls,
-            database,
+            connection,
             file_type,
             label,
             pattern,
-            prefix_dir=None,
-            leaf_dir=None):
+            replacement_dir=None):
+        """Builds a loader powered by a SQL database
+
+        .. note:: ``replacement_dir`` can be used to modify
+                  names in ``file`` table
+
+        :param connection: sqlite3.connection to a database
+        :param file_type: keyword to specify particular loader
+        :param label: keyword to link app state to loader
+        :param replacement_dir: directory to substitute in ``file`` table
+        """
         locator = db.Locator(
-            database.connection,
-            directory=cls.replace_dir(prefix_dir, leaf_dir))
-        return data.file_loader(
+            connection,
+            directory=replacement_dir)
+        return cls.file_loader(
                     file_type,
                     pattern,
                     label=label,
@@ -68,10 +102,11 @@ class Loader(object):
 
     @classmethod
     def from_files(cls, label, pattern, files, file_type):
+        """Builds a loader from list of files and a file type"""
         locator = None  # RDT, EIDA50 etc. have built-in locators
         if file_type == 'unified_model':
             locator = unified_model.Locator(files)
-        return data.file_loader(
+        return cls.file_loader(
                     file_type,
                     pattern,
                     label=label,
@@ -82,15 +117,31 @@ class Loader(object):
             label,
             pattern,
             file_type):
-        # Search using prefix, leaf and pattern
+        """Builds a loader from a pattern and a file type"""
         locator = None  # RDT, EIDA50 etc. have built-in locators
         if file_type == 'unified_model':
             locator = unified_model.Locator.pattern(pattern)
-        return data.file_loader(
+        return cls.file_loader(
                     file_type,
                     pattern,
                     label=label,
                     locator=locator)
+
+    @staticmethod
+    def file_loader(file_type, pattern, label=None, locator=None):
+        file_type = file_type.lower().replace("_", "")
+        if file_type == 'rdt':
+            return rdt.Loader(pattern)
+        elif file_type == 'gpm':
+            return data.GPM(pattern)
+        elif file_type == 'earthnetworks':
+            return earth_networks.Loader.pattern(pattern)
+        elif file_type == 'eida50':
+            return satellite.EIDA50(pattern)
+        elif file_type == 'unifiedmodel':
+            return data.DBLoader(label, pattern, locator)
+        else:
+            raise Exception("unrecognised file_type: {}".format(file_type))
 
     @staticmethod
     def full_pattern(pattern, leaf_dir, prefix_dir):

@@ -3,6 +3,11 @@ import forest
 from forest import main
 
 
+def test_earth_networks_loader_given_pattern():
+    loader = forest.Loader.from_pattern("Label", "EarthNetworks*.txt", "earth_networks")
+    assert isinstance(loader, forest.earth_networks.Loader)
+
+
 def test_build_loader_given_files():
     """replicate main.py as close as possible"""
     files = ["file_20190101T0000Z.nc"]
@@ -93,8 +98,8 @@ def test_build_loader_given_eida50_file_type():
 
 
 def test_build_loader_given_rdt_file_type():
-    loader = forest.data.file_loader(
-            "rdt", "*.json", "file_system")
+    loader = forest.Loader.from_pattern(
+            "Label", "*.json", "rdt")
     assert isinstance(loader, forest.rdt.Loader)
     assert isinstance(loader.locator, forest.rdt.Locator)
 
