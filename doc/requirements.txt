@@ -3,4 +3,3 @@ netCDF4
 numpy
 scipy
 pandas
-cf-units
