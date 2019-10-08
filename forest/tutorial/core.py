@@ -86,7 +86,7 @@ def build_um(build_dir):
     Z_0 = np.sqrt(X**2 + Y**2)
     Z_1 = Z_0 + 5.
     reference = dt.datetime(2019, 4, 17)
-    times = [dt.datetime(2019, 4, 17, 12, 30), dt.datetime(2019, 4, 17, 1, 30)]
+    times = [dt.datetime(2019, 4, 17, 12, 45), dt.datetime(2019, 4, 17, 13, 45)]
     path = os.path.join(build_dir, UM_FILE)
     print("writing: {}".format(path))
     with netCDF4.Dataset(path, "w") as dataset:
