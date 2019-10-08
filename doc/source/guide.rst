@@ -57,7 +57,7 @@ work.
 Branch
 ------
 
-Next, create a branch related to your issue. Navigate to
+The next thing to do is to create a branch related to your issue. To do this, navigate to
 the top level directory of your cloned repository. The
 name of the branch should be related to the issue or bug you are
 solving.
