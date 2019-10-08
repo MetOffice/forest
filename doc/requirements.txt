@@ -2,3 +2,4 @@ bokeh
 netCDF4
 numpy
 scipy
+pandas
