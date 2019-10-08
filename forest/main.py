@@ -6,7 +6,7 @@ import glob
 from forest import (
         satellite,
         data,
-        loader_builder,
+        load,
         view,
         images,
         earth_networks,
@@ -113,10 +113,12 @@ def main(argv=None):
     for group in config.file_groups:
         print(group)
         if group.label not in data.LOADERS:
-            builder = loader_builder.LoaderBuilder.group_args(group, args)
             if group.locator == "database":
-                builder.add_database(database)
-            loader = builder.loader()
+                loader = load.Loader.group_args(
+                        group, args, database=database)
+            else:
+                loader = load.Loader.group_args(
+                        group, args)
             data.add_loader(group.label, loader)
 
     renderers = {}
