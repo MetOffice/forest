@@ -67,10 +67,10 @@ def test_build_database_adds_sample_nc_to_file_table(tmpdir):
     assert expect == result
 
 
-def test_build_all_builds_config_file(tmpdir):
+def test_build_all_builds_um_config_file(tmpdir):
     build_dir = str(tmpdir)
     forest.tutorial.build_all(build_dir)
-    path = os.path.join(build_dir, forest.tutorial.CFG_FILE)
+    path = str(tmpdir / forest.tutorial.UM_CFG_FILE)
     with open(path) as stream:
         result = yaml.load(stream)
     expect = {
@@ -79,6 +79,33 @@ def test_build_all_builds_config_file(tmpdir):
             "pattern": "*" + forest.tutorial.UM_FILE,
             "directory": build_dir,
             "locator": "database"
+        }]
+    }
+    assert expect == result
+
+
+def test_build_all_builds_config_file(tmpdir):
+    build_dir = str(tmpdir)
+    forest.tutorial.build_all(build_dir)
+    path = str(tmpdir / forest.tutorial.MULTI_CFG_FILE)
+    with open(path) as stream:
+        result = yaml.load(stream)
+    expect = {
+        "files": [{
+            "label": "UM",
+            "pattern": "unified_model*.nc",
+            "locator": "file_system",
+            "file_type": "unified_model"
+        }, {
+            "label": "EIDA50",
+            "pattern": "eida50*.nc",
+            "locator": "file_system",
+            "file_type": "eida50"
+        }, {
+            "label": "RDT",
+            "pattern": "rdt*.json",
+            "locator": "file_system",
+            "file_type": "rdt"
         }]
     }
     assert expect == result

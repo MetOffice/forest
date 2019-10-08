@@ -2,9 +2,11 @@ import bokeh.plotting
 import bokeh.events
 import numpy as np
 import os
+import glob
 from forest import (
         satellite,
         data,
+        load,
         view,
         images,
         earth_networks,
@@ -108,44 +110,15 @@ def main(argv=None):
         figure.add_layout(colorbar, 'center')
 
     # Database/File system loader(s)
-    def replace_dir(args_dir, group_dir):
-        if args_dir is None:
-            return group_dir
-        elif group_dir is None:
-            return args_dir
-        else:
-            if os.path.isabs(group_dir):
-                return group_dir
-            else:
-                return os.path.join(args_dir, group_dir)
-
     for group in config.file_groups:
         print(group)
         if group.label not in data.LOADERS:
             if group.locator == "database":
-                locator = db.Locator(
-                    database.connection,
-                    directory=replace_dir(args.directory, group.directory))
-                loader = data.DBLoader(group.label, group.pattern, locator)
-            elif group.locator == "file_system":
-                if group.file_type == 'unified_model':
-                    locator = unified_model.Locator(args.files)
-                    loader = data.DBLoader(group.label, group.pattern, locator)
-                else:
-                    if args.directory is not None:
-                        pattern = os.path.join(args.directory, group.pattern)
-                    else:
-                        if group.directory is None:
-                            pattern = group.pattern
-                        else:
-                            pattern = os.path.join(
-                                    os.path.expanduser(group.directory),
-                                    group.pattern)
-                    loader = data.file_loader(
-                            group.file_type,
-                            pattern)
+                loader = load.Loader.group_args(
+                        group, args, database=database)
             else:
-                raise Exception("Unknown locator: {}".format(group.locator))
+                loader = load.Loader.group_args(
+                        group, args)
             data.add_loader(group.label, loader)
 
     renderers = {}

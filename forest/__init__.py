@@ -8,8 +8,12 @@ forecasts alongside observations.
 
 .. automodule:: forest.keys
 
+.. automodule:: forest.config
+
+.. automodule:: forest.load
+
 """
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 
 from .config import *
 from . import (
@@ -19,3 +23,4 @@ from . import (
         tutorial)
 from .db import Database
 from .keys import *
+from .load import *

@@ -92,25 +92,32 @@ nice if we could store our settings and use them in a reproducible way!
 Example - Multiple data sources
 -------------------------------
 
-Open up `config.yml` for an example of the settings that can be adjusted
+Open up `multi-config.yaml` for an example of the settings that can be adjusted
 to suit your particular use case.
 
 .. code-block:: yaml
 
   files:
      - label: UM
-       pattern: unified_model*.nc
+       pattern: "unified_model*.nc"
        locator: file_system
-     - label: RDT
-       pattern: rdt*.json
-       locator: file_system
+       file_type: unified_model
      - label: EIDA50
-       pattern: eida50*.nc
+       pattern: "eida50*.nc"
        locator: file_system
+       file_type: eida50
+     - label: RDT
+       pattern: "rdt*.json"
+       locator: file_system
+       file_type: rdt
 
 Running the following command should load FOREST with a model diagnostic,
 satellite image and derived polygon product at the same time that can be
-simultaneously compared
+simultaneously compared.
+
+.. code-block:: bash
+
+   :> forest --show --config-file multi-config.yaml
 
 Example - Going faster with SQL
 -------------------------------
@@ -125,7 +132,7 @@ files and indices.
 
 .. code-block:: sh
 
-  :> forest --show --config-file config.yml --database database.db
+  :> forest --show --config-file um-config.yaml --database database.db
 
 To generate a database from scratch use the `forestdb` command.
 
