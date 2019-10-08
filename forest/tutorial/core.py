@@ -7,7 +7,8 @@ import forest.db
 
 
 SOURCE_DIR = os.path.dirname(__file__)
-CFG_FILE = "config.yaml"
+MULTI_CFG_FILE = "multi-config.yaml"
+UM_CFG_FILE = "um-config.yaml"
 UM_FILE = "unified_model.nc"
 DB_FILE = "database.db"
 RDT_FILE = "rdt_201904171245.json"
@@ -17,7 +18,8 @@ EIDA50_FILE = "eida50_20190417.nc"
 def build_all(build_dir):
     """Build sample files"""
     for builder in [
-            build_config,
+            build_um_config,
+            build_multi_config,
             build_rdt,
             build_eida50,
             build_um,
@@ -40,15 +42,37 @@ def build_file(directory, file_name):
     shutil.copy2(src, dst)
 
 
-def build_config(build_dir):
-    path = os.path.join(build_dir, CFG_FILE)
+def build_um_config(build_dir):
+    path = os.path.join(build_dir, UM_CFG_FILE)
     content = """
-    files:
-       - label: Unified Model
-         pattern: "*{}"
-         directory: {}
-         locator: database
+files:
+   - label: Unified Model
+     pattern: "*{}"
+     directory: {}
+     locator: database
 """.format(UM_FILE, build_dir)
+    print("writing: {}".format(path))
+    with open(path, "w") as stream:
+        stream.write(content)
+
+
+def build_multi_config(build_dir):
+    path = os.path.join(build_dir, MULTI_CFG_FILE)
+    content = """
+files:
+   - label: UM
+     pattern: "unified_model*.nc"
+     locator: file_system
+     file_type: unified_model
+   - label: EIDA50
+     pattern: "eida50*.nc"
+     locator: file_system
+     file_type: eida50
+   - label: RDT
+     pattern: "rdt*.json"
+     locator: file_system
+     file_type: rdt
+"""
     print("writing: {}".format(path))
     with open(path, "w") as stream:
         stream.write(content)
@@ -59,8 +83,10 @@ def build_um(build_dir):
     x = np.linspace(0, 45, nx)
     y = np.linspace(0, 45, ny)
     X, Y = np.meshgrid(x, y)
-    Z = np.sqrt(X**2 + Y**2)
-    times = [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)]
+    Z_0 = np.sqrt(X**2 + Y**2)
+    Z_1 = Z_0 + 5.
+    reference = dt.datetime(2019, 4, 17)
+    times = [dt.datetime(2019, 4, 17, 12, 30), dt.datetime(2019, 4, 17, 1, 30)]
     path = os.path.join(build_dir, UM_FILE)
     print("writing: {}".format(path))
     with netCDF4.Dataset(path, "w") as dataset:
@@ -77,7 +103,8 @@ def build_um(build_dir):
         dims = ("dim0", "longitude", "latitude")
         coordinates = "forecast_period_1 forecast_reference_time pressure time"
         var = formatter.relative_humidity(dims, coordinates=coordinates)
-        var[:] = Z.T
+        var[0] = Z_0.T
+        var[1] = Z_1.T
 
 
 def build_database(build_dir):
