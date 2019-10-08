@@ -11,7 +11,11 @@ import json
 import pandas as pd
 import numpy as np
 import netCDF4
-import cf_units
+try:
+    import cf_units
+except ImportError:
+    # ReadTheDocs unable to pip install cf-units
+    pass
 from forest import (
         satellite,
         rdt,
@@ -22,7 +26,11 @@ import bokeh.models
 from collections import OrderedDict, defaultdict
 from functools import partial
 import scipy.ndimage
-import shapely.geometry
+try:
+    import shapely.geometry
+except ImportError:
+    # ReadTheDocs unable to pip install shapely
+    pass
 from forest.util import (
         timeout_cache,
         initial_time,
