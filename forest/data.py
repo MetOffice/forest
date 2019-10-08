@@ -26,7 +26,11 @@ import bokeh.models
 from collections import OrderedDict, defaultdict
 from functools import partial
 import scipy.ndimage
-import shapely.geometry
+try:
+    import shapely.geometry
+except ImportError:
+    # ReadTheDocs unable to pip install shapely
+    pass
 from forest.util import (
         timeout_cache,
         initial_time,
