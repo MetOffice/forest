@@ -181,57 +181,6 @@ class View(object):
         return RenderGroup([renderer, lines, circles, cntr_circles, future_lines, arrows])
 
 
-class TailPointLoader(object):
-    @staticmethod
-    def load(path):
-        with open(path) as stream:
-            rdt = json.load(stream)
-
-        # Create an empty dictionary
-        mydict = dict(
-                x=[], y=[],
-                LonTrajCellCG=[],
-                LatTrajCellCG=[],
-                NumIdCell=[],
-                NumIdBirth=[],
-                DTimeTraj=[],
-                BTempTraj=[],
-                BTminTraj=[],
-                BaseAreaTraj=[],
-                TopAreaTraj=[],
-                CoolingRateTraj=[],
-                ExpanRateTraj=[],
-                SpeedTraj=[],
-                DirTraj=[])
-
-        # Loop through features
-        for i, feature in enumerate(rdt["features"]):
-            # Append data from the feature properties to the dictionary
-            # First though, how many points do we have in the trajectory tail?
-            npts = len(feature['properties']['LonTrajCellCG'])
-            mykeys = [k for k in mydict.keys() if k not in ['x', 'y']]
-            for k in mykeys:
-                # print(k, type(feature['properties'][k]), sep=':')
-                try:
-                    if not isinstance(feature['properties'][k], list):
-                        datalist = [i for i in itertools.repeat(feature['properties'][k],npts)]
-                        thisdata, units = descale_rdt(k, datalist)
-                        mydict[k].extend(datalist)
-                    else:
-                        thisdata, units = descale_rdt(k, feature['properties'][k])
-                        mydict[k].extend(thisdata)
-                except:
-                    datalist = [i for i in itertools.repeat(None, npts)]
-                    mydict[k].extend(datalist)
-            # Takes the trajectory lat/lons, reprojects and puts them in a list within a list
-            lons = feature['properties']['LonTrajCellCG']
-            lats = feature['properties']['LatTrajCellCG']
-            x, y = geo.web_mercator(lons, lats)
-            mydict['x'].extend(x)
-            mydict['y'].extend(y)
-        return mydict
-
-
 def calc_dst_point(x1d, y1d, speed, angle):
     """Calculate destination point
 
@@ -359,14 +308,13 @@ class Loader(object):
     """High-level RDT loader"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
-        self.tail_point_loader = TailPointLoader()
         self.centre_point_loader = CentrePointLoader()
 
     def load_date(self, date):
         file_name = self.locator.find_file(date)
         geojson_poly = self.load_polygon(file_name)
         cds_tail_line = self.load_tail_lines(file_name)
-        cds_tail_point = self.tail_point_loader.load(file_name)
+        cds_tail_point = self.load_tail_points(file_name)
         cds_centre_point = self.centre_point_loader.load_date(file_name)
         return [geojson_poly, cds_tail_line, cds_tail_point, cds_centre_point]
 
@@ -458,6 +406,55 @@ class Loader(object):
             xs, ys = geo.web_mercator(lons, lats)
             mydict['xs'].append(xs)
             mydict['ys'].append(ys)
+        return mydict
+
+    @staticmethod
+    def load_tail_points(path):
+        with open(path) as stream:
+            rdt = json.load(stream)
+
+        # Create an empty dictionary
+        mydict = dict(
+                x=[], y=[],
+                LonTrajCellCG=[],
+                LatTrajCellCG=[],
+                NumIdCell=[],
+                NumIdBirth=[],
+                DTimeTraj=[],
+                BTempTraj=[],
+                BTminTraj=[],
+                BaseAreaTraj=[],
+                TopAreaTraj=[],
+                CoolingRateTraj=[],
+                ExpanRateTraj=[],
+                SpeedTraj=[],
+                DirTraj=[])
+
+        # Loop through features
+        for i, feature in enumerate(rdt["features"]):
+            # Append data from the feature properties to the dictionary
+            # First though, how many points do we have in the trajectory tail?
+            npts = len(feature['properties']['LonTrajCellCG'])
+            mykeys = [k for k in mydict.keys() if k not in ['x', 'y']]
+            for k in mykeys:
+                # print(k, type(feature['properties'][k]), sep=':')
+                try:
+                    if not isinstance(feature['properties'][k], list):
+                        datalist = [i for i in itertools.repeat(feature['properties'][k],npts)]
+                        thisdata, units = descale_rdt(k, datalist)
+                        mydict[k].extend(datalist)
+                    else:
+                        thisdata, units = descale_rdt(k, feature['properties'][k])
+                        mydict[k].extend(thisdata)
+                except:
+                    datalist = [i for i in itertools.repeat(None, npts)]
+                    mydict[k].extend(datalist)
+            # Takes the trajectory lat/lons, reprojects and puts them in a list within a list
+            lons = feature['properties']['LonTrajCellCG']
+            lats = feature['properties']['LatTrajCellCG']
+            x, y = geo.web_mercator(lons, lats)
+            mydict['x'].extend(x)
+            mydict['y'].extend(y)
         return mydict
 
 
