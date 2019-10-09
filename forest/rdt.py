@@ -29,7 +29,6 @@ class RenderGroup(object):
             r.visible = value
 
 
-
 class View(object):
     def __init__(self, loader):
         self.loader = loader
@@ -76,21 +75,17 @@ class View(object):
         self.empty_centre_point_source = dict(x1=[], y1=[], x2=[], y2=[], xs=[], ys=[], Arrowxs=[], Arrowys=[], LonG=[], LatG=[], NumIdCell=[], NumIdBirth=[], MvtSpeed=[], MvtDirection=[])
         self.empty_geojson = json.dumps(empty)
 
-        # print(self.empty_geojson)
         self.color_mapper = bokeh.models.CategoricalColorMapper(
-                # palette=bokeh.palettes.Spectral6,
                 palette=['#fee8c8', '#fdbb84', '#e34a33', '#43a2ca', '#a8ddb5'],
                 factors=["Triggering", "Triggering from split", "Growing", "Mature", "Decaying"])
-                # factors=["0", "1", "2", "3", "4"]) # "Triggering", "Triggering from split", "Growing", "Mature", "Decaying"
-
 
         self.source = bokeh.models.GeoJSONDataSource(geojson=self.empty_geojson)
         self.tail_line_source = bokeh.models.ColumnDataSource(self.empty_tail_line_source)
         self.tail_point_source = bokeh.models.ColumnDataSource(self.empty_tail_point_source)
         self.centre_point_source = bokeh.models.ColumnDataSource(self.empty_centre_point_source)
 
-    # Gets called when a menu button is clicked (or when application state changes)
     def render(self, state):
+        """Gets called when a menu button is clicked (or when application state changes)"""
         print(state.valid_time)
         if state.valid_time is not None:
             date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
@@ -105,11 +100,9 @@ class View(object):
                 self.centre_point_source.data = self.centre_point_source
 
     def add_figure(self, figure):
-
         # This is where all the plotting happens (e.g. when the applciation is loaded)
         ## TODO Add in multi-line plotting method for the tails, polygons and points
         print('Adding figure')
-
         circles = figure.circle(x="x", y="y", size=3, source=self.tail_point_source)
         cntr_circles = figure.circle_cross(x="x1", y="y1", size=10, line_color='black', fill_color=None, source=self.centre_point_source)
         future_lines = figure.multi_line(xs="xs", ys="ys", line_color='black', source=self.centre_point_source)
@@ -153,8 +146,8 @@ class View(object):
         figure.add_tools(tool)
         return RenderGroup([renderer, lines, circles, cntr_circles, future_lines, arrows])
 
-class TailLineLoader(object):
 
+class TailLineLoader(object):
     def __init__(self, locator):
         self.locator = locator # Locator(pattern)
 
@@ -163,8 +156,6 @@ class TailLineLoader(object):
 
     @staticmethod
     def load(path):
-        # print(path)
-
         with open(path) as stream:
             rdt = json.load(stream)
 
@@ -237,12 +228,10 @@ class TailPointLoader(object):
             x, y = geo.web_mercator(lons, lats)
             mydict['x'].extend(x)
             mydict['y'].extend(y)
-
         return mydict
 
+
 def calc_dst_point(x1d, y1d, speed, angle):
-
-
     # NB: X and Y need to be lat/lons
 
     # Distance travelled (m) = speed (m/s) * 60 seconds * 60 minutes
@@ -268,12 +257,10 @@ def calc_dst_point(x1d, y1d, speed, angle):
     y2d = math.degrees(y2)
 
     # print('d:',d, 'angle:', angle, 'x1:',x1d, 'x2:', x2d, 'y1:', y1d, 'y2:', y2d)
-
     return x2d, y2d
 
+
 def get_arrow_poly(x2,y2, speed, direction):
-
-
     timestep = 60 # See above function re: 60 mins
     mvt_line_len = speed * 60 * timestep
     mvt_line_dir = direction
@@ -295,29 +282,20 @@ def get_arrow_poly(x2,y2, speed, direction):
     pt2_speed = pt2_len / (timestep * 60)
     # Calculate x3, y3
     x4, y4 = calc_dst_point(x2, y2, pt2_speed, pt2_dir)
-
     return x3, y3, x4, y4
 
 
-
 class CentrePointLoader(object):
-
-    # Holds a centre point, future point and future movement line
-
+    """Holds a centre point, future point and future movement line"""
     def __init__(self, locator):
         self.locator = locator
 
     def load_date(self, date):
         cntr_point = self.load(self.locator.find_file(date))
-
         return cntr_point
-
 
     @staticmethod
     def load(path):
-
-        # print(path)
-
         with open(path) as stream:
             rdt = json.load(stream)
 
@@ -355,14 +333,10 @@ class CentrePointLoader(object):
 
             mydict['Arrowxs'].append([x2[0], x3, x4])
             mydict['Arrowys'].append([y2[0], y3, y4])
-
-        # print(mydict)
-
         return mydict
 
 
 class Loader(object):
-
     def __init__(self, pattern):
         self.locator = Locator(pattern)
         self.poly_loader = PolygonLoader(self.locator)
@@ -375,15 +349,10 @@ class Loader(object):
         cds_tail_line = self.tail_line_loader.load_date(date)
         cds_tail_point = self.tail_point_loader.load_date(date)
         cds_centre_point = self.centre_point_loader.load_date(date)
-
-        # print(cds_centre_point.data)
-
         return [geojson_poly, cds_tail_line, cds_tail_point, cds_centre_point]
 
 
 class PolygonLoader(object):
-    # Keep this loader as it is, and write loader for each RDT data type
-
     def __init__(self, locator):
         self.locator = locator # Locator(pattern)
 
@@ -392,9 +361,6 @@ class PolygonLoader(object):
 
     @staticmethod
     def load(path, date):
-        # print(path)
-        # print(date)
-
         with open(path) as stream:
             rdt = json.load(stream)
 
@@ -430,7 +396,6 @@ class PolygonLoader(object):
                         copy['features'][i]['properties'][k] = fieldValueLUT(k, feature['properties'][k])
                     except:
                         continue
-
         return json.dumps(copy)
 
 
@@ -476,16 +441,13 @@ def descale_rdt(fn, data):
     try:
         dict = rdtUnitsLUT.get(fn, {'scale': 1, 'offset': 0, 'units': '-'})
         scale, offset, units = dict.values()
-
         conv_data = ( data / scale ) + offset
-
         return(conv_data, units)
-
     except:
         return(data, '-')
 
-def fieldNameLUT(fn):
 
+def fieldNameLUT(fn):
     short2long = {
                     'NbSigCell': 'Number of encoded significant RDT-CW cloud cells',
                     'NbConvCell': 'Number of convective cloud cells',
@@ -559,8 +521,8 @@ def fieldNameLUT(fn):
     except:
         return fn
 
-def fieldValueLUT(fn, uid):
 
+def fieldValueLUT(fn, uid):
     rdtLUT = {
         "MapCellCatType": {
             0: "Non convective",
@@ -673,7 +635,6 @@ def fieldValueLUT(fn, uid):
             4: "Very high risk"
         }
     }
-
     try:
         return rdtLUT.get(fn)[uid]
     except:
@@ -683,11 +644,9 @@ def fieldValueLUT(fn, uid):
 class Locator(object):
     def __init__(self, pattern):
         self.pattern = pattern
-        # print(pattern)
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
-        # print(paths)
         bounds = locate.bounds(
                 self.dates(paths),
                 dt.timedelta(minutes=15))
