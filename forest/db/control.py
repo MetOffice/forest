@@ -223,22 +223,6 @@ def previous_item(items, item):
 
 
 @export
-class Navigator(object):
-    """Interface for navigation menu system"""
-    def variables(self, pattern):
-        return ['air_temperature']
-
-    def initial_times(self, pattern):
-        return ['2019-01-01 00:00:00']
-
-    def valid_times(self, pattern, variable, initial_time):
-        return ['2019-01-01 12:00:00']
-
-    def pressures(self, pattern, variable, initial_time):
-        return [750.]
-
-
-@export
 class Converter(object):
     def __init__(self, maps):
         self.maps = maps
