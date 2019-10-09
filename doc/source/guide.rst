@@ -3,65 +3,130 @@ Developer guide
 ===============
 
 Contributing to FOREST should be simple. Building, testing and documenting
-the code should be straight forward.
+the code should be as easy as falling off a log, pardon the pun.
 
-To begin to develop FOREST first take a look at
-the existing issues_ list available at the github_ repository. If a
-suitable issue exists that you would like to work on, go ahead and
-assign yourself to it. Alternatively, if there are no issues that address
-your need open a new issue that captures the feature/bug/enhancement you would
-like to make with enough information to describe the problem at hand. This
-information will make it easy for other developers to contribute, review
-or even see if similar functionality is being worked on elsewhere.
+To get ideas on how to contribute, first take a look at
+the existing issues_ list. If an
+issue exists that you would like to work on, go ahead and
+assign yourself to it or drop a comment so that one of our
+developers can get in touch. 
 
-Issues are organised into projects_ to make it clear to new
-and existing developers what tasks are currently being tackled and which
-we should think about tackling next. Projects are a good way to manage
-the many potential features of FOREST so that nothing falls through the cracks.
+Alternatively, if there are no issues that address
+your need open a new issue that describes the feature or bug you
+are thinking about. A well written issue will make it easy for other
+developers to help you, review your changes or even point out similar
+functionality that may already be being worked on elsewhere.
 
-While the aim is to distribute FOREST to users via conda, e.g.
-using ``conda install -c conda-forge forest``, developers need the source code.
+The issue list is organised into projects_. Projects help us
+prioritise which issues should to be tackled next. It's a good
+idea to take a peak at the currently active project to see
+what is considered urgent and what is deemed less of a priority.
+
+Contributing guidelines
+-----------------------
+
+We recommend forking the repository and submitting a pull request.
+
+1. Fork the repo
+2. Create a branch, named with your feature/bug
+3. Write code
+4. Commit and push changes
+5. Submit pull request
+
+One of our developers will pick it up and after a friendly review will merge it into
+``master`` ready for the next release.
+
+Getting set up
+--------------
+
 Clone the github_ repository into a sensible location on your machine to begin
 work.
+
 
 .. code::
 
    git clone git@github.com:informatics-lab/forest.git
+   
 
-Next create a branch related to your issue. Your branch will
-be reviewed and merged back to master once your developments
-are complete and the reviewer is happy with your improvements.
+.. note::
 
-.. code::
+   If you don't have permissions to work directly on the repository, please fork
+   it under your own GitHub user account.
 
-   git co -b name_of_branch
 
-The above command checks out a local branch called **name_of_branch**. Please
-specify a good name for the branch which is not ``master`` or ``develop``.
-To make this branch appear in the list of branches on the GitHub repository,
-attempt to run ``git push``. This will probably fail but should include the
-latest way to set an upstream branch in the error message. For example,
+Branch
+------
 
-.. code::
-
-   git co --set-upstream origin name_of_branch
-
-The repository ships with a setup.py that should be suitable to
-use inside a virtual environment, either venv or conda.
-
-The test suite is run using the Python standard library unittest module.
+The next thing to do is to create a branch related to your issue. To do this, navigate to
+the top level directory of your cloned repository. The
+name of the branch should be related to the issue or bug you are
+solving.
 
 .. code::
 
-   python -m unittest discover
+   git checkout -b name_of_branch
 
-Remember to check code in regularly, the granularity of commits is not
-extremely important but it may help the reviewer to understand the motivation
-behind each change. Also, push changes to make sure the GitHub copy of your
-branch is up to date prior to review or during discussion with other developers.
+To make this branch appear in the list of branches on the GitHub repository
+run ``git push``. This will fail but should tell you the best way
+to set an upstream branch. For example,
 
+.. code::
+
+   git push --set-upstream origin name_of_branch
+   
+
+Development environment
+-----------------------
+
+It is recommended to develop FOREST in a virtual environment of some kind,
+we recommend miniconda_ since it's fairly light weight. To make sure
+all of the various dependencies and development tools are installed
+in your environment run the following command with your chosen
+environment activated.
+
+.. code::
+
+   conda install -c conda-forge --file requirements.txt --file requirements-dev.txt
+
+The repository ships with
+a ``setup.py`` that should be suitable to
+use inside a virtual environment, either ``venv`` or ``conda``. Once
+you've created and activated an environment it should be possible
+to set the code base to development mode.
+
+.. code::
+
+   python setup.py develop
+   
+Of course, if you develop Python projects using an IDE or if you can't use virtual environments,
+go ahead and use the tools that are most comfortable to you.
+
+Running tests
+-------------
+
+The test suite uses pytest_, to run all of the tests navigate to the root directory
+of your working copy and run the ``pytest`` command. This should produce
+a lot of output but hopefully should indicate to you that all tests
+have passed.
+
+.. code::
+
+   pytest -q
+
+To supress noisy pytest messages the ``-q`` flag is useful.
+
+Advice
+------
+
+Remember to commit and push code regularly, the granularity of commits is a personal
+preference but we recommend small, orthogonal changes to ease the burden
+on our developers. We also appreciate documentation that describes your
+changes and tests that cover your code will go a long way to making
+sure we don't accidentally deprecate your feature.
 
 
 .. _github: https://github.com/informatics-lab/forest
 .. _issues: https://github.com/informatics-lab/forest/issues
 .. _projects: https://github.com/informatics-lab/forest/projects
+.. _pytest: https://docs.pytest.org/en/latest
+.. _miniconda: https://docs.conda.io/en/latest/miniconda.html

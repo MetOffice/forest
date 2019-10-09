@@ -1,7 +1,8 @@
 import datetime as dt
+import numpy as np
 import bokeh.models
-import geo
-from exceptions import FileNotFound, IndexNotFound
+from forest import geo
+from forest.exceptions import FileNotFound, IndexNotFound
 
 
 class UMView(object):
@@ -31,7 +32,7 @@ class UMView(object):
                 renderers=[renderer],
                 tooltips=[
                     ("Name", "@name"),
-                    ("Value", "@image"),
+                    ("Value", "@image @units"),
                     ('Length', '@length'),
                     ('Valid', '@valid{%F %H:%M}'),
                     ('Initial', '@initial{%F %H:%M}'),
@@ -98,7 +99,21 @@ class EIDA50(object):
     def render(self, state):
         print(state)
         if state.valid_time is not None:
-            self.image(dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S'))
+            self.image(self.to_datetime(state.valid_time))
+
+    @staticmethod
+    def to_datetime(d):
+        if isinstance(d, dt.datetime):
+            return d
+        elif isinstance(d, str):
+            try:
+                return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
+        elif isinstance(d, np.datetime64):
+            return d.astype(dt.datetime)
+        else:
+            raise Exception("Unknown value: {}".format(d))
 
     def image(self, time):
         print("EIDA50: {}".format(time))

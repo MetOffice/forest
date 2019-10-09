@@ -1,4 +1,0 @@
-
-
-class SearchFail(Exception):
-    pass

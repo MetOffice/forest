@@ -1,6 +1,8 @@
+import os
+import glob
 import datetime as dt
 import pandas as pd
-import geo
+from forest import geo
 import bokeh.models
 
 
@@ -53,7 +55,12 @@ class View(object):
 class Loader(object):
     def __init__(self, paths):
         self.paths = paths
-        self.frame = self.read(paths)
+        if len(self.paths) > 0:
+            self.frame = self.read(paths)
+
+    @classmethod
+    def pattern(cls, text):
+        return cls(list(sorted(glob.glob(os.path.expanduser(text)))))
 
     def load_date(self, date):
         frame = self.frame.set_index('date')

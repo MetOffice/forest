@@ -9,10 +9,11 @@ import datetime as dt
 import bokeh
 import json
 import numpy as np
-import geo
-import locate
-from util import timeout_cache
-from exceptions import FileNotFound
+from forest import (
+        geo,
+        locate)
+from forest.util import timeout_cache
+from forest.exceptions import FileNotFound
 from bokeh.palettes import GnBu3, OrRd3
 import itertools
 import math
@@ -54,8 +55,8 @@ class View(object):
                         'ConvType': 0,
                         'ConvTypeQuality': 0,
                         'SeverityIntensity': 0,
-                        'MvtSpeed': '',
-                        'MvtDirection': '',
+                        'MvtSpeed': 0,
+                        'MvtDirection': 0,
                         'NumIdCell': 0,
                         'CTPressure': 0,
                         'CTPhase': '',
@@ -134,6 +135,7 @@ class View(object):
                  self.tail_point_source.data,
                  self.centre_point_source.data) = self.loader.load_date(date)
             except FileNotFound:
+                print("rdt.View.render caught FileNotFound", date)
                 self.source.geojson = self.empty_geojson
                 self.tail_line_source.data = self.empty_tail_line
                 self.tail_point_source.data = self.empty_tail_point
@@ -369,7 +371,15 @@ class Loader(object):
             mydict['y1'].extend(y1)
 
             # Now calculate future point and line
-            lon2, lat2 = calc_dst_point(lon, lat, feature['properties']['MvtSpeed'], feature['properties']['MvtDirection'])
+            try:
+                speed = float(feature['properties']['MvtSpeed'])
+            except ValueError:
+                speed = 0
+            try:
+                direction = float(feature['properties']['MvtDirection'])
+            except ValueError:
+                direction = 0
+            lon2, lat2 = calc_dst_point(lon, lat, speed, direction)
             x2, y2 = geo.web_mercator(lon2, lat2)
             mydict['x2'].extend(x2)
             mydict['y2'].extend(y2)
@@ -377,7 +387,7 @@ class Loader(object):
             mydict['ys'].append([y1, y2])
 
             # Now calculate arrow polygon
-            x3d, y3d, x4d, y4d = get_arrow_poly(lon2, lat2, feature['properties']['MvtSpeed'], feature['properties']['MvtDirection'])
+            x3d, y3d, x4d, y4d = get_arrow_poly(lon2, lat2, speed, direction)
             [x3, x4], [y3, y4] = geo.web_mercator([x3d, x4d], [y3d, y4d])
 
             mydict['Arrowxs'].append([x2[0], x3, x4])
@@ -699,6 +709,7 @@ def fieldValueLUT(fn, uid):
 
 class Locator(object):
     def __init__(self, pattern):
+        print("rdt.Locator('{}')".format(pattern))
         self.pattern = pattern
 
     def find_file(self, valid_date):
@@ -727,7 +738,29 @@ class Locator(object):
             self.parse_date(p) for p in paths],
             dtype='datetime64[s]')
 
-    def parse_date(self, path):
+    @staticmethod
+    def parse_date(path):
         groups = re.search(r"[0-9]{12}", os.path.basename(path))
         if groups is not None:
             return dt.datetime.strptime(groups[0], "%Y%m%d%H%M")
+
+
+class Coordinates(object):
+    """Menu system interface"""
+    def initial_time(self, path):
+        times = self.valid_times(path, None)
+        if len(times) > 0:
+            return times[0]
+        return None
+
+    def variables(self, path):
+        return ["RDT"]
+
+    def valid_times(self, path, variable):
+        date = Locator.parse_date(path)
+        if date is None:
+            return []
+        return [str(date)]
+
+    def pressures(self, path, variable):
+        return None

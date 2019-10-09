@@ -2,7 +2,7 @@ import os
 from functools import lru_cache
 import numpy as np
 from .connection import Connection
-from .exceptions import SearchFail
+from forest.exceptions import SearchFail
 
 
 __all__ = [

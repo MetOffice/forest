@@ -3,28 +3,40 @@ import bokeh.models
 import bokeh.events
 import numpy as np
 import os
-import satellite
-import data
-import view
-import images
-import earth_networks
-import rdt
-import geo
-import colors
-import db
-import config as cfg
-import parse_args
-from util import Observable
-from db.util import autolabel
+import glob
+from forest import (
+        satellite,
+        data,
+        load,
+        view,
+        images,
+        earth_networks,
+        rdt,
+        geo,
+        colors,
+        db,
+        keys,
+        redux,
+        unified_model,
+        navigate,
+        parse_args)
+import forest.config as cfg
+from forest.observe import Observable
+from forest.db.util import autolabel
 import datetime as dt
 
 
-def main():
-    args = parse_args.parse_args()
-    if args.database != ':memory:':
-        assert os.path.exists(args.database), "{} must exist".format(args.database)
-    database = db.Database.connect(args.database)
-    config = cfg.load_config(args.config_file)
+def main(argv=None):
+    args = parse_args.parse_args(argv)
+    if len(args.files) > 0:
+        config = cfg.from_files(args.files, args.file_type)
+    else:
+        config = cfg.load_config(args.config_file)
+
+    if args.database is not None:
+        if args.database != ':memory:':
+            assert os.path.exists(args.database), "{} must exist".format(args.database)
+        database = db.Database.connect(args.database)
 
     # Full screen map
     lon_range = (0, 30)
@@ -99,36 +111,16 @@ def main():
         figure.add_layout(colorbar, 'center')
 
     # Database/File system loader(s)
-    def replace_dir(args_dir, group_dir):
-        if args_dir is None:
-            return group_dir
-        elif group_dir is None:
-            return args_dir
-        else:
-            if os.path.isabs(group_dir):
-                return group_dir
-            else:
-                return os.path.join(args_dir, group_dir)
-
     for group in config.file_groups:
+        print(group)
         if group.label not in data.LOADERS:
             if group.locator == "database":
-                locator = db.Locator(
-                    database.connection,
-                    directory=replace_dir(args.directory, group.directory))
-                loader = data.DBLoader(group.label, group.pattern, locator)
-                data.add_loader(group.label, loader)
-            elif group.locator == "file_system":
-                if args.directory is not None:
-                    pattern = os.path.join(args.directory, group.pattern)
-                else:
-                    pattern = group.pattern
-                loader = data.file_loader(
-                        group.file_type,
-                        pattern)
-                data.add_loader(group.label, loader)
+                loader = load.Loader.group_args(
+                        group, args, database=database)
             else:
-                raise Exception("Unknown locator: {}".format(group.locator))
+                loader = load.Loader.group_args(
+                        group, args)
+            data.add_loader(group.label, loader)
 
     renderers = {}
     viewers = {}
@@ -250,24 +242,51 @@ def main():
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
-    # Pre-select menu choices (if any)
-    state = None
-    for _, pattern in config.patterns:
-        state = db.initial_state(database, pattern=pattern)
-        break
-
     # Pre-select first layer
     for name, _ in config.patterns:
         image_controls.select(name)
         break
 
-    # Add prototype database controls
-    controls = db.Controls(database, patterns=config.patterns, state=state)
-    controls.subscribe(controls.render)
-    controls.subscribe(artist.on_state)
+    if len(args.files) > 0:
+        navigator = navigate.FileSystem.file_type(
+                args.files,
+                args.file_type)
+    elif args.database is not None:
+        navigator = database
+    else:
+        navigator = navigate.Config(config)
+
+    # Pre-select menu choices (if any)
+    initial_state = {}
+    for _, pattern in config.patterns:
+        initial_state = db.initial_state(navigator, pattern=pattern)
+        break
+    middlewares = [
+        db.Log(verbose=True),
+        keys.navigate,
+        db.InverseCoordinate("pressure"),
+        db.next_previous,
+        db.Controls(navigator),
+        db.Converter({
+            "valid_times": db.stamps,
+            "inital_times": db.stamps
+        })
+    ]
+    store = redux.Store(
+        db.reducer,
+        initial_state=initial_state,
+        middlewares=middlewares)
+    controls = db.ControlView()
+    controls.subscribe(store.dispatch)
+    store.subscribe(controls.render)
+    old_states = (db.Stream()
+                    .listen_to(store)
+                    .map(lambda x: db.State(**x)))
+    old_states.subscribe(artist.on_state)
 
     # Ensure all listeners are pointing to the current state
-    controls.notify(controls.state)
+    store.notify(store.state)
+    store.dispatch(db.set_value("patterns", config.patterns))
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
@@ -322,7 +341,7 @@ def main():
             series_figure,
             config.file_groups,
             directory=args.directory)
-    controls.subscribe(series.on_state)
+    old_states.subscribe(series.on_state)
     for f in figures:
         f.on_event(bokeh.events.Tap, series.on_tap)
         f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
@@ -365,11 +384,16 @@ def main():
 
     compact_button.on_click(on_compact)
 
+    # Add key press support
+    key_press = keys.KeyPress()
+    key_press.subscribe(store.dispatch)
+
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"
     document.add_root(control_root)
     document.add_root(series_row)
     document.add_root(figure_row)
+    document.add_root(key_press.hidden_button)
 
 
 from itertools import cycle

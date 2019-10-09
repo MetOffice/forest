@@ -2,207 +2,103 @@
 import netCDF4
 import datetime as dt
 import numpy as np
-import util
 
 
-class NoData(Exception):
+class AxisNotFound(Exception):
     pass
 
 
-def scrape(path):
-    """All meta-data in single transaction"""
-    scheme = {
-        'dimensions': [],
-        'variables': {}
-    }
-    with netCDF4.Dataset(path) as dataset:
-        for d in dataset.dimensions:
-            scheme['dimensions'].append(d)
-        for v, obj in dataset.variables.items():
-            scheme['variables'][v] = {
-                'dimensions': obj.dimensions,
-                'attrs': {a: getattr(obj, a) for a in obj.ncattrs()}
-            }
-    return scheme
+def ndindex(masks, axes):
+    """N-dimensional array indexing
 
+    Given logical masks and their axes generate
+    a multi-dimensional slice
 
-def coordinate_variables(scheme):
-    """In-memory coordinate variable detection"""
-    coords = set()
-    for item in scheme.items():
-        attrs = item['attrs']
-        if 'coordinates' not in attrs:
-            continue
-        for c in attrs['coordinates'].split():
-            coords.add(c)
-    return coords
-
-
-def dimension_variables(scheme):
-    """In-memory dimension variable detection"""
-    names = set()
-    for item in scheme.items():
-        for d in scheme['dimensions']:
-            if d in scheme['variables']:
-                names.add(d)
-    return names
-
-
-def load_variables(path, names):
-    values = {}
-    with netCDF4.Dataset(path) as dataset:
-        for name in names:
-            try:
-                var = dataset.variables[name]
-            except KeyError:
-                continue
-            if 'time' in name:
-                datetimes = netCDF4.num2date(var[:], units=var.units)
-                values[name] = np.array(datetimes, dtype='datetime64[s]')
-            else:
-                values[name] = var[:]
-    return values
-
-
-class Locator(object):
-    def __init__(self, paths):
-        self.paths = np.asarray(paths)
-        self.initial_times = np.array([
-                util.initial_time(p) for p in paths],
-                dtype='datetime64[s]')
-
-    def search(self, initial):
-        if isinstance(initial, str):
-            initial = np.datetime64(initial, 's')
-        return self.paths[self.initial_times == initial]
-
-
-class GlobalUM(object):
-    """Locator for collection of UM diagnostic files
-
-    Uses file naming convention and meta-data stored in
-    files to quickly look up file/index related to point
-    in space/time
+    :returns: tuple(slices)
     """
-    def __init__(self, paths):
-        self.locator = Locator(paths)
-        self.paths = np.asarray(paths)
-        self.valid_times = {}
-        self.pressures = {}
-        for path in paths:
-            with netCDF4.Dataset(path) as dataset:
-                var = dataset.variables["time"]
-                dates = netCDF4.num2date(var[:],
-                        units=var.units)
-                if isinstance(dates, dt.datetime):
-                    dates = np.array([dates], dtype=object)
-                self.valid_times[path] = dates.astype(
-                        'datetime64[s]')
-                self.pressures[path] = dataset.variables[
-                        'pressure'][:]
-
-    def search(self, *args, **kwargs):
-        return self.path_points(*args, **kwargs)
-
-    def path_index(self, variable, initial, valid, pressure):
-        path, pts = self.path_points(variable, initial, valid, pressure)
-        return path, np.argmax(pts)
-
-    def path_points(self, variable, initial, valid, pressure):
-        if isinstance(valid, str):
-            valid = np.datetime64(valid, 's')
-        paths = self.run_paths(initial)
-        for path in paths:
-            with netCDF4.Dataset(path) as dataset:
-                valid_times = self._valid_times(dataset, variable)
-                pressures = self._pressures(dataset, variable)
-                if pressures is not None:
-                    pts = points(
-                            valid_times,
-                            pressures,
-                            valid,
-                            pressure)
-                else:
-                    pts = time_points(
-                            valid_times,
-                            valid)
-                if pts.any():
-                    return path, pts
-        raise NoData('initial: {} valid: {} pressure: {}'.format(initial, valid, pressure))
-
-    @staticmethod
-    def _pressures(dataset, variable):
-        """Search dataset for pressure axis"""
-        var = dataset.variables[variable]
-        for d in var.dimensions:
-            if d.startswith('pressure'):
-                if d in dataset.variables:
-                    return dataset.variables[d][:]
-        coords = var.coordinates.split()
-        for c in coords:
-            if c.startswith('pressure'):
-                return dataset.variables[c][:]
-
-    @staticmethod
-    def _valid_times(dataset, variable):
-        """Search dataset for time axis"""
-        var = dataset.variables[variable]
-        for d in var.dimensions:
-            if d.startswith('time'):
-                if d in dataset.variables:
-                    tvar = dataset.variables[d]
-                    return np.array(
-                        netCDF4.num2date(tvar[:], units=tvar.units),
-                        dtype='datetime64[s]')
-        coords = var.coordinates.split()
-        for c in coords:
-            if c.startswith('time'):
-                tvar = dataset.variables[c]
-                return np.array(
-                    netCDF4.num2date(tvar[:], units=tvar.units),
-                    dtype='datetime64[s]')
-
-    def run_paths(self, initial):
-        return self.locator.search(initial)
+    joint = {}
+    for mask, axis in zip(masks, axes):
+        if axis in joint:
+            joint[axis] = joint[axis] & mask
+        else:
+            joint[axis] = mask
+    rank = max(joint.keys()) + 1  # find highest dimension
+    return axes_pts([joint[i] for i in range(rank)])
 
 
-
-def file_name(pattern, initial, length):
-    if isinstance(initial, np.datetime64):
-        initial = initial.astype(dt.datetime)
-    if isinstance(length, np.timedelta64):
-        length = length / np.timedelta64(1, 'h')
-    return pattern.format(initial, int(length))
-
-
-def lengths(times, initial):
-    if isinstance(initial, dt.datetime):
-        initial = np.datetime64(initial, 's')
-    if times.dtype == 'O':
-        times = times.astype('datetime64[s]')
-    return (times - initial) / np.timedelta64(1, 'h')
+def axes_pts(masks):
+    slices = []
+    for mask in masks:
+        pts = np.where(mask)[0][0]
+        slices.append(pts)
+    return tuple(slices)
 
 
-def points(times, pressures, time, pressure):
-    """Locate slice of array for time/pressure"""
-    return (
-            pressure_points(pressures, pressure) &
-            time_points(times, time))
+def coord_mask(name, values, value):
+    return {
+        "time": time_mask,
+        "pressure": pressure_mask}[name](values, value)
 
 
-def pressure_points(pressures, pressure):
-    ptol = 1
-    return np.abs(pressures - pressure) < ptol
-
-
-def time_points(times, time):
-    ttol = np.timedelta64(15 * 60, 's')
-    if times.dtype == 'O':
-        times = times.astype('datetime64[s]')
-    if isinstance(time, dt.datetime):
+def time_mask(times, time):
+    """Logical mask that selects particular time"""
+    if isinstance(time, (str, dt.datetime)):
         time = np.datetime64(time, 's')
-    return np.abs(times - time) < ttol
+    if isinstance(times, list):
+        times = np.array(times, dtype='datetime64[s]')
+    return times == time
 
 
-def pressure_index(pressures, pressure):
-    return np.argmin(np.abs(pressures - pressure))
+def pressure_mask(pressures, pressure, rtol=0.01):
+    """Logical mask that selects particular pressure"""
+    if isinstance(pressures, list):
+        pressures = np.array(pressures, dtype='d')
+    return (np.abs(pressures - pressure) / np.abs(pressure)) < rtol
+
+
+def pressure_axis(path, variable):
+    return _axis("pressure", path, variable)
+
+
+def time_axis(path, variable):
+    return _axis("time", path, variable)
+
+
+def _axis(name, path, variable):
+    dims, coords = load_dim_coords(path, variable)
+    value = axis(name, dims, coords)
+    if value is None:
+        msg = "{} axis not found: '{}' '{}'".format(name.capitalize(), path, variable)
+        raise AxisNotFound(msg)
+    else:
+        return value
+
+
+def load_dim_coords(path, variable):
+    with netCDF4.Dataset(path) as dataset:
+        var = dataset.variables[variable]
+        dims = var.dimensions
+        coords = getattr(var, "coordinates", "")
+    return dims, coords
+
+
+def has_coord(coord, dims, coords):
+    return coord_var(coord, dims, coords) is not None
+
+
+def coord_var(coord, dims, coords):
+    for d in dims:
+        if d.startswith(coord):
+            return d
+    for c in coords.split():
+        if c.startswith(coord):
+            return c
+
+
+def axis(name, dims, coords):
+    for i, d in enumerate(dims):
+        if d.startswith(name):
+            return i
+    for c in coords.split():
+        if c.startswith(name):
+            return 0

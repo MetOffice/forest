@@ -6,3 +6,5 @@ __pycache__
 kubeconfig
 *.swp
 node_modules
+*.egg-info
+.coverage

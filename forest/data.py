@@ -1,25 +1,41 @@
 import os
 import datetime as dt
 import re
-import cartopy
+try:
+    import cartopy
+except ImportError:
+    # ReadTheDocs unable to pip install cartopy
+    pass
 import glob
 import json
 import pandas as pd
 import numpy as np
 import netCDF4
-import cf_units
-import satellite
-import rdt
-import earth_networks
-import geo
+try:
+    import cf_units
+except ImportError:
+    # ReadTheDocs unable to pip install cf-units
+    pass
+from forest import (
+        satellite,
+        rdt,
+        earth_networks,
+        geo,
+        disk)
 import bokeh.models
 from collections import OrderedDict, defaultdict
 from functools import partial
 import scipy.ndimage
-import shapely.geometry
-from util import timeout_cache, initial_time, coarsify
-from db.exceptions import SearchFail
-import disk
+try:
+    import shapely.geometry
+except ImportError:
+    # ReadTheDocs unable to pip install shapely
+    pass
+from forest.util import (
+        timeout_cache,
+        initial_time,
+        coarsify)
+from forest.exceptions import SearchFail
 
 
 # Application data shared across documents
@@ -73,17 +89,6 @@ def add_loader(name, loader):
     global LOADERS
     if name not in LOADERS:
         LOADERS[name] = loader
-
-
-def file_loader(file_type, pattern):
-    if file_type.lower() == 'rdt':
-        return rdt.Loader(pattern)
-    elif file_type.lower() == 'gpm':
-        return GPM(pattern)
-    elif file_type.lower() == 'earthnetworks':
-        return earth_networks.Loader(pattern)
-    elif file_type.lower() == 'eida50':
-        return satellite.EIDA50(pattern)
 
 
 def load_coastlines():
@@ -273,11 +278,26 @@ class DBLoader(object):
             "dh": [],
             "image": [],
             "name": [],
+            "units": [],
             "valid": [],
             "initial": [],
             "length": [],
             "level": []
         }
+
+    @staticmethod
+    def to_datetime(d):
+        if isinstance(d, dt.datetime):
+            return d
+        elif isinstance(d, str):
+            try:
+                return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
+        elif isinstance(d, np.datetime64):
+            return d.astype(dt.datetime)
+        else:
+            raise Exception("Unknown value: {}".format(d))
 
     def image(self, state):
         if not self.valid(state):
@@ -290,12 +310,14 @@ class DBLoader(object):
                 state.initial_time,
                 state.valid_time,
                 state.pressure)
+            print("{}() {} {}".format(self.__class__.__name__, path, pts))
         except SearchFail:
             return self.empty_image
 
-        valid = dt.datetime.strptime(state.valid_time, "%Y-%m-%d %H:%M:%S")
-        initial = dt.datetime.strptime(state.initial_time, "%Y-%m-%d %H:%M:%S")
+        valid = self.to_datetime(state.valid_time)
+        initial = self.to_datetime(state.initial_time)
         hours = (valid - initial).total_seconds() / (60*60)
+        units = self.read_units(path, state.variable)
         length = "T{:+}".format(int(hours))
         data = load_image_pts(
                 path,
@@ -307,11 +329,22 @@ class DBLoader(object):
         else:
             level = "Surface"
         data["name"] = [self.name]
+        data["units"] = [units]
         data["valid"] = [valid]
         data["initial"] = [initial]
         data["length"] = [length]
         data["level"] = [level]
         return data
+
+    @staticmethod
+    def read_units(filename,parameter):
+        dataset = netCDF4.Dataset(filename)
+        veep = dataset.variables[parameter]
+        # read the units and assign a blank value if there aren't any:
+        units = getattr(veep, 'units', '')
+        dataset.close()
+        return units
+
 
     def valid(self, state):
         if state.variable is None:
@@ -323,6 +356,8 @@ class DBLoader(object):
         if state.pressures is None:
             return False
         if len(state.pressures) > 0:
+            if state.pressure is None:
+                return False
             if not self.has_pressure(state.pressures, state.pressure):
                 return False
         return True
@@ -361,20 +396,73 @@ class SeriesLoader(object):
             data["y"] += list(segment["y"])
         return data
 
-    def series_file(self,
-            path,
-            variable,
-            lon0,
-            lat0,
-            pressure=None):
+    def series_file(self, *args, **kwargs):
+        try:
+            times, values = self._load_netcdf4(*args, **kwargs)
+        except:
+            times, values = self._load_cube(*args, **kwargs)
+        return {
+            "x": times,
+            "y": values}
+
+    def _load_cube(self, path, variable, lon0, lat0, pressure=None):
+        import iris
+        cube = iris.load_cube(path, iris.Constraint(variable))
+        coord = cube.coord('time')
+        times = netCDF4.num2date(coord.points, units=str(coord.units))
+        lons = cube.coord('longitude').points
+        lats = cube.coord('latitude').points
+        if lons.ndim == 2:
+            lons = lons[0, :]
+        if lats.ndim == 2:
+            lats = lats[:, 0]
+        lons = geo.to_180(lons)
+        i = np.argmin(np.abs(lons - lon0))
+        j = np.argmin(np.abs(lats - lat0))
+        values = cube.data
+
+        # Index array based on coordinate ordering
+        pts = []
+        for c in cube.coords():
+            if c.name() == 'longitude':
+                pts.append(i)
+            elif c.name() == 'latitude':
+                pts.append(j)
+            else:
+                pts.append(slice(None))
+        pts = tuple(pts)
+        values = values[pts]
+
+        # Filter time/pressure axes to select correct pressure
+        if self._has_dim(cube, 'pressure'):
+            pressures = cube.coord('pressure').points
+            if len(cube.ndim) == 3:
+                pts = self.search(pressures, pressure)
+                values = values[pts]
+                if isinstance(times, dt.datetime):
+                    times = [times]
+                else:
+                    times = times[pts]
+            else:
+                mask = self.search(pressures, pressure)
+                values = values[:, mask][:, 0]
+        return times, values
+
+    @staticmethod
+    def _has_dim(cube, label):
+        import iris
+        try:
+            cube.coord(label)
+        except iris.exceptions.CoordinateNotFoundError:
+            return False
+        return True
+
+    def _load_netcdf4(self, path, variable, lon0, lat0, pressure=None):
         with netCDF4.Dataset(path) as dataset:
             try:
                 var = dataset.variables[variable]
             except KeyError:
-                return {
-                    "x": [],
-                    "y": []
-                }
+                return [], []
             lons = geo.to_180(self._longitudes(dataset, var))
             lats = self._latitudes(dataset, var)
             i = np.argmin(np.abs(lons - lon0))
@@ -395,9 +483,7 @@ class SeriesLoader(object):
                 else:
                     mask = self.search(pressures, pressure)
                     values = values[:, mask][:, 0]
-        return {
-            "x": times,
-            "y": values}
+        return times, values
 
     @staticmethod
     def _times(dataset, variable):
@@ -564,8 +650,12 @@ class SeriesLocator(object):
         for path in paths:
             time = initial_time(path)
             if time is None:
-                # NOTE: Could read reference_time from file
-                continue
+                try:
+                    with netCDF4.Dataset(path) as dataset:
+                        var = dataset.variables["forecast_reference_time"]
+                        time = netCDF4.num2date(var[:], units=var.units)
+                except KeyError:
+                    continue
             self.table[self.key(time)].append(path)
 
     def initial_times(self):
@@ -647,10 +737,6 @@ def load_image(path, variable, itime, ipressure):
     return load_image_pts(path, variable, (itime,), (itime, ipressure))
 
 
-class FastLoadFailure(Exception):
-    pass
-
-
 def load_image_pts(path, variable, pts_3d, pts_4d):
     key = (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
     if key in IMAGES:
@@ -658,24 +744,28 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
         return IMAGES[key]
     else:
         try:
-            lons, lats, values = load_image_pts_fast(path, variable, pts_3d, pts_4d)
+            lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
         except:
-            lons, lats, values = load_image_pts_cube(path, variable, pts_3d, pts_4d)
+            lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
 
     # Units
-    # if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
-    #     if var.units == "mm h-1":
-    #         values = values
-    #     else:
-    #         values = convert_units(values, var.units, "kg m-2 hour-1")
-    # elif var.units == "K":
-    #     values = convert_units(values, "K", "Celsius")
+    if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
+        if units == "mm h-1":
+            values = values
+        else:
+            values = convert_units(values, units, "kg m-2 hour-1")
+    elif units == "K":
+        values = convert_units(values, "K", "Celsius")
 
     # DEBUG
     print(pts_3d, values.shape)
 
     # Coarsify images
-    fraction = 1 # 0.25
+    threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199
+    if values.size > threshold:
+        fraction = 0.25
+    else:
+        fraction = 1.
     lons, lats, values = coarsify(
         lons, lats, values, fraction)
 
@@ -684,27 +774,24 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
     return image
 
 
-def load_image_pts_cube(path, variable, pts_3d, pts_4d):
-
+def _load_cube(path, variable, pts_3d, pts_4d):
     import iris
-    # Do something with cubes
     cube = iris.load_cube(path, iris.Constraint(variable))
-
+    units = cube.units
     lons = cube.coord('longitude').points
     if lons.ndim == 2:
         lons = lons[0, :]
     lats = cube.coord('latitude').points
     if lons.ndim == 2:
         lats = lats[:, 0]
-
     if cube.data.ndim == 4:
-        return lons, lats, cube.data[pts_4d]
+        values = cube.data[pts_4d]
     else:
-        return lons, lats, cube.data[pts_3d]
+        values = cube.data[pts_3d]
+    return lons, lats, values, units
 
 
-def load_image_pts_fast(path, variable, pts_3d, pts_4d):
-    print("loading: {}".format(key))
+def _load_netcdf4(path, variable, pts_3d, pts_4d):
     with netCDF4.Dataset(path) as dataset:
         try:
             var = dataset.variables[variable]
@@ -719,12 +806,11 @@ def load_image_pts_fast(path, variable, pts_3d, pts_4d):
             if "latitude" in d:
                 lats = dataset.variables[d][:]
         if len(var.dimensions) == 4:
-            return lons, lats, var[pts_4d]
+            values = var[pts_4d]
         else:
-            return lons, lats, var[pts_3d]
-
-
-
+            values = var[pts_3d]
+        units = var.units
+    return lons, lats, values, units
 
 
 def convert_units(values, old_unit, new_unit):

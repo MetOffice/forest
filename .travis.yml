@@ -1,5 +1,51 @@
-language: python
-python:
-- '3.6'
-install: echo "Hello, install!"
-script: echo "Hello, script!"
+language: minimal
+dist: xenial
+
+env:
+  matrix:
+    - PYTHON_VERSION="3.6"
+    - PYTHON_VERSION="3.7"
+
+git:
+  # We need a deep clone so that we can compute the age of the files using their git history.
+  depth: 10000
+
+install:
+  # Install miniconda
+  # -----------------
+  - echo "Installing miniconda"
+  - CONDA_BASE="http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+  - wget --quiet "${CONDA_BASE}" -O miniconda.sh
+  - bash miniconda.sh -b -p ${HOME}/miniconda
+  - export PATH="${HOME}/miniconda/bin:$PATH"
+
+  # Create the testing environment
+  # ------------------------------
+  - echo "Configure conda and create test environment"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set show_channel_urls True
+  - conda config --add channels conda-forge
+  - conda update --quiet conda
+  - ENV_NAME="test-environment"
+  - conda create --quiet -n ${ENV_NAME} python=${PYTHON_VERSION} pip
+  - source activate ${ENV_NAME}
+
+  # Customise the testing environment
+  # ---------------------------------
+  - echo "Install forest dependencies"
+  - conda install --quiet -n ${ENV_NAME} --file requirements.txt --file requirements-dev.txt
+
+  # Output debug info
+  # -----------------
+  - conda list -n ${ENV_NAME}
+  - conda list -n ${ENV_NAME} --explicit
+  - conda info -a
+
+  # Build the package
+  # -----------------
+  - pip install -e .
+
+script:
+  - pytest
+
+after_success: coveralls
