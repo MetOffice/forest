@@ -1,4 +1,5 @@
 import bokeh.plotting
+import bokeh.models
 import bokeh.events
 import numpy as np
 import os
@@ -146,6 +147,7 @@ def main():
         renderers[name] = [
                 viewer.add_figure(f)
                 for f in figures]
+
     artist = Artist(viewers, renderers)
     renderers = []
     for _, r in artist.renderers.items():
@@ -205,14 +207,19 @@ def main():
         step=0.1,
         value=1.0,
         show_value=False)
-    # custom_js = bokeh.models.CustomJS(
-    #         args=dict(renderers=renderers),
-    #         code="""
-    #         renderers.forEach(function (r) {
-    #             r.glyph.global_alpha = cb_obj.value
-    #         })
-    #         """)
-    # slider.js_on_change("value", custom_js)
+
+    def is_image(renderer):
+        return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
+
+    image_renderers = [r for r in renderers if is_image(r)]
+    custom_js = bokeh.models.CustomJS(
+            args=dict(renderers=image_renderers),
+            code="""
+            renderers.forEach(function (r) {
+                r.glyph.global_alpha = cb_obj.value
+            })
+            """)
+    slider.js_on_change("value", custom_js)
 
     colors_controls = colors.Controls(
             color_mapper, "Plasma", 256)
