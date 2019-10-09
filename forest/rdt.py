@@ -76,7 +76,7 @@ class View(object):
             ]
         }
         self.empty_geojson = json.dumps(empty)
-        self.empty_tail_line_source = dict(
+        self.empty_tail_line = dict(
                 xs=[], ys=[],
                 LonTrajCellCG=[],
                 LatTrajCellCG=[],
@@ -91,7 +91,7 @@ class View(object):
                 ExpanRateTraj=[],
                 SpeedTraj=[],
                 DirTraj=[])
-        self.empty_tail_point_source = dict(
+        self.empty_tail_point = dict(
                 x=[], y=[],
                 LonTrajCellCG=[],
                 LatTrajCellCG=[],
@@ -106,7 +106,7 @@ class View(object):
                 ExpanRateTraj=[],
                 SpeedTraj=[],
                 DirTraj=[])
-        self.empty_centre_point_source = dict(
+        self.empty_centre_point = dict(
                 x1=[], y1=[], x2=[], y2=[], xs=[], ys=[],
                 Arrowxs=[],
                 Arrowys=[],
@@ -120,9 +120,9 @@ class View(object):
                 palette=['#fee8c8', '#fdbb84', '#e34a33', '#43a2ca', '#a8ddb5'],
                 factors=["Triggering", "Triggering from split", "Growing", "Mature", "Decaying"])
         self.source = bokeh.models.GeoJSONDataSource(geojson=self.empty_geojson)
-        self.tail_line_source = bokeh.models.ColumnDataSource(self.empty_tail_line_source)
-        self.tail_point_source = bokeh.models.ColumnDataSource(self.empty_tail_point_source)
-        self.centre_point_source = bokeh.models.ColumnDataSource(self.empty_centre_point_source)
+        self.tail_line_source = bokeh.models.ColumnDataSource(self.empty_tail_line)
+        self.tail_point_source = bokeh.models.ColumnDataSource(self.empty_tail_point)
+        self.centre_point_source = bokeh.models.ColumnDataSource(self.empty_centre_point)
 
     def render(self, state):
         """Gets called when a menu button is clicked (or when application state changes)"""
@@ -135,9 +135,9 @@ class View(object):
                  self.centre_point_source.data) = self.loader.load_date(date)
             except FileNotFound:
                 self.source.geojson = self.empty_geojson
-                self.tail_line_source.data = self.empty_tail_line_source
-                self.tail_point_source.data = self.empty_tail_point_source
-                self.centre_point_source.data = self.empty_centre_point_source
+                self.tail_line_source.data = self.empty_tail_line
+                self.tail_point_source.data = self.empty_tail_point
+                self.centre_point_source.data = self.empty_centre_point
 
     def add_figure(self, figure):
         """This is where all the plotting happens (e.g. when the applciation is loaded)"""
