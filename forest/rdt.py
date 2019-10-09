@@ -1,3 +1,7 @@
+"""
+Rapidly Developing Thunderstorms (RDT)
+--------------------------------------
+"""
 import os
 import glob
 import re
@@ -15,6 +19,7 @@ import math
 
 
 class RenderGroup(object):
+    """Collection of renderers that act as one"""
     def __init__(self, renderers, visible=False):
         self.renderers = renderers
         self.visible = visible
@@ -30,6 +35,7 @@ class RenderGroup(object):
 
 
 class View(object):
+    """Rapidly Developing Thunderstorms (RDT) visualisation"""
     def __init__(self, loader):
         self.loader = loader
         empty = {
@@ -69,16 +75,50 @@ class View(object):
                 }
             ]
         }
-
-        self.empty_tail_line_source = dict(xs=[], ys=[], LonTrajCellCG=[], LatTrajCellCG=[], NumIdCell=[], NumIdBirth=[], DTimeTraj=[], BTempTraj=[], BTminTraj=[], BaseAreaTraj=[], TopAreaTraj=[], CoolingRateTraj=[], ExpanRateTraj=[], SpeedTraj=[], DirTraj=[])
-        self.empty_tail_point_source = dict(x=[], y=[], LonTrajCellCG=[], LatTrajCellCG=[], NumIdCell=[], NumIdBirth=[], DTimeTraj=[], BTempTraj=[], BTminTraj=[], BaseAreaTraj=[], TopAreaTraj=[], CoolingRateTraj=[], ExpanRateTraj=[], SpeedTraj=[], DirTraj=[])
-        self.empty_centre_point_source = dict(x1=[], y1=[], x2=[], y2=[], xs=[], ys=[], Arrowxs=[], Arrowys=[], LonG=[], LatG=[], NumIdCell=[], NumIdBirth=[], MvtSpeed=[], MvtDirection=[])
         self.empty_geojson = json.dumps(empty)
-
+        self.empty_tail_line_source = dict(
+                xs=[], ys=[],
+                LonTrajCellCG=[],
+                LatTrajCellCG=[],
+                NumIdCell=[],
+                NumIdBirth=[],
+                DTimeTraj=[],
+                BTempTraj=[],
+                BTminTraj=[],
+                BaseAreaTraj=[],
+                TopAreaTraj=[],
+                CoolingRateTraj=[],
+                ExpanRateTraj=[],
+                SpeedTraj=[],
+                DirTraj=[])
+        self.empty_tail_point_source = dict(
+                x=[], y=[],
+                LonTrajCellCG=[],
+                LatTrajCellCG=[],
+                NumIdCell=[],
+                NumIdBirth=[],
+                DTimeTraj=[],
+                BTempTraj=[],
+                BTminTraj=[],
+                BaseAreaTraj=[],
+                TopAreaTraj=[],
+                CoolingRateTraj=[],
+                ExpanRateTraj=[],
+                SpeedTraj=[],
+                DirTraj=[])
+        self.empty_centre_point_source = dict(
+                x1=[], y1=[], x2=[], y2=[], xs=[], ys=[],
+                Arrowxs=[],
+                Arrowys=[],
+                LonG=[],
+                LatG=[],
+                NumIdCell=[],
+                NumIdBirth=[],
+                MvtSpeed=[],
+                MvtDirection=[])
         self.color_mapper = bokeh.models.CategoricalColorMapper(
                 palette=['#fee8c8', '#fdbb84', '#e34a33', '#43a2ca', '#a8ddb5'],
                 factors=["Triggering", "Triggering from split", "Growing", "Mature", "Decaying"])
-
         self.source = bokeh.models.GeoJSONDataSource(geojson=self.empty_geojson)
         self.tail_line_source = bokeh.models.ColumnDataSource(self.empty_tail_line_source)
         self.tail_point_source = bokeh.models.ColumnDataSource(self.empty_tail_point_source)
@@ -86,23 +126,21 @@ class View(object):
 
     def render(self, state):
         """Gets called when a menu button is clicked (or when application state changes)"""
-        print(state.valid_time)
         if state.valid_time is not None:
             date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
-            print('This is:',date)
             try:
-                self.source.geojson, self.tail_line_source.data, self.tail_point_source.data, self.centre_point_source.data = self.loader.load_date(date)
+                (self.source.geojson,
+                 self.tail_line_source.data,
+                 self.tail_point_source.data,
+                 self.centre_point_source.data) = self.loader.load_date(date)
             except FileNotFound:
-                print('File not found - bug?')
                 self.source.geojson = self.empty_geojson
                 self.tail_line_source.data = self.tail_line_source
                 self.tail_point_source.data = self.tail_point_source
                 self.centre_point_source.data = self.centre_point_source
 
     def add_figure(self, figure):
-        # This is where all the plotting happens (e.g. when the applciation is loaded)
-        ## TODO Add in multi-line plotting method for the tails, polygons and points
-        print('Adding figure')
+        """This is where all the plotting happens (e.g. when the applciation is loaded)"""
         circles = figure.circle(x="x", y="y", size=3, source=self.tail_point_source)
         cntr_circles = figure.circle_cross(x="x1", y="y1", size=10, line_color='black', fill_color=None, source=self.centre_point_source)
         future_lines = figure.multi_line(xs="xs", ys="ys", line_color='black', source=self.centre_point_source)
@@ -112,9 +150,6 @@ class View(object):
             xs="xs",
             ys="ys",
             fill_alpha=0,
-            # hatch_scale=5,
-            # hatch_weight=0.1,
-            # hatch_pattern='dot',
             line_width=2,
             line_color={
                  'field': 'PhaseLife',
@@ -139,7 +174,6 @@ class View(object):
                     ('Min. Brightness Temp', '@BTmin{0.0}' + ' K'),
                     ('Average Brightness Temp', '@BTmoy{0.0}' + ' K'),
                     ('Max. Cloud Optical Thickness', '@CTCot'),
-                    # ('Max. Cloud Condensed Water Path', '@CTCwp' + ' Kg/m-2'),
                     ('No. of Cloud-Ground Positive Lightning Strokes', '@NbPosLightning')
                 ],
                 renderers=[renderer])
@@ -160,7 +194,21 @@ class TailLineLoader(object):
             rdt = json.load(stream)
 
         # Create an empty dictionary
-        mydict = dict(xs=[], ys=[], LonTrajCellCG=[], LatTrajCellCG=[], NumIdCell=[], NumIdBirth=[], DTimeTraj=[], BTempTraj=[], BTminTraj=[], BaseAreaTraj=[], TopAreaTraj=[], CoolingRateTraj=[], ExpanRateTraj=[], SpeedTraj=[], DirTraj=[])
+        mydict = dict(
+                xs=[], ys=[],
+                LonTrajCellCG=[],
+                LatTrajCellCG=[],
+                NumIdCell=[],
+                NumIdBirth=[],
+                DTimeTraj=[],
+                BTempTraj=[],
+                BTminTraj=[],
+                BaseAreaTraj=[],
+                TopAreaTraj=[],
+                CoolingRateTraj=[],
+                ExpanRateTraj=[],
+                SpeedTraj=[],
+                DirTraj=[])
 
         # Loop through features
         for i, feature in enumerate(rdt["features"]):
@@ -175,18 +223,17 @@ class TailLineLoader(object):
                         mydict[k].append(None)
                     else:
                         continue
-            # Takes the trajectory lat/lons, reprojects and puts them in a list within a list
+            # Takes the trajectory lat/lons, reprojects and
+            # puts them in a list within a list
             lons = feature['properties']['LonTrajCellCG']
             lats = feature['properties']['LatTrajCellCG']
             xs, ys = geo.web_mercator(lons, lats)
             mydict['xs'].append(xs)
             mydict['ys'].append(ys)
-
         return mydict
 
 
 class TailPointLoader(object):
-
     def __init__(self, locator):
         self.locator = locator
 
@@ -201,7 +248,21 @@ class TailPointLoader(object):
             rdt = json.load(stream)
 
         # Create an empty dictionary
-        mydict = dict(x=[], y=[], LonTrajCellCG=[], LatTrajCellCG=[], NumIdCell=[], NumIdBirth=[], DTimeTraj=[], BTempTraj=[], BTminTraj=[], BaseAreaTraj=[], TopAreaTraj=[], CoolingRateTraj=[], ExpanRateTraj=[], SpeedTraj=[], DirTraj=[])
+        mydict = dict(
+                x=[], y=[],
+                LonTrajCellCG=[],
+                LatTrajCellCG=[],
+                NumIdCell=[],
+                NumIdBirth=[],
+                DTimeTraj=[],
+                BTempTraj=[],
+                BTminTraj=[],
+                BaseAreaTraj=[],
+                TopAreaTraj=[],
+                CoolingRateTraj=[],
+                ExpanRateTraj=[],
+                SpeedTraj=[],
+                DirTraj=[])
 
         # Loop through features
         for i, feature in enumerate(rdt["features"]):
@@ -232,6 +293,14 @@ class TailPointLoader(object):
 
 
 def calc_dst_point(x1d, y1d, speed, angle):
+    """Calculate destination point
+
+    Estimates positions in longitude/latitude space from speed and
+    angle on the surface of a sphere, in this case Earth.
+
+    :param x1d: longitude
+    :param y1d: latitude
+    """
     # NB: X and Y need to be lat/lons
 
     # Distance travelled (m) = speed (m/s) * 60 seconds * 60 minutes
@@ -255,12 +324,20 @@ def calc_dst_point(x1d, y1d, speed, angle):
 
     x2d = math.degrees(x2)
     y2d = math.degrees(y2)
-
-    # print('d:',d, 'angle:', angle, 'x1:',x1d, 'x2:', x2d, 'y1:', y1d, 'y2:', y2d)
     return x2d, y2d
 
 
 def get_arrow_poly(x2,y2, speed, direction):
+    """Draw a polygon representing an arrow in geographical coordinates
+
+    .. note:: The arrows are scaled in longitude/latitude space not
+              in screen coordinates
+
+    :param x2: longitude of point
+    :param y2: latitude of point
+    :param speed: scalar velocity in m/s
+    :param direction: angle in degrees relative to north
+    """
     timestep = 60 # See above function re: 60 mins
     mvt_line_len = speed * 60 * timestep
     mvt_line_dir = direction
@@ -300,7 +377,16 @@ class CentrePointLoader(object):
             rdt = json.load(stream)
 
         # Create an empty dictionary
-        mydict = dict(x1=[], y1=[], x2=[], y2=[], xs=[], ys=[], Arrowxs=[], Arrowys=[], LonG=[], LatG=[], NumIdCell=[], NumIdBirth=[], MvtSpeed=[], MvtDirection=[])
+        mydict = dict(
+                x1=[], y1=[], x2=[], y2=[], xs=[], ys=[],
+                Arrowxs=[],
+                Arrowys=[],
+                LonG=[],
+                LatG=[],
+                NumIdCell=[],
+                NumIdBirth=[],
+                MvtSpeed=[],
+                MvtDirection=[])
 
         # Loop through features
         for i, feature in enumerate(rdt["features"]):
@@ -337,6 +423,7 @@ class CentrePointLoader(object):
 
 
 class Loader(object):
+    """High-level RDT loader"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
         self.poly_loader = PolygonLoader(self.locator)
@@ -366,7 +453,6 @@ class PolygonLoader(object):
 
         # Convert units from the netcdf / geojson data file units into something more readable (e.g. could be Kelvin to degrees C or Pa to hPa)
         unitsToRescale = {'Pa' : {'scale':100, 'offset':0, 'Units': 'hPa'} }
-                          # 'K'  : {'scale':1, 'offset':-273.15, 'Units': 'degC'}
         # Get text labels instead of numbers for certain fields
         fieldsToLookup = ['PhaseLife', 'SeverityType', 'SeverityIntensity', 'ConvType', 'CType']
 
