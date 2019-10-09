@@ -30,7 +30,6 @@ class RenderGroup(object):
 class View(object):
     def __init__(self, loader):
         self.loader = loader
-        ## TODO Need to put in more empty features (for lines, points etc) here as I add them to the loader
         empty = {
             "type": "FeatureCollection",
             "features": [
