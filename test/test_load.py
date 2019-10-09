@@ -90,7 +90,7 @@ def test_build_loader_given_config_file_pattern(tmpdir):
 
 def test_build_loader_given_eida50_file_type():
     label = "EIDA50"
-    pattern = "*.nc"
+    pattern = "eida50*.nc"
     file_type = "eida50"
     loader = forest.Loader.from_pattern(label, pattern, file_type)
     assert isinstance(loader, forest.satellite.EIDA50)
