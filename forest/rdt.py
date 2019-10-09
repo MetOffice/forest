@@ -9,6 +9,9 @@ import geo
 import locate
 from util import timeout_cache
 from exceptions import FileNotFound
+from bokeh.palettes import GnBu3, OrRd3
+import itertools
+import math
 
 
 class RenderGroup(object):
@@ -74,7 +77,6 @@ class View(object):
         self.empty_geojson = json.dumps(empty)
 
         # print(self.empty_geojson)
-        from bokeh.palettes import GnBu3, OrRd3
         self.color_mapper = bokeh.models.CategoricalColorMapper(
                 # palette=bokeh.palettes.Spectral6,
                 palette=['#fee8c8', '#fdbb84', '#e34a33', '#43a2ca', '#a8ddb5'],
@@ -202,7 +204,6 @@ class TailPointLoader(object):
 
     @staticmethod
     def load(path):
-        import itertools
         # print(path)
 
         with open(path) as stream:
@@ -241,7 +242,6 @@ class TailPointLoader(object):
 
 def calc_dst_point(x1d, y1d, speed, angle):
 
-    import math
 
     # NB: X and Y need to be lat/lons
 
@@ -273,7 +273,6 @@ def calc_dst_point(x1d, y1d, speed, angle):
 
 def get_arrow_poly(x2,y2, speed, direction):
 
-    import math
 
     timestep = 60 # See above function re: 60 mins
     mvt_line_len = speed * 60 * timestep
