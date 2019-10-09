@@ -181,76 +181,6 @@ class View(object):
         return RenderGroup([renderer, lines, circles, cntr_circles, future_lines, arrows])
 
 
-def calc_dst_point(x1d, y1d, speed, angle):
-    """Calculate destination point
-
-    Estimates positions in longitude/latitude space from speed and
-    angle on the surface of a sphere, in this case Earth.
-
-    :param x1d: longitude
-    :param y1d: latitude
-    """
-    # NB: X and Y need to be lat/lons
-
-    # Distance travelled (m) = speed (m/s) * 60 seconds * 60 minutes
-    # NB: 60 mins may change depending on the time frequency of the display (currently 1 hour)
-    d = (speed * 60 * 60)
-
-    # Radius of the earth (m)
-    R = 6378137
-
-    x1 = math.radians(x1d)
-    y1 = math.radians(y1d)
-
-    # Convert degrees to radians
-    direction = math.radians(angle)
-
-    y2 = math.asin(math.sin(y1) * math.cos(d / R) +
-                   math.cos(y1) * math.sin(d / R) * math.cos(direction))
-
-    x2 = x1 + math.atan2(math.sin(direction) * math.sin(d / R) * math.cos(y1),
-                         math.cos(d / R) - math.sin(y1) * math.sin(y2))
-
-    x2d = math.degrees(x2)
-    y2d = math.degrees(y2)
-    return x2d, y2d
-
-
-def get_arrow_poly(x2,y2, speed, direction):
-    """Draw a polygon representing an arrow in geographical coordinates
-
-    .. note:: The arrows are scaled in longitude/latitude space not
-              in screen coordinates
-
-    :param x2: longitude of point
-    :param y2: latitude of point
-    :param speed: scalar velocity in m/s
-    :param direction: angle in degrees relative to north
-    """
-    timestep = 60 # See above function re: 60 mins
-    mvt_line_len = speed * 60 * timestep
-    mvt_line_dir = direction
-    arrow_angl = 20
-    arrow_linefrac = 1./5
-
-    # First point
-    pt1_dir = (mvt_line_dir - 180) % 360 - arrow_angl
-    pt1_len = math.sqrt(3. * math.pow( mvt_line_len * arrow_linefrac, 2 ) / 2) # Metres
-    # Convert len back to speed for the function
-    pt1_speed = pt1_len / (timestep * 60)
-    # Calculate x3, y3
-    x3, y3 = calc_dst_point(x2, y2, pt1_speed, pt1_dir)
-
-    # Second point
-    pt2_dir = (mvt_line_dir - 180) % 360 + arrow_angl
-    pt2_len = math.sqrt(3.* math.pow( mvt_line_len * arrow_linefrac, 2 ) / 2) # Metres
-    # Convert len back to speed for the function
-    pt2_speed = pt2_len / (timestep * 60)
-    # Calculate x3, y3
-    x4, y4 = calc_dst_point(x2, y2, pt2_speed, pt2_dir)
-    return x3, y3, x4, y4
-
-
 class Loader(object):
     """High-level RDT loader"""
     def __init__(self, pattern):
@@ -258,11 +188,11 @@ class Loader(object):
 
     def load_date(self, date):
         file_name = self.locator.find_file(date)
-        geojson_poly = self.load_polygon(file_name)
-        cds_tail_line = self.load_tail_lines(file_name)
-        cds_tail_point = self.load_tail_points(file_name)
-        cds_centre_point = self.load_centre_points(file_name)
-        return [geojson_poly, cds_tail_line, cds_tail_point, cds_centre_point]
+        return (
+                self.load_polygon(file_name),
+                self.load_tail_lines(file_name),
+                self.load_tail_points(file_name),
+                self.load_centre_points(file_name))
 
     @staticmethod
     def load_polygon(path):
@@ -453,6 +383,76 @@ class Loader(object):
             mydict['Arrowxs'].append([x2[0], x3, x4])
             mydict['Arrowys'].append([y2[0], y3, y4])
         return mydict
+
+
+def calc_dst_point(x1d, y1d, speed, angle):
+    """Calculate destination point
+
+    Estimates positions in longitude/latitude space from speed and
+    angle on the surface of a sphere, in this case Earth.
+
+    :param x1d: longitude
+    :param y1d: latitude
+    """
+    # NB: X and Y need to be lat/lons
+
+    # Distance travelled (m) = speed (m/s) * 60 seconds * 60 minutes
+    # NB: 60 mins may change depending on the time frequency of the display (currently 1 hour)
+    d = (speed * 60 * 60)
+
+    # Radius of the earth (m)
+    R = 6378137
+
+    x1 = math.radians(x1d)
+    y1 = math.radians(y1d)
+
+    # Convert degrees to radians
+    direction = math.radians(angle)
+
+    y2 = math.asin(math.sin(y1) * math.cos(d / R) +
+                   math.cos(y1) * math.sin(d / R) * math.cos(direction))
+
+    x2 = x1 + math.atan2(math.sin(direction) * math.sin(d / R) * math.cos(y1),
+                         math.cos(d / R) - math.sin(y1) * math.sin(y2))
+
+    x2d = math.degrees(x2)
+    y2d = math.degrees(y2)
+    return x2d, y2d
+
+
+def get_arrow_poly(x2,y2, speed, direction):
+    """Draw a polygon representing an arrow in geographical coordinates
+
+    .. note:: The arrows are scaled in longitude/latitude space not
+              in screen coordinates
+
+    :param x2: longitude of point
+    :param y2: latitude of point
+    :param speed: scalar velocity in m/s
+    :param direction: angle in degrees relative to north
+    """
+    timestep = 60 # See above function re: 60 mins
+    mvt_line_len = speed * 60 * timestep
+    mvt_line_dir = direction
+    arrow_angl = 20
+    arrow_linefrac = 1./5
+
+    # First point
+    pt1_dir = (mvt_line_dir - 180) % 360 - arrow_angl
+    pt1_len = math.sqrt(3. * math.pow( mvt_line_len * arrow_linefrac, 2 ) / 2) # Metres
+    # Convert len back to speed for the function
+    pt1_speed = pt1_len / (timestep * 60)
+    # Calculate x3, y3
+    x3, y3 = calc_dst_point(x2, y2, pt1_speed, pt1_dir)
+
+    # Second point
+    pt2_dir = (mvt_line_dir - 180) % 360 + arrow_angl
+    pt2_len = math.sqrt(3.* math.pow( mvt_line_len * arrow_linefrac, 2 ) / 2) # Metres
+    # Convert len back to speed for the function
+    pt2_speed = pt2_len / (timestep * 60)
+    # Calculate x3, y3
+    x4, y4 = calc_dst_point(x2, y2, pt2_speed, pt2_dir)
+    return x3, y3, x4, y4
 
 
 def descale_rdt(fn, data):
