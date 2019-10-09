@@ -135,9 +135,9 @@ class View(object):
                  self.centre_point_source.data) = self.loader.load_date(date)
             except FileNotFound:
                 self.source.geojson = self.empty_geojson
-                self.tail_line_source.data = self.tail_line_source
-                self.tail_point_source.data = self.tail_point_source
-                self.centre_point_source.data = self.centre_point_source
+                self.tail_line_source.data = self.empty_tail_line_source
+                self.tail_point_source.data = self.empty_tail_point_source
+                self.centre_point_source.data = self.empty_centre_point_source
 
     def add_figure(self, figure):
         """This is where all the plotting happens (e.g. when the applciation is loaded)"""
