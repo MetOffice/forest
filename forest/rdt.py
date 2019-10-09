@@ -181,52 +181,6 @@ class View(object):
         return RenderGroup([renderer, lines, circles, cntr_circles, future_lines, arrows])
 
 
-class TailLineLoader(object):
-    @staticmethod
-    def load(path):
-        with open(path) as stream:
-            rdt = json.load(stream)
-
-        # Create an empty dictionary
-        mydict = dict(
-                xs=[], ys=[],
-                LonTrajCellCG=[],
-                LatTrajCellCG=[],
-                NumIdCell=[],
-                NumIdBirth=[],
-                DTimeTraj=[],
-                BTempTraj=[],
-                BTminTraj=[],
-                BaseAreaTraj=[],
-                TopAreaTraj=[],
-                CoolingRateTraj=[],
-                ExpanRateTraj=[],
-                SpeedTraj=[],
-                DirTraj=[])
-
-        # Loop through features
-        for i, feature in enumerate(rdt["features"]):
-            # Append data from the feature properties to the dictionary
-            for k in mydict.keys():
-                try:
-                    thisdata, units = descale_rdt(k, feature['properties'][k])
-                    mydict[k].append(thisdata)
-                except:
-                    # Do nothing at the moment with the xs and ys
-                    if not k in ['xs', 'ys']:
-                        mydict[k].append(None)
-                    else:
-                        continue
-            # Takes the trajectory lat/lons, reprojects and
-            # puts them in a list within a list
-            lons = feature['properties']['LonTrajCellCG']
-            lats = feature['properties']['LatTrajCellCG']
-            xs, ys = geo.web_mercator(lons, lats)
-            mydict['xs'].append(xs)
-            mydict['ys'].append(ys)
-        return mydict
-
-
 class TailPointLoader(object):
     @staticmethod
     def load(path):
@@ -405,14 +359,13 @@ class Loader(object):
     """High-level RDT loader"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
-        self.tail_line_loader = TailLineLoader()
         self.tail_point_loader = TailPointLoader()
         self.centre_point_loader = CentrePointLoader()
 
     def load_date(self, date):
         file_name = self.locator.find_file(date)
         geojson_poly = self.load_polygon(file_name)
-        cds_tail_line = self.tail_line_loader.load(file_name)
+        cds_tail_line = self.load_tail_lines(file_name)
         cds_tail_point = self.tail_point_loader.load(file_name)
         cds_centre_point = self.centre_point_loader.load_date(file_name)
         return [geojson_poly, cds_tail_line, cds_tail_point, cds_centre_point]
@@ -458,6 +411,54 @@ class Loader(object):
                     except:
                         continue
         return json.dumps(copy)
+
+    @staticmethod
+    def load_tail_lines(path):
+        """Load tail line data from file
+
+        :returns: dict representation suitable for ColumnDataSource
+        """
+        with open(path) as stream:
+            rdt = json.load(stream)
+
+        # Create an empty dictionary
+        mydict = dict(
+                xs=[], ys=[],
+                LonTrajCellCG=[],
+                LatTrajCellCG=[],
+                NumIdCell=[],
+                NumIdBirth=[],
+                DTimeTraj=[],
+                BTempTraj=[],
+                BTminTraj=[],
+                BaseAreaTraj=[],
+                TopAreaTraj=[],
+                CoolingRateTraj=[],
+                ExpanRateTraj=[],
+                SpeedTraj=[],
+                DirTraj=[])
+
+        # Loop through features
+        for i, feature in enumerate(rdt["features"]):
+            # Append data from the feature properties to the dictionary
+            for k in mydict.keys():
+                try:
+                    thisdata, units = descale_rdt(k, feature['properties'][k])
+                    mydict[k].append(thisdata)
+                except:
+                    # Do nothing at the moment with the xs and ys
+                    if not k in ['xs', 'ys']:
+                        mydict[k].append(None)
+                    else:
+                        continue
+            # Takes the trajectory lat/lons, reprojects and
+            # puts them in a list within a list
+            lons = feature['properties']['LonTrajCellCG']
+            lats = feature['properties']['LatTrajCellCG']
+            xs, ys = geo.web_mercator(lons, lats)
+            mydict['xs'].append(xs)
+            mydict['ys'].append(ys)
+        return mydict
 
 
 def descale_rdt(fn, data):
