@@ -53,11 +53,11 @@ class View(object):
                         'CTPressure': 0,
                         'CTPhase': '',
                         'CTReff': '',
-                        'ExpansionRate': '',
+                        'ExpansionRate': '-',
                         'BTmin': 0,
                         'BTmoy': 0,
-                        'CTCot': '',
-                        'CTCwp': '',
+                        'CTCot': '-',
+                        'CTCwp': '-',
                         'NbPosLightning': 0,
                         'SeverityType': '',
                         'Surface': '',
@@ -394,7 +394,7 @@ class PolygonLoader(object):
 
     @staticmethod
     def load(path, date):
-        print(path)
+        # print(path)
         # print(date)
 
         with open(path) as stream:
@@ -689,7 +689,7 @@ class Locator(object):
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
-        print(self.dates(paths))
+        # print(paths)
         bounds = locate.bounds(
                 self.dates(paths),
                 dt.timedelta(minutes=15))
