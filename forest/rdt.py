@@ -251,71 +251,17 @@ def get_arrow_poly(x2,y2, speed, direction):
     return x3, y3, x4, y4
 
 
-class CentrePointLoader(object):
-    """Holds a centre point, future point and future movement line"""
-    @staticmethod
-    def load(path):
-        with open(path) as stream:
-            rdt = json.load(stream)
-
-        # Create an empty dictionary
-        mydict = dict(
-                x1=[], y1=[], x2=[], y2=[], xs=[], ys=[],
-                Arrowxs=[],
-                Arrowys=[],
-                LonG=[],
-                LatG=[],
-                NumIdCell=[],
-                NumIdBirth=[],
-                MvtSpeed=[],
-                MvtDirection=[])
-
-        # Loop through features
-        for i, feature in enumerate(rdt["features"]):
-            # Append data from the feature properties to the dictionary
-            mykeys = [k for k in mydict.keys() if not (('x' in k) or ('y' in k))]
-            for k in mykeys:
-                try:
-                    thisdata, units = descale_rdt(k, feature['properties'][k])
-                    mydict[k].append(thisdata)
-                except:
-                    mydict[k].append(None)
-            # Takes the trajectory lat/lons, reprojects and puts them in a list within a list
-            lon = feature['properties']['LonG']
-            lat = feature['properties']['LatG']
-            x1, y1 = geo.web_mercator(lon, lat)
-            mydict['x1'].extend(x1)
-            mydict['y1'].extend(y1)
-
-            # Now calculate future point and line
-            lon2, lat2 = calc_dst_point(lon, lat, feature['properties']['MvtSpeed'], feature['properties']['MvtDirection'])
-            x2, y2 = geo.web_mercator(lon2, lat2)
-            mydict['x2'].extend(x2)
-            mydict['y2'].extend(y2)
-            mydict['xs'].append([x1, x2])
-            mydict['ys'].append([y1, y2])
-
-            # Now calculate arrow polygon
-            x3d, y3d, x4d, y4d = get_arrow_poly(lon2, lat2, feature['properties']['MvtSpeed'], feature['properties']['MvtDirection'])
-            [x3, x4], [y3, y4] = geo.web_mercator([x3d, x4d], [y3d, y4d])
-
-            mydict['Arrowxs'].append([x2[0], x3, x4])
-            mydict['Arrowys'].append([y2[0], y3, y4])
-        return mydict
-
-
 class Loader(object):
     """High-level RDT loader"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
-        self.centre_point_loader = CentrePointLoader()
 
     def load_date(self, date):
         file_name = self.locator.find_file(date)
         geojson_poly = self.load_polygon(file_name)
         cds_tail_line = self.load_tail_lines(file_name)
         cds_tail_point = self.load_tail_points(file_name)
-        cds_centre_point = self.centre_point_loader.load_date(file_name)
+        cds_centre_point = self.load_centre_points(file_name)
         return [geojson_poly, cds_tail_line, cds_tail_point, cds_centre_point]
 
     @staticmethod
@@ -455,6 +401,57 @@ class Loader(object):
             x, y = geo.web_mercator(lons, lats)
             mydict['x'].extend(x)
             mydict['y'].extend(y)
+        return mydict
+
+    @staticmethod
+    def load_centre_points(path):
+        """Holds a centre point, future point and future movement line"""
+        with open(path) as stream:
+            rdt = json.load(stream)
+
+        # Create an empty dictionary
+        mydict = dict(
+                x1=[], y1=[], x2=[], y2=[], xs=[], ys=[],
+                Arrowxs=[],
+                Arrowys=[],
+                LonG=[],
+                LatG=[],
+                NumIdCell=[],
+                NumIdBirth=[],
+                MvtSpeed=[],
+                MvtDirection=[])
+
+        # Loop through features
+        for i, feature in enumerate(rdt["features"]):
+            # Append data from the feature properties to the dictionary
+            mykeys = [k for k in mydict.keys() if not (('x' in k) or ('y' in k))]
+            for k in mykeys:
+                try:
+                    thisdata, units = descale_rdt(k, feature['properties'][k])
+                    mydict[k].append(thisdata)
+                except:
+                    mydict[k].append(None)
+            # Takes the trajectory lat/lons, reprojects and puts them in a list within a list
+            lon = feature['properties']['LonG']
+            lat = feature['properties']['LatG']
+            x1, y1 = geo.web_mercator(lon, lat)
+            mydict['x1'].extend(x1)
+            mydict['y1'].extend(y1)
+
+            # Now calculate future point and line
+            lon2, lat2 = calc_dst_point(lon, lat, feature['properties']['MvtSpeed'], feature['properties']['MvtDirection'])
+            x2, y2 = geo.web_mercator(lon2, lat2)
+            mydict['x2'].extend(x2)
+            mydict['y2'].extend(y2)
+            mydict['xs'].append([x1, x2])
+            mydict['ys'].append([y1, y2])
+
+            # Now calculate arrow polygon
+            x3d, y3d, x4d, y4d = get_arrow_poly(lon2, lat2, feature['properties']['MvtSpeed'], feature['properties']['MvtDirection'])
+            [x3, x4], [y3, y4] = geo.web_mercator([x3d, x4d], [y3d, y4d])
+
+            mydict['Arrowxs'].append([x2[0], x3, x4])
+            mydict['Arrowys'].append([y2[0], y3, y4])
         return mydict
 
 
