@@ -150,5 +150,5 @@ def test_full_pattern_given_absolute_leaf_ignores_absolute_prefix():
 
 
 def check_full_pattern(name, leaf, prefix, expected):
-    actual = forest.Loader.full_pattern(name, leaf, prefix)
+    actual = forest.load.full_pattern(name, leaf, prefix)
     assert actual == expected

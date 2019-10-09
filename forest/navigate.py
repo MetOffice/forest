@@ -10,6 +10,7 @@ from . import (
         unified_model,
         eida50,
         rdt)
+from forest import load
 
 
 class Config(object):
@@ -18,19 +19,18 @@ class Config(object):
     This implementation performs a glob and then delegates to
     FileSystem navigators
     """
-    def __init__(self, config):
+    def __init__(self, config, prefix_dir=None):
         self.config = config
         self.navigators = {}
         for group in self.config.file_groups:
-            if group.directory is None:
-                pattern = group.pattern
-            else:
-                pattern = os.path.join(group.directory, group.pattern)
+            pattern = load.full_pattern(
+                    group.pattern,
+                    group.directory,
+                    prefix_dir)
             paths = glob.glob(os.path.expanduser(pattern))
             self.navigators[group.pattern] = FileSystem.file_type(paths, group.file_type)
 
     def variables(self, pattern):
-        print(pattern)
         return self.navigators[pattern].variables(pattern)
 
     def initial_times(self, pattern, variable=None):

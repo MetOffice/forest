@@ -254,7 +254,7 @@ def main(argv=None):
     elif args.database is not None:
         navigator = database
     else:
-        navigator = navigate.Config(config)
+        navigator = navigate.Config(config, prefix_dir=args.directory)
 
     # Pre-select menu choices (if any)
     initial_state = {}
