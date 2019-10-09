@@ -405,23 +405,24 @@ class Loader(object):
     """High-level RDT loader"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
-        self.poly_loader = PolygonLoader()
         self.tail_line_loader = TailLineLoader()
         self.tail_point_loader = TailPointLoader()
         self.centre_point_loader = CentrePointLoader()
 
     def load_date(self, date):
         file_name = self.locator.find_file(date)
-        geojson_poly = self.poly_loader.load(file_name)
+        geojson_poly = self.load_polygon(file_name)
         cds_tail_line = self.tail_line_loader.load(file_name)
         cds_tail_point = self.tail_point_loader.load(file_name)
         cds_centre_point = self.centre_point_loader.load_date(file_name)
         return [geojson_poly, cds_tail_line, cds_tail_point, cds_centre_point]
 
-
-class PolygonLoader(object):
     @staticmethod
-    def load(path):
+    def load_polygon(path):
+        """Load GeoJSON string representation of Polygons from file
+
+        :returns: GeoJSON str
+        """
         with open(path) as stream:
             rdt = json.load(stream)
 
