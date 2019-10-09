@@ -107,6 +107,7 @@ class TestDBLoader(unittest.TestCase):
             "dh": [],
             "image": [],
             "name": [],
+            "units": [],
             "valid": [],
             "initial": [],
             "length": [],
