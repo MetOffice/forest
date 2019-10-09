@@ -278,6 +278,7 @@ class DBLoader(object):
             "dh": [],
             "image": [],
             "name": [],
+            "units": [],
             "valid": [],
             "initial": [],
             "length": [],
@@ -316,6 +317,7 @@ class DBLoader(object):
         valid = self.to_datetime(state.valid_time)
         initial = self.to_datetime(state.initial_time)
         hours = (valid - initial).total_seconds() / (60*60)
+        units = self.read_units(path, state.variable)
         length = "T{:+}".format(int(hours))
         data = load_image_pts(
                 path,
@@ -327,11 +329,22 @@ class DBLoader(object):
         else:
             level = "Surface"
         data["name"] = [self.name]
+        data["units"] = [units]
         data["valid"] = [valid]
         data["initial"] = [initial]
         data["length"] = [length]
         data["level"] = [level]
         return data
+
+    @staticmethod
+    def read_units(filename,parameter):
+        dataset = netCDF4.Dataset(filename)
+        veep = dataset.variables[parameter]
+        # read the units and assign a blank value if there aren't any:
+        units = getattr(veep, 'units', '')
+        dataset.close()
+        return units
+
 
     def valid(self, state):
         if state.variable is None:

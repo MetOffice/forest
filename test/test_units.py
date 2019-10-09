@@ -1,14 +1,6 @@
 import netCDF4
 import os
-
-
-def read_units(filename,parameter):
-    dataset = netCDF4.Dataset(filename)
-    veep = dataset.variables[parameter]
-    # read the units and assign a blank value if there aren't any:
-    units = getattr(veep, 'units', '')
-    dataset.close()
-    return units
+from forest.data import DBLoader
 
 # example where there are units in the file
 def test_readunits():
@@ -18,7 +10,7 @@ def test_readunits():
     v = dataset.createVariable('mslp','f',())
     v.units = 'hPa'
     dataset.close()
-    result = read_units(filename,parameter)
+    result = DBLoader.read_units(filename,parameter)
     expect = 'hPa'
     assert result == expect
     os.remove(filename)
@@ -30,7 +22,7 @@ def test_read_no_units():
     dataset = netCDF4.Dataset(filename,'w')
     NNN = dataset.createVariable('nonsense','f',())
     dataset.close()
-    result = read_units(filename,parameter)
+    result = DBLoader.read_units(filename,parameter)
     expect = ''
     assert result == expect
     os.remove(filename)
