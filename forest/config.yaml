@@ -1,6 +1,11 @@
 files:
-        - label: Operational GA6
+        - label: Operational GA6 Africa
           pattern: '*global_africa*.nc'
+          locator: database
+          file_type: unified_model
+          directory: unified_model
+        - label: Operational GA6 SE Asia
+          pattern: '*oper_global_south_east_asia*.nc'
           locator: database
           file_type: unified_model
           directory: unified_model
