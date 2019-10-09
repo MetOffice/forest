@@ -32,7 +32,7 @@ class UMView(object):
                 renderers=[renderer],
                 tooltips=[
                     ("Name", "@name"),
-                    ("Value", "@image"),
+                    ("Value", "@image @units"),
                     ('Length', '@length'),
                     ('Valid', '@valid{%F %H:%M}'),
                     ('Initial', '@initial{%F %H:%M}'),
