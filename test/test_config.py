@@ -12,14 +12,14 @@ class TestIntegration(unittest.TestCase):
     def test_load_server_config_first_group(self):
         result = self.config.file_groups[0]
         expect = forest.config.FileGroup(
-                "Operational GA6",
+                "Operational GA6 Africa",
                 "*global_africa*.nc",
                 locator="database",
                 directory="unified_model")
         self.assert_group_equal(expect, result)
 
     def test_load_server_config_second_group(self):
-        result = self.config.file_groups[1]
+        result = self.config.file_groups[2]
         expect = forest.config.FileGroup(
                 "Operational Tropical Africa",
                 "*os42_ea*.nc",
