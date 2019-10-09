@@ -182,12 +182,6 @@ class View(object):
 
 
 class TailLineLoader(object):
-    def __init__(self, locator):
-        self.locator = locator # Locator(pattern)
-
-    def load_date(self, date):
-        return self.load(self.locator.find_file(date))
-
     @staticmethod
     def load(path):
         with open(path) as stream:
@@ -234,16 +228,8 @@ class TailLineLoader(object):
 
 
 class TailPointLoader(object):
-    def __init__(self, locator):
-        self.locator = locator
-
-    def load_date(self, date):
-        return self.load(self.locator.find_file(date))
-
     @staticmethod
     def load(path):
-        # print(path)
-
         with open(path) as stream:
             rdt = json.load(stream)
 
@@ -364,13 +350,6 @@ def get_arrow_poly(x2,y2, speed, direction):
 
 class CentrePointLoader(object):
     """Holds a centre point, future point and future movement line"""
-    def __init__(self, locator):
-        self.locator = locator
-
-    def load_date(self, date):
-        cntr_point = self.load(self.locator.find_file(date))
-        return cntr_point
-
     @staticmethod
     def load(path):
         with open(path) as stream:
@@ -426,28 +405,23 @@ class Loader(object):
     """High-level RDT loader"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
-        self.poly_loader = PolygonLoader(self.locator)
-        self.tail_line_loader = TailLineLoader(self.locator)
-        self.tail_point_loader = TailPointLoader(self.locator)
-        self.centre_point_loader = CentrePointLoader(self.locator)
+        self.poly_loader = PolygonLoader()
+        self.tail_line_loader = TailLineLoader()
+        self.tail_point_loader = TailPointLoader()
+        self.centre_point_loader = CentrePointLoader()
 
     def load_date(self, date):
-        geojson_poly = self.poly_loader.load_date(date)
-        cds_tail_line = self.tail_line_loader.load_date(date)
-        cds_tail_point = self.tail_point_loader.load_date(date)
-        cds_centre_point = self.centre_point_loader.load_date(date)
+        file_name = self.locator.find_file(date)
+        geojson_poly = self.poly_loader.load(file_name)
+        cds_tail_line = self.tail_line_loader.load(file_name)
+        cds_tail_point = self.tail_point_loader.load(file_name)
+        cds_centre_point = self.centre_point_loader.load_date(file_name)
         return [geojson_poly, cds_tail_line, cds_tail_point, cds_centre_point]
 
 
 class PolygonLoader(object):
-    def __init__(self, locator):
-        self.locator = locator # Locator(pattern)
-
-    def load_date(self, date):
-        return self.load(self.locator.find_file(date), date)
-
     @staticmethod
-    def load(path, date):
+    def load(path):
         with open(path) as stream:
             rdt = json.load(stream)
 
