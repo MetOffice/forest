@@ -8,19 +8,24 @@ import bokeh.models
 def test_forecast_user_interface():
     """Should hide initial_time and variable rows"""
     state = {
-        "selected": {
-            "file_type": "unified_model"
+        "selected": 1,
+        "groups": {
+            0: {
+                "label": "RDT",
+                "dimensions": 0
+            },
+            1: {
+                "label": "UM",
+                "dimensions": 1
+            }
         },
         "dimensions": {
-            "rdt": [
-                "valid_time"
-            ],
-            "unified_model": [
+            0: ["valid_time"],
+            1: [
                 "variable",
                 "initial_time",
                 "valid_time",
-                "pressure"
-            ]
+                "pressure"]
         }
     }
     controls = forest.ui.Controls()
@@ -45,14 +50,20 @@ def test_forecast_user_interface():
 def test_observation_user_interface():
     """Should hide initial_time and variable rows"""
     state = {
-        "selected": {
-            "file_type": "rdt"
+        "selected": 0,
+        "groups": {
+            0: {
+                "label": "RDT",
+                "dimensions": 0
+            },
+            1: {
+                "label": "UM",
+                "dimensions": 1
+            }
         },
         "dimensions": {
-            "rdt": [
-                "valid_time"
-            ],
-            "unified_model": [
+            0: ["valid_time"],
+            1: [
                 "variable",
                 "initial_time",
                 "valid_time",

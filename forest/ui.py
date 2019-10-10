@@ -107,16 +107,35 @@ def next_id(table):
         return 0
 
 
+class Query(object):
+    """Helper class to traverse application state"""
+    def __init__(self, state):
+        self.state = state
+
+    @property
+    def selected_label(self):
+        state = self.state
+        if "selected" not in state:
+            return
+        if "groups" not in state:
+            return
+        return state["groups"][state["selected"]]["label"]
+
+    def dimensions(self, label):
+        state = self.state
+        if "dimensions" not in state:
+            return
+        if "groups" not in state:
+            return
+        dimensions = state["dimensions"]
+        groups = state["groups"]
+        for group in groups.values():
+            if group["label"] == label:
+                return dimensions[group["dimensions"]]
+
+
 def find_dimensions(state, label):
-    if "dimensions" not in state:
-        return
-    if "groups" not in state:
-        return
-    dimensions = state["dimensions"]
-    groups = state["groups"]
-    for group in groups.values():
-        if group["label"] == label:
-            return dimensions[group["dimensions"]]
+    return Query(state).dimensions(label)
 
 
 class Controls(object):
@@ -144,8 +163,9 @@ class Controls(object):
         self.layout = bokeh.layouts.column(self.rows["title"])
 
     def render(self, state):
-        key = state["selected"]["file_type"]
-        dimensions = state["dimensions"][key]
+        query = Query(state)
+        label = query.selected_label
+        dimensions = query.dimensions(label)
         children = [
             self.rows["title"]
         ]
