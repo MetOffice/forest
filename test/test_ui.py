@@ -5,6 +5,33 @@ from forest import ui
 import bokeh.models
 
 
+def test_render_selected_pressure():
+    state = {
+        "selected": 2,
+        "groups": {
+            2: {
+                "label": "UM",
+                "dimensions": 0,
+                "coordinates": {
+                    "pressure": [100, 200, 300, 400]
+                }
+            }
+        },
+        "dimensions": {
+            0: ["pressure"]
+        },
+        "index": {
+            2: {
+                "pressure": 3
+            }
+        }
+    }
+    controls = forest.ui.Controls()
+    controls.render(state)
+    dropdown = controls.dropdowns["pressure"]
+    assert dropdown.label == "400"
+
+
 def test_forecast_user_interface():
     """Should hide initial_time and variable rows"""
     state = {
@@ -110,7 +137,7 @@ def test_render_valid_times():
     controls = forest.ui.Controls()
     controls.render(state)
     _, drop, _ = controls.rows["valid_time"].children
-    assert drop.menu == [("2019-01-01 00:00:00", "2019-01-01 00:00:00")]
+    assert drop.menu == [("2019-01-01 00:00:00", "0")]
 
 
 def test_search_dimensions_related_to_label():
@@ -323,4 +350,33 @@ def test_query_labels():
             1: {'label': 'UM'}
         }}).labels
     expect = ['RDT', 'UM']
+    assert expect == result
+
+
+def test_set_coordinate_index():
+    state = {
+        "selected": 0
+    }
+    action = ui.set_coordinate_index("pressure", "4")
+    state = ui.reducer(state, action)
+    result = state["index"]
+    expect = {
+        0: {"pressure": 4}
+    }
+    assert expect == result
+
+
+def test_set_coordinate_index_twice():
+    state = {
+        "selected": 2
+    }
+    for key, value in [
+            ("pressure", "2"),
+            ("initial_time", "4")]:
+        action = ui.set_coordinate_index(key, value)
+        state = ui.reducer(state, action)
+    result = state["index"]
+    expect = {
+        2: {"pressure": 2, "initial_time": 4}
+    }
     assert expect == result

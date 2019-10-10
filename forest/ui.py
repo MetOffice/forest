@@ -3,10 +3,12 @@ import numpy as np
 import datetime as dt
 import bokeh.models
 import bokeh.layouts
+from forest.observe import Observable
 
 
 SET_DIMENSIONS = "SET_DIMENSIONS"
 SET_COORDINATE = "SET_COORDINATE"
+SET_COORDINATE_INDEX = "SET_COORDINATE_INDEX"
 SET_SELECTED = "SET_SELECTED"
 
 
@@ -20,6 +22,10 @@ def set_selected(label):
 
 def set_coordinate(label, name, values):
     return dict(kind=SET_COORDINATE, payload=locals())
+
+
+def set_coordinate_index(key, value):
+    return dict(kind=SET_COORDINATE_INDEX, payload=locals())
 
 
 def reducer(state, action):
@@ -64,6 +70,17 @@ def reducer(state, action):
             group["coordinates"] = {}
         group["coordinates"].update({name: [sanitize(value) for value in values]})
         state["groups"] = groups
+    elif kind == SET_COORDINATE_INDEX:
+        payload = action["payload"]
+        key = payload["key"]
+        value = payload["value"]
+        selected = state["selected"]
+        if "index" not in state:
+            state["index"] = {}
+        if selected in state["index"]:
+            state["index"][selected].update({key: int(value)})
+        else:
+            state["index"][selected] = {key: int(value)}
     return state
 
 
@@ -110,6 +127,16 @@ class Query(object):
     def __init__(self, state):
         self.state = state
 
+    def selected_coordinate_value(self, dimension):
+        state = self.state
+        if "selected" not in state:
+            return None
+        if "index" not in state:
+            return None
+        gid = state["selected"]
+        i = state["index"][gid][dimension]
+        return state["groups"][gid]["coordinates"][dimension][i]
+
     @property
     def selected_label(self):
         state = self.state
@@ -117,7 +144,11 @@ class Query(object):
             return
         if "groups" not in state:
             return
-        return state["groups"][state["selected"]]["label"]
+        return state["groups"][state["selected"]].get("label", None)
+
+    @property
+    def selected_index(self):
+        return self.state.get("selected", None)
 
     @property
     def labels(self):
@@ -153,7 +184,7 @@ def find_dimensions(state, label):
     return Query(state).dimensions(label)
 
 
-class Controls(object):
+class Controls(Observable):
     def __init__(self):
         self.dropdowns = {
             "variable": bokeh.models.Dropdown(label="Variable"),
@@ -161,6 +192,8 @@ class Controls(object):
             "valid_time": bokeh.models.Dropdown(label="Valid time"),
             "pressure": bokeh.models.Dropdown(label="Pressure"),
         }
+        for key, dropdown in self.dropdowns.items():
+            dropdown.on_change("value", self.on_dropdown(key))
         self.rows = {
             "title": bokeh.layouts.row(
                     bokeh.models.Div(text="Navigation:")),
@@ -182,6 +215,12 @@ class Controls(object):
                     bokeh.models.Button(label="Next"))
         }
         self.layout = bokeh.layouts.column(self.rows["title"])
+        super().__init__()
+
+    def on_dropdown(self, key):
+        def on_change(attr, old, new):
+            self.notify(set_coordinate_index(key, new))
+        return on_change
 
     def render(self, state):
         query = Query(state)
@@ -192,9 +231,17 @@ class Controls(object):
         ]
         if dimensions is not None:
             for d in dimensions:
+                # Populate dropdown menu
+                dropdown = self.dropdowns[d]
                 values = query.coordinate(label, d)
                 if values is not None:
-                    menu = [(str(v), str(v)) for v in values]
-                    self.dropdowns[d].menu = menu
+                    menu = [(str(v), str(i)) for i, v in enumerate(values)]
+                    dropdown.menu = menu
+
+                # Label dropdown if value selected
+                value = query.selected_coordinate_value(d)
+                if value is not None:
+                    dropdown.label = str(value)
+
                 children.append(self.rows[d])
         self.layout.children = children
