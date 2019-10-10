@@ -45,10 +45,8 @@ def reducer(state, action):
         # Link group to dimension
         group["dimensions"] = did
 
-        state = {
-            "groups": groups,
-            "dimensions": dimensions
-        }
+        state["groups"] = groups
+        state["dimensions"] = dimensions
     elif kind == SET_SELECTED:
         payload = action["payload"]
         label = payload["label"]
@@ -120,6 +118,13 @@ class Query(object):
         if "groups" not in state:
             return
         return state["groups"][state["selected"]]["label"]
+
+    @property
+    def labels(self):
+        state = self.state
+        if "groups" not in state:
+            return []
+        return [group['label'] for _, group in sorted(state['groups'].items())]
 
     def dimensions(self, label):
         state = self.state

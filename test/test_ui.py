@@ -262,3 +262,38 @@ def test_set_multiple_coordinates():
         }
     }
     assert expect == result
+
+
+def test_set_dimensions_preserves_set_selected():
+    state = {}
+    for action in [
+            ui.set_selected("RDT"),
+            ui.set_dimensions("UM", ["valid_time"])]:
+        state = ui.reducer(state, action)
+    result = state
+    expect = {
+        "selected": 0,
+        "groups": {
+            0: {
+                "label": "RDT"
+            },
+            1: {
+                "label": "UM",
+                "dimensions": 0
+            }
+        },
+        "dimensions": {
+            0: ["valid_time"]
+        }
+    }
+    assert expect == result
+
+
+def test_query_labels():
+    result = ui.Query({
+        'groups': {
+            0: {'label': 'RDT'},
+            1: {'label': 'UM'}
+        }}).labels
+    expect = ['RDT', 'UM']
+    assert expect == result
