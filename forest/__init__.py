@@ -20,6 +20,7 @@ from . import (
         navigate,
         unified_model,
         redux,
+        ui,
         tutorial)
 from .db import Database
 from .keys import *
