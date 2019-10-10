@@ -134,8 +134,9 @@ class Query(object):
         if "index" not in state:
             return None
         gid = state["selected"]
-        i = state["index"][gid][dimension]
-        return state["groups"][gid]["coordinates"][dimension][i]
+        if gid in state["index"]:
+            i = state["index"][gid][dimension]
+            return state["groups"][gid]["coordinates"][dimension][i]
 
     @property
     def selected_label(self):
@@ -186,6 +187,12 @@ def find_dimensions(state, label):
 
 class Controls(Observable):
     def __init__(self):
+        self.labels = {
+            "variable": "Variable",
+            "initial_time": "Initial time",
+            "valid_time": "Valid time",
+            "pressure": "Pressure",
+        }
         self.dropdowns = {
             "variable": bokeh.models.Dropdown(label="Variable"),
             "initial_time": bokeh.models.Dropdown(label="Initial time"),
@@ -240,7 +247,9 @@ class Controls(Observable):
 
                 # Label dropdown if value selected
                 value = query.selected_coordinate_value(d)
-                if value is not None:
+                if value is  None:
+                    dropdown.label = self.labels[d]
+                else:
                     dropdown.label = str(value)
 
                 children.append(self.rows[d])
