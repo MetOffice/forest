@@ -48,3 +48,5 @@ One of the core development team members will review your changes and offer advi
 ## License
 
 FOREST is licensed under the GNU Lesser General Public License v3.0
+
+© Crown copyright 2019, Met Office. 
