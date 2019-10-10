@@ -86,6 +86,33 @@ def test_observation_user_interface():
     assert right_btn.label == "Next"
 
 
+def test_render_given_empty_state():
+    controls = forest.ui.Controls()
+    controls.render({})
+
+
+def test_render_valid_times():
+    state = {
+        "selected": 0,
+        "groups": {
+            0: {
+                "label": "RDT",
+                "dimensions": 0,
+                "coordinates": {
+                    "valid_time": ["2019-01-01 00:00:00"]
+                }
+            }
+        },
+        "dimensions": {
+            0: ["valid_time"]
+        }
+    }
+    controls = forest.ui.Controls()
+    controls.render(state)
+    _, drop, _ = controls.rows["valid_time"].children
+    assert drop.menu == [("2019-01-01 00:00:00", "2019-01-01 00:00:00")]
+
+
 def test_search_dimensions_related_to_label():
     state = {}
     actions = [

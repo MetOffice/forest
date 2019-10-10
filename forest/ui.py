@@ -138,6 +138,16 @@ class Query(object):
             if group["label"] == label:
                 return dimensions[group["dimensions"]]
 
+    def coordinate(self, label, name):
+        state = self.state
+        groups = state["groups"]
+        for group in groups.values():
+            if group["label"] == label:
+                if "coordinates" not in group:
+                    continue
+                coordinates = group["coordinates"]
+                return coordinates.get(name, None)
+
 
 def find_dimensions(state, label):
     return Query(state).dimensions(label)
@@ -145,24 +155,30 @@ def find_dimensions(state, label):
 
 class Controls(object):
     def __init__(self):
+        self.dropdowns = {
+            "variable": bokeh.models.Dropdown(label="Variable"),
+            "initial_time": bokeh.models.Dropdown(label="Initial time"),
+            "valid_time": bokeh.models.Dropdown(label="Valid time"),
+            "pressure": bokeh.models.Dropdown(label="Pressure"),
+        }
         self.rows = {
             "title": bokeh.layouts.row(
                     bokeh.models.Div(text="Navigation:")),
             "variable": bokeh.layouts.row(
                     bokeh.models.Button(label="Previous"),
-                    bokeh.models.Dropdown(label="Variable"),
+                    self.dropdowns["variable"],
                     bokeh.models.Button(label="Next")),
             "initial_time": bokeh.layouts.row(
                     bokeh.models.Button(label="Previous"),
-                    bokeh.models.Dropdown(label="Initial time"),
+                    self.dropdowns["initial_time"],
                     bokeh.models.Button(label="Next")),
             "valid_time": bokeh.layouts.row(
                     bokeh.models.Button(label="Previous"),
-                    bokeh.models.Dropdown(label="Valid time"),
+                    self.dropdowns["valid_time"],
                     bokeh.models.Button(label="Next")),
             "pressure": bokeh.layouts.row(
                     bokeh.models.Button(label="Previous"),
-                    bokeh.models.Dropdown(label="Pressure"),
+                    self.dropdowns["pressure"],
                     bokeh.models.Button(label="Next"))
         }
         self.layout = bokeh.layouts.column(self.rows["title"])
@@ -174,6 +190,11 @@ class Controls(object):
         children = [
             self.rows["title"]
         ]
-        for d in dimensions:
-            children.append(self.rows[d])
+        if dimensions is not None:
+            for d in dimensions:
+                values = query.coordinate(label, d)
+                if values is not None:
+                    menu = [(str(v), str(v)) for v in values]
+                    self.dropdowns[d].menu = menu
+                children.append(self.rows[d])
         self.layout.children = children
