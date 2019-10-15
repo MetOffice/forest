@@ -9,7 +9,8 @@ from .exceptions import (
 from . import (
         unified_model,
         eida50,
-        rdt)
+        rdt,
+        nearcast)
 
 
 class Config(object):
@@ -63,6 +64,8 @@ class FileSystem(object):
             coordinates = eida50.Coordinates()
         elif file_type.lower() == "unified_model":
             coordinates = unified_model.Coordinates()
+        elif file_type.lower() == "nearcast":
+            coordinates = nearcast.Coordinates()
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)

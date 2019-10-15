@@ -17,6 +17,7 @@ except ImportError:
     # ReadTheDocs unable to pip install cf-units
     pass
 from forest import (
+        nearcast,
         satellite,
         rdt,
         earth_networks,
