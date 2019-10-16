@@ -1,3 +1,11 @@
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to an instance
+    Type: AWS::EC2::KeyPair::KeyName
+
 Resources:
   HelloBucket:
     Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: met-office-rmed-collab-stack
