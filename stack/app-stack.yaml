@@ -1,16 +1,33 @@
 Parameters:
+
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to an instance
     Type: AWS::EC2::KeyPair::KeyName
+
   ServiceOwner:
     Description: The owner of the service which costs are attributed to
     Type: String
+
   ServiceCode:
     Description: The code attached to the service which costs are attributed to
     Type: String
+
   ServiceName:
     Description: The name of the service which costs are attributed to
     Type: String
+
+  ProjectName:
+    Description: The name of the project
+    Default: forest
+    Type: String
+    AllowedPattern: "[a-z0-9]+"
+    ConstraintDescription: Name must be in lower case or numeric
+
+  UniqueEnvName:
+    Type: String
+    Default: prototype
+    Description: Unique environment name
+
 
 Resources:
   HelloBucket:
@@ -29,7 +46,7 @@ Resources:
   HelloWorldLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: hello-world-lambda-execution-role
+      RoleName: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda-role"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -39,11 +56,24 @@ Resources:
                 - lambda.amazonaws.com
               Action:
                 - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda-policy"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:CreateLogEvents
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda:*"
 
   HelloWorldLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: hello-world-lambda
+      FunctionName: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
       Handler: hello_world.handler
       Runtime: python3.7
       MemorySize: 128
