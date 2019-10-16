@@ -81,8 +81,8 @@ Resources:
       Timeout: 30
       Role: !GetAtt HelloWorldLambdaExecutionRole.Arn
       Code:
-        S3Bucket: Fn::GetArtifactAtt: [SourceArtifact, BucketName]
-        S3Key: Fn::GetArtifactAtt: [SourceArtifact, ObjectKey]
+        S3Bucket: !GetArtifactAtt SourceArtifact.BucketName
+        S3Key: !GetArtifactAtt SourceArtifact.ObjectKey
       Tags:
         - Key: Name
           Value: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
