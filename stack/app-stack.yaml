@@ -23,6 +23,14 @@ Parameters:
     AllowedPattern: "[a-z0-9]+"
     ConstraintDescription: Name must be in lower case or numeric
 
+  ArtifactS3Bucket:
+    Description: Bucket used by CodePipeline to store code
+    Type: String
+
+  ArtifactS3Key:
+    Description: Object key used by CodePipeline to store code
+    Type: String
+
   UniqueEnvName:
     Type: String
     Default: prototype
@@ -81,8 +89,8 @@ Resources:
       Timeout: 30
       Role: !GetAtt HelloWorldLambdaExecutionRole.Arn
       Code:
-        S3Bucket: !GetArtifactAtt SourceArtifact.BucketName
-        S3Key: !GetArtifactAtt SourceArtifact.ObjectKey
+        S3Bucket: !Sub "${ArtifactS3Bucket}"
+        S3Key: !Sub "${ArtifactS3Key}"
       Tags:
         - Key: Name
           Value: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
