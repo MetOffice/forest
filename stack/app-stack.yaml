@@ -54,8 +54,8 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
-              Action:
-                - sts:AssumeRole
+            Action:
+              - sts:AssumeRole
       Path: /
       Policies:
         - PolicyName: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda-policy"
