@@ -80,10 +80,12 @@ Resources:
       MemorySize: 128
       Timeout: 30
       Role: !GetAtt HelloWorldLambdaExecutionRole.Arn
-      Code: ./src
+      Code:
+        S3Bucket: Fn::GetArtifactAtt: [SourceArtifact, BucketName]
+        S3Key: Fn::GetArtifactAtt: [SourceArtifact, ObjectKey]
       Tags:
         - Key: Name
-          Value: hello-world-lambda
+          Value: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
         - Key: ServiceOwner
           Value: !Ref ServiceOwner
         - Key: ServiceCode
