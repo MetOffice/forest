@@ -2,6 +2,15 @@ Parameters:
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to an instance
     Type: AWS::EC2::KeyPair::KeyName
+  ServiceOwner:
+    Description: The owner of the service which costs are attributed to
+    Type: String
+  ServiceCode:
+    Description: The code attached to the service which costs are attributed to
+    Type: String
+  ServiceName:
+    Description: The name of the service which costs are attributed to
+    Type: String
 
 Resources:
   HelloBucket:
@@ -9,3 +18,44 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: met-office-rmed-collab-stack
+      Tags:
+        - Key: ServiceOwner
+          Value: !Ref ServiceOwner
+        - Key: ServiceCode
+          Value: !Ref ServiceCode
+        - Key: ServiceName
+          Value: !Ref ServiceName
+
+  HelloWorldLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: hello-world-lambda-execution-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+
+  HelloWorldLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: hello-world-lambda
+      Handler: hello_world.handler
+      Runtime: python3.7
+      MemorySize: 128
+      Timeout: 30
+      Role: !GetAtt HelloWorldLambdaExecutionRole.Arn
+      Code: ./src
+      Tags:
+        - Key: Name
+          Value: hello-world-lambda
+        - Key: ServiceOwner
+          Value: !Ref ServiceOwner
+        - Key: ServiceCode
+          Value: !Ref ServiceCode
+        - Key: ServiceName
+          Value: !Ref ServiceName
