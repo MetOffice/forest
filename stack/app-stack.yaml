@@ -83,7 +83,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
-      Handler: hello_world.handler
+      Handler: stack/src/hello_world.handler
       Runtime: python3.7
       MemorySize: 128
       Timeout: 30
