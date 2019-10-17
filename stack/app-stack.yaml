@@ -130,12 +130,32 @@ Resources:
             HelloWorldSchema:
               body:
                 type: string
+            PresignSchema:
+              body:
+                type: string
         info:
           description: Simple Hello World API with Lambda integration
           title: Hello World API
           version: 0.1.0
         openapi: 3.0.0
         paths:
+          /presign:
+            post:
+              description: Generate pre-signed S3 URL
+              responses:
+                '200':
+                  description: OK
+              requestBody:
+                description: JSON encoded body
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#components/schemas/PresignSchema"
+              consumes:
+                - "application/json"
+              returns:
+                - "application/json"
           /helloworld:
             get:
               description: Returns Hello World
