@@ -97,7 +97,6 @@ class EIDA50(object):
                 self.empty)
 
     def render(self, state):
-        print(state)
         if state.valid_time is not None:
             self.image(self.to_datetime(state.valid_time))
 
@@ -116,7 +115,6 @@ class EIDA50(object):
             raise Exception("Unknown value: {}".format(d))
 
     def image(self, time):
-        print("EIDA50: {}".format(time))
         try:
             self.source.data = self.loader.image(time)
         except (FileNotFound, IndexNotFound):

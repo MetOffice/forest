@@ -30,7 +30,6 @@ class Config(object):
             self.navigators[group.pattern] = FileSystem.file_type(paths, group.file_type)
 
     def variables(self, pattern):
-        print(pattern)
         return self.navigators[pattern].variables(pattern)
 
     def initial_times(self, pattern, variable=None):

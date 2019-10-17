@@ -386,7 +386,6 @@ class ControlView(Observable):
     def render(self, state):
         """Configure dropdown menus"""
         assert isinstance(state, dict), "Only support dict"
-        print(state)
         for key, items_key in [
                 ("pattern", "patterns"),
                 ("variable", "variables"),

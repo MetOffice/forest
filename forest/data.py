@@ -147,10 +147,7 @@ def cache(name):
     def decorator(f):
         def wrapped(*args):
             if args not in store:
-                print("load from disk")
                 store[args] = f(*args)
-            else:
-                print("seen before")
             return store[args]
         return wrapped
     return decorator
@@ -229,7 +226,6 @@ class WindBarbs(ActiveViewer):
     @staticmethod
     @cache("VECTORS")
     def load_data(path, itime, ipressure):
-        print("load_data", path, ipressure, itime)
         step = 100
         with netCDF4.Dataset(path) as dataset:
             var = dataset.variables["x_wind"]
@@ -310,7 +306,6 @@ class DBLoader(object):
                 state.initial_time,
                 state.valid_time,
                 state.pressure)
-            print("{}() {} {}".format(self.__class__.__name__, path, pts))
         except SearchFail:
             return self.empty_image
 
@@ -384,7 +379,6 @@ class SeriesLoader(object):
             pressure=None):
         data = {"x": [], "y": []}
         paths = self.locator.locate(initial_time)
-        print(paths)
         for path in paths:
             segment = self.series_file(
                     path,
@@ -740,7 +734,6 @@ def load_image(path, variable, itime, ipressure):
 def load_image_pts(path, variable, pts_3d, pts_4d):
     key = (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
     if key in IMAGES:
-        print("already seen: {}".format(key))
         return IMAGES[key]
     else:
         try:
@@ -756,9 +749,6 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
             values = convert_units(values, units, "kg m-2 hour-1")
     elif units == "K":
         values = convert_units(values, "K", "Celsius")
-
-    # DEBUG
-    print(pts_3d, values.shape)
 
     # Coarsify images
     threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199
