@@ -142,6 +142,8 @@ Resources:
           /presign:
             post:
               description: Generate pre-signed S3 URL
+              produces:
+                - "application/json"
               responses:
                 '200':
                   description: OK
@@ -152,10 +154,19 @@ Resources:
                   application/json:
                     schema:
                       $ref: "#components/schemas/PresignSchema"
-              consumes:
-                - "application/json"
-              returns:
-                - "application/json"
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                responses:
+                  default:
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'" # This should be locked down to requesting domains unless it's a public API.
+                    responseTemplates:
+                      application/json: $input.json('$')
+                    statusCode: 200
+                type: aws
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda/invocations"
           /helloworld:
             get:
               description: Returns Hello World
