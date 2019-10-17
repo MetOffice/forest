@@ -709,7 +709,6 @@ def fieldValueLUT(fn, uid):
 
 class Locator(object):
     def __init__(self, pattern):
-        print("rdt.Locator('{}')".format(pattern))
         self.pattern = pattern
 
     def find_file(self, valid_date):

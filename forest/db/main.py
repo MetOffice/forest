@@ -23,7 +23,6 @@ def main(argv=None, args=None):
         args = parse_args(argv=argv)
     with db.Database.connect(args.database) as database:
         for path in args.paths:
-            print("reading: {}".format(path))
             database.insert_netcdf(path)
 
 

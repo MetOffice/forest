@@ -37,7 +37,6 @@ class Locator(Connection):
             else:
                 path = file_name
             ta, pa = self.axes(file_name, variable)
-            print(ta, pa)
             if (ta is None) and (pa is None):
                 return path, ()
             elif (ta is None) and (pa is not None):

@@ -112,7 +112,6 @@ def main(argv=None):
 
     # Database/File system loader(s)
     for group in config.file_groups:
-        print(group)
         if group.label not in data.LOADERS:
             if group.locator == "database":
                 loader = load.Loader.group_args(
@@ -505,7 +504,6 @@ class Series(object):
         pressure = self.state.get("pressure", None)
         self.figure.title.text = variable
         for name, source in self.sources.items():
-            print(name, source)
             loader = self.loaders[name]
             lon, lat = geo.plate_carree(x, y)
             lon, lat = lon[0], lat[0]  # Map to scalar
@@ -529,7 +527,6 @@ class Artist(object):
         self.state = None
 
     def on_visible(self, visible_state):
-        print("on_visible", visible_state)
         if self.visible_state is not None:
             # Hide deselected states
             lost_items = (
