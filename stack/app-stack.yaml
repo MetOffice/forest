@@ -130,9 +130,6 @@ Resources:
             HelloWorldSchema:
               body:
                 type: string
-            PresignSchema:
-              body:
-                type: string
         info:
           description: Simple Hello World API with Lambda integration
           title: Hello World API
@@ -142,18 +139,23 @@ Resources:
           /presign:
             post:
               description: Generate pre-signed S3 URL
-              produces:
-                - "application/json"
               responses:
                 '200':
                   description: OK
-              requestBody:
-                description: JSON encoded body
-                required: true
-                content:
-                  application/json:
-                    schema:
-                      $ref: "#components/schemas/PresignSchema"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#components/schemas/HelloWorldSchema"
+                  headers:
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 responses:
