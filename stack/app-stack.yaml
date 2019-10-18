@@ -136,12 +136,12 @@ Resources:
           version: 0.1.0
         openapi: 3.0.0
         paths:
-          /presign/{file_name}:
+          /presign:
             get:
               description: Generate pre-signed S3 URL
               parameters:
                 - name: file_name
-                  in: path
+                  in: query
                   required: true
                   schema:
                     type: string
@@ -166,10 +166,6 @@ Resources:
                 httpMethod: POST
                 responses:
                   default:
-                    requestParameters:
-                      integration.request.path.file_name: method.request.path.file_name
-                    requestTemplates:
-                      application/json: $input.path('$')
                     responseParameters:
                       method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
                       method.response.header.Access-Control-Allow-Methods: "'GET'"
