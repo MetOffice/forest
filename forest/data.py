@@ -17,6 +17,7 @@ except ImportError:
     # ReadTheDocs unable to pip install cf-units
     pass
 from forest import (
+        gridded_forecast,
         satellite,
         rdt,
         earth_networks,
@@ -267,37 +268,10 @@ class DBLoader(object):
         self.name = name
         self.pattern = pattern
         self.locator = locator
-        self.empty_image = {
-            "x": [],
-            "y": [],
-            "dw": [],
-            "dh": [],
-            "image": [],
-            "name": [],
-            "units": [],
-            "valid": [],
-            "initial": [],
-            "length": [],
-            "level": []
-        }
-
-    @staticmethod
-    def to_datetime(d):
-        if isinstance(d, dt.datetime):
-            return d
-        elif isinstance(d, str):
-            try:
-                return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
-        elif isinstance(d, np.datetime64):
-            return d.astype(dt.datetime)
-        else:
-            raise Exception("Unknown value: {}".format(d))
 
     def image(self, state):
         if not self.valid(state):
-            return self.empty_image
+            return gridded_forecast.empty_image()
 
         try:
             path, pts = self.locator.locate(
@@ -307,13 +281,9 @@ class DBLoader(object):
                 state.valid_time,
                 state.pressure)
         except SearchFail:
-            return self.empty_image
+            return gridded_forecast.empty_image()
 
-        valid = self.to_datetime(state.valid_time)
-        initial = self.to_datetime(state.initial_time)
-        hours = (valid - initial).total_seconds() / (60*60)
         units = self.read_units(path, state.variable)
-        length = "T{:+}".format(int(hours))
         data = load_image_pts(
                 path,
                 state.variable,
@@ -323,12 +293,12 @@ class DBLoader(object):
             level = "{} hPa".format(int(state.pressure))
         else:
             level = "Surface"
+        data.update(gridded_forecast.coordinates(state.valid_time,
+                                                 state.initial_time,
+                                                 state.pressures,
+                                                 state.pressure))
         data["name"] = [self.name]
         data["units"] = [units]
-        data["valid"] = [valid]
-        data["initial"] = [initial]
-        data["length"] = [length]
-        data["level"] = [level]
         return data
 
     @staticmethod
