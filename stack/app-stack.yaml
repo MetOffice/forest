@@ -134,48 +134,26 @@ Resources:
           description: Simple pre-signed URL API with Lambda integration
           title: Pre-signed URL API
           version: 0.1.0
-        openapi: 3.0.0
+        openapi: 3.0.1
         paths:
-          /presign/{file+}:
-            x-amazon-apigateway-any-method:
+          /presign:
+            get:
               description: Generate pre-signed S3 URL
               parameters:
-                - name: file
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-              responses:
-                '200':
-                  description: Successful generation of URL
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#components/schemas/PresignSchema"
-                  headers:
-                    Access-Control-Allow-Headers:
-                      schema:
-                        type: string
-                    Access-Control-Allow-Methods:
-                      schema:
-                        type: string
-                    Access-Control-Allow-Origin:
-                      schema:
-                        type: string
+              - name: file
+                in: query
+                default: file.nc
+                schema:
+                  type: string
               x-amazon-apigateway-integration:
-                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda/invocations"
                 responses:
                   default:
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-                      method.response.header.Access-Control-Allow-Methods: "'GET'"
-                      method.response.header.Access-Control-Allow-Origin: "'*'" # This should be locked down to requesting domains unless it's a public API.
-                    responseTemplates:
-                      application/json: $input.json('$')
-                    statusCode: 200
-                type: aws_proxy
-                passthroughBehaviour: when_no_match
-                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda/invocations"
+                    statusCode: "200"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws"
 
 
   # The API Gateway Deployment after the gateway is done.
