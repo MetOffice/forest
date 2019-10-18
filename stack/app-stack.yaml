@@ -136,12 +136,12 @@ Resources:
           version: 0.1.0
         openapi: 3.0.0
         paths:
-          /presign:
-            get:
+          /presign/{file+}:
+            x-amazon-apigateway-any-method:
               description: Generate pre-signed S3 URL
               parameters:
-                - name: file_name
-                  in: query
+                - name: file
+                  in: path
                   required: true
                   schema:
                     type: string
@@ -173,7 +173,8 @@ Resources:
                     responseTemplates:
                       application/json: $input.json('$')
                     statusCode: 200
-                type: aws
+                type: aws_proxy
+                passthroughBehaviour: when_no_match
                 uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda/invocations"
 
 
