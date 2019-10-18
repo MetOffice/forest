@@ -46,7 +46,7 @@ Resources:
   HelloBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Public
+      AccessControl: PublicReadWrite
       BucketName: !Ref CollaborationBucketName
       Tags:
         - Key: ServiceOwner
