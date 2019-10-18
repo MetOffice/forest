@@ -6,9 +6,10 @@ from botocore.exceptions import ClientError
 
 
 def handler(event, context):
-    object_name = json.loads(event['body'])['object_name']
-    bucket_name = os.environ["BUCKET"]
-    response= presigned_post(bucket_name, object_name)
+    # object_name = json.loads(event['body'])['object_name']
+    # bucket_name = os.environ["BUCKET"]
+    # response= presigned_post(bucket_name, object_name)
+    response = event
     return {
         'statusCode': 200,
         'body': json.dumps(response)

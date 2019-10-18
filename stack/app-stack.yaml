@@ -88,7 +88,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
-      Handler: stack/src/hello_world.handler
+      Handler: stack/src/presign.handler
       Runtime: python3.7
       MemorySize: 128
       Timeout: 30
@@ -136,9 +136,15 @@ Resources:
           version: 0.1.0
         openapi: 3.0.0
         paths:
-          /presign:
+          /presign/{file_name}:
             get:
               description: Generate pre-signed S3 URL
+              parameters:
+                - name: file_name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
               responses:
                 '200':
                   description: Successful generation of URL
@@ -172,6 +178,7 @@ Resources:
 
 
   # The API Gateway Deployment after the gateway is done.
+  # NOTE: A manual re-deploy is needed to get REST API changes
   APIGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: [HelloWorldLambdaPermission]
