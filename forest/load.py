@@ -25,6 +25,7 @@ from forest import (
         data,
         db,
         earth_networks,
+        gridded_forecast,
         unified_model,
         rdt,
         satellite)
@@ -138,6 +139,8 @@ class Loader(object):
             return earth_networks.Loader.pattern(pattern)
         elif file_type == 'eida50':
             return satellite.EIDA50(pattern)
+        elif file_type == 'griddedforecast':
+            return gridded_forecast.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
         else:
