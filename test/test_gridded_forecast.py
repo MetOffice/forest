@@ -161,3 +161,141 @@ class Test_load(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             gridded_forecast._load(None)
+
+
+class Test_ImageLoader(unittest.TestCase):
+    @patch('forest.gridded_forecast._load')
+    def test_init(self, load):
+        load.return_value = sentinel.cubes
+        result = gridded_forecast.ImageLoader(sentinel.label, sentinel.pattern)
+        load.assert_called_once_with(sentinel.pattern)
+        self.assertEqual(result._label, sentinel.label)
+        self.assertEqual(result._cubes, sentinel.cubes)
+
+    @patch('forest.gridded_forecast.empty_image')
+    @patch('iris.Constraint')
+    @patch('forest.gridded_forecast._to_datetime')
+    def test_empty(self, to_datetime, constraint, empty_image):
+        # To avoid re-testing the constructor, just make a fake ImageLoader
+        # instance.
+        original_cube = Mock()
+        original_cube.extract.return_value = None
+        image_loader = Mock(_cubes={'foo': original_cube})
+
+        to_datetime.return_value = sentinel.valid_datetime
+        constraint.return_value = sentinel.constraint
+        empty_image.return_value = sentinel.empty_image
+
+        result = gridded_forecast.ImageLoader.image(
+            image_loader, Mock(variable='foo', valid_time=sentinel.valid))
+
+        to_datetime.assert_called_once_with(sentinel.valid)
+        constraint.assert_called_once_with(time=sentinel.valid_datetime)
+        original_cube.extract.assert_called_once_with(sentinel.constraint)
+        self.assertEqual(result, sentinel.empty_image)
+
+    @patch('forest.gridded_forecast.coordinates')
+    @patch('forest.geo.stretch_image')
+    @patch('iris.Constraint')
+    @patch('forest.gridded_forecast._to_datetime')
+    def test_image(self, to_datetime, constraint, stretch_image, coordinates):
+        # To avoid re-testing the constructor, just make a fake ImageLoader
+        # instance.
+        cube = Mock()
+        cube.coord.side_effect = [Mock(points=sentinel.longitudes),
+                                  Mock(points=sentinel.latitudes)]
+        cube.units.__str__ = lambda self: 'my-units'
+        original_cube = Mock()
+        original_cube.extract.return_value = cube
+        image_loader = Mock(_cubes={'foo': original_cube}, _label='my-label')
+
+        to_datetime.return_value = sentinel.valid_datetime
+        constraint.return_value = sentinel.constraint
+        stretch_image.return_value = {'stretched_image': True}
+        coordinates.return_value = {'coordinates': True}
+
+        result = gridded_forecast.ImageLoader.image(
+            image_loader, Mock(variable='foo', valid_time=sentinel.valid,
+                               initial_time=sentinel.initial,
+                               pressures=sentinel.pressures,
+                               pressure=sentinel.pressure))
+
+        self.assertEqual(cube.coord.mock_calls, [call('longitude'),
+                                                 call('latitude')])
+        stretch_image.assert_called_once_with(sentinel.longitudes,
+                                              sentinel.latitudes, cube.data)
+        coordinates.assert_called_once_with(sentinel.valid, sentinel.initial,
+                                            sentinel.pressures,
+                                            sentinel.pressure)
+        self.assertEqual(result, {'stretched_image': True, 'coordinates': True,
+                                  'name': ['my-label'], 'units': ['my-units']})
+
+
+class Test_Navigator(unittest.TestCase):
+    @patch('forest.gridded_forecast._load')
+    def test_init(self, load):
+        load.return_value = sentinel.cubes
+        result = gridded_forecast.Navigator(sentinel.paths)
+        load.assert_called_once_with(sentinel.paths)
+        self.assertEqual(result._cubes, sentinel.cubes)
+
+    def test_variables(self):
+        navigator = Mock(_cubes={'one': 1, 'two': 2, 'three': 3})
+        result = gridded_forecast.Navigator.variables(navigator, None)
+        self.assertEqual(list(sorted(result)), ['one', 'three', 'two'])
+
+    def test_initial_times(self):
+        cube1 = Mock()
+        cube1.coord.return_value.cell().point = '2019-10-18'
+        cube2 = Mock()
+        cube2.coord.return_value.cell().point = '2019-10-19'
+        cube3 = Mock()
+        cube3.coord.return_value.cell().point = '2019-10-18'
+        navigator = Mock()
+        navigator._cubes.values.return_value = [cube1, cube2, cube3]
+
+        result = gridded_forecast.Navigator.initial_times(navigator, None,
+                                                          None)
+
+        navigator._cubes.values.assert_called_once_with()
+        cube1.coord.assert_called_once_with('forecast_reference_time')
+        cube2.coord.assert_called_once_with('forecast_reference_time')
+        cube3.coord.assert_called_once_with('forecast_reference_time')
+        self.assertEqual(list(sorted(result)), ['2019-10-18', '2019-10-19'])
+
+    def test_valid_times(self):
+        cube1 = Mock()
+        cube1.coord.return_value.cells.return_value = [Mock(point='p1'),
+                                                       Mock(point='p2')]
+        navigator = Mock()
+        navigator._cubes = {'first': cube1, 'second': None}
+
+        result = gridded_forecast.Navigator.valid_times(navigator, None,
+                                                        'first', None)
+
+        cube1.coord.assert_called_once_with('time')
+        self.assertEqual(result, ['p1', 'p2'])
+
+    def test_pressures(self):
+        cube1 = Mock()
+        cube1.coord.return_value.cells.return_value = [Mock(point='p1'),
+                                                       Mock(point='p2')]
+        navigator = Mock()
+        navigator._cubes = {'first': cube1, 'second': None}
+        result = gridded_forecast.Navigator.pressures(navigator, None,
+                                                        'first', None)
+
+        cube1.coord.assert_called_once_with('pressure')
+        self.assertEqual(result, ['p1', 'p2'])
+
+    def test_pressures_empty(self):
+        cube1 = Mock()
+        cube1.coord.side_effect = iris.exceptions.CoordinateNotFoundError
+        navigator = Mock()
+        navigator._cubes = {'first': cube1, 'second': None}
+
+        result = gridded_forecast.Navigator.pressures(navigator, None,
+                                                        'first', None)
+
+        cube1.coord.assert_called_once_with('pressure')
+        self.assertEqual(result, [])
