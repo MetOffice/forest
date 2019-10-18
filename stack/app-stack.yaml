@@ -136,16 +136,9 @@ Resources:
           version: 0.1.0
         openapi: 3.0.0
         paths:
-          /presign/{file_name}:
+          /presign:
             get:
               description: Generate pre-signed S3 URL
-              parameters:
-              - name: file_name
-                in: path
-                description: Name of file related to pre-signed URL
-                required: true
-                schema:
-                  type: string
               responses:
                 '200':
                   description: Successful generation of URL
