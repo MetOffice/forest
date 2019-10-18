@@ -121,31 +121,38 @@ Resources:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Name: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-api-gateway"
-      Description: Hello World API
+      Description: Pre-signed URL API
       # The Body is the OPEN API (Swagger) Standard.
       # http://editor.swagger.io/
       Body:
         components:
           schemas:
-            HelloWorldSchema:
+            PresignSchema:
               body:
                 type: string
         info:
-          description: Simple Hello World API with Lambda integration
-          title: Hello World API
+          description: Simple pre-signed URL API with Lambda integration
+          title: Pre-signed URL API
           version: 0.1.0
         openapi: 3.0.0
         paths:
-          /presign:
-            post:
+          /presign/{file_name}:
+            get:
               description: Generate pre-signed S3 URL
+              parameters:
+              - name: file_name
+                in: path
+                description: Name of file related to pre-signed URL
+                required: true
+                schema:
+                  type: string
               responses:
                 '200':
-                  description: OK
+                  description: Successful generation of URL
                   content:
                     application/json:
                       schema:
-                        $ref: "#components/schemas/HelloWorldSchema"
+                        $ref: "#components/schemas/PresignSchema"
                   headers:
                     Access-Control-Allow-Headers:
                       schema:
