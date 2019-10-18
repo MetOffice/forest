@@ -166,6 +166,10 @@ Resources:
                 httpMethod: POST
                 responses:
                   default:
+                    requestParameters:
+                      integration.request.path.file_name: method.request.querystring.file_name
+                    requestTemplates:
+                      application/json: $input.json('$')
                     responseParameters:
                       method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
                       method.response.header.Access-Control-Allow-Methods: "'GET'"
