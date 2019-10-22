@@ -135,6 +135,33 @@ Resources:
           version: 0.1.0
         openapi: 3.0.1
         paths:
+          /hello:
+            get:
+              description: Hello, world!
+              parameters:
+                - name: "action"
+                  in: query
+                  schema:
+                    type: string
+              responses:
+                "200":
+                  content:
+                    application/json:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                requestTemplates:
+                  application/json: |
+                    {
+                      "body": $input.json('$')
+                    }
+
           /presign:
             get:
               description: Generate pre-signed S3 URL

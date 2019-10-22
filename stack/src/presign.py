@@ -7,10 +7,6 @@ from botocore.exceptions import ClientError
 
 def handler(event, context):
     object_name = os.path.basename(event["params"]["querystring"]["file"])
-    if not object_name.startswith("forest"):
-        return {
-            "statusCode": 400
-        }
     bucket_name = os.environ["BUCKET"]
     response = presigned_post(bucket_name, object_name)
     return {
