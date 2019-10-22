@@ -1,0 +1,6 @@
+# Runtime dependencies
+
+## to be populated with runtime dependencies for the lambda
+
+#This is a completely pointless requirement that's in here for demo purposes
+cowsay==2.0.3 

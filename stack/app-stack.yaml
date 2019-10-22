@@ -1,0 +1,259 @@
+Parameters:
+
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to an instance
+    Type: AWS::EC2::KeyPair::KeyName
+
+  ServiceOwner:
+    Description: The owner of the service which costs are attributed to
+    Type: String
+
+  ServiceCode:
+    Description: The code attached to the service which costs are attributed to
+    Type: String
+
+  ServiceName:
+    Description: The name of the service which costs are attributed to
+    Type: String
+
+  ProjectName:
+    Description: The name of the project
+    Default: forest
+    Type: String
+    AllowedPattern: "[a-z0-9]+"
+    ConstraintDescription: Name must be in lower case or numeric
+
+  ArtifactS3Bucket:
+    Description: Bucket used by CodePipeline to store code
+    Type: String
+
+  ArtifactS3Key:
+    Description: Object key used by CodePipeline to store code
+    Type: String
+
+  UniqueEnvName:
+    Type: String
+    Default: prototype
+    Description: Unique environment name
+
+  CollaborationBucketName:
+    Type: String
+    Default: met-office-rmed-collab-stack
+    Description: Collaboration bucket name
+
+
+Resources:
+  HelloBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicReadWrite
+      BucketName: !Ref CollaborationBucketName
+      Tags:
+        - Key: ServiceOwner
+          Value: !Ref ServiceOwner
+        - Key: ServiceCode
+          Value: !Ref ServiceCode
+        - Key: ServiceName
+          Value: !Ref ServiceName
+
+  HelloWorldLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda-role"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda-policy"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:CreateLogEvents
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda:*"
+
+  HelloWorldLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
+      Handler: stack/src/presign.handler
+      Runtime: python3.7
+      MemorySize: 128
+      Timeout: 30
+      Role: !GetAtt HelloWorldLambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Sub "${ArtifactS3Bucket}"
+        S3Key: !Sub "${ArtifactS3Key}"
+      Environment:
+        Variables:
+          BUCKET: !Ref CollaborationBucketName
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
+        - Key: ServiceOwner
+          Value: !Ref ServiceOwner
+        - Key: ServiceCode
+          Value: !Ref ServiceCode
+        - Key: ServiceName
+          Value: !Ref ServiceName
+
+  HelloWorldLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt HelloWorldLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${APIGateway}/*"
+
+  APIGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub "${ProjectName}-${UniqueEnvName}-${AWS::Region}-api-gateway"
+      Description: Pre-signed URL API
+      # The Body is the OPEN API (Swagger) Standard.
+      # http://editor.swagger.io/
+      Body:
+        components:
+          schemas:
+            Presign:
+              type: "object"
+            Multipart:
+              type: string
+              enum:
+                - start
+                - stop
+        info:
+          description: Simple pre-signed URL API with Lambda integration
+          title: Pre-signed URL API
+          version: 0.1.0
+        openapi: 3.0.1
+        paths:
+          /hello:
+            get:
+              description: Hello, world!
+              parameters:
+                - name: "action"
+                  in: query
+                  schema:
+                    $ref: "#components/schemas/Multipart"
+              responses:
+                "200":
+                  description: Boiler-plate to understand OpenAPI syntax
+                  content:
+                    application/json:
+                      schema:
+                        type: string
+              security:
+              - api_key: []
+              x-amazon-apigateway-integration:
+                type: "aws_proxy"
+                httpMethod: "POST"
+                contentHandling: "CONVERT_TO_TEXT"
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                requestTemplates:
+                  application/json: |
+                    {
+                      "body": "$input.json('$')",
+                      "params": "$input.params()"
+                    }
+
+          /presign:
+            get:
+              description: Generate pre-signed S3 URL
+              parameters:
+              - name: "file"
+                in: query
+                required: true
+                schema:
+                  type: string
+              responses:
+                "200":
+                  description: Successful pre-signed URL generation
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#components/schemas/Presign"
+              x-amazon-apigateway-integration:
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                requestParameters:
+                  integration.request.querystring.file: "method.request.querystring.file"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                requestTemplates:
+                  application/json: "##  See http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html\n\
+                    ##  This template will pass through all parameters including path, querystring,\
+                    \ header, stage variables, and context through to the integration endpoint\
+                    \ via the body/payload\n#set($allParams = $input.params())\n{\n\"body-json\"\
+                    \ : $input.json('$'),\n\"params\" : {\n#foreach($type in $allParams.keySet())\n\
+                    \    #set($params = $allParams.get($type))\n\"$type\" : {\n    #foreach($paramName\
+                    \ in $params.keySet())\n    \"$paramName\" : \"$util.escapeJavaScript($params.get($paramName))\"\
+                    \n        #if($foreach.hasNext),#end\n    #end\n}\n    #if($foreach.hasNext),#end\n\
+                    #end\n},\n\"stage-variables\" : {\n#foreach($key in $stageVariables.keySet())\n\
+                    \"$key\" : \"$util.escapeJavaScript($stageVariables.get($key))\"\n   \
+                    \ #if($foreach.hasNext),#end\n#end\n},\n\"context\" : {\n    \"account-id\"\
+                    \ : \"$context.identity.accountId\",\n    \"api-id\" : \"$context.apiId\"\
+                    ,\n    \"api-key\" : \"$context.identity.apiKey\",\n    \"authorizer-principal-id\"\
+                    \ : \"$context.authorizer.principalId\",\n    \"caller\" : \"$context.identity.caller\"\
+                    ,\n    \"cognito-authentication-provider\" : \"$context.identity.cognitoAuthenticationProvider\"\
+                    ,\n    \"cognito-authentication-type\" : \"$context.identity.cognitoAuthenticationType\"\
+                    ,\n    \"cognito-identity-id\" : \"$context.identity.cognitoIdentityId\"\
+                    ,\n    \"cognito-identity-pool-id\" : \"$context.identity.cognitoIdentityPoolId\"\
+                    ,\n    \"http-method\" : \"$context.httpMethod\",\n    \"stage\" : \"\
+                    $context.stage\",\n    \"source-ip\" : \"$context.identity.sourceIp\"\
+                    ,\n    \"user\" : \"$context.identity.user\",\n    \"user-agent\" : \"\
+                    $context.identity.userAgent\",\n    \"user-arn\" : \"$context.identity.userArn\"\
+                    ,\n    \"request-id\" : \"$context.requestId\",\n    \"resource-id\" :\
+                    \ \"$context.resourceId\",\n    \"resource-path\" : \"$context.resourcePath\"\
+                    \n    }\n}\n"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws"
+        components:
+          securitySchemes:
+            api_key:
+              type: "apiKey"
+              name: "x-api-key"
+              in: "header"
+
+
+  # The API Gateway Deployment after the gateway is done.
+  # NOTE: A manual re-deploy is needed to get REST API changes
+  APIGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: [HelloWorldLambdaPermission]
+    Properties:
+      RestApiId: !Ref APIGateway
+      StageDescription:
+        #### Uncomment to enable caching ###
+        # CacheClusterEnabled: true
+        # CacheClusterSize: '0.5'
+        # CacheTtlInSeconds: 60
+        # CachingEnabled: true
+        MetricsEnabled: true
+        Tags:
+          - Key: Environment
+            Value: !Ref UniqueEnvName
+          - Key: ServiceCode
+            Value: !Ref ServiceCode
+          - Key: ServiceName
+            Value: !Ref ServiceName
+          - Key: ServiceOwner
+            Value: !Ref ServiceOwner
+      StageName: v1
