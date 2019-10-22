@@ -166,7 +166,8 @@ Resources:
                 requestTemplates:
                   application/json: |
                     {
-                      "body": $input.json('$')
+                      "body": "$input.json('$')",
+                      "params": "$input.params()"
                     }
 
           /presign:
