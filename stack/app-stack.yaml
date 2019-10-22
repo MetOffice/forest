@@ -225,11 +225,12 @@ Resources:
                     \n    }\n}\n"
                 contentHandling: "CONVERT_TO_TEXT"
                 type: "aws"
-        securityDefinitions:
-          api_key:
-            type: "apiKey"
-            name: "x-api-key"
-            in: "header"
+        components:
+          securitySchemes:
+            api_key:
+              type: "apiKey"
+              name: "x-api-key"
+              in: "header"
 
 
   # The API Gateway Deployment after the gateway is done.
