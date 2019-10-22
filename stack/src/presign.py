@@ -6,6 +6,25 @@ from botocore.exceptions import ClientError
 
 
 def handler(event, context):
+    if "queryStringParameters" in event:
+        action = event["queryStringParameters"]["action"]
+        if action.lower() == "start":
+            return {
+                'statusCode': 200,
+                'body': 'START'
+            }
+        elif action.lower() == "end":
+            return {
+                'statusCode': 200,
+                'body': 'END'
+            }
+        else:
+            return {
+                'statusCode': 400,
+                'body': 'uh-oh'
+            }
+
+
     object_name = os.path.basename(event["params"]["querystring"]["file"])
     bucket_name = os.environ["BUCKET"]
     response = presigned_post(bucket_name, object_name)
