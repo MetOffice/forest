@@ -156,7 +156,7 @@ Resources:
                       schema:
                         type: string
               security:
-                api_key: []
+              - api_key: []
               x-amazon-apigateway-integration:
                 type: "aws_proxy"
                 httpMethod: "POST"
