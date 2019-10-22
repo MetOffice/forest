@@ -151,6 +151,7 @@ Resources:
                         type: string
               x-amazon-apigateway-integration:
                 type: "aws"
+                httpMethod: "POST"
                 contentHandling: "CONVERT_TO_TEXT"
                 uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda/invocations"
                 responses:
