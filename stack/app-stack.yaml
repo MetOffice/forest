@@ -129,6 +129,11 @@ Resources:
           schemas:
             Presign:
               type: "object"
+            Multipart:
+              type: string
+              enum:
+                - start
+                - stop
         info:
           description: Simple pre-signed URL API with Lambda integration
           title: Pre-signed URL API
@@ -142,10 +147,10 @@ Resources:
                 - name: "action"
                   in: query
                   schema:
-                    type: string
+                    $ref: "#components/schemas/Multipart"
               responses:
                 "200":
-                  description: Boiler-plate to understand OpenAPI
+                  description: Boiler-plate to understand OpenAPI syntax
                   content:
                     application/json:
                       schema:
