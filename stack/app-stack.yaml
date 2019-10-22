@@ -145,6 +145,7 @@ Resources:
                     type: string
               responses:
                 "200":
+                  description: Boiler-plate to understand OpenAPI
                   content:
                     application/json:
                       schema:
@@ -157,8 +158,6 @@ Resources:
                 responses:
                   default:
                     statusCode: "200"
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
                 requestTemplates:
                   application/json: |
                     {
