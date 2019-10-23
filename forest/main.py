@@ -197,7 +197,8 @@ def main(argv=None):
         end=1,
         step=0.1,
         value=1.0,
-        show_value=False)
+        show_value=False,
+        title='Transparency')
 
     def is_image(renderer):
         return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
@@ -212,8 +213,8 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
-    colors_controls = colors.Controls(
-            color_mapper, "Plasma", 256)
+    default_palette="Plasma"#FCL: This could be changed based on data type or saved user settings
+    colors_controls = colors.Controls(color_mapper, default_palette, 256)
 
     mapper_limits = MapperLimits(image_sources, color_mapper)
 

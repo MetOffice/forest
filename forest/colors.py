@@ -25,7 +25,7 @@ class Controls(object):
 
         numbers = sorted(self.palettes[self.name].keys())
         self.numbers = bokeh.models.Dropdown(
-                label="N",
+                label="Colour Steps",#Was called N
                 value=str(self.number),
                 menu=self.numbers_menu(numbers))
         autolabel(self.numbers)
@@ -45,6 +45,7 @@ class Controls(object):
             active=[])
         self.invisible_checkbox.on_change("active",
                 self.on_invisible_checkbox)
+        ##FCL:I think we don't need the low box below, it will take from the other low (mapper_limits.low_input)
         self.invisible_input = bokeh.models.TextInput(
                 title="Low:",
                 value="0")
