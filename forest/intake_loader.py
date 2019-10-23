@@ -70,3 +70,4 @@ class IntakeNavigator:
 if __name__ == '__main__':
     cube = _load_from_intake()
     print(cube)
+    print('hi richard')
