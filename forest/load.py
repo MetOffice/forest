@@ -72,6 +72,7 @@ class Loader(object):
                         group.label,
                         pattern,
                         group.file_type)
+                        
         else:
             raise Exception("Unknown locator: {}".format(group.locator))
 
