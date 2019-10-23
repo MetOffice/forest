@@ -1,0 +1,4 @@
+files:     
+  - label: NCAR ESM
+    pattern: temporary
+    file_type: intake
