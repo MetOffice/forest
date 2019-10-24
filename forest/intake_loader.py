@@ -2,11 +2,13 @@ import intake
 from datetime import datetime
 from collections import namedtuple
 import numpy
+import cftime
+import iris
 
 from forest import geo, gridded_forecast
 
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
-HALO_SIZE=15
+HALO_SIZE=7
 
 def _load_from_intake(
         experiment_id='ssp585',
@@ -51,17 +53,25 @@ class IntakeLoader:
         valid_time = state.valid_time,
         pressure = state.pressure
 
-        cube = cube[0, 0, :, :]  # TODO: replace with dynamic extract
+        # month_start = cftime.DatetimeNoLeap(2020, 1, 1)
+        # month_end= cftime.DatetimeNoLeap(2020, 2, 1)
+        #
+        # cube1.extract(iris.Constraint(air_pressure=1000,time=lambda t: month_start < t.point < month_end))
+
+        cube = cube[10, 3, :, :]  # TODO: replace with dynamic extract
         # import pdb
         # pdb.set_trace()
 
         if cube is None or state.initial_time is None:
             data = gridded_forecast.empty_image()
         else:
-            cube_cropped = self._cube[0,0,50:100,50:100]
+            cube_cropped = cube[HALO_SIZE:-HALO_SIZE,:]
             lat_pts = cube_cropped.coord('latitude').points
             long_pts = cube_cropped.coord('longitude').points - 180.0
             cube_data_cropped = cube_cropped.data
+            cube_width = int(cube_data_cropped.shape[1]/2)
+            cube_data_cropped = numpy.concatenate([cube_data_cropped[:,cube_width:], cube_data_cropped[:,:cube_width]],axis=1)
+
             data = geo.stretch_image(long_pts, lat_pts, cube_data_cropped)
             data['image'] = [numpy.ma.masked_array(data['image'][0],
                                                   mask=numpy.isnan(
