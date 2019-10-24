@@ -1,11 +1,12 @@
 import intake
 from datetime import datetime
 from collections import namedtuple
+import numpy
 
 from forest import geo, gridded_forecast
 
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
-
+HALO_SIZE=15
 
 def _load_from_intake(
         experiment_id='ssp585',
@@ -51,12 +52,20 @@ class IntakeLoader:
         pressure = state.pressure
 
         cube = cube[0, 0, :, :]  # TODO: replace with dynamic extract
+        # import pdb
+        # pdb.set_trace()
 
         if cube is None or state.initial_time is None:
             data = gridded_forecast.empty_image()
         else:
-            data = geo.stretch_image(cube.coord('longitude').points,
-                                     cube.coord('latitude').points, cube.data)
+            cube_cropped = self._cube[0,0,50:100,50:100]
+            lat_pts = cube_cropped.coord('latitude').points
+            long_pts = cube_cropped.coord('longitude').points - 180.0
+            cube_data_cropped = cube_cropped.data
+            data = geo.stretch_image(long_pts, lat_pts, cube_data_cropped)
+            data['image'] = [numpy.ma.masked_array(data['image'][0],
+                                                  mask=numpy.isnan(
+                                                      data['image'][0]))]
             data.update(gridded_forecast.coordinates(state.valid_time,
                                                      state.initial_time,
                                                      state.pressures,
