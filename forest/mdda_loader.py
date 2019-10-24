@@ -141,39 +141,50 @@ def _nc_from_mdda(parameter, level, time):
 
 class MddaLoader:
     def __init__(self, url=URL):
+        print('mdda loader')
         self._label = 'dummy data'
         self.metadata = _load_from_mdda(url)
 
     def image(self, state):
+        print('mdda image')
         variable = state.variable
         init_time = state.initial_time
         valid_time = state.valid_time
         pressure = state.pressure
-
-        cube = _nc_from_mdda(variable, pressure, valid_time)        
-        if cube is None:
-            data = empty_image()
-        else:
-            data = geo.stretch_image(cube.coord('longitude').points,
-                                     cube.coord('latitude').points, cube.data)
-            img = data['image'][0]
-            masked_img = np.ma.masked_array(img, mask = np.isnan(img))
-            data['image'] = [masked_img]
-            data.update(gridded_forecast.coordinates(state.valid_time, state.initial_time,
-                                    state.pressures, state.pressure))
-            data.update({
-                'name': [self._label],
-                'units': [str(cube.units)]
-            })
+        print(state)
+        if variable is None:
+            data = gridded_forecast.empty_image()
+            print('returning empty data:')
+            print(data)
+        cube = _nc_from_mdda(variable, pressure, valid_time)   
+        print(cube)
+        print(type(cube))
+        data = geo.stretch_image(cube.coord('longitude').points,
+                                    cube.coord('latitude').points, cube.data)
+        img = data['image'][0]
+        masked_img = np.ma.masked_array(img, mask = np.isnan(img))
+        data['image'] = [masked_img]
+        data.update(gridded_forecast.coordinates(state.valid_time, state.initial_time,
+                                state.pressures, state.pressure))
+        data.update({
+            'name': [self._label],
+            'units': [str(cube.units)]
+        })
+        print('returning data:')
+        print(data)
         return data
 
 
 class MddaNavigator:
     def __init__(self, url=URL):
+        print(url)
         self.metadata = _load_from_mdda(url)
+        print(self.metadata.parameters)
 
     def variables(self, **kwargs):
-        return self.metadata.parameters
+        p = self.metadata.parameters
+        print(p)
+        return p
 
     def initial_times(self, **kwargs):
         return self.metadata.reference_times
