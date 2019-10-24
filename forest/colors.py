@@ -108,4 +108,6 @@ class Controls(object):
             color = bokeh.colors.RGB(0, 0, 0, a=0)
             self.color_mapper.low_color = color
             self.color_mapper.low = low
+        self.color_mapper.high_color = color
+        self.color_mapper.high = high
         self.color_mapper.palette = palette

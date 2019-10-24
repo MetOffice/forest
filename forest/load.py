@@ -28,7 +28,8 @@ from forest import (
         gridded_forecast,
         unified_model,
         rdt,
-        satellite)
+        satellite,
+        nearcast)
 
 
 __all__ = []
@@ -143,6 +144,8 @@ class Loader(object):
             return gridded_forecast.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
+        elif file_type == 'nearcast':
+            return nearcast.Nearcast(pattern)
         else:
             raise Exception("unrecognised file_type: {}".format(file_type))
 

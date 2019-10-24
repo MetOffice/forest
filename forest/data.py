@@ -18,6 +18,7 @@ except ImportError:
     pass
 from forest import (
         gridded_forecast,
+        nearcast,
         satellite,
         rdt,
         earth_networks,
