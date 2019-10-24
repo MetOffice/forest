@@ -10,7 +10,8 @@ from forest import (
         gridded_forecast,
         unified_model,
         eida50,
-        rdt)
+        rdt,
+        mdda_loader)
 
 
 class Config(object):
@@ -66,6 +67,8 @@ class FileSystem(object):
             return gridded_forecast.Navigator(paths)
         elif file_type.lower() == "unified_model":
             coordinates = unified_model.Coordinates()
+        elif file_type.lower() == "mdda":
+            coordinates = mdda_loader.MddaNavigator()
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)
