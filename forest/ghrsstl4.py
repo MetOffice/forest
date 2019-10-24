@@ -63,7 +63,12 @@ def coordinates(valid_time, initial_time, pressures, pressure):
 def _is_valid_cube(cube):
     """Return True if, and only if, the cube conforms to a GHRSST data specification"""
     attributes = cube.metadata.attributes
-    return ( "GDS_version_id" in attributes) or ("gds_version_id" in attributes)
+    is_gds = ("GDS_version_id" in attributes) or ("gds_version_id" in attributes)
+    dim_names = [c.name() for c in cube.dim_coords]
+    contains_dims = {'time', 'latitude', 'longitude'}.issubset(set(dim_names))
+    dims_are_ordered = dim_names[:3] == ['time', 'latitude', 'longitude']
+    has_3_dims = len(dim_names) == 3
+    return is_gds and contains_dims and dims_are_ordered and has_3_dims
 
 # TODO: This logic should move to a "Group" concept.
 def _load(pattern):
