@@ -6,15 +6,16 @@ from forest import geo, gridded_forecast
 
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
 
+
 def _load_from_intake(
-    experiment_id='ssp585',
-    table_id='Amon',
-    grid_label='gn',
-    variable_id='ta',
-    institution_id='NCAR',
-    activity_id='ScenarioMIP',
-    parent_source_id='CESM2',
-    member_id='r2i1p1f1'):
+        experiment_id='ssp585',
+        table_id='Amon',
+        grid_label='gn',
+        variable_id='ta',
+        institution_id='NCAR',
+        activity_id='ScenarioMIP',
+        parent_source_id='CESM2',
+        member_id='r2i1p1f1'):
     collection = intake.open_esm_datastore(URL)
     print('opening catalogue')
     cat = collection.search(
@@ -32,7 +33,7 @@ def _load_from_intake(
     xr = dset_dict[ds_label]
     print(xr[variable_id])
     cube = xr[variable_id].to_iris()
-    return cube[0] # drop member dimension
+    return cube[0]  # drop member dimension
 
 
 class IntakeLoader:
@@ -43,21 +44,23 @@ class IntakeLoader:
     def image(self, state):
         # TODO: cube = ?
         cube = self._cube
-        reference_time = datetime.now() # temporary
+        reference_time = datetime.now()  # temporary
         variable = state.variable,
         init_time = state.initial_time,
         valid_time = state.valid_time,
         pressure = state.pressure
 
-        cube = cube[0, 0, :, :] # TODO: replace with dynamic extract
-        
-        if cube is None:
-            data = empty_image()
+        cube = cube[0, 0, :, :]  # TODO: replace with dynamic extract
+
+        if cube is None or state.initial_time is None:
+            data = gridded_forecast.empty_image()
         else:
             data = geo.stretch_image(cube.coord('longitude').points,
                                      cube.coord('latitude').points, cube.data)
-            data.update(gridded_forecast.coordinates(state.valid_time, state.initial_time,
-                                    state.pressures, state.pressure))
+            data.update(gridded_forecast.coordinates(state.valid_time,
+                                                     state.initial_time,
+                                                     state.pressures,
+                                                     state.pressure))
             data.update({
                 'name': [self._label],
                 'units': [str(cube.units)]
@@ -69,31 +72,37 @@ class Navigator:
     def __init__(self):
         self._cube = _load_from_intake()
 
-    def variables(self):
-        return 'air_temperature'
+    def variables(self, pattern):
+        return ['air_temperature']
 
-    def initial_times(self):
+    def initial_times(self, pattern, variable=None):
         cube = self._cube
         for cell in cube.coord('time').cells():
-            return cell
+            init_time = gridded_forecast._to_datetime(cell.point)
+            return [init_time]
 
-    def valid_times(self):
+    def valid_times(self, pattern, variable, initial_time):
         cube = self._cube
-        return [cell.point for cell in cube.coord('time').cells()]
+        valid_times = [gridded_forecast._to_datetime(cell.point) for cell in cube.coord('time').cells()]
+        return valid_times
 
-    def pressures(self):
+    def pressures(self, pattern, variable, initial_time):
         cube = self._cube
         pressures = []
         try:
-            pressures = [cell.point for cell in cube.coord('air_pressure').cells()]
+            pressures = [cell.point for cell in
+                         cube.coord('air_pressure').cells()]
         except iris.exceptions.CoordinateNotFoundError:
             pass
         return pressures
 
+
 if __name__ == '__main__':
-    State = namedtuple('State', field_names=['variable', 'initial_time', 'valid_time', 'pressures', 'pressure'])
-    state = State('temperature', datetime.now(), datetime.now(), [1,2,3], 1)
-    
+    State = namedtuple('State',
+                       field_names=['variable', 'initial_time', 'valid_time',
+                                    'pressures', 'pressure'])
+    state = State('temperature', datetime.now(), datetime.now(), [1, 2, 3], 1)
+
     dummy_loader = IntakeLoader()
 
     dummy_image = dummy_loader.image(state)

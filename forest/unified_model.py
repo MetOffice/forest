@@ -6,7 +6,7 @@ import datetime as dt
 import numpy as np
 import netCDF4
 from forest import disk
-from forest.exceptions import SearchFail
+from forest.exceptions import SearchFail, PressuresNotFound
 try:
     import iris
 except ImportError:
