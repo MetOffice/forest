@@ -1,9 +1,10 @@
 import intake
 from datetime import datetime
 from collections import namedtuple
+import bokeh
 import numpy
-import cftime
 import iris
+import functools
 
 from forest import geo, gridded_forecast
 
@@ -39,33 +40,97 @@ def _load_from_intake(
     return cube[0]  # drop member dimension
 
 
+class IntakeView(object):
+    def __init__(self, loader, color_mapper):
+        self.loader = loader
+        self.color_mapper = color_mapper
+        self.source = bokeh.models.ColumnDataSource({
+                "x": [],
+                "y": [],
+                "dw": [],
+                "dh": [],
+                "image": []})
+
+    def render(self, state):
+        self.source.data = self.loader.image(state)
+
+    def add_figure(self, figure):
+        renderer = figure.image(
+                x="x",
+                y="y",
+                dw="dw",
+                dh="dh",
+                image="image",
+                source=self.source,
+                color_mapper=self.color_mapper)
+        tool = bokeh.models.HoverTool(
+                renderers=[renderer],
+                tooltips=[
+                    ("Name", "@name"),
+                    ("Value", "@image @units"),
+                    ('Valid', '@valid{%F %H:%M}'),
+                    ("Level", "@level"),
+                    ("Experiment","@experiment"),
+                    ("Institution", "@institution"),
+                    ("Member","@memberid")
+                ],
+                formatters={
+                    'valid': 'datetime',
+                })
+        figure.add_tools(tool)
+        return renderer
+
+
 class IntakeLoader:
     def __init__(self):
-        self._label = 'dummy data'
-        self._cube = _load_from_intake()
+        self.experiment_id = 'ssp585'
+        self.table_id = 'Amon'
+        self.grid_label = 'gn'
+        self.variable_id = 'ta'
+        self.institution_id = 'NCAR'
+        self.activity_id = 'ScenarioMIP'
+        self.parent_source_id = 'CESM2'
+        self.member_id = 'r2i1p1f1'
+        self._label = f'{self.experiment_id}_{self.institution_id}_{self.member_id}'
+        self._cube = _load_from_intake(experiment_id=self.experiment_id,
+                                       table_id=self.table_id,
+                                       grid_label=self.grid_label,
+                                       variable_id=self.variable_id,
+                                       institution_id=self.institution_id,
+                                       activity_id=self.activity_id,
+                                       parent_source_id=self.parent_source_id,
+                                       member_id=self.member_id)
 
     def image(self, state):
-        # TODO: cube = ?
         cube = self._cube
         reference_time = datetime.now()  # temporary
         variable = state.variable,
-        init_time = state.initial_time,
-        valid_time = state.valid_time,
+        init_time = state.initial_time
+        valid_time = state.valid_time
         pressure = state.pressure
 
-        # month_start = cftime.DatetimeNoLeap(2020, 1, 1)
-        # month_end= cftime.DatetimeNoLeap(2020, 2, 1)
-        #
-        # cube1.extract(iris.Constraint(air_pressure=1000,time=lambda t: month_start < t.point < month_end))
+        selected_time = gridded_forecast._to_datetime(valid_time)
+        def time_comp(select_time, time_cell):#
+            data_time = gridded_forecast._to_datetime(time_cell.point)
+            try:
+                if abs((select_time - data_time).days) < 2:
+                    return True
+            except ValueError:
+                pass
+            return False
 
-        cube = cube[10, 3, :, :]  # TODO: replace with dynamic extract
-        # import pdb
-        # pdb.set_trace()
+        def lat_filter(lat):
+            return -85.0 < lat < 85.0
+
 
         if cube is None or state.initial_time is None:
             data = gridded_forecast.empty_image()
         else:
-            cube_cropped = cube[HALO_SIZE:-HALO_SIZE,:]
+            cube_cropped = cube.extract(
+                iris.Constraint(latitude=lat_filter,
+                                air_pressure=pressure,
+                                time=functools.partial(time_comp,
+                                                       selected_time)))
             lat_pts = cube_cropped.coord('latitude').points
             long_pts = cube_cropped.coord('longitude').points - 180.0
             cube_data_cropped = cube_cropped.data
@@ -82,7 +147,11 @@ class IntakeLoader:
                                                      state.pressure))
             data.update({
                 'name': [self._label],
-                'units': [str(cube.units)]
+                'units': [str(cube.units)],
+                'experiment': [self.experiment_id],
+                'institution': [self.institution_id],
+                'memberid': [self.member_id]
+
             })
         return data
 

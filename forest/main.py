@@ -18,6 +18,7 @@ from forest import (
         keys,
         redux,
         unified_model,
+        intake_loader,
         navigate,
         parse_args)
 import forest.config as cfg
@@ -132,6 +133,8 @@ def main(argv=None):
             viewer = view.GPMView(loader, color_mapper)
         elif isinstance(loader, satellite.EIDA50):
             viewer = view.EIDA50(loader, color_mapper)
+        elif isinstance(loader, intake_loader.IntakeLoader):
+            viewer = intake_loader.IntakeView(loader, color_mapper)
         else:
             viewer = view.UMView(loader, color_mapper)
         viewers[name] = viewer
@@ -146,7 +149,7 @@ def main(argv=None):
 
     image_sources = []
     for name, viewer in artist.viewers.items():
-        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
+        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50, intake_loader.IntakeView)):
             image_sources.append(viewer.source)
 
     # Lakes
