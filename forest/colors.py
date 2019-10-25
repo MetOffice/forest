@@ -5,14 +5,17 @@ import bokeh.palettes
 import bokeh.colors
 import bokeh.layouts
 from forest.db.util import autolabel
+from numpy import linspace
 
 
 class Controls(object):
-    def __init__(self, color_mapper, name, number, cbar_min, cbar_max):
+    def __init__(self, color_mapper, name, number):
         self.name = name
         self.number = number
         self.palettes = bokeh.palettes.all_palettes
         self.color_mapper = color_mapper
+        self.cbar_min = color_mapper.low
+        self.cbar_max = color_mapper.high
 
         names = sorted(self.palettes.keys())
         menu = list(zip(names, names))
@@ -31,6 +34,24 @@ class Controls(object):
         autolabel(self.numbers)
         self.numbers.on_change("value", self.on_number)
 
+        # Option to set customised discrete colourscale intervals
+        # (None of this is actually working... )
+        # length of list depending on setting in numbers
+        # Want list input only appearing when cbar_discrete is selected
+        # Want cbar_min / max to disappear (those values are specified as first and last values of interval list
+        self.cbar_discrete = False
+        # Intervals default to linear spacing of min/max with the number of
+        # intervals epending on number set in colour steps setting
+        self.cbar_discrete_list = linspace(self.cbar_min,self.cbar_max,num=self.number)
+        self.cbar_discrete_checkbox = bokeh.models.CheckboxGroup(
+            labels=["Customise Colourbar Intervals"],
+            active=[])
+        self.cbar_discrete_checkbox.on_change("active", self.on_cbar_discrete)
+        self.cbar_discrete_input = bokeh.models.TextInput(
+            title="Thresholds for Colourbar Intervals",
+            value=str(self.cbar_discrete_list))
+
+
         self.reverse = False
         #Tickbox more intuitive for On/Off selection
         # - easier to see what is selected
@@ -40,23 +61,22 @@ class Controls(object):
             active=[])
         self.checkbox.on_change("active", self.on_reverse)
 
+
         # Color bar min/max settings
         # *** Want the default values to pick up data min/max or whatever it currently defaults to
-        self.cbar_min = cbar_min
-        self.cbar_max = cbar_max
         self.cbar_min_input = bokeh.models.TextInput(
                 title="Colourbar Min:",
-                value=str(cbar_min))
+                value=str(self.cbar_min))
         self.cbar_max_input = bokeh.models.TextInput(
                 title="Colourbar Max:",
-                value=str(cbar_max))
+                value=str(self.cbar_max))
 
         # Invisible color settings
         self.invisible_on = False
         # *** Want the default values to pick up data min/max or whatever the current colourbar extention defaults to
         # *** Want the upper and lower boxes to only appear when the threshold masking is actually selected
-        self.lower = cbar_min
-        self.upper = cbar_max
+        self.lower = self.cbar_min
+        self.upper = self.cbar_max
         self.invisible_checkbox = bokeh.models.CheckboxGroup(
             labels=["Hide data below/above threshold"],
             active=[])
@@ -64,24 +84,37 @@ class Controls(object):
                 self.on_invisible_checkbox)
         self.invisible_input_lower = bokeh.models.TextInput(
                 title="Lower Threshold:",
-                value=str(cbar_min))
+                value=str(self.cbar_min))
         self.invisible_input_lower.on_change("value",
                 self.on_invisible_input_lower)
         self.invisible_input_upper = bokeh.models.TextInput(
                 title="Upper Threshold:",
-                value=str(cbar_max))
+                value=str(self.cbar_max))
         self.invisible_input_upper.on_change("value",
                 self.on_invisible_input_upper)
 
-        self.layout = bokeh.layouts.column(
-                self.names,
+
+        self.default_widges = [self.names,
                 self.numbers,
+                self.cbar_discrete_checkbox,
                 self.checkbox,
                 self.cbar_min_input,
                 self.cbar_max_input,
-                self.invisible_checkbox,
-                self.invisible_input_lower,
-                self.invisible_input_upper)
+                self.invisible_checkbox]
+        self.invisible_show = [self.invisible_input_lower,
+                               self.invisible_input_upper]
+        self.discrete_show = [self.cbar_discrete_input]
+        self.min_max_show = [self.cbar_min_input, self.cbar_max_input]
+        self.layout = bokeh.layouts.column(self.default_widges)
+        # self.layout = bokeh.layouts.column(
+        #         self.names,
+        #         self.numbers,
+        #         self.checkbox,
+        #         self.cbar_min_input,
+        #         self.cbar_max_input,
+        #         self.invisible_checkbox,
+        #         self.invisible_input_lower,
+        #         self.invisible_input_upper)
 
     def on_name(self, attr, old, new):
         self.name = new
@@ -117,6 +150,17 @@ class Controls(object):
         self.cbar_max = float(new)
         self.render()
 
+    def on_cbar_discrete(self, attr, old, new):
+        if len(new) == 1:
+            self.cbar_discrete = True
+        else:
+            self.cbar_discrete = False
+        self.render()
+
+    def on_cbar_discrete_input(self, attr, old, new):
+        self.cbar_discrete_list = new
+        self.render()
+
     def on_invisible_checkbox(self, attr, old, new):
         if len(new) == 1:
             self.invisible_on = True
@@ -134,6 +178,7 @@ class Controls(object):
 
     def render(self):
         if self.name is None:
+
             return
         if self.number is None:
             return
@@ -145,4 +190,16 @@ class Controls(object):
             color = bokeh.colors.RGB(0, 0, 0, a=0)
             self.color_mapper.low_color = color
             self.color_mapper.low = lower
+            self.layout.children = self.layout.children + self.invisible_show
+        else:
+            self.layout.children = [lc for lc in self.layout.children
+                                    if lc not in self.invisible_show]
+        if self.cbar_discrete:
+            # Insert discrete value input and remove cbar min/max input
+            self.layout.children = [lc for lc in self.layout.children + self.discrete_show
+                                    if lc not in self.min_max_show]
+        else:
+            self.layout.children = [lc for lc in self.layout.children + self.min_max_show
+                                    if lc not in self.discrete_show]
+
         self.color_mapper.palette = palette

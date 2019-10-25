@@ -216,8 +216,7 @@ def main(argv=None):
     mapper_limits = MapperLimits(image_sources, color_mapper)
 
     default_palette="Plasma"#FCL: This could be changed based on data type or saved user settings
-    colors_controls = colors.Controls(color_mapper, default_palette, 256,
-                                      color_mapper.low, color_mapper.high)
+    colors_controls = colors.Controls(color_mapper, default_palette, 256)
 
 
 
