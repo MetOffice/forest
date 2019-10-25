@@ -29,7 +29,8 @@ from forest import (
         ghrsstl4,
         unified_model,
         rdt,
-        satellite)
+        satellite,
+        saf)
 
 
 __all__ = []
@@ -147,6 +148,8 @@ class Loader(object):
             return ghrsstl4.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
+        elif file_type == 'saf':
+            return saf.saf(pattern)
         else:
             raise Exception("unrecognised file_type: {}".format(file_type))
 

@@ -11,7 +11,8 @@ from forest import (
         ghrsstl4,
         unified_model,
         eida50,
-        rdt)
+        rdt,
+        saf)
 
 
 class Config(object):
@@ -69,6 +70,8 @@ class FileSystem(object):
             return ghrsstl4.Navigator(paths)
         elif file_type.lower() == "unified_model":
             coordinates = unified_model.Coordinates()
+        elif file_type.lower() == "saf":
+            coordinates = saf.Coordinates()
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)
