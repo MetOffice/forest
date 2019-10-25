@@ -27,8 +27,7 @@ class saf(object):
             if nc is None:
                 data = empty_image()
             else:
-                variable = nc.variables[state.variable]
-                data = geo.stretch_image(nc.variables['lon'][:][0], nc.variables['lat'][:][:,0], variable[:])
+                data = geo.stretch_image(nc.variables['lon'][:][0], nc.variables['lat'][:][:,0], nc.variables[state.variable][:])
                 return data
           
 class Locator(object):
@@ -37,6 +36,7 @@ class Locator(object):
         self.pattern = pattern
         self._sets = []
         for path in self.find(pattern):
+            #possibly use MFDataset which takes a glob pattern
             self._sets.append(netCDF4.Dataset(path)) 
 
     def find_file(self, valid_date):
@@ -81,7 +81,12 @@ class Coordinates(object):
         return None
 
     def variables(self, path):
-        return ["ctth_pres"]
+        '''
+        Get list of variables.
+
+         :return: list of strings of variable names'''
+        nc = netCDF4.Dataset(path) 
+        return nc.variables
 
     def valid_times(self, path, variable):
         date = Locator.parse_date(path)
