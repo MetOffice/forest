@@ -23,10 +23,9 @@ class saf(object):
         '''gets actual data
 
         :state: Bokeh State object of info from UI'''
-        print("wibble", state.valid_time)
         data = empty_image()
         for nc in self.locator._sets: #just do one for now
-            if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time:
+            if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and state.variable in nc.variables:
                 data = geo.stretch_image(nc.variables['lon'][:][0], nc.variables['lat'][:][:,0], nc.variables[state.variable][:])
           
         return data
@@ -94,7 +93,7 @@ class Coordinates(object):
          :return: list of strings of variable names'''
         self.locator = Locator(pattern)        
         varlist  = []
-        for nc in self.locator._sets: #just do one for now
+        for nc in self.locator._sets: 
             varlist = varlist + list(nc.variables.keys())
     
         #return list of vars. coercing to set ensures uniqueness
@@ -110,7 +109,8 @@ class Coordinates(object):
         self.locator = Locator(pattern)
         times = []
         for nc in self.locator._sets:
-            times.append(str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')))
+            if variable is None or variable in nc.variables:
+                times.append(str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')))
         return times
 
     def pressures(self, path, variable):
