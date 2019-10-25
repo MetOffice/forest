@@ -12,6 +12,7 @@ URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalo
 HALO_SIZE = 7
 
 
+@functools.lru_cache(maxsize=16)
 def _load_from_intake(
         experiment_id,
         table_id,
