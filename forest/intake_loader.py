@@ -9,17 +9,18 @@ import functools
 from forest import geo, gridded_forecast
 
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
-HALO_SIZE=7
+HALO_SIZE = 7
+
 
 def _load_from_intake(
-        experiment_id='ssp585',
-        table_id='Amon',
-        grid_label='gn',
-        variable_id='ta',
-        institution_id='NCAR',
-        activity_id='ScenarioMIP',
-        parent_source_id='CESM2',
-        member_id='r2i1p1f1'):
+        experiment_id,
+        table_id,
+        grid_label,
+        variable_id,
+        institution_id,
+        activity_id,
+        parent_source_id,
+        member_id):
     collection = intake.open_esm_datastore(URL)
     print('opening catalogue')
     cat = collection.search(
@@ -45,38 +46,38 @@ class IntakeView(object):
         self.loader = loader
         self.color_mapper = color_mapper
         self.source = bokeh.models.ColumnDataSource({
-                "x": [],
-                "y": [],
-                "dw": [],
-                "dh": [],
-                "image": []})
+            "x": [],
+            "y": [],
+            "dw": [],
+            "dh": [],
+            "image": []})
 
     def render(self, state):
         self.source.data = self.loader.image(state)
 
     def add_figure(self, figure):
         renderer = figure.image(
-                x="x",
-                y="y",
-                dw="dw",
-                dh="dh",
-                image="image",
-                source=self.source,
-                color_mapper=self.color_mapper)
+            x="x",
+            y="y",
+            dw="dw",
+            dh="dh",
+            image="image",
+            source=self.source,
+            color_mapper=self.color_mapper)
         tool = bokeh.models.HoverTool(
-                renderers=[renderer],
-                tooltips=[
-                    ("Name", "@name"),
-                    ("Value", "@image @units"),
-                    ('Valid', '@valid{%F %H:%M}'),
-                    ("Level", "@level"),
-                    ("Experiment","@experiment"),
-                    ("Institution", "@institution"),
-                    ("Member","@memberid")
-                ],
-                formatters={
-                    'valid': 'datetime',
-                })
+            renderers=[renderer],
+            tooltips=[
+                ("Name", "@name"),
+                ("Value", "@image @units"),
+                ('Valid', '@valid{%F %H:%M}'),
+                ("Level", "@level"),
+                ("Experiment", "@experiment"),
+                ("Institution", "@institution"),
+                ("Member", "@memberid")
+            ],
+            formatters={
+                'valid': 'datetime',
+            })
         figure.add_tools(tool)
         return renderer
 
@@ -100,6 +101,7 @@ class IntakeLoader:
                                        activity_id=self.activity_id,
                                        parent_source_id=self.parent_source_id,
                                        member_id=self.member_id)
+        self._cube.coord('air_pressure').convert_units('hPa')
 
     def image(self, state):
         cube = self._cube
@@ -110,7 +112,8 @@ class IntakeLoader:
         pressure = state.pressure
 
         selected_time = gridded_forecast._to_datetime(valid_time)
-        def time_comp(select_time, time_cell):#
+
+        def time_comp(select_time, time_cell):  #
             data_time = gridded_forecast._to_datetime(time_cell.point)
             try:
                 if abs((select_time - data_time).days) < 2:
@@ -121,7 +124,6 @@ class IntakeLoader:
 
         def lat_filter(lat):
             return -85.0 < lat < 85.0
-
 
         if cube is None or state.initial_time is None:
             data = gridded_forecast.empty_image()
@@ -134,13 +136,15 @@ class IntakeLoader:
             lat_pts = cube_cropped.coord('latitude').points
             long_pts = cube_cropped.coord('longitude').points - 180.0
             cube_data_cropped = cube_cropped.data
-            cube_width = int(cube_data_cropped.shape[1]/2)
-            cube_data_cropped = numpy.concatenate([cube_data_cropped[:,cube_width:], cube_data_cropped[:,:cube_width]],axis=1)
+            cube_width = int(cube_data_cropped.shape[1] / 2)
+            cube_data_cropped = numpy.concatenate(
+                [cube_data_cropped[:, cube_width:],
+                 cube_data_cropped[:, :cube_width]], axis=1)
 
             data = geo.stretch_image(long_pts, lat_pts, cube_data_cropped)
             data['image'] = [numpy.ma.masked_array(data['image'][0],
-                                                  mask=numpy.isnan(
-                                                      data['image'][0]))]
+                                                   mask=numpy.isnan(
+                                                       data['image'][0]))]
             data.update(gridded_forecast.coordinates(state.valid_time,
                                                      state.initial_time,
                                                      state.pressures,
@@ -158,7 +162,24 @@ class IntakeLoader:
 
 class Navigator:
     def __init__(self):
-        self._cube = _load_from_intake()
+        self.experiment_id = 'ssp585'
+        self.table_id = 'Amon'
+        self.grid_label = 'gn'
+        self.variable_id = 'ta'
+        self.institution_id = 'NCAR'
+        self.activity_id = 'ScenarioMIP'
+        self.parent_source_id = 'CESM2'
+        self.member_id = 'r2i1p1f1'
+        self._label = f'{self.experiment_id}_{self.institution_id}_{self.member_id}'
+        self._cube = _load_from_intake(experiment_id=self.experiment_id,
+                                       table_id=self.table_id,
+                                       grid_label=self.grid_label,
+                                       variable_id=self.variable_id,
+                                       institution_id=self.institution_id,
+                                       activity_id=self.activity_id,
+                                       parent_source_id=self.parent_source_id,
+                                       member_id=self.member_id)
+        self._cube.coord('air_pressure').convert_units('hPa')
 
     def variables(self, pattern):
         return ['air_temperature']
@@ -171,7 +192,8 @@ class Navigator:
 
     def valid_times(self, pattern, variable, initial_time):
         cube = self._cube
-        valid_times = [gridded_forecast._to_datetime(cell.point) for cell in cube.coord('time').cells()]
+        valid_times = [gridded_forecast._to_datetime(cell.point) for cell in
+                       cube.coord('time').cells()]
         return valid_times
 
     def pressures(self, pattern, variable, initial_time):
