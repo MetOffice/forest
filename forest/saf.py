@@ -22,20 +22,21 @@ class saf(object):
     def image(self, state):
         '''gets actual data
 
-        :state: object of info from UI'''
-        for nc in self.locator._sets[0:1]: #just do one for now
-            if nc is None:
-                data = empty_image()
-            else:
+        :state: Bokeh State object of info from UI'''
+        print("wibble", state.valid_time)
+        data = empty_image()
+        for nc in self.locator._sets: #just do one for now
+            if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time:
                 data = geo.stretch_image(nc.variables['lon'][:][0], nc.variables['lat'][:][:,0], nc.variables[state.variable][:])
-                return data
+          
+        return data
           
 class Locator(object):
     def __init__(self, pattern):
         print("saf.Locator('{}')".format(pattern))
         self.pattern = pattern
         self._sets = []
-        for path in self.find(pattern):
+        for path in self.paths:
             #possibly use MFDataset which takes a glob pattern
             self._sets.append(netCDF4.Dataset(path)) 
 
@@ -74,25 +75,43 @@ class Locator(object):
 
 class Coordinates(object):
     """Menu system interface"""
-    def initial_time(self, path):
-        times = self.valid_times(path, None)
+    def initial_time(self, pattern):
+        '''Return initial time.
+
+        :pattern: Glob pattern of filepaths
+        :return: datetime object
+        '''
+        times = self.valid_times(pattern, None)
         if len(times) > 0:
             return times[0]
         return None
 
-    def variables(self, path):
+    def variables(self, pattern):
         '''
         Get list of variables.
 
+         :pattern: glob pattern of filepaths
          :return: list of strings of variable names'''
-        nc = netCDF4.Dataset(path) 
-        return nc.variables
+        self.locator = Locator(pattern)        
+        varlist  = []
+        for nc in self.locator._sets: #just do one for now
+            varlist = varlist + list(nc.variables.keys())
+    
+        #return list of vars. coercing to set ensures uniqueness
+        return list(set(varlist))
 
-    def valid_times(self, path, variable):
-        date = Locator.parse_date(path)
-        if date is None:
-            return []
-        return [str(date)]
+    def valid_times(self, pattern, variable):
+        '''Gets valid times from input files
+
+        :pattern: Glob of file paths
+        :variable: String of variable name
+        :return: List of Date strings
+        '''
+        self.locator = Locator(pattern)
+        times = []
+        for nc in self.locator._sets:
+            times.append(str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')))
+        return times
 
     def pressures(self, path, variable):
         '''There's no pressure levels in SAF data'''
