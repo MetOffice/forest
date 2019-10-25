@@ -11,7 +11,8 @@ from forest import (
         unified_model,
         eida50,
         rdt,
-        nearcast)
+        nearcast,
+        saf)
 
 
 class Config(object):
@@ -69,6 +70,8 @@ class FileSystem(object):
             coordinates = unified_model.Coordinates()
         elif file_type.lower() == "nearcast":
             coordinates = nearcast.Coordinates()
+        elif file_type.lower() == "saf":
+            coordinates = saf.Coordinates()
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)

@@ -29,7 +29,8 @@ from forest import (
         unified_model,
         rdt,
         satellite,
-        nearcast)
+        nearcast,
+        saf)
 
 
 __all__ = []
@@ -146,6 +147,8 @@ class Loader(object):
             return data.DBLoader(label, pattern, locator)
         elif file_type == 'nearcast':
             return nearcast.Nearcast(pattern)
+        elif file_type == 'saf':
+            return saf.saf(pattern)
         else:
             raise Exception("unrecognised file_type: {}".format(file_type))
 
