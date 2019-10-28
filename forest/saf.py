@@ -26,7 +26,7 @@ class saf(object):
         data = empty_image()
         for nc in self.locator._sets: #just do one for now
             if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and state.variable in nc.variables:
-                data = geo.stretch_image(nc.variables['lon'][:][0], nc.variables['lat'][:][:,0], nc.variables[state.variable][:])
+                data = geo.stretch_image(nc['lon'][:][0], nc['lat'][:][:,0], nc[state.variable])
           
         return data
           
