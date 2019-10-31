@@ -9,6 +9,11 @@ import scipy.ndimage
 
 
 def stretch_image(lons, lats, values):
+    if np.ma.is_masked(values):
+        mask = values.mask
+    else:
+        mask = None
+
     gx, _ = web_mercator(
         lons,
         np.zeros(len(lons), dtype="d"))
@@ -16,6 +21,10 @@ def stretch_image(lons, lats, values):
         np.zeros(len(lats), dtype="d"),
         lats)
     image = stretch_y(gy)(values)
+    if mask is not None:
+        image_mask = stretch_y(gy)(mask)
+        image = np.ma.masked_array(image, mask=image_mask)
+
     x = gx.min()
     y = gy.min()
     dw = gx[-1] - gx[0]
