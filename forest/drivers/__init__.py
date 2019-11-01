@@ -35,3 +35,4 @@ view to ingest data from multiple data sources.
     :members:
 
 """
+from forest.drivers.util import by_name
