@@ -24,6 +24,9 @@ class Dataset:
         self.label = label
         self.pattern = pattern
 
+    def map_view(self, loader, **kwargs):
+        return View(loader)
+
     def loader(self):
         return Loader(self.pattern)
 

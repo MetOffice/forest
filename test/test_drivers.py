@@ -31,6 +31,13 @@ def test_rdt_loader():
     assert isinstance(loader.locator, rdt.Locator)
 
 
+def test_rdt_map_view():
+    label = "RDT"
+    dataset = rdt.Dataset(label, pattern="*.json")
+    view = dataset.map_view(loader=None, color_mapper=None)
+    assert isinstance(view, rdt.View)
+
+
 def test_eida50_loader():
     driver = forest.drivers.by_name("eida50")
     dataset = driver.Dataset("Label", pattern="*.nc")
@@ -47,3 +54,13 @@ def test_earth_networks_loader():
     loader = dataset.loader()
     os.remove("empty.txt")
     assert isinstance(loader, earth_networks.Loader)
+
+
+def test_earth_networks_map_view():
+    path = "empty.txt"
+    dataset = earth_networks.Dataset("label", pattern=path)
+    with open(path, "w"):
+        pass
+    view = dataset.map_view(dataset.loader(), color_mapper=None)
+    os.remove(path)
+    assert isinstance(view, earth_networks.View)

@@ -14,6 +14,9 @@ class Dataset:
     def loader(self):
         return Loader(self.pattern)
 
+    def map_view(self, loader, **kwargs):
+        return View(loader)
+
 
 class View(object):
     def __init__(self, loader):
