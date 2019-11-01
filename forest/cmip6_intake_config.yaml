@@ -1,0 +1,4 @@
+files:
+- file_type: intake
+  label: NCAR ssp585 r2i1p1f1
+  pattern: NCAR_ssp585_r2i1p1f1_gn_Amon_ScenarioMIP

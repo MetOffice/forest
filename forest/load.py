@@ -145,7 +145,7 @@ class Loader(object):
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
         elif file_type == 'intake':
-            return intake_loader.IntakeLoader()
+            return intake_loader.IntakeLoader(pattern)
         else:
             raise Exception("unrecognised file_type: {}".format(file_type))
 

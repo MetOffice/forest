@@ -43,7 +43,6 @@ def _load_from_intake(
         variable_id,
         institution_id,
         activity_id,
-        parent_source_id,
         member_id):
     """
     Load data from the pangeo CMIP6 intake catalogue.The arguments relate to
@@ -65,6 +64,11 @@ def _load_from_intake(
     dset_dict = cat.to_dataset_dict(
         zarr_kwargs={'consolidated': True, 'decode_times': False},
         cdf_kwargs={'chunks': {}, 'decode_times': False})
+    try:
+        parent_source_id = [l1 for l1 in dset_dict.values()][0].parent_source_id
+    except IndexError:
+        import pdb
+        pdb.set_trace()
     ds_label = f'{activity_id}.{institution_id}.{parent_source_id}.{experiment_id}.{table_id}.{grid_label}'
     xr = dset_dict[ds_label]
     print(xr[variable_id])
@@ -181,15 +185,15 @@ def _get_bokeh_image(cube,
         return data
 
 class IntakeLoader:
-    def __init__(self):
-        self.experiment_id = 'ssp585'
-        self.table_id = 'Amon'
-        self.grid_label = 'gn'
+    def __init__(self, pattern):
+        institution_id, experiment_id,member_id, grid, table_id,activity_id = pattern.split('_')
+        self.experiment_id = experiment_id
+        self.table_id = table_id
+        self.grid_label = grid
         self.variable_id = 'ta'
-        self.institution_id = 'NCAR'
-        self.activity_id = 'ScenarioMIP'
-        self.parent_source_id = 'CESM2'
-        self.member_id = 'r2i1p1f1'
+        self.institution_id = institution_id
+        self.activity_id = activity_id
+        self.member_id = member_id
         self._label = f'{self.experiment_id}_{self.institution_id}_{self.member_id}'
         self._cube = _load_from_intake(experiment_id=self.experiment_id,
                                        table_id=self.table_id,
@@ -197,7 +201,6 @@ class IntakeLoader:
                                        variable_id=self.variable_id,
                                        institution_id=self.institution_id,
                                        activity_id=self.activity_id,
-                                       parent_source_id=self.parent_source_id,
                                        member_id=self.member_id)
 
 
@@ -219,7 +222,6 @@ class IntakeLoader:
                                            variable_id=self.variable_id,
                                            institution_id=self.institution_id,
                                            activity_id=self.activity_id,
-                                           parent_source_id=self.parent_source_id,
                                            member_id=self.member_id)
 
         valid_time = state.valid_time
@@ -268,7 +270,6 @@ class Navigator:
                                        variable_id=self.variable_id,
                                        institution_id=self.institution_id,
                                        activity_id=self.activity_id,
-                                       parent_source_id=self.parent_source_id,
                                        member_id=self.member_id)
         self._cube.coord('air_pressure').convert_units('hPa')
 
