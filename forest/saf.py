@@ -20,19 +20,21 @@ class saf(object):
         self.locator = Locator(pattern)        
 
     def image(self, state):
-        '''gets actual data
+        '''gets actual data. 
+
+        `values` passed to `geo.stretch_image` must be a NumPy Masked Array, 
+        rather than a NetCDF4 Variable, so need to add `[:]`.
 
         :state: Bokeh State object of info from UI'''
         data = empty_image()
         for nc in self.locator._sets: #just do one for now
             if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and state.variable in nc.variables:
-                data = geo.stretch_image(nc['lon'][:][0], nc['lat'][:][:,0], nc[state.variable])
+                data = geo.stretch_image(nc['lon'][:][0], nc['lat'][:][:,0], nc[state.variable][:])
           
         return data
           
 class Locator(object):
     def __init__(self, pattern):
-        print("saf.Locator('{}')".format(pattern))
         self.pattern = pattern
         self._sets = []
         for path in self.paths:
