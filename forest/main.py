@@ -1,6 +1,7 @@
 import bokeh.plotting
 import bokeh.models
 import bokeh.events
+import bokeh.colors
 import numpy as np
 import os
 import glob
@@ -686,6 +687,8 @@ class MapperLimits(object):
             high = np.max([np.max(x) for x in images])
             self.color_mapper.low = low
             self.color_mapper.high = high
+            self.color_mapper.low_color = bokeh.colors.RGB(0, 0, 0, a=0)
+            self.color_mapper.high_color = bokeh.colors.RGB(0, 0, 0, a=0)
 
     @staticmethod
     def change(widget, prop, dtype):
