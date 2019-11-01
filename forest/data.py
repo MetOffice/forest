@@ -19,7 +19,6 @@ except ImportError:
 from forest import (
         gridded_forecast,
         satellite,
-        rdt,
         earth_networks,
         geo,
         disk)

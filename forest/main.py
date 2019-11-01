@@ -5,6 +5,8 @@ import bokeh.colors
 import numpy as np
 import os
 import glob
+from forest.drivers import (
+        rdt)
 from forest import (
         satellite,
         data,
@@ -12,7 +14,6 @@ from forest import (
         view,
         images,
         earth_networks,
-        rdt,
         geo,
         colors,
         db,

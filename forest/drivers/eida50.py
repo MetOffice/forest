@@ -3,6 +3,11 @@ import numpy as np
 from functools import lru_cache
 
 
+class Dataset:
+    def __init__(self, label):
+        self.label = label
+
+
 class Coordinates(object):
     """Coordinate system related to EIDA50 file(s)"""
     def initial_time(self, path):

@@ -97,13 +97,6 @@ def test_build_loader_given_eida50_file_type():
     assert isinstance(loader.locator, forest.satellite.Locator)
 
 
-def test_build_loader_given_rdt_file_type():
-    loader = forest.Loader.from_pattern(
-            "Label", "*.json", "rdt")
-    assert isinstance(loader, forest.rdt.Loader)
-    assert isinstance(loader.locator, forest.rdt.Locator)
-
-
 def test_replace_dir_given_args_dir_only():
     check_replace_dir("args/dir", None, "args/dir")
 

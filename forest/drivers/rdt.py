@@ -19,6 +19,19 @@ import itertools
 import math
 
 
+class Dataset:
+    def __init__(self, label, settings=None):
+        self.label = label
+        if settings is None:
+            settings = {
+                "pattern": "*.json"
+            }
+        self.settings = settings
+
+    def loader(self):
+        return Loader(self.settings["pattern"])
+
+
 class RenderGroup(object):
     """Collection of renderers that act as one"""
     def __init__(self, renderers, visible=False):

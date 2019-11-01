@@ -4,8 +4,9 @@ import os
 import glob
 import json
 import numpy as np
+from forest.drivers import (
+        rdt)
 from forest import (
-        rdt,
         locate)
 
 

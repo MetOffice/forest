@@ -3,7 +3,11 @@ import os
 import datetime as dt
 import netCDF4
 import numpy as np
-from forest import (eida50, satellite, navigate)
+from forest import (
+        satellite,
+        navigate)
+from forest.drivers import (
+        eida50)
 from forest.exceptions import FileNotFound, IndexNotFound
 
 

@@ -6,12 +6,13 @@ from .exceptions import (
         InitialTimeNotFound,
         ValidTimesNotFound,
         PressuresNotFound)
+from forest.drivers import (
+        eida50,
+        rdt)
 from forest import (
         gridded_forecast,
         ghrsstl4,
-        unified_model,
-        eida50,
-        rdt)
+        unified_model)
 
 
 class Config(object):

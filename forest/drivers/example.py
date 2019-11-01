@@ -3,11 +3,6 @@
 This example module can be used as a template to add
 support for new data formats
 
-
->>> dataset = Dataset(config)
->>> navigator = dataset.navigator()
->>> view = dataset.view()
-
 """
 
 

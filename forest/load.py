@@ -21,6 +21,8 @@ testing.
 """
 import os
 from forest.export import export
+from forest.drivers import (
+        rdt)
 from forest import (
         data,
         db,
@@ -28,7 +30,6 @@ from forest import (
         gridded_forecast,
         ghrsstl4,
         unified_model,
-        rdt,
         satellite)
 
 
