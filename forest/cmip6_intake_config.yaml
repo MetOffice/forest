@@ -2,3 +2,12 @@ files:
 - file_type: intake
   label: NCAR ssp585 r2i1p1f1
   pattern: NCAR_ssp585_r2i1p1f1_gn_Amon_ScenarioMIP
+- file_type: intake
+  label: BCC ssp370 r1i1p1f1
+  pattern: BCC_ssp370_r1i1p1f1_gn_Amon_AerChemMIP
+- file_type: intake
+  label: CNRM-CERFACS hist-nat r10i1p1f2
+  pattern: CNRM-CERFACS_hist-nat_r10i1p1f2_gr_Amon_DAMIP
+- file_type: intake
+  label: CNRM-CERFACS highresSST-present r1i1p1f2
+  pattern: CNRM-CERFACS_highresSST-present_r1i1p1f2_gr_3hr_HighResMIP

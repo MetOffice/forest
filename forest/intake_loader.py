@@ -17,6 +17,7 @@ from forest import geo, gridded_forecast
 # Location of the Pangeo-CMIP6 intake catalogue file.
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
 
+@functools.lru_cache(maxsize=64)
 def _get_intake_vars(
         experiment_id,
         table_id,
@@ -190,11 +191,20 @@ class IntakeLoader:
         self.experiment_id = experiment_id
         self.table_id = table_id
         self.grid_label = grid
-        self.variable_id = 'ta'
+        self.variable_id = ''
         self.institution_id = institution_id
         self.activity_id = activity_id
         self.member_id = member_id
         self._label = f'{self.experiment_id}_{self.institution_id}_{self.member_id}'
+        self._cube = None
+
+    @property
+    def cube(self):
+        if not self._cube:
+            self._load_cube()
+        return self._cube
+
+    def _load_cube(self):
         self._cube = _load_from_intake(experiment_id=self.experiment_id,
                                        table_id=self.table_id,
                                        grid_label=self.grid_label,
@@ -202,8 +212,6 @@ class IntakeLoader:
                                        institution_id=self.institution_id,
                                        activity_id=self.activity_id,
                                        member_id=self.member_id)
-
-
 
     def image(self, state):
         """
@@ -216,13 +224,7 @@ class IntakeLoader:
             do_update = True
 
         if do_update:
-            self._cube = _load_from_intake(experiment_id=self.experiment_id,
-                                           table_id=self.table_id,
-                                           grid_label=self.grid_label,
-                                           variable_id=self.variable_id,
-                                           institution_id=self.institution_id,
-                                           activity_id=self.activity_id,
-                                           member_id=self.member_id)
+            self._cube = None
 
         valid_time = state.valid_time
         pressure = state.pressure
@@ -232,7 +234,8 @@ class IntakeLoader:
         # the guts of creating the bokeh object has been put into a separate
         # function so that it can be cached, so if image is called multiple
         # time the calculations are only done once (hopefully).
-        data = _get_bokeh_image(self._cube, self.experiment_id,
+        cube = self.cube
+        data = _get_bokeh_image(cube, self.experiment_id,
                                 self.variable_id,
                                 self.institution_id, state.initial_time,
                                 self.member_id, selected_time, pressure)
@@ -243,7 +246,7 @@ class IntakeLoader:
                                                  pressure))
         data.update({
             'name': [self._label],
-            'units': [str(self._cube.units)],
+            'units': [str(cube.units)],
             'experiment': [self.experiment_id],
             'institution': [self.institution_id],
             'memberid': [self.member_id],
@@ -270,7 +273,6 @@ class Navigator:
         self.experiment_id = experiment_id
         self.table_id = table_id
         self.grid_label = grid
-        self.variable_id = 'ta'
         self.institution_id = institution_id
         self.activity_id = activity_id
         self.member_id = member_id
@@ -283,6 +285,8 @@ class Navigator:
         return self._cube
 
     def _load_cube(self):
+        if not self.variable_id:
+            self.variable_id = self._get_vars()[0]
         self._cube = _load_from_intake(experiment_id=self.experiment_id,
                                        table_id=self.table_id,
                                        grid_label=self.grid_label,
@@ -294,11 +298,22 @@ class Navigator:
 
     def variables(self, pattern):
         self._parse_pattern(pattern)
-        return ['ta'] + _get_intake_vars(experiment_id=self.experiment_id,
+        return self._get_vars()
+
+    def _get_vars(self):
+        var_list = _get_intake_vars(experiment_id=self.experiment_id,
                                 table_id=self.table_id,
                                 grid_label=self.grid_label,
                                 institution_id=self.institution_id,
                                 member_id=self.member_id)
+        if 'ta' in var_list:
+            var_list.remove('ta')
+            var_list.insert(0,'ta')
+        elif 'tas' in var_list:
+            var_list.remove('tas')
+            var_list = ['tas'] + var_list
+        return var_list
+
 
     def initial_times(self, pattern, variable=None):
         self._parse_pattern(pattern)
