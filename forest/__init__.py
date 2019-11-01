@@ -6,6 +6,8 @@ forecasts alongside observations.
 
 .. automodule:: forest.redux
 
+.. automodule:: forest.drivers
+
 .. automodule:: forest.keys
 
 .. automodule:: forest.config
@@ -17,6 +19,7 @@ __version__ = '0.4.4'
 
 from .config import *
 from . import (
+        drivers,
         navigate,
         unified_model,
         redux,
