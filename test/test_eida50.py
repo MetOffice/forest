@@ -133,7 +133,7 @@ class Formatter(object):
         var[:] = 0
 
 
-class TestCoordinates(unittest.TestCase):
+class TestNavigator(unittest.TestCase):
     def setUp(self):
         self.path = "test-navigate-eida50.nc"
 
@@ -147,7 +147,7 @@ class TestCoordinates(unittest.TestCase):
             writer = Formatter(dataset)
             writer.define(times)
 
-        coord = eida50.Coordinates()
+        coord = eida50.Navigator()
         result = coord.valid_times(self.path, "toa_brightness_temperature")
         expect = times
         self.assertEqual(expect, result)

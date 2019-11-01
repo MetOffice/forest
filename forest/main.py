@@ -133,7 +133,7 @@ def main(argv=None):
         elif isinstance(loader, data.GPM):
             viewer = view.GPMView(loader, color_mapper)
         elif isinstance(loader, eida50.Loader):
-            viewer = view.EIDA50(loader, color_mapper)
+            viewer = eida50.View(loader, color_mapper)
         else:
             viewer = view.UMView(loader, color_mapper)
         viewers[name] = viewer
@@ -148,7 +148,7 @@ def main(argv=None):
 
     image_sources = []
     for name, viewer in artist.viewers.items():
-        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
+        if isinstance(viewer, (view.UMView, view.GPMView, eida50.View)):
             image_sources.append(viewer.source)
 
     # Lakes

@@ -13,6 +13,7 @@ from forest.exceptions import FileNotFound, IndexNotFound
 import netCDF4
 import numpy as np
 from functools import lru_cache
+import bokeh.models
 
 
 class Dataset:
@@ -20,11 +21,65 @@ class Dataset:
         self.label = label
         self.pattern = pattern
 
+    def map_view(self, loader, color_mapper):
+        return View(loader, color_mapper)
+
     def loader(self):
         return Loader(self.pattern)
 
+    def navigator(self):
+        return Navigator(glob.glob(self.pattern)[0])
 
-class Coordinates(object):
+
+class View(object):
+    def __init__(self, loader, color_mapper):
+        self.loader = loader
+        self.color_mapper = color_mapper
+        self.empty = {
+                "x": [],
+                "y": [],
+                "dw": [],
+                "dh": [],
+                "image": []}
+        self.source = bokeh.models.ColumnDataSource(
+                self.empty)
+
+    def render(self, state):
+        if state.valid_time is not None:
+            self.image(self.to_datetime(state.valid_time))
+
+    @staticmethod
+    def to_datetime(d):
+        if isinstance(d, dt.datetime):
+            return d
+        elif isinstance(d, str):
+            try:
+                return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
+        elif isinstance(d, np.datetime64):
+            return d.astype(dt.datetime)
+        else:
+            raise Exception("Unknown value: {}".format(d))
+
+    def image(self, time):
+        try:
+            self.source.data = self.loader.image(time)
+        except (FileNotFound, IndexNotFound):
+            self.source.data = self.empty
+
+    def add_figure(self, figure):
+        return figure.image(
+                x="x",
+                y="y",
+                dw="dw",
+                dh="dh",
+                image="image",
+                source=self.source,
+                color_mapper=self.color_mapper)
+
+
+class Navigator(object):
     """Coordinate system related to EIDA50 file(s)"""
     def initial_time(self, path):
         return min(self._cached_times(path))

@@ -62,7 +62,7 @@ class FileSystem(object):
         if file_type.lower() == "rdt":
             coordinates = rdt.Coordinates()
         elif file_type.lower() == "eida50":
-            coordinates = eida50.Coordinates()
+            coordinates = eida50.Navigator()
         elif file_type.lower() == 'griddedforecast':
             # XXX This needs a "Group" object ... not "paths"
             return gridded_forecast.Navigator(paths)
