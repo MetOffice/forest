@@ -72,6 +72,58 @@ def test_Navigator_expand_paths__with_dir(join, expanduser, glob):
     assert paths == sentinel.paths
 
 
+def test_Navigator_variables():
+    sub_navigator = Mock()
+    sub_navigator.variables.return_value = sentinel.variables
+    navigator = Mock(_navigators={sentinel.pattern: sub_navigator})
+
+    result = navigate.Navigator.variables(navigator, sentinel.pattern)
+
+    sub_navigator.variables.assert_called_once_with(sentinel.pattern)
+    assert result == sentinel.variables
+
+
+def test_Navigator_initial_times():
+    sub_navigator = Mock()
+    sub_navigator.initial_times.return_value = sentinel.initial_times
+    navigator = Mock(_navigators={sentinel.pattern: sub_navigator})
+
+    result = navigate.Navigator.initial_times(navigator, sentinel.pattern,
+                                              sentinel.variable)
+
+    sub_navigator.initial_times.assert_called_once_with(
+        sentinel.pattern, variable=sentinel.variable)
+    assert result == sentinel.initial_times
+
+
+def test_Navigator_valid_times():
+    sub_navigator = Mock()
+    sub_navigator.valid_times.return_value = sentinel.valid_times
+    navigator = Mock(_navigators={sentinel.pattern: sub_navigator})
+
+    result = navigate.Navigator.valid_times(navigator, sentinel.pattern,
+                                            sentinel.variable,
+                                            sentinel.initial_time)
+
+    sub_navigator.valid_times.assert_called_once_with(
+        sentinel.pattern, sentinel.variable, sentinel.initial_time)
+    assert result == sentinel.valid_times
+
+
+def test_Navigator_pressures():
+    sub_navigator = Mock()
+    sub_navigator.pressures.return_value = sentinel.pressures
+    navigator = Mock(_navigators={sentinel.pattern: sub_navigator})
+
+    result = navigate.Navigator.pressures(navigator, sentinel.pattern,
+                                          sentinel.variable,
+                                          sentinel.initial_time)
+
+    sub_navigator.pressures.assert_called_once_with(
+        sentinel.pattern, sentinel.variable, sentinel.initial_time)
+    assert result == sentinel.pressures
+
+
 @pytest.mark.skip("use real unified model file")
 def test_unified_model_navigator():
     paths = ["unified.nc"]
