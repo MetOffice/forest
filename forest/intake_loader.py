@@ -24,6 +24,10 @@ def _get_intake_vars(
         grid_label,
         institution_id,
         member_id):
+    """
+    Helper function to get a list of variables for this particular combination
+    of parameters. Function is cahced to reduce remote queries.
+    """
     collection = intake.open_esm_datastore(URL)
     cat = collection.search(
         experiment_id=experiment_id,
@@ -50,7 +54,7 @@ def _load_from_intake(
     the CMIP6 parameters of a dataset. The CMIP6 reference is the ESGF servers
     which can be accessed here:
     https://esgf-index1.ceda.ac.uk/search/cmip6-ceda/
-
+    Function is cahced to reduce remote queries.
     """
     collection = intake.open_esm_datastore(URL)
     print('opening catalogue')
@@ -82,6 +86,10 @@ def _load_from_intake(
 
 
 class IntakeView(object):
+    """
+    View object for CMIP6 dataset. The main customisation of the standard view
+    class is to provide more CMIP6 specific info in the hover info.
+    """
     def __init__(self, loader, color_mapper):
         self.loader = loader
         self.color_mapper = color_mapper
@@ -133,7 +141,11 @@ def _get_bokeh_image(cube,
                      selected_time,
                      pressure,
                      ):
-
+    """
+    A helper function to do  the creation of the image dict required by bokeh.
+    This includes downloading the actual data required for the current view, so
+    this function is cached to reduce remote queries.
+    """
 
     def time_comp(select_time, time_cell):  #
         data_time = gridded_forecast._to_datetime(time_cell.point)
@@ -186,6 +198,9 @@ def _get_bokeh_image(cube,
         return data
 
 class IntakeLoader:
+    """
+    Loader class for the CMIP6 intake dataset.
+    """
     def __init__(self, pattern):
         institution_id, experiment_id,member_id, grid, table_id,activity_id = pattern.split('_')
         self.experiment_id = experiment_id
@@ -200,6 +215,11 @@ class IntakeLoader:
 
     @property
     def cube(self):
+        """
+        The purpose of this property is to delay loading of the cube until the
+        point where all relevant parameters are defined and data and metadata
+        can be downloaded.
+        """
         if not self._cube:
             self._load_cube()
         return self._cube
@@ -257,6 +277,9 @@ class IntakeLoader:
 
 
 class Navigator:
+    """
+    Navigator class for CMIP6 intake dataset.
+    """
     def __init__(self):
         self.experiment_id = ''
         self.table_id = ''
@@ -269,6 +292,10 @@ class Navigator:
         self._cube = None
 
     def _parse_pattern(self, pattern):
+        """
+        The pattern contains the important CMIP6 parameters needed to get the
+        correct data and metadata through the intake catalogue.
+        """
         institution_id, experiment_id,member_id, grid, table_id,activity_id = pattern.split('_')
         self.experiment_id = experiment_id
         self.table_id = table_id
@@ -280,6 +307,11 @@ class Navigator:
 
     @property
     def cube(self):
+        """
+        The purpose of this property is to delay loading of the cube until the
+        point where all relevant parameters are defined and data and metadata
+        can be downloaded.
+        """
         if not self._cube:
             self._load_cube()
         return self._cube
@@ -342,6 +374,8 @@ class Navigator:
 
 
 if __name__ == '__main__':
+    #TODO:
+    # Use this stuff as the basis for some basic functional tests
     State = namedtuple('State',
                        field_names=['variable', 'initial_time', 'valid_time',
                                     'pressures', 'pressure'])
