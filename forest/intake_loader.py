@@ -1,15 +1,21 @@
-import intake
+'''
+Module for loading data from the Pangeo CMIP6n intake catalogue (usng the intake-esm
+loader) created by NCAR.
+'''
+
 from datetime import datetime
 from collections import namedtuple
-import bokeh
-import numpy
-import iris
 import functools
+
+import bokeh
+import intake
+import iris
+import numpy
 
 from forest import geo, gridded_forecast
 
+# Location of the Pangeo-CMIP6 intake catalogue file.
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
-HALO_SIZE = 7
 
 def _get_intake_vars(
         experiment_id,
@@ -39,6 +45,13 @@ def _load_from_intake(
         activity_id,
         parent_source_id,
         member_id):
+    """
+    Load data from the pangeo CMIP6 intake catalogue.The arguments relate to
+    the CMIP6 parameters of a dataset. The CMIP6 reference is the ESGF servers
+    which can be accessed here:
+    https://esgf-index1.ceda.ac.uk/search/cmip6-ceda/
+
+    """
     collection = intake.open_esm_datastore(URL)
     print('opening catalogue')
     cat = collection.search(
@@ -122,7 +135,10 @@ class IntakeLoader:
         self._cube.coord('air_pressure').convert_units('hPa')
 
     def image(self, state):
-        cube = self._cube
+        """
+        Main image loading function. This function will actually realise the
+        data,
+        """
         do_update = False
         if self.variable_id != state.variable:
             self.variable_id = state.variable
@@ -137,6 +153,7 @@ class IntakeLoader:
                                            activity_id=self.activity_id,
                                            parent_source_id=self.parent_source_id,
                                            member_id=self.member_id)
+        cube = self._cube
         valid_time = state.valid_time
         pressure = state.pressure
 
@@ -152,6 +169,13 @@ class IntakeLoader:
             return False
 
         def lat_filter(lat):
+            """
+            Due to the way the current projection of gridded data works, the poles are
+            not well handled, resulting in NaNs if we use the full range of latitudes.
+            The current hack is to chop off latitude greater than 85 degrees north and
+            south. Given the importance of data at the poles in climate change research,
+            we will need to fix this in future.
+            """
             return -85.0 < lat < 85.0
 
         def pressure_select(select_pressure, data_pressure):
@@ -164,7 +188,7 @@ class IntakeLoader:
                                                          selected_time),
                                'latitude': lat_filter,
                                }
-            coord_names = [c1.name() for c1 in self._cube.coords()]
+            coord_names = [c1.name() for c1 in cube.coords()]
             if 'air_pressure' in coord_names:
                 constraint_dict['air_pressure'] = functools.partial(
                     pressure_select,
