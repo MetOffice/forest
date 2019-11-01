@@ -255,15 +255,34 @@ class IntakeLoader:
 
 class Navigator:
     def __init__(self):
-        self.experiment_id = 'ssp585'
-        self.table_id = 'Amon'
-        self.grid_label = 'gn'
+        self.experiment_id = ''
+        self.table_id = ''
+        self.grid_label = ''
+        self.variable_id = ''
+        self.institution_id = ''
+        self.activity_id = ''
+        self.parent_source_id = ''
+        self.member_id = ''
+        self._cube = None
+
+    def _parse_pattern(self, pattern):
+        institution_id, experiment_id,member_id, grid, table_id,activity_id = pattern.split('_')
+        self.experiment_id = experiment_id
+        self.table_id = table_id
+        self.grid_label = grid
         self.variable_id = 'ta'
-        self.institution_id = 'NCAR'
-        self.activity_id = 'ScenarioMIP'
-        self.parent_source_id = 'CESM2'
-        self.member_id = 'r2i1p1f1'
+        self.institution_id = institution_id
+        self.activity_id = activity_id
+        self.member_id = member_id
         self._label = f'{self.experiment_id}_{self.institution_id}_{self.member_id}'
+
+    @property
+    def cube(self):
+        if not self._cube:
+            self._load_cube()
+        return self._cube
+
+    def _load_cube(self):
         self._cube = _load_from_intake(experiment_id=self.experiment_id,
                                        table_id=self.table_id,
                                        grid_label=self.grid_label,
@@ -271,9 +290,10 @@ class Navigator:
                                        institution_id=self.institution_id,
                                        activity_id=self.activity_id,
                                        member_id=self.member_id)
-        self._cube.coord('air_pressure').convert_units('hPa')
+
 
     def variables(self, pattern):
+        self._parse_pattern(pattern)
         return ['ta'] + _get_intake_vars(experiment_id=self.experiment_id,
                                 table_id=self.table_id,
                                 grid_label=self.grid_label,
@@ -281,19 +301,22 @@ class Navigator:
                                 member_id=self.member_id)
 
     def initial_times(self, pattern, variable=None):
-        cube = self._cube
+        self._parse_pattern(pattern)
+        cube = self.cube
         for cell in cube.coord('time').cells():
             init_time = gridded_forecast._to_datetime(cell.point)
             return [init_time]
 
     def valid_times(self, pattern, variable, initial_time):
-        cube = self._cube
+        self._parse_pattern(pattern)
+        cube = self.cube
         valid_times = [gridded_forecast._to_datetime(cell.point) for cell in
                        cube.coord('time').cells()]
         return valid_times
 
     def pressures(self, pattern, variable, initial_time):
-        cube = self._cube
+        self._parse_pattern(pattern)
+        cube = self.cube
         pressures = []
         try:
             pressures = [cell.point for cell in
