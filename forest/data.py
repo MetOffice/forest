@@ -18,7 +18,6 @@ except ImportError:
     pass
 from forest import (
         gridded_forecast,
-        earth_networks,
         geo,
         disk)
 import bokeh.models

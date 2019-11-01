@@ -6,6 +6,15 @@ from forest import geo
 import bokeh.models
 
 
+class Dataset:
+    def __init__(self, label, pattern=None):
+        self.label = label
+        self.pattern = pattern
+
+    def loader(self):
+        return Loader(self.pattern)
+
+
 class View(object):
     def __init__(self, loader):
         self.loader = loader

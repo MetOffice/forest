@@ -6,6 +6,7 @@ import numpy as np
 import os
 import glob
 from forest.drivers import (
+        earth_networks,
         eida50,
         rdt)
 from forest import (
@@ -13,7 +14,6 @@ from forest import (
         load,
         view,
         images,
-        earth_networks,
         geo,
         colors,
         db,

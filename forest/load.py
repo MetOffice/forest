@@ -23,11 +23,11 @@ import os
 from forest.export import export
 from forest.drivers import (
         rdt,
+        earth_networks,
         eida50)
 from forest import (
         data,
         db,
-        earth_networks,
         gridded_forecast,
         ghrsstl4,
         unified_model)

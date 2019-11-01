@@ -1,7 +1,7 @@
 import unittest
 import datetime as dt
 import glob
-from forest import earth_networks
+from forest.drivers import earth_networks
 import pandas as pd
 import pandas.testing as pdt
 
