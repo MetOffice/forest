@@ -14,37 +14,54 @@ from forest import (
         rdt)
 
 
-class Config(object):
-    """File system navigation using config file
+class Navigator:
+    def __init__(self, config, database):
+        # TODO: Once the idea of a "Group" exists we can avoid using the
+        # config and defer the sub-navigator creation to each of the
+        # groups. This will remove the need for the `_from_group` helper
+        # and the logic in FileSystemNavigator.from_file_type().
+        # Also, it'd be good to switch the identification of groups from
+        # using the `pattern` to using the `label`. In general, not every
+        # group would have a `pattern`.
+        # e.g.
+        # self._navigators = {group.label: group.navigator for group in ...}
+        self._navigators = {group.pattern: self._from_group(group, database)
+                           for group in config.file_groups}
 
-    This implementation performs a glob and then delegates to
-    FileSystem navigators
-    """
-    def __init__(self, config):
-        self.config = config
-        self.navigators = {}
-        for group in self.config.file_groups:
-            if group.directory is None:
-                pattern = group.pattern
-            else:
-                pattern = os.path.join(group.directory, group.pattern)
-            paths = glob.glob(os.path.expanduser(pattern))
-            self.navigators[group.pattern] = FileSystem.file_type(paths, group.file_type)
+    @classmethod
+    def _from_group(cls, group, database):
+        if group.locator == 'database':
+            navigator = database
+        else:
+            paths = cls._expand_paths(group.directory, group.pattern)
+            navigator = FileSystemNavigator.from_file_type(paths,
+                                                           group.file_type)
+        return navigator
+
+    @classmethod
+    def _expand_paths(cls, directory, pattern):
+        if directory is not None:
+            pattern = os.path.join(directory, pattern)
+        return glob.glob(os.path.expanduser(pattern))
 
     def variables(self, pattern):
-        return self.navigators[pattern].variables(pattern)
+        navigator = self._navigators[pattern]
+        return navigator.variables(pattern)
 
     def initial_times(self, pattern, variable=None):
-        return self.navigators[pattern].initial_times(pattern, variable=variable)
+        navigator = self._navigators[pattern]
+        return navigator.initial_times(pattern, variable=variable)
 
     def valid_times(self, pattern, variable, initial_time):
-        return self.navigators[pattern].valid_times(pattern, variable, initial_time)
+        navigator = self._navigators[pattern]
+        return navigator.valid_times(pattern, variable, initial_time)
 
     def pressures(self, pattern, variable, initial_time):
-        return self.navigators[pattern].pressures(pattern, variable, initial_time)
+        navigator = self._navigators[pattern]
+        return navigator.pressures(pattern, variable, initial_time)
 
 
-class FileSystem(object):
+class FileSystemNavigator:
     """Navigates collections of file(s)
 
     .. note:: This is a naive implementation designed
@@ -57,7 +74,7 @@ class FileSystem(object):
         self.coordinates = coordinates
 
     @classmethod
-    def file_type(cls, paths, file_type):
+    def from_file_type(cls, paths, file_type):
         if file_type.lower() == "rdt":
             coordinates = rdt.Coordinates()
         elif file_type.lower() == "eida50":
