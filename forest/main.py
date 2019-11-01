@@ -6,9 +6,9 @@ import numpy as np
 import os
 import glob
 from forest.drivers import (
+        eida50,
         rdt)
 from forest import (
-        satellite,
         data,
         load,
         view,
@@ -132,7 +132,7 @@ def main(argv=None):
             viewer = earth_networks.View(loader)
         elif isinstance(loader, data.GPM):
             viewer = view.GPMView(loader, color_mapper)
-        elif isinstance(loader, satellite.EIDA50):
+        elif isinstance(loader, eida50.Loader):
             viewer = view.EIDA50(loader, color_mapper)
         else:
             viewer = view.UMView(loader, color_mapper)

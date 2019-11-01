@@ -17,10 +17,15 @@ def test_by_name_rdt():
 def test_rdt_loader():
     driver = forest.drivers.by_name("rdt")
     label = "RDT"
-    settings = {
-        "pattern": "*.json"
-    }
-    dataset = driver.Dataset(label, settings)
+    dataset = driver.Dataset(label, pattern="*.json")
     loader = dataset.loader()
     assert isinstance(loader, rdt.Loader)
     assert isinstance(loader.locator, rdt.Locator)
+
+
+def test_eida50_loader():
+    driver = forest.drivers.by_name("eida50")
+    dataset = driver.Dataset("Label", pattern="*.nc")
+    loader = dataset.loader()
+    assert isinstance(loader, eida50.Loader)
+    assert isinstance(loader.locator, eida50.Locator)

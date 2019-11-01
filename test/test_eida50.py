@@ -4,7 +4,6 @@ import datetime as dt
 import netCDF4
 import numpy as np
 from forest import (
-        satellite,
         navigate)
 from forest.drivers import (
         eida50)
@@ -15,7 +14,7 @@ class TestLocator(unittest.TestCase):
     def setUp(self):
         self.paths = []
         self.pattern = "test-eida50*.nc"
-        self.locator = satellite.Locator(self.pattern)
+        self.locator = eida50.Locator(self.pattern)
 
     def tearDown(self):
         for path in self.paths:

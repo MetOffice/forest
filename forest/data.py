@@ -18,7 +18,6 @@ except ImportError:
     pass
 from forest import (
         gridded_forecast,
-        satellite,
         earth_networks,
         geo,
         disk)

@@ -22,15 +22,15 @@ testing.
 import os
 from forest.export import export
 from forest.drivers import (
-        rdt)
+        rdt,
+        eida50)
 from forest import (
         data,
         db,
         earth_networks,
         gridded_forecast,
         ghrsstl4,
-        unified_model,
-        satellite)
+        unified_model)
 
 
 __all__ = []
@@ -141,7 +141,7 @@ class Loader(object):
         elif file_type == 'earthnetworks':
             return earth_networks.Loader.pattern(pattern)
         elif file_type == 'eida50':
-            return satellite.EIDA50(pattern)
+            return eida50.EIDA50(pattern)
         elif file_type == 'griddedforecast':
             return gridded_forecast.ImageLoader(label, pattern)
         elif file_type == 'ghrsstl4':

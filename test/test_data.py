@@ -3,8 +3,9 @@ import os
 import datetime as dt
 import netCDF4
 import numpy as np
+from forest.drivers import (
+        eida50)
 from forest import (
-        satellite,
         data,
         db)
 
@@ -42,7 +43,7 @@ class TestUMLoader(unittest.TestCase):
 class TestEIDA50(unittest.TestCase):
     def setUp(self):
         self.path = os.path.expanduser("~/cache/EIDA50_takm4p4_20190417.nc")
-        self.fixture = satellite.EIDA50([self.path])
+        self.fixture = eida50.EIDA50([self.path])
 
     def test_image(self):
         time = dt.datetime(2019, 4, 17, 12)
@@ -53,7 +54,7 @@ class TestEIDA50(unittest.TestCase):
 
     def test_parse_date(self):
         path = os.path.expanduser("~/cache/EIDA50_takm4p4_20190417.nc")
-        result = satellite.EIDA50.parse_date(path)
+        result = eida50.EIDA50.parse_date(path)
         expect = dt.datetime(2019, 4, 17)
         self.assertEqual(expect, result)
 

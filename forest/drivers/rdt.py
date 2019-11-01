@@ -20,16 +20,12 @@ import math
 
 
 class Dataset:
-    def __init__(self, label, settings=None):
+    def __init__(self, label, pattern=None):
         self.label = label
-        if settings is None:
-            settings = {
-                "pattern": "*.json"
-            }
-        self.settings = settings
+        self.pattern = pattern
 
     def loader(self):
-        return Loader(self.settings["pattern"])
+        return Loader(self.pattern)
 
 
 class RenderGroup(object):
