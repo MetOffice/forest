@@ -11,6 +11,23 @@ from forest import geo, gridded_forecast
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
 HALO_SIZE = 7
 
+def _get_intake_vars(
+        experiment_id,
+        table_id,
+        grid_label,
+        institution_id,
+        member_id):
+    collection = intake.open_esm_datastore(URL)
+    cat = collection.search(
+        experiment_id=experiment_id,
+        table_id=table_id,
+        grid_label=grid_label,
+        institution_id=institution_id,
+        member_id=member_id,
+    )
+    var_list = cat.unique('variable_id')['variable_id']['values']
+    return var_list
+
 
 @functools.lru_cache(maxsize=16)
 def _load_from_intake(
@@ -106,9 +123,20 @@ class IntakeLoader:
 
     def image(self, state):
         cube = self._cube
-        reference_time = datetime.now()  # temporary
-        variable = state.variable,
-        init_time = state.initial_time
+        do_update = False
+        if self.variable_id != state.variable:
+            self.variable_id = state.variable
+            do_update = True
+
+        if do_update:
+            self._cube = _load_from_intake(experiment_id=self.experiment_id,
+                                           table_id=self.table_id,
+                                           grid_label=self.grid_label,
+                                           variable_id=self.variable_id,
+                                           institution_id=self.institution_id,
+                                           activity_id=self.activity_id,
+                                           parent_source_id=self.parent_source_id,
+                                           member_id=self.member_id)
         valid_time = state.valid_time
         pressure = state.pressure
 
@@ -126,14 +154,23 @@ class IntakeLoader:
         def lat_filter(lat):
             return -85.0 < lat < 85.0
 
+        def pressure_select(select_pressure, data_pressure):
+            return abs(select_pressure - data_pressure.point) < 1.0
+
         if cube is None or state.initial_time is None:
             data = gridded_forecast.empty_image()
         else:
-            cube_cropped = cube.extract(
-                iris.Constraint(latitude=lat_filter,
-                                air_pressure=pressure,
-                                time=functools.partial(time_comp,
-                                                       selected_time)))
+            constraint_dict = {'time': functools.partial(time_comp,
+                                                         selected_time),
+                               'latitude': lat_filter,
+                               }
+            coord_names = [c1.name() for c1 in self._cube.coords()]
+            if 'air_pressure' in coord_names:
+                constraint_dict['air_pressure'] = functools.partial(
+                    pressure_select,
+                    pressure,
+                )
+            cube_cropped = cube.extract(iris.Constraint(**constraint_dict))
             lat_pts = cube_cropped.coord('latitude').points
             long_pts = cube_cropped.coord('longitude').points - 180.0
             cube_data_cropped = cube_cropped.data
@@ -183,7 +220,11 @@ class Navigator:
         self._cube.coord('air_pressure').convert_units('hPa')
 
     def variables(self, pattern):
-        return ['air_temperature']
+        return ['ta'] + _get_intake_vars(experiment_id=self.experiment_id,
+                                table_id=self.table_id,
+                                grid_label=self.grid_label,
+                                institution_id=self.institution_id,
+                                member_id=self.member_id)
 
     def initial_times(self, pattern, variable=None):
         cube = self._cube
