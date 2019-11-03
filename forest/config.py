@@ -41,6 +41,40 @@ def parse_datasets(data):
     return [DatasetSpec(label, driver) for label, driver in zip(labels, drivers)]
 
 
+def args_to_data(args):
+    """Convert argparse.Namespace into tree structure"""
+    datasets = []
+    if args.config_file is not None:
+        with open(args.config_file) as stream:
+            try:
+                # PyYaml 5.1 onwards
+                data = yaml.full_load(stream)
+            except AttributeError:
+                data = yaml.load(stream)
+        datasets += data["datasets"]
+
+    # Update datasets with prefix directory
+    if args.directory is not None:
+        for dataset in datasets:
+            settings = dataset["driver"]["settings"]
+            pattern = settings["pattern"]
+            settings["pattern"] = os.path.join(args.directory, pattern)
+
+    for path in args.files:
+        datasets.append({
+            "label": path,
+            "driver": {
+                "name": args.file_type,
+                "settings": {
+                    "pattern": path
+                }
+            }
+        })
+    return {
+        "datasets": datasets
+    }
+
+
 class Config(object):
     """Configuration data structure
 

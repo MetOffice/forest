@@ -2,7 +2,64 @@ import unittest
 import yaml
 import os
 import forest
-from forest.config import parse_datasets
+from forest.config import (
+        parse_datasets,
+        args_to_data)
+
+
+def test_args_to_data():
+    path = "file.nc"
+    args = forest.parse_args.parse_args([path])
+    result = args_to_data(args)
+    expect = {
+        "datasets": [
+            {
+                "label": path,
+                "driver": {
+                    "name": "unified_model",
+                    "settings": {
+                        "pattern": path
+                    }
+                }
+            }
+        ]
+    }
+    assert expect == result
+
+
+def test_args_to_data_given_directory_and_config_file(tmp_path):
+    config_path = str(tmp_path / "config.yaml")
+    data = {
+        "datasets": [
+            {
+                "label": "label",
+                "driver": {
+                    "name": "unified_model",
+                    "settings": {"pattern": "*.nc"}
+                }
+            }
+        ]
+    }
+    with open(config_path, "w") as stream:
+        yaml.dump(data, stream)
+    args = forest.parse_args.parse_args([
+        "--directory", "/prefix",
+        "--config-file", config_path])
+    result = args_to_data(args)
+    expect = {
+        "datasets": [
+            {
+                "label": "label",
+                "driver": {
+                    "name": "unified_model",
+                    "settings": {
+                        "pattern": "/prefix/*.nc"
+                    }
+                }
+            }
+        ]
+    }
+    assert expect == result
 
 
 def test_parse_datasets():
