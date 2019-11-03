@@ -11,6 +11,7 @@ from forest.drivers import (
 
 @pytest.mark.parametrize("driver_name", [
         "gridded_forecast",
+        "ghrsstl4",
         "earth_networks",
         "eida50",
         "rdt"])

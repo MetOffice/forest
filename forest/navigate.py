@@ -9,9 +9,9 @@ from .exceptions import (
 from forest.drivers import (
         eida50,
         gridded_forecast,
+        ghrsstl4,
         rdt)
 from forest import (
-        ghrsstl4,
         unified_model)
 
 
