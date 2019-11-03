@@ -7,6 +7,21 @@ import iris
 from forest import geo
 
 
+class Dataset:
+    """Gridded forecast collection"""
+    def __init__(self, label):
+        self.label = label
+
+    def navigator(self):
+        raise NotImplementedError()
+
+    def loader(self):
+        raise NotImplementedError()
+
+    def map_view(self):
+        raise NotImplementedError()
+
+
 def empty_image():
     return {
         "x": [],

@@ -11,6 +11,9 @@ class Dataset:
         self.label = label
         self.pattern = pattern
 
+    def navigator(self):
+        raise NotImplementedError()
+
     def loader(self):
         return Loader(self.pattern)
 

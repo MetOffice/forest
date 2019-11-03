@@ -24,6 +24,9 @@ class Dataset:
         self.label = label
         self.pattern = pattern
 
+    def navigator(self):
+        raise NotImplementedError()
+
     def map_view(self, loader, **kwargs):
         return View(loader)
 

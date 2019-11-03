@@ -16,8 +16,9 @@ try:
 except ImportError:
     # ReadTheDocs unable to pip install cf-units
     pass
+from forest.drivers import (
+        gridded_forecast)
 from forest import (
-        gridded_forecast,
         geo,
         disk)
 import bokeh.models

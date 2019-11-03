@@ -5,7 +5,7 @@ import unittest
 import iris
 import numpy as np
 
-from forest import gridded_forecast
+from forest.drivers import gridded_forecast
 
 
 class Test_empty_image(unittest.TestCase):
@@ -42,7 +42,7 @@ class Test_to_datetime(unittest.TestCase):
             gridded_forecast._to_datetime(12)
 
 
-@patch('forest.gridded_forecast._to_datetime')
+@patch('forest.drivers.gridded_forecast._to_datetime')
 class Test_coordinates(unittest.TestCase):
     def test_surface_and_times(self, to_datetime):
         valid = datetime(2019, 10, 10, 9)
@@ -125,7 +125,7 @@ class Test_is_valid_cube(unittest.TestCase):
 
 
 class Test_load(unittest.TestCase):
-    @patch('forest.gridded_forecast._is_valid_cube')
+    @patch('forest.drivers.gridded_forecast._is_valid_cube')
     @patch('iris.load')
     def test_all_unique(self, load, is_valid_cube):
         cube1 = Mock(**{'name.return_value': 'foo'})
@@ -139,7 +139,7 @@ class Test_load(unittest.TestCase):
         self.assertEqual(is_valid_cube.mock_calls, [call(cube1), call(cube2)])
         self.assertEqual(result, {'foo': cube1, 'bar': cube2})
 
-    @patch('forest.gridded_forecast._is_valid_cube')
+    @patch('forest.drivers.gridded_forecast._is_valid_cube')
     @patch('iris.load')
     def test_duplicate_name(self, load, is_valid_cube):
         cube1 = Mock(**{'name.return_value': 'foo'})
@@ -153,7 +153,7 @@ class Test_load(unittest.TestCase):
         self.assertEqual(is_valid_cube.mock_calls, [call(cube1), call(cube2)])
         self.assertEqual(result, {'foo (1)': cube1, 'foo (2)': cube2})
 
-    @patch('forest.gridded_forecast._is_valid_cube')
+    @patch('forest.drivers.gridded_forecast._is_valid_cube')
     @patch('iris.load')
     def test_none_valid(self, load, is_valid_cube):
         load.return_value = ['foo', 'bar']
@@ -164,7 +164,7 @@ class Test_load(unittest.TestCase):
 
 
 class Test_ImageLoader(unittest.TestCase):
-    @patch('forest.gridded_forecast._load')
+    @patch('forest.drivers.gridded_forecast._load')
     def test_init(self, load):
         load.return_value = sentinel.cubes
         result = gridded_forecast.ImageLoader(sentinel.label, sentinel.pattern)
@@ -172,9 +172,9 @@ class Test_ImageLoader(unittest.TestCase):
         self.assertEqual(result._label, sentinel.label)
         self.assertEqual(result._cubes, sentinel.cubes)
 
-    @patch('forest.gridded_forecast.empty_image')
+    @patch('forest.drivers.gridded_forecast.empty_image')
     @patch('iris.Constraint')
-    @patch('forest.gridded_forecast._to_datetime')
+    @patch('forest.drivers.gridded_forecast._to_datetime')
     def test_empty(self, to_datetime, constraint, empty_image):
         # To avoid re-testing the constructor, just make a fake ImageLoader
         # instance.
@@ -194,10 +194,10 @@ class Test_ImageLoader(unittest.TestCase):
         original_cube.extract.assert_called_once_with(sentinel.constraint)
         self.assertEqual(result, sentinel.empty_image)
 
-    @patch('forest.gridded_forecast.coordinates')
+    @patch('forest.drivers.gridded_forecast.coordinates')
     @patch('forest.geo.stretch_image')
     @patch('iris.Constraint')
-    @patch('forest.gridded_forecast._to_datetime')
+    @patch('forest.drivers.gridded_forecast._to_datetime')
     def test_image(self, to_datetime, constraint, stretch_image, coordinates):
         # To avoid re-testing the constructor, just make a fake ImageLoader
         # instance.
@@ -232,7 +232,7 @@ class Test_ImageLoader(unittest.TestCase):
 
 
 class Test_Navigator(unittest.TestCase):
-    @patch('forest.gridded_forecast._load')
+    @patch('forest.drivers.gridded_forecast._load')
     def test_init(self, load):
         load.return_value = sentinel.cubes
         result = gridded_forecast.Navigator(sentinel.paths)

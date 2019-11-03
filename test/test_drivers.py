@@ -1,9 +1,26 @@
+import pytest
+import inspect
 import os
 import forest.drivers
 from forest.drivers import (
         earth_networks,
         eida50,
+        gridded_forecast,
         rdt)
+
+
+@pytest.mark.parametrize("driver_name", [
+        "gridded_forecast",
+        "earth_networks",
+        "eida50",
+        "rdt"])
+def test_by_name_returns_module_implements_driver(driver_name):
+    driver = forest.drivers.by_name(driver_name)
+    assert inspect.isclass(getattr(driver, "Dataset"))
+    dataset = driver.Dataset("label")
+    assert hasattr(dataset, "navigator")
+    assert hasattr(dataset, "loader")
+    assert hasattr(dataset, "map_view")
 
 
 def test_by_name_earth_networks():
