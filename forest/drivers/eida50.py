@@ -24,14 +24,14 @@ class Dataset:
     def map_view(self, loader, color_mapper):
         return View(loader, color_mapper)
 
-    def loader(self):
+    def map_loader(self):
         return Loader(self.pattern)
 
     def navigator(self):
         return Navigator(glob.glob(self.pattern)[0])
 
 
-class View(object):
+class View:
     def __init__(self, loader, color_mapper):
         self.loader = loader
         self.color_mapper = color_mapper
@@ -79,7 +79,7 @@ class View(object):
                 color_mapper=self.color_mapper)
 
 
-class Navigator(object):
+class Navigator:
     """Coordinate system related to EIDA50 file(s)"""
     def initial_time(self, path):
         return min(self._cached_times(path))
@@ -101,7 +101,7 @@ class Navigator(object):
         pass
 
 
-class Loader(object):
+class Loader:
     def __init__(self, pattern):
         self.locator = Locator(pattern)
         self.cache = {}
@@ -135,7 +135,7 @@ class Loader(object):
                 lons, lats, values)
 
 
-class Locator(object):
+class Locator:
     """Locate EIDA50 satellite images"""
     def __init__(self, pattern):
         self.pattern = pattern

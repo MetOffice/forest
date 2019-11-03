@@ -26,7 +26,7 @@ class Dataset:
     def map_view(self):
         raise NotImplementedError()
 
-    def loader(self):
+    def map_loader(self):
         raise NotImplementedError()
 
 

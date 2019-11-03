@@ -6,10 +6,10 @@ support for new data formats
 """
 
 
-FILE_TYPE = "example"
-
-
 class Dataset:
+    def __init__(self, label):
+        self.label = label
+
     def navigator():
         return Navigator()
 
@@ -50,7 +50,7 @@ class View:
         raise NotImplementedError()
 
 
-class Loader(object):
+class Loader:
     """Called by the View
 
     The View defines the interface that the Loader should implement

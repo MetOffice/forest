@@ -10,6 +10,7 @@ from forest.drivers import (
 
 
 @pytest.mark.parametrize("driver_name", [
+        "example",
         "gridded_forecast",
         "ghrsstl4",
         "earth_networks",
@@ -21,7 +22,7 @@ def test_by_name_returns_module_implements_driver(driver_name):
     assert inspect.isclass(getattr(driver, "Dataset"))
     dataset = driver.Dataset("label")
     assert hasattr(dataset, "navigator")
-    assert hasattr(dataset, "loader")
+    assert hasattr(dataset, "map_loader")
     assert hasattr(dataset, "map_view")
 
 
@@ -45,7 +46,7 @@ def test_rdt_loader():
     driver = forest.drivers.by_name("rdt")
     label = "RDT"
     dataset = driver.Dataset(label, pattern="*.json")
-    loader = dataset.loader()
+    loader = dataset.map_loader()
     assert isinstance(loader, rdt.Loader)
     assert isinstance(loader.locator, rdt.Locator)
 
@@ -60,7 +61,7 @@ def test_rdt_map_view():
 def test_eida50_loader():
     driver = forest.drivers.by_name("eida50")
     dataset = driver.Dataset("Label", pattern="*.nc")
-    loader = dataset.loader()
+    loader = dataset.map_loader()
     assert isinstance(loader, eida50.Loader)
     assert isinstance(loader.locator, eida50.Locator)
 
@@ -70,7 +71,7 @@ def test_earth_networks_loader():
     dataset = driver.Dataset("Label", pattern="empty.txt")
     with open("empty.txt", "w"):
         pass
-    loader = dataset.loader()
+    loader = dataset.map_loader()
     os.remove("empty.txt")
     assert isinstance(loader, earth_networks.Loader)
 
@@ -80,6 +81,6 @@ def test_earth_networks_map_view():
     dataset = earth_networks.Dataset("label", pattern=path)
     with open(path, "w"):
         pass
-    view = dataset.map_view(dataset.loader(), color_mapper=None)
+    view = dataset.map_view(dataset.map_loader(), color_mapper=None)
     os.remove(path)
     assert isinstance(view, earth_networks.View)

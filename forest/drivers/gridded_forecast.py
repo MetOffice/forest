@@ -15,10 +15,10 @@ class Dataset:
     def navigator(self):
         raise NotImplementedError()
 
-    def loader(self):
+    def map_view(self):
         raise NotImplementedError()
 
-    def map_view(self):
+    def map_loader(self):
         raise NotImplementedError()
 
 

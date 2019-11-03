@@ -30,11 +30,11 @@ class Dataset:
     def map_view(self, loader, **kwargs):
         return View(loader)
 
-    def loader(self):
+    def map_loader(self):
         return Loader(self.pattern)
 
 
-class RenderGroup(object):
+class RenderGroup:
     """Collection of renderers that act as one"""
     def __init__(self, renderers, visible=False):
         self.renderers = renderers
@@ -50,7 +50,7 @@ class RenderGroup(object):
             r.visible = value
 
 
-class View(object):
+class View:
     """Rapidly Developing Thunderstorms (RDT) visualisation"""
     def __init__(self, loader):
         self.loader = loader
@@ -198,7 +198,7 @@ class View(object):
         return RenderGroup([renderer, lines, circles, cntr_circles, future_lines, arrows])
 
 
-class Loader(object):
+class Loader:
     """High-level RDT loader"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
@@ -722,7 +722,7 @@ def fieldValueLUT(fn, uid):
         return "-"
 
 
-class Locator(object):
+class Locator:
     def __init__(self, pattern):
         self.pattern = pattern
 
@@ -759,7 +759,7 @@ class Locator(object):
             return dt.datetime.strptime(groups[0], "%Y%m%d%H%M")
 
 
-class Coordinates(object):
+class Coordinates:
     """Menu system interface"""
     def initial_time(self, path):
         times = self.valid_times(path, None)

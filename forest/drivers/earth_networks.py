@@ -14,14 +14,14 @@ class Dataset:
     def navigator(self):
         raise NotImplementedError()
 
-    def loader(self):
-        return Loader(self.pattern)
-
     def map_view(self, loader, **kwargs):
         return View(loader)
 
+    def map_loader(self):
+        return Loader(self.pattern)
 
-class View(object):
+
+class View:
     def __init__(self, loader):
         self.loader = loader
         self.source = bokeh.models.ColumnDataSource({
@@ -67,7 +67,7 @@ class View(object):
         return renderer
 
 
-class Loader(object):
+class Loader:
     def __init__(self, paths):
         self.paths = paths
         if len(self.paths) > 0:
