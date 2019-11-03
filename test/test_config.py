@@ -2,6 +2,28 @@ import unittest
 import yaml
 import os
 import forest
+from forest.config import parse_datasets
+
+
+def test_parse_datasets():
+    label = "Label"
+    name = "eida50"
+    pattern = "*.nc"
+    datasets = parse_datasets({
+        "datasets": [{
+            "label": label,
+            "driver": {
+                "name":name,
+                "settings": {
+                    "pattern": pattern
+                }
+            }
+        }]
+    })
+    dataset = datasets[0]
+    assert dataset.label == label
+    assert dataset.driver.name == name
+    assert dataset.driver.settings == {"pattern": pattern}
 
 
 class TestIntegration(unittest.TestCase):

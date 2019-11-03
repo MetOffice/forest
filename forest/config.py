@@ -22,10 +22,23 @@ applications.
 """
 import os
 import yaml
+from collections import namedtuple
 from forest.export import export
 
 
 __all__ = []
+
+
+DatasetSpec = namedtuple("DatasetSpec", ("label", "driver"))
+DriverSpec = namedtuple("DriverSpec", ("name", "settings"))
+
+
+def parse_datasets(data):
+    labels = [ds["label"]
+            for ds in data["datasets"]]
+    drivers = [DriverSpec(ds["driver"]["name"], ds["driver"].get("settings", {}))
+            for ds in data["datasets"]]
+    return [DatasetSpec(label, driver) for label, driver in zip(labels, drivers)]
 
 
 class Config(object):

@@ -19,27 +19,12 @@ from forest.drivers import (
         "unified_model"])
 def test_by_name_returns_module_implements_driver(driver_name):
     driver = forest.drivers.by_name(driver_name)
+    assert driver.__name__ == f"forest.drivers.{driver_name}"
     assert inspect.isclass(getattr(driver, "Dataset"))
     dataset = driver.Dataset("label")
     assert hasattr(dataset, "navigator")
     assert hasattr(dataset, "map_loader")
     assert hasattr(dataset, "map_view")
-
-
-def test_by_name_earth_networks():
-    driver = forest.drivers.by_name("earth_networks")
-    assert isinstance(driver.Dataset("label", pattern="engl*.txt"),
-            earth_networks.Dataset)
-
-
-def test_by_name_eida50():
-    driver = forest.drivers.by_name("eida50")
-    assert isinstance(driver.Dataset("label"), eida50.Dataset)
-
-
-def test_by_name_rdt():
-    driver = forest.drivers.by_name("rdt")
-    assert isinstance(driver.Dataset("label"), rdt.Dataset)
 
 
 def test_rdt_loader():
