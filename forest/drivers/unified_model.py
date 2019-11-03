@@ -18,7 +18,21 @@ class NotFound(Exception):
     pass
 
 
-class Coordinates(object):
+class Dataset:
+    def __init__(self, label):
+        self.label = label
+
+    def navigator(self):
+        raise NotImplementedError()
+
+    def map_view(self):
+        raise NotImplementedError()
+
+    def loader(self):
+        raise NotImplementedError()
+
+
+class Coordinates:
     """Coordinate system for unified model diagnostics"""
     def initial_time(self, path):
         return InitialTimeLocator()(path)
@@ -34,7 +48,7 @@ class Coordinates(object):
         return PressuresLocator()(path, variable)
 
 
-class Locator(object):
+class Locator:
     def __init__(self, paths):
         self.paths = paths
         self.spare = []
@@ -150,7 +164,7 @@ class Locator(object):
         return result
 
 
-class InitialTimeLocator(object):
+class InitialTimeLocator:
     def __call__(self, path):
         try:
             return self.netcdf4_strategy(path)
@@ -173,7 +187,7 @@ class InitialTimeLocator(object):
         raise InitialTimeNotFound("No initial time: '{}'".format(path))
 
 
-class ValidTimesLocator(object):
+class ValidTimesLocator:
     def __call__(self, path, variable):
         try:
             t = self.netcdf4_strategy(path, variable)
@@ -217,7 +231,7 @@ class ValidTimesLocator(object):
                  dtype='datetime64[s]')
 
 
-class PressuresLocator(object):
+class PressuresLocator:
     def __call__(self, path, variable):
         try:
             return self.netcdf4_strategy(path, variable)

@@ -26,11 +26,11 @@ from forest.drivers import (
         gridded_forecast,
         ghrsstl4,
         earth_networks,
-        eida50)
+        eida50,
+        unified_model)
 from forest import (
         data,
-        db,
-        unified_model)
+        db)
 
 
 __all__ = []

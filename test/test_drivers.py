@@ -14,7 +14,8 @@ from forest.drivers import (
         "ghrsstl4",
         "earth_networks",
         "eida50",
-        "rdt"])
+        "rdt",
+        "unified_model"])
 def test_by_name_returns_module_implements_driver(driver_name):
     driver = forest.drivers.by_name(driver_name)
     assert inspect.isclass(getattr(driver, "Dataset"))

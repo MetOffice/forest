@@ -19,7 +19,6 @@ from forest import (
         db,
         keys,
         redux,
-        unified_model,
         navigate,
         parse_args)
 import forest.config as cfg

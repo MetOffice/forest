@@ -21,7 +21,6 @@ from .config import *
 from . import (
         drivers,
         navigate,
-        unified_model,
         redux,
         tutorial)
 from .db import Database

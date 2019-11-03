@@ -5,10 +5,10 @@ import netCDF4
 import os
 import fnmatch
 import pytest
+from forest.drivers import unified_model
 from forest import (
         disk,
         navigate,
-        unified_model,
         tutorial)
 from forest.exceptions import SearchFail
 
