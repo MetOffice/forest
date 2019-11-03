@@ -44,6 +44,8 @@ def parse_datasets(data):
 def args_to_data(args):
     """Convert argparse.Namespace into tree structure"""
     datasets = []
+
+    # Parse config file to datasets
     if args.config_file is not None:
         with open(args.config_file) as stream:
             try:
@@ -53,13 +55,7 @@ def args_to_data(args):
                 data = yaml.load(stream)
         datasets += data["datasets"]
 
-    # Update datasets with prefix directory
-    if args.directory is not None:
-        for dataset in datasets:
-            settings = dataset["driver"]["settings"]
-            pattern = settings["pattern"]
-            settings["pattern"] = os.path.join(args.directory, pattern)
-
+    # Append command line files
     for path in args.files:
         datasets.append({
             "label": path,
@@ -70,6 +66,14 @@ def args_to_data(args):
                 }
             }
         })
+
+    # Update datasets with prefix directory
+    if args.directory is not None:
+        for dataset in datasets:
+            settings = dataset["driver"]["settings"]
+            pattern = settings["pattern"]
+            settings["pattern"] = os.path.join(args.directory, pattern)
+
     return {
         "datasets": datasets
     }

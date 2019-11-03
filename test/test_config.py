@@ -62,6 +62,16 @@ def test_args_to_data_given_directory_and_config_file(tmp_path):
     assert expect == result
 
 
+def test_args_to_data_given_directory_and_files():
+    args = forest.parse_args.parse_args([
+        "--directory", "/prefix",
+        "a.nc", "b.nc"])
+    data = args_to_data(args)
+    result = [ds["driver"]["settings"]["pattern"] for ds in data["datasets"]]
+    expect = ["/prefix/a.nc", "/prefix/b.nc"]
+    assert expect == result
+
+
 def test_parse_datasets():
     label = "Label"
     name = "eida50"
