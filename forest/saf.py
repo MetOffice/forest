@@ -5,6 +5,8 @@ import re
 import os
 
 import numpy as np
+import numpy.ma as ma
+from scipy.interpolate import griddata
 import netCDF4
 
 from forest.gridded_forecast import _to_datetime, empty_image
@@ -22,14 +24,30 @@ class saf(object):
     def image(self, state):
         '''gets actual data. 
 
+        X and Y passed to `geo.stretch_image` must be 1D arrays. NWCSAF data 
+        are not on a regular grid so must be regridded.
+
         `values` passed to `geo.stretch_image` must be a NumPy Masked Array, 
         rather than a NetCDF4 Variable, so need to add `[:]`.
 
         :state: Bokeh State object of info from UI'''
         data = empty_image()
-        for nc in self.locator._sets: #just do one for now
+        for nc in self.locator._sets: 
             if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and state.variable in nc.variables:
-                data = geo.stretch_image(nc['lon'][:][0], nc['lat'][:][:,0], nc[state.variable][:])
+                #regrid to regular grid
+                x = nc['lon'][:] # lat & lon both 2D arrays
+                y = nc['lat'][:] #
+
+                #define grid
+                xi, yi = np.meshgrid(
+                        np.linspace(x.min(),x.max(),len(x[0,:])),
+                        np.linspace(y.min(),y.max(),len(y[:,0])), 
+                            )
+
+
+                zi = griddata(np.array([x.flatten(),y.flatten()]).transpose(),nc[state.variable][:].flatten(), (xi, yi))
+
+                data = geo.stretch_image(xi[0,:], yi[:,0], np.nan_to_num(zi))
           
         return data
           
