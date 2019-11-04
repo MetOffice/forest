@@ -67,6 +67,15 @@ class DriverSpec(typing.NamedTuple):
 
 class DatasetSpec(typing.NamedTuple):
     """Specification to instantiate a dataset
+
+    Contains information needed to build a
+    dataset. Every dataset needs a label and
+    a driver to power visualisations
+
+    :param label: text description of dataset
+    :type label: str
+    :param driver: specification of driver
+    :type driver: DriverSpec
     """
     label: str
     driver: DriverSpec
@@ -107,10 +116,32 @@ def parse_datasets(data):
 
 
 def args_to_data(args):
-    """Convert argparse.Namespace into tree structure
+    """Convert :py:class:`argparse.Namespace` to data structure
+
+    It takes a parsed command line and returns a data structure
+    containing a list of configured datasets
+
+    >>> args = parse_args(["--directory", "/prefix", "a.nc"])
+    >>> args_to_data(args)
+    ... {
+    ... "datasets": [
+    ...     {
+    ...         "label": "a.nc",
+    ...         "driver": {
+    ...             "name": "unified_model",
+    ...             "settings": {
+    ...                 "pattern": "/prefix/a.nc"
+    ...             }
+    ...         }
+    ...     }
+    ... }
+
+    .. note:: If ``args.config_file`` is not ``None`` its contents are
+              loaded and merged with other command line settings
 
     :param args: parsed command line arguments
-    :returns: nested dict structure representing application configuration
+    :type args: argparse.Namespace
+    :returns: nested structure representing application configuration
     """
     datasets = []
 
