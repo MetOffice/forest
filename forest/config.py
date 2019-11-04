@@ -11,6 +11,7 @@ applications.
 
 
 .. code-block:: yaml
+    :caption: Example config.yaml
 
     datasets:
         - label: Trial
