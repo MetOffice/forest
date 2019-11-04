@@ -15,11 +15,17 @@ from forest.util import timeout_cache
 from forest import geo
 
 class saf(object):
-    def __init__(self, pattern):
+    def __init__(self, pattern, label=None, locator=None):
         '''Object to process SAF NetCDF files
 
         :pattern: shell-style glob pattern of input file(s)'''
-        self.locator = Locator(pattern)        
+        if(locator):
+            self.locator = locator
+        else:
+            self.locator = Locator(pattern)        
+
+        if(label):
+            self.label = label
 
     def image(self, state):
         '''gets actual data. 
@@ -32,6 +38,7 @@ class saf(object):
 
         :state: Bokeh State object of info from UI'''
         data = empty_image()
+        print("wibble", "saf.image called")
         for nc in self.locator._sets: 
             if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and state.variable in nc.variables:
                 #regrid to regular grid
@@ -40,10 +47,9 @@ class saf(object):
 
                 #define grid
                 xi, yi = np.meshgrid(
-                        np.linspace(x.min(),x.max(),len(x[0,:])),
-                        np.linspace(y.min(),y.max(),len(y[:,0])), 
+                        np.linspace(x.min(),x.max(),nc.dimensions['nx'].size),
+                        np.linspace(y.min(),y.max(),nc.dimensions['ny'].size), 
                             )
-
 
                 zi = griddata(np.array([x.flatten(),y.flatten()]).transpose(),nc[state.variable][:].flatten(), (xi, yi))
 
