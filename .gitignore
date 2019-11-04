@@ -8,3 +8,4 @@ kubeconfig
 node_modules
 *.egg-info
 .coverage
+doc/build
