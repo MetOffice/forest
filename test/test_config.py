@@ -1,16 +1,37 @@
+import pytest
 import unittest
 import yaml
 import os
 import forest
+from forest import config
 from forest.config import (
         parse_datasets,
-        args_to_data)
+        to_data)
 
 
-def test_args_to_data():
+@pytest.mark.parametrize("argv,items", [
+    (["a.nc"],
+        [("a.nc", "unified_model", {"pattern": "a.nc"})]),
+    (["--directory", "/prefix", "a.nc"],
+        [("a.nc", "unified_model", {"pattern": "/prefix/a.nc"})]),
+    ])
+def test_dataset_specs(argv, items):
+    args = forest.parse_args.parse_args(argv)
+    result = config.dataset_specs(
+            args.config_file,
+            args.files,
+            args.file_type,
+            args.directory,
+            args.database)
+    expect = [config.DatasetSpec(label, config.DriverSpec(name, settings))
+            for label, name, settings in items]
+    assert expect == result
+
+
+def test_to_data():
     path = "file.nc"
     args = forest.parse_args.parse_args([path])
-    result = args_to_data(args)
+    result = to_data(args.config_file, args.files, args.file_type, args.directory)
     expect = {
         "datasets": [
             {
@@ -27,7 +48,7 @@ def test_args_to_data():
     assert expect == result
 
 
-def test_args_to_data_given_directory_and_config_file(tmp_path):
+def test_to_data_given_directory_and_config_file(tmp_path):
     config_path = str(tmp_path / "config.yaml")
     data = {
         "datasets": [
@@ -45,7 +66,7 @@ def test_args_to_data_given_directory_and_config_file(tmp_path):
     args = forest.parse_args.parse_args([
         "--directory", "/prefix",
         "--config-file", config_path])
-    result = args_to_data(args)
+    result = to_data(args.config_file, args.files, args.file_type, args.directory)
     expect = {
         "datasets": [
             {
@@ -62,11 +83,11 @@ def test_args_to_data_given_directory_and_config_file(tmp_path):
     assert expect == result
 
 
-def test_args_to_data_given_directory_and_files():
+def test_to_data_given_directory_and_files():
     args = forest.parse_args.parse_args([
         "--directory", "/prefix",
         "a.nc", "b.nc"])
-    data = args_to_data(args)
+    data = to_data(args.config_file, args.files, args.file_type, args.directory)
     result = [ds["driver"]["settings"]["pattern"] for ds in data["datasets"]]
     expect = ["/prefix/a.nc", "/prefix/b.nc"]
     assert expect == result

@@ -34,7 +34,9 @@ applications.
               directory: /satellite/rdt/json
 
 
-.. autofunction:: args_to_data
+.. autofunction:: dataset_specs
+
+.. autofunction:: to_data
 
 .. autofunction:: parse_datasets
 
@@ -82,6 +84,14 @@ class DatasetSpec(typing.NamedTuple):
     driver: DriverSpec
 
 
+def dataset_specs(config_file, files, file_type, directory, database):
+    """Generate specifications from settings
+
+    :returns: list of :class:`DatasetSpec`
+    """
+    return parse_datasets(to_data(config_file, files, file_type, directory))
+
+
 def parse_datasets(data):
     """Parse configuration data into convenient namedtuples
 
@@ -116,14 +126,13 @@ def parse_datasets(data):
     return [DatasetSpec(label, driver) for label, driver in zip(labels, drivers)]
 
 
-def args_to_data(args):
-    """Convert :py:class:`argparse.Namespace` to data structure
+def to_data(config_file, files, file_type, directory):
+    """Convert command line args to intermediate data structure
 
     It takes a parsed command line and returns a data structure
     containing a list of configured datasets
 
-    >>> args = parse_args(["--directory", "/prefix", "a.nc"])
-    >>> args_to_data(args)
+    >>> to_data(None, ["a.nc"], "unified_model", "/prefix")
     ... {
     ... "datasets": [
     ...     {
@@ -137,18 +146,20 @@ def args_to_data(args):
     ...     }
     ... }
 
-    .. note:: If ``args.config_file`` is not ``None`` its contents are
+    .. note:: If ``config_file`` is not ``None`` its contents are
               loaded and merged with other command line settings
 
-    :param args: parsed command line arguments
-    :type args: argparse.Namespace
+    :param config_file: path to config file
+    :param files: list of file names
+    :param file_type: keyword to select loader
+    :param directory: prefix directory
     :returns: nested structure representing application configuration
     """
     datasets = []
 
     # Parse config file to datasets
-    if args.config_file is not None:
-        with open(args.config_file) as stream:
+    if config_file is not None:
+        with open(config_file) as stream:
             try:
                 # PyYaml 5.1 onwards
                 data = yaml.full_load(stream)
@@ -157,11 +168,11 @@ def args_to_data(args):
         datasets += data["datasets"]
 
     # Append command line files
-    for path in args.files:
+    for path in files:
         datasets.append({
             "label": path,
             "driver": {
-                "name": args.file_type,
+                "name": file_type,
                 "settings": {
                     "pattern": path
                 }
@@ -169,11 +180,11 @@ def args_to_data(args):
         })
 
     # Update datasets with prefix directory
-    if args.directory is not None:
+    if directory is not None:
         for dataset in datasets:
             settings = dataset["driver"]["settings"]
             pattern = settings["pattern"]
-            settings["pattern"] = os.path.join(args.directory, pattern)
+            settings["pattern"] = os.path.join(directory, pattern)
 
     return {
         "datasets": datasets
