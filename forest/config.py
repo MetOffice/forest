@@ -9,31 +9,96 @@ represented on the command line by leveraging file formats
 such as YAML and JSON that are widely used to configure
 applications.
 
-.. autoclass:: Config
+
+.. code-block:: yaml
+
+    datasets:
+        - label: Trial
+          driver:
+            name: gridded_forecast
+            settings:
+              pattern: "*.nc"
+              directory: trial/output
+        - label: Control
+          driver:
+            name: gridded_forecast
+            settings:
+              pattern: "*.nc"
+              directory: control/output
+        - label: RDT
+          driver:
+            name: rdt
+            settings:
+              pattern: "*.json"
+              directory: /satellite/rdt/json
+
+
+.. autofunction:: args_to_data
+
+.. autofunction:: parse_datasets
+
+.. autoclass:: DatasetSpec
    :members:
 
-.. autoclass:: FileGroup
+.. autoclass:: DriverSpec
    :members:
-
-.. autofunction:: load_config
-
-.. autofunction:: from_files
 
 """
 import os
+import typing
 import yaml
-from collections import namedtuple
 from forest.export import export
 
 
 __all__ = []
 
 
-DatasetSpec = namedtuple("DatasetSpec", ("label", "driver"))
-DriverSpec = namedtuple("DriverSpec", ("name", "settings"))
+class DriverSpec(typing.NamedTuple):
+    """Specification to instansiate a driver
+
+    :param name: name of driver in `forest.drivers`
+    :type name: str
+    :param settings: keyword args passed to Dataset constructor
+    :type settings: dict
+    """
+    name: str
+    settings: dict
+
+
+class DatasetSpec(typing.NamedTuple):
+    """Specification to instantiate a dataset
+    """
+    label: str
+    driver: DriverSpec
 
 
 def parse_datasets(data):
+    """Parse configuration data into convenient namedtuples
+
+    It takes a application representation and returns named tuples
+
+    >>> data = {
+    ...     "datasets": [{
+    ...         "label": "Hello",
+    ...         "driver": {
+    ...             "name": "world",
+    ...             "settings": {"x": 1}
+    ...         }}]
+    ... }
+    >>> datasets = parse_datasets(data)
+    >>> datasets
+    ... [DatasetSpec(label="Hello",
+    ...              driver=DriverSpec(name="world",
+    ...                                settings={"x": 1}))]
+    >>> datasets[0].driver.settings
+    ... {"x": 1}
+
+    Named tuples provide syntactic sugar to ease attribute access
+
+    :param data: data structure representing application configuration
+    :type data: dict
+    :returns: list of :class:`DatasetSpec`
+    """
     labels = [ds["label"]
             for ds in data["datasets"]]
     drivers = [DriverSpec(ds["driver"]["name"], ds["driver"].get("settings", {}))
@@ -42,7 +107,11 @@ def parse_datasets(data):
 
 
 def args_to_data(args):
-    """Convert argparse.Namespace into tree structure"""
+    """Convert argparse.Namespace into tree structure
+
+    :param args: parsed command line arguments
+    :returns: nested dict structure representing application configuration
+    """
     datasets = []
 
     # Parse config file to datasets
