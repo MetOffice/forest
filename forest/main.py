@@ -40,8 +40,8 @@ def main(argv=None):
         database = db.Database.connect(args.database)
 
     # Full screen map
-    lon_range = (0, 30)
-    lat_range = (0, 30)
+    lon_range = (90, 140)
+    lat_range = (-23.5, 23.5)
     x_range, y_range = geo.web_mercator(
         lon_range,
         lat_range)
