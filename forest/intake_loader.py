@@ -57,7 +57,6 @@ def _load_from_intake(
     Function is cahced to reduce remote queries.
     """
     collection = intake.open_esm_datastore(URL)
-    print('opening catalogue')
     cat = collection.search(
         experiment_id=experiment_id,
         table_id=table_id,
@@ -65,15 +64,13 @@ def _load_from_intake(
         institution_id=institution_id,
         member_id=member_id,
         variable_id=variable_id)
-    print('downloading data')
     dset_dict = cat.to_dataset_dict(
         zarr_kwargs={'consolidated': True, 'decode_times': False},
         cdf_kwargs={'chunks': {}, 'decode_times': False})
     try:
         parent_source_id = [l1 for l1 in dset_dict.values()][0].parent_source_id
     except IndexError:
-        import pdb
-        pdb.set_trace()
+        pass
     ds_label = f'{activity_id}.{institution_id}.{parent_source_id}.{experiment_id}.{table_id}.{grid_label}'
     xr = dset_dict[ds_label]
     print(xr[variable_id])
@@ -371,25 +368,3 @@ class Navigator:
         except iris.exceptions.CoordinateNotFoundError:
             pass
         return pressures
-
-
-if __name__ == '__main__':
-    #TODO:
-    # Use this stuff as the basis for some basic functional tests
-    State = namedtuple('State',
-                       field_names=['variable', 'initial_time', 'valid_time',
-                                    'pressures', 'pressure'])
-    state = State('temperature', datetime.now(), datetime.now(), [1, 2, 3], 1)
-
-    dummy_loader = IntakeLoader()
-
-    dummy_image = dummy_loader.image(state)
-
-    print(dummy_image)
-
-    print('PART 2')
-    navigator = Navigator()
-    print(navigator.variables())
-    print(navigator.pressures())
-    print(navigator.valid_times())
-    print(navigator.initial_times())
