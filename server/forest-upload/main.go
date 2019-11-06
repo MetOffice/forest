@@ -55,11 +55,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if args.APIKey == "" {
-		Usage()
-		fmt.Println("Please specify FOREST_API_KEY environment variable")
-		return
-	}
 	if len(args.fileNames) == 0 {
 		Usage()
 		fmt.Println("Too few arguments specified")
@@ -67,9 +62,14 @@ func main() {
 	}
 	for _, fileName := range args.fileNames {
 		fmt.Printf("pre-sign URL: %s\n", fileName)
-		signed, err := presignedURL(endpoint, fileName)
+		url := endpoint + "?file=" + fileName
+		content, err := apiKeyGet(url, args.APIKey)
 		if err != nil {
 			fmt.Printf("pre-signed URL generation failed: %s\n", fileName)
+			log.Fatal(err)
+		}
+		signed, err := parseResponseBody(content)
+		if err != nil {
 			log.Fatal(err)
 		}
 		err = fileUpload(fileName, signed.url, signed.fields)
@@ -144,20 +144,25 @@ func fileUpload(fileName string, url string, params map[string]string) error {
 	return nil
 }
 
-func presignedURL(endpoint, fileName string) (SignedURL, error) {
-	// Ask Lambda for pre-signed URL and parse response
-	url := endpoint + "?file=" + fileName
-	res, err := http.Get(url)
+func apiKeyGet(url, key string) ([]byte, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return SignedURL{}, err
+		return []byte{}, err
 	}
-	defer res.Body.Close()
-	content, err := ioutil.ReadAll(res.Body)
+	req.Header.Add("x-api-key", key)
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return SignedURL{}, err
+		return []byte{}, err
 	}
+	return content, nil
+}
+
+func parseResponseBody(content []byte) (SignedURL, error) {
 	var data interface{}
-	err = json.Unmarshal(content, &data)
+	err := json.Unmarshal(content, &data)
 	if err != nil {
 		return SignedURL{}, err
 	}

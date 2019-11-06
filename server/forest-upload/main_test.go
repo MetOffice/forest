@@ -5,6 +5,9 @@ import (
 	"testing"
 )
 
+func TestURL(t *testing.T) {
+}
+
 func TestParseArgs(t *testing.T) {
 	t.Run("given environment variable", func(t *testing.T) {
 		key := "ABC"
