@@ -104,11 +104,11 @@ class Controls(object):
         palette = self.palettes[self.name][self.number]
         if self.reverse:
             palette = list(reversed(palette))
+        color = bokeh.colors.RGB(0, 0, 0, a=0)
         if self.invisible_on:
             low = self.low
-            color = bokeh.colors.RGB(0, 0, 0, a=0)
             self.color_mapper.low_color = color
             self.color_mapper.low = low
         self.color_mapper.high_color = color
-        self.color_mapper.high = high
+        self.color_mapper.high = self.color_mapper.high
         self.color_mapper.palette = palette
