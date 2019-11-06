@@ -67,15 +67,11 @@ def _load_from_intake(
     dset_dict = cat.to_dataset_dict(
         zarr_kwargs={'consolidated': True, 'decode_times': False},
         cdf_kwargs={'chunks': {}, 'decode_times': False})
-    try:
-        parent_source_id = [l1 for l1 in dset_dict.values()][0].parent_source_id
-    except IndexError:
-        pass
-    ds_label = f'{activity_id}.{institution_id}.{parent_source_id}.{experiment_id}.{table_id}.{grid_label}'
-    xr = dset_dict[ds_label]
-    print(xr[variable_id])
-    cube = xr[variable_id].to_iris()
 
+    # The search should have produced a dictionary with only 1 item, so
+    # get that item and get a cube from it.
+    ds_label, xr = dset_dict.popitem()
+    cube = xr[variable_id].to_iris()
     coord_names = [c1.name() for c1 in cube.coords()]
     if 'air_pressure' in coord_names:
         cube.coord('air_pressure').convert_units('hPa')
