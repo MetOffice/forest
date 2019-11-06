@@ -134,7 +134,9 @@ def main(argv=None):
         elif isinstance(loader, satellite.EIDA50):
             viewer = view.EIDA50(loader, color_mapper)
         elif isinstance(loader, intake_loader.IntakeLoader):
-            viewer = intake_loader.IntakeView(loader, color_mapper)
+            viewer = view.UMView(loader, color_mapper)
+            viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
+                                        intake_loader.INTAKE_FORMATTERS)
         else:
             viewer = view.UMView(loader, color_mapper)
         viewers[name] = viewer
@@ -149,7 +151,7 @@ def main(argv=None):
 
     image_sources = []
     for name, viewer in artist.viewers.items():
-        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50, intake_loader.IntakeView)):
+        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
             image_sources.append(viewer.source)
 
     # Lakes

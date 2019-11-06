@@ -16,8 +16,25 @@ class UMView(object):
                 "dh": [],
                 "image": []})
 
+        self.tooltips = [
+            ("Name", "@name"),
+            ("Value", "@image @units"),
+            ('Length', '@length'),
+            ('Valid', '@valid{%F %H:%M}'),
+            ('Initial', '@initial{%F %H:%M}'),
+            ("Level", "@level")]
+
+        self.formatters = {
+            'valid': 'datetime',
+            'initial': 'datetime'
+        }
+
     def render(self, state):
         self.source.data = self.loader.image(state)
+
+    def set_hover_properties(self, tooltips, formatters):
+        self.tooltips = tooltips
+        self.formatters = formatters
 
     def add_figure(self, figure):
         renderer = figure.image(
@@ -30,17 +47,8 @@ class UMView(object):
                 color_mapper=self.color_mapper)
         tool = bokeh.models.HoverTool(
                 renderers=[renderer],
-                tooltips=[
-                    ("Name", "@name"),
-                    ("Value", "@image @units"),
-                    ('Length', '@length'),
-                    ('Valid', '@valid{%F %H:%M}'),
-                    ('Initial', '@initial{%F %H:%M}'),
-                    ("Level", "@level")],
-                formatters={
-                    'valid': 'datetime',
-                    'initial': 'datetime'
-                })
+                tooltips=self.tooltips,
+                formatters=self.formatters)
         figure.add_tools(tool)
         return renderer
 

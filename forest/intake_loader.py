@@ -77,51 +77,18 @@ def _load_from_intake(
         cube.coord('air_pressure').convert_units('hPa')
     return cube[0]  # drop member dimension
 
-
-class IntakeView(object):
-    """
-    View object for CMIP6 dataset. The main customisation of the standard view
-    class is to provide more CMIP6 specific info in the hover info.
-    """
-    def __init__(self, loader, color_mapper):
-        self.loader = loader
-        self.color_mapper = color_mapper
-        self.source = bokeh.models.ColumnDataSource({
-            "x": [],
-            "y": [],
-            "dw": [],
-            "dh": [],
-            "image": []})
-
-    def render(self, state):
-        self.source.data = self.loader.image(state)
-
-    def add_figure(self, figure):
-        renderer = figure.image(
-            x="x",
-            y="y",
-            dw="dw",
-            dh="dh",
-            image="image",
-            source=self.source,
-            color_mapper=self.color_mapper)
-        tool = bokeh.models.HoverTool(
-            renderers=[renderer],
-            tooltips=[
-                ("Name", "@name"),
-                ("Value", "@image @units"),
-                ('Valid', '@valid{%F %H:%M}'),
-                ("Level", "@level"),
-                ("Experiment", "@experiment"),
-                ("Institution", "@institution"),
-                ("Member", "@memberid"),
-                ('Variable', "@variableid"),
-            ],
-            formatters={
-                'valid': 'datetime',
-            })
-        figure.add_tools(tool)
-        return renderer
+INTAKE_TOOLTIPS = [
+    ("Name", "@name"),
+    ("Value", "@image @units"),
+    ('Valid', '@valid{%F %H:%M}'),
+    ("Level", "@level"),
+    ("Experiment", "@experiment"),
+    ("Institution", "@institution"),
+    ("Member", "@memberid"),
+    ('Variable', "@variableid"), ]
+INTAKE_FORMATTERS = {
+    'valid': 'datetime',
+}
 
 
 @functools.lru_cache(maxsize=16)
@@ -331,10 +298,7 @@ class Navigator:
                                 grid_label=self.grid_label,
                                 institution_id=self.institution_id,
                                 member_id=self.member_id)
-        if 'ta' in var_list:
-            var_list.remove('ta')
-            var_list.insert(0,'ta')
-        elif 'tas' in var_list:
+        if 'tas' in var_list:
             var_list.remove('tas')
             var_list = ['tas'] + var_list
         return var_list
@@ -359,8 +323,10 @@ class Navigator:
         cube = self.cube
         pressures = []
         try:
-            pressures = [cell.point for cell in
-                         cube.coord('air_pressure').cells()]
+            pressures = sorted((cell.point for cell in
+                         cube.coord('air_pressure').cells()), reverse=True)
+            pressures
         except iris.exceptions.CoordinateNotFoundError:
             pass
+
         return pressures
