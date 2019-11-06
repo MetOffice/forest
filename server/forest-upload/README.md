@@ -27,7 +27,7 @@ to use the tool.
 
 ```bash
 # Upload multiple NetCDF files
-forest-upload *.nc
+forest-upload-${GOARCH} *.nc
 ```
 
 **Note:** Multi-part upload is not supported. The whole file is
