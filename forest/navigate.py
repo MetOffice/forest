@@ -68,7 +68,9 @@ class FileSystem(object):
         elif file_type.lower() == "unified_model":
             coordinates = unified_model.Coordinates()
         elif file_type.lower() == "mdda":
-            coordinates = mdda_loader.MddaNavigator()
+            print('hey I am mdda')
+            return mdda_loader.MddaNavigator()
+            
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)

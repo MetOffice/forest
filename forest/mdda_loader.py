@@ -10,7 +10,9 @@ import numpy as np
 
 from forest import geo, gridded_forecast
 
-URL = 'https://mdda.hub.metoffice.cloud/v1/collections/PT1HTE1fMjAxOS0xMC0yNFQwNi4wMC4wMFpfSVNCTA=='
+# replace this with a live collection (or code to auto find collections)
+# see https://mdda.hub.metoffice.cloud/documentation
+URL = 'https://mdda.hub.metoffice.cloud/v1/collections/PT1HTE1fMjAxOS0xMC0yOVQwNi4wMC4wMFpfSVNCTA=='
 APIKEY = os.environ['MDDA_KEY']
 
 VALID_TIME = datetime(2019, 10, 24, 0, 0, 0)
@@ -109,22 +111,29 @@ class MddaResponse:
 
 def _load_from_mdda(url):
     if url != None:
+        print(url)
         response = requests.get(
             url, headers={'x-api-key': APIKEY})
+        print(response)
         collection = json.loads(response.content)
     else:
         collection = EXAMPLE_RESPONSE
     return MddaResponse(collection)
 
-def _nc_from_mdda(parameter, level, time):
-    time = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+def _nc_from_mdda(parameter, level, t):
+    print('formatting time')
+    t = gridded_forecast._to_datetime(t)
+    print(t)
+    time_str = t.strftime('%Y-%m-%dT%H:%M:%SZ')
+    print('getting data')
+    print(level)
     data = requests.get(
         f'{URL}/cube',
         params = {
             'parameters': parameter,
             'outputFormat': 'netCDF4',
             'bbox': '-180,-90,180,90',
-            'time': time,
+            'time': time_str,
             'z': level},
         headers = {
             'x-api-key': APIKEY
@@ -152,24 +161,26 @@ class MddaLoader:
         valid_time = state.valid_time
         pressure = state.pressure
         print(state)
-        if variable is None:
+        cube = _nc_from_mdda(variable, pressure, valid_time)
+        print('hey I am cube')
+        print(cube)
+        if cube is None or state.initial_time is None:
             data = gridded_forecast.empty_image()
             print('returning empty data:')
-            print(data)
-        cube = _nc_from_mdda(variable, pressure, valid_time)   
-        print(cube)
-        print(type(cube))
-        data = geo.stretch_image(cube.coord('longitude').points,
-                                    cube.coord('latitude').points, cube.data)
-        img = data['image'][0]
-        masked_img = np.ma.masked_array(img, mask = np.isnan(img))
-        data['image'] = [masked_img]
-        data.update(gridded_forecast.coordinates(state.valid_time, state.initial_time,
-                                state.pressures, state.pressure))
-        data.update({
-            'name': [self._label],
-            'units': [str(cube.units)]
-        })
+        else:
+            print(cube)
+            print(type(cube))
+            data = geo.stretch_image(cube.coord('longitude').points,
+                                        cube.coord('latitude').points, cube.data)
+            img = data['image'][0]
+            masked_img = np.ma.masked_array(img, mask = np.isnan(img))
+            data['image'] = [masked_img]
+            data.update(gridded_forecast.coordinates(state.valid_time, state.initial_time,
+                                    state.pressures, state.pressure))
+            data.update({
+                'name': [self._label],
+                'units': [str(cube.units)]
+            })
         print('returning data:')
         print(data)
         return data
@@ -177,26 +188,31 @@ class MddaLoader:
 
 class MddaNavigator:
     def __init__(self, url=URL):
+        print('navigator')
         print(url)
         self.metadata = _load_from_mdda(url)
-        print(self.metadata.parameters)
 
-    def variables(self, **kwargs):
+    def variables(self, *args, **kwargs):
         p = self.metadata.parameters
         print(p)
         return p
 
-    def initial_times(self, **kwargs):
+    def initial_times(self, *args, **kwargs):
+        print('init times')
+        print(self.metadata.reference_times)
         return self.metadata.reference_times
 
-    def valid_times(self, **kwargs):
+    def valid_times(self, *args, **kwargs):
         # not all variables are necessarily available on all times
         params = self.metadata.parameters
         times = [self.metadata.parameter_times(p) for p in params]
         longest_t = sorted(times, reverse = True, key = lambda arr: len(arr))[0]
+        print('valid times')
+        print(longest_t)
         return longest_t
 
-    def pressures(self, **kwargs):
+    def pressures(self, *args, **kwargs):
+        print('pressures')
         # not all variables are necessarily available on all levels
         # data is not necessarily on pressure levels
         params = self.metadata.parameters
