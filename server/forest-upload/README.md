@@ -14,6 +14,9 @@ on the end user.
 make build ENDPOINT=https://...amazonaws.com/lambda
 ```
 
+**Note:** If the ENDPOINT is not specified at compile
+time the application will fail to operate
+
 ## Usage
 
 The REST endpoint is secured using API keys. Instructions
