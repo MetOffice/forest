@@ -13,6 +13,7 @@ class Controls(object):
         self.number = number
         self.palettes = bokeh.palettes.all_palettes
         self.color_mapper = color_mapper
+        self.color_mapper.nan_color = bokeh.colors.RGB(0, 0, 0, a=0)
 
         names = sorted(self.palettes.keys())
         menu = list(zip(names, names))
