@@ -370,8 +370,8 @@ class Database(Connection):
         """, dict(path=path, variable=variable, pressure=pressure, i=i))
 
     def valid_times(self,
-                    variable=None,
                     pattern=None,
+                    variable=None,
                     initial_time=None):
         """Valid times associated with search criteria"""
         # Note: SQL injection possible if not properly escaped
@@ -410,7 +410,7 @@ class Database(Connection):
         rows = self.cursor.fetchall()
         return [time for time, in rows]
 
-    def pressures(self, variable=None, pattern=None, initial_time=None):
+    def pressures(self, pattern=None, variable=None, initial_time=None):
         """Select pressures from database"""
         # Note: SQL injection possible if not properly escaped
         #       use ? and :name syntax in template
