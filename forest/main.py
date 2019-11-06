@@ -6,6 +6,7 @@ import numpy as np
 import os
 import glob
 from forest import (
+        nearcast,
         satellite,
         data,
         load,

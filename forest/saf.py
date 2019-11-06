@@ -24,9 +24,10 @@ import os
 import numpy as np
 import numpy.ma as ma
 from scipy.interpolate import griddata
+#from metpy.interpolate import interpolate_to_grid
 import netCDF4
 
-from forest.gridded_forecast import _to_datetime, empty_image
+from forest.gridded_forecast import _to_datetime, empty_image, coordinates
 from forest.util import timeout_cache
 
 from forest import geo
@@ -55,12 +56,12 @@ class saf(object):
         :param state: Bokeh State object of info from UI
         :returns: Output data from :meth:`geo.stretch_image`'''
         data = empty_image()
-        print("wibble", "saf.image called")
         for nc in self.locator._sets: 
             if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and state.variable in nc.variables:
                 #regrid to regular grid
-                x = nc['lon'][:] # lat & lon both 2D arrays
-                y = nc['lat'][:] #
+                x = nc['lon'][:].flatten() # lat & lon both 2D arrays
+                y = nc['lat'][:].flatten() #
+                z = nc[state.variable][:].flatten()
 
                 #define grid
                 xi, yi = np.meshgrid(
@@ -68,9 +69,23 @@ class saf(object):
                         np.linspace(y.min(),y.max(),nc.dimensions['ny'].size), 
                             )
 
-                zi = griddata(np.array([x.flatten(),y.flatten()]).transpose(),nc[state.variable][:].flatten(), (xi, yi))
+                zi = griddata(
+                        np.array([x,y]).transpose(),
+                        z, 
+                        (xi, yi), 
+                        method='linear',
+                        fill_value=np.nan)
 
-                data = geo.stretch_image(xi[0,:], yi[:,0], np.nan_to_num(zi))
+                #zi = np.ma.masked_invalid(zi, copy=False)
+                zi = np.ma.masked_outside(zi, nc[state.variable].valid_range[0], nc[state.variable].valid_range[1], copy=False)
+
+                data = geo.stretch_image(xi[0,:], yi[:,0], zi)
+                #data = geo.stretch_image(x[0,:], y[:,0], nc[state.variable][:])
+                data.update(coordinates(state.valid_time, state.initial_time, state.pressures, state.pressure))
+                data.update({
+                    'name': [str(nc[state.variable].long_name)],
+                    'units': [str(nc[state.variable].units)]
+                })
           
         return data
           
