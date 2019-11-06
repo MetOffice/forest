@@ -27,8 +27,10 @@ to use the tool.
 
 ```bash
 # Upload multiple NetCDF files
-forest-upload-${GOARCH} *.nc
+forest-upload-${GOOS} *.nc
 ```
 
 **Note:** Multi-part upload is not supported. The whole file is
 read into memory prior to upload.
+
+**Note:** FOREST_API_KEY should be in your environment when running the command
