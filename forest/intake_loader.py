@@ -198,12 +198,8 @@ class IntakeLoader:
         Main image loading function. This function will actually realise the
         data,
         """
-        do_update = False
         if self.variable_id != state.variable:
             self.variable_id = state.variable
-            do_update = True
-
-        if do_update:
             self._cube = None
 
         valid_time = state.valid_time
@@ -215,6 +211,11 @@ class IntakeLoader:
         # function so that it can be cached, so if image is called multiple
         # time the calculations are only done once (hopefully).
         cube = self.cube
+        coord_names = [c1.name() for c1 in cube.coords()]
+        if 'air_pressure' in coord_names and pressure is None:
+            data = gridded_forecast.empty_image()
+            return data
+
         data = _get_bokeh_image(cube, self.experiment_id,
                                 self.variable_id,
                                 self.institution_id, state.initial_time,
@@ -298,9 +299,10 @@ class Navigator:
                                 grid_label=self.grid_label,
                                 institution_id=self.institution_id,
                                 member_id=self.member_id)
+        # make air temperature at surface the first variable so it shows as
+        # default
         if 'tas' in var_list:
-            var_list.remove('tas')
-            var_list = ['tas'] + var_list
+            var_list = ['tas'] + [v1 for v1 in var_list if v1 != 'tas']
         return var_list
 
 
@@ -312,6 +314,9 @@ class Navigator:
             return [init_time]
 
     def valid_times(self, pattern, variable, initial_time):
+        if self.variable_id != variable:
+            self.variable_id = variable
+            self._cube = None
         self._parse_pattern(pattern)
         cube = self.cube
         valid_times = [gridded_forecast._to_datetime(cell.point) for cell in
@@ -319,14 +324,19 @@ class Navigator:
         return valid_times
 
     def pressures(self, pattern, variable, initial_time):
+        print(f'retrieving pressures for variable {variable}')
+        if self.variable_id != variable:
+            self.variable_id = variable
+            self._cube = None
         self._parse_pattern(pattern)
         cube = self.cube
-        pressures = []
+        print(pattern)
+        print(variable)
         try:
+            # get pressures and sorted from largest to smallest, so that
+            # closer to the surface shows higher up the list.
             pressures = sorted((cell.point for cell in
                          cube.coord('air_pressure').cells()), reverse=True)
-            pressures
         except iris.exceptions.CoordinateNotFoundError:
-            pass
-
+            pressures = []
         return pressures
