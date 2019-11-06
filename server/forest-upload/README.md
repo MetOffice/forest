@@ -27,5 +27,5 @@ to use the tool.
 forest-upload *.nc
 ```
 
-*Note:* Large file transfer is not supported. The whole file is read into memory
-        prior to upload.
+**Note:** Multi-part upload is not supported. The whole file is
+read into memory prior to upload.
