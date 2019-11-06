@@ -70,6 +70,7 @@ func main() {
 		}
 		signed, err := parseResponseBody(content)
 		if err != nil {
+			fmt.Printf("Could not parse response: %s\n", string(content))
 			log.Fatal(err)
 		}
 		err = fileUpload(fileName, signed.url, signed.fields)
