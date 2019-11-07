@@ -24,6 +24,9 @@ type SignedURL struct {
 // use go build -ldflags "-X main.endpoint=$ENDPOINT"
 var endpoint string
 
+// Debug setting to help developers see response contents
+var debug bool = false
+
 type Namespace struct {
 	APIKey    string
 	fileNames []string
@@ -73,6 +76,11 @@ func main() {
 			fmt.Printf("Could not parse response: %s\n", string(content))
 			log.Fatal(err)
 		}
+		if debug {
+			fmt.Printf("upload: %s to %s\n", fileName, signed.url)
+		} else {
+			fmt.Printf("upload: %s to S3 bucket\n", fileName)
+		}
 		err = fileUpload(fileName, signed.url, signed.fields)
 		if err != nil {
 			log.Fatal(err)
@@ -81,8 +89,6 @@ func main() {
 }
 
 func fileUpload(fileName string, url string, params map[string]string) error {
-	fmt.Printf("upload: %s to %s\n", fileName, url)
-
 	// Read/write buffer to store file content
 	rw := &bytes.Buffer{}
 
@@ -136,7 +142,7 @@ func fileUpload(fileName string, url string, params map[string]string) error {
 			return err
 		}
 		response.Body.Close()
-		if true {
+		if debug {
 			fmt.Println(response.StatusCode)
 			fmt.Println(response.Header)
 			fmt.Println(body)
