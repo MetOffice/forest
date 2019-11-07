@@ -5,7 +5,13 @@ import (
 	"testing"
 )
 
-func TestURL(t *testing.T) {
+func TestParseResponse(t *testing.T) {
+	t.Run("given empty JSON object returns error", func(t *testing.T) {
+		_, err := parseResponse([]byte("{}"))
+		if err == nil {
+			t.Error("want error got nil")
+		}
+	})
 }
 
 func TestParseArgs(t *testing.T) {

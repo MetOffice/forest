@@ -68,7 +68,7 @@ func main() {
 			fmt.Printf("pre-signed URL generation failed: %s\n", fileName)
 			log.Fatal(err)
 		}
-		signed, err := parseResponseBody(content)
+		signed, err := parseResponse(content)
 		if err != nil {
 			fmt.Printf("Could not parse response: %s\n", string(content))
 			log.Fatal(err)
@@ -161,13 +161,17 @@ func apiKeyGet(url, key string) ([]byte, error) {
 	return content, nil
 }
 
-func parseResponseBody(content []byte) (SignedURL, error) {
+func parseResponse(content []byte) (SignedURL, error) {
 	var data interface{}
 	err := json.Unmarshal(content, &data)
 	if err != nil {
 		return SignedURL{}, err
 	}
 	mapping := data.(map[string]interface{})
+	if mapping["body"] == nil {
+		message := fmt.Sprintf("Could not parse: %s", content)
+		return SignedURL{}, errors.New(message)
+	}
 	body := mapping["body"].(string)
 
 	var bodyData interface{}
