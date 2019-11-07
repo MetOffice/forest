@@ -1,4 +1,9 @@
 files:
+  - label: GA7
+    pattern: '*ga7*.nc'
+    directory: wcssp
+    file_type: unified_model
+    locator: database
   - label: GA6
     pattern: '*ga6*.nc'
     directory: wcssp
