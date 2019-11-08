@@ -153,7 +153,8 @@ class TestCoordinates(unittest.TestCase):
 class TestEIDA50(unittest.TestCase):
     def setUp(self):
         self.path = "test-navigate-eida50.nc"
-        self.navigator = navigate.FileSystem.file_type([self.path], "eida50")
+        self.navigator = navigate.FileSystemNavigator.from_file_type(
+            [self.path], 'eida50')
         self.times = [
             dt.datetime(2019, 1, 1, 0),
             dt.datetime(2019, 1, 1, 0, 15),

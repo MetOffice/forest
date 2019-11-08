@@ -34,6 +34,7 @@ def main(argv=None):
     else:
         config = cfg.load_config(args.config_file)
 
+    database = None
     if args.database is not None:
         if args.database != ':memory:':
             assert os.path.exists(args.database), "{} must exist".format(args.database)
@@ -247,14 +248,7 @@ def main(argv=None):
         image_controls.select(name)
         break
 
-    if len(args.files) > 0:
-        navigator = navigate.FileSystem.file_type(
-                args.files,
-                args.file_type)
-    elif args.database is not None:
-        navigator = database
-    else:
-        navigator = navigate.Config(config)
+    navigator = navigate.Navigator(config, database)
 
     # Pre-select menu choices (if any)
     initial_state = {}
