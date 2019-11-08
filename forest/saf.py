@@ -55,9 +55,9 @@ class saf(object):
         :param state: Bokeh State object of info from UI
         :returns: Output data from :meth:`geo.stretch_image`'''
         data = empty_image()
-        print("wibble", "saf.image called")
         for nc in self.locator._sets: 
-            if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and state.variable in nc.variables:
+            print("wibble", str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')), state.valid_time)
+            if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and self.locator.varlist[state.variable] in nc.variables:
                 #regrid to regular grid
                 x = nc['lon'][:] # lat & lon both 2D arrays
                 y = nc['lat'][:] #
@@ -68,7 +68,7 @@ class saf(object):
                         np.linspace(y.min(),y.max(),nc.dimensions['ny'].size), 
                             )
 
-                zi = griddata(np.array([x.flatten(),y.flatten()]).transpose(),nc[state.variable][:].flatten(), (xi, yi))
+                zi = griddata(np.array([x.flatten(),y.flatten()]).transpose(),nc[self.locator.varlist[state.variable]][:].flatten(), (xi, yi))
 
                 data = geo.stretch_image(xi[0,:], yi[:,0], np.nan_to_num(zi))
           
@@ -81,6 +81,13 @@ class Locator(object):
         for path in self.paths:
             #possibly use MFDataset which takes a glob pattern
             self._sets.append(netCDF4.Dataset(path)) 
+
+        #Get variable names and keys
+        self.varlist = {}
+        for nc in self._sets: 
+            for variable in nc.variables:
+                self.varlist[nc.variables[variable].long_name] = variable
+
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
@@ -135,12 +142,9 @@ class Coordinates(object):
          :returns: list of strings of variable names
          '''
         self.locator = Locator(pattern)        
-        varlist  = []
-        for nc in self.locator._sets: 
-            varlist = varlist + list(nc.variables.keys())
-    
+
         #return list of vars. coercing to set ensures uniqueness
-        return list(set(varlist))
+        return self.locator.varlist.keys()
 
     def valid_times(self, pattern, variable):
         '''Gets valid times from input files
@@ -152,7 +156,7 @@ class Coordinates(object):
         self.locator = Locator(pattern)
         times = []
         for nc in self.locator._sets:
-            if variable is None or variable in nc.variables:
+            if variable is None or self.locator.varlist[variable] in nc.variables:
                 times.append(str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')))
         return times
 
