@@ -85,7 +85,7 @@ class Locator(object):
         self.varlist = {}
         for nc in self._sets: 
             for variable in nc.variables:
-                #only display vars woth lon/lat coords
+                #only display vars with lon/lat coords
                 if('coordinates' in nc.variables[variable].ncattrs() and nc.variables[variable].coordinates == "lon lat"):
                     self.varlist[nc.variables[variable].long_name] = variable
 
