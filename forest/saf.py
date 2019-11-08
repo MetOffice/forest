@@ -56,7 +56,6 @@ class saf(object):
         :returns: Output data from :meth:`geo.stretch_image`'''
         data = empty_image()
         for nc in self.locator._sets: 
-            print("wibble", str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')), state.valid_time)
             if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and self.locator.varlist[state.variable] in nc.variables:
                 #regrid to regular grid
                 x = nc['lon'][:] # lat & lon both 2D arrays
@@ -86,7 +85,9 @@ class Locator(object):
         self.varlist = {}
         for nc in self._sets: 
             for variable in nc.variables:
-                self.varlist[nc.variables[variable].long_name] = variable
+                #only display vars woth lon/lat coords
+                if('coordinates' in nc.variables[variable].ncattrs() and nc.variables[variable].coordinates == "lon lat"):
+                    self.varlist[nc.variables[variable].long_name] = variable
 
 
     def find_file(self, valid_date):
@@ -143,7 +144,7 @@ class Coordinates(object):
          '''
         self.locator = Locator(pattern)        
 
-        #return list of vars. coercing to set ensures uniqueness
+        #return list of vars from Locator
         return self.locator.varlist.keys()
 
     def valid_times(self, pattern, variable):
