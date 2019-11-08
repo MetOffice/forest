@@ -27,7 +27,3 @@ files:
           pattern: 'rdt_json/*.json'
           locator: file_system
           file_type: rdt
-        - label: NearCast
-          pattern: 'NEARCAST*.GRIB2'
-          locator: file_system
-          file_type: nearcast
