@@ -109,11 +109,8 @@ def _get_bokeh_image(cube,
 
     def time_comp(select_time, time_cell):  #
         data_time = gridded_forecast._to_datetime(time_cell.point)
-        try:
-            if abs((select_time - data_time).days) < 2:
-                return True
-        except ValueError:
-            pass
+        if abs((select_time - data_time).days) < 2:
+            return True
         return False
 
     def lat_filter(lat):
