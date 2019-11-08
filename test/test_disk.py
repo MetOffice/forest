@@ -236,7 +236,8 @@ class TestNavigator(unittest.TestCase):
         pattern = "*.nc"
         with netCDF4.Dataset(self.path, "w") as dataset:
             pass
-        navigator = navigate.FileSystem.file_type([self.path], "unified_model")
+        navigator = navigate.FileSystemNavigator.from_file_type(
+            [self.path], "unified_model")
         result = navigator.variables(pattern)
         expect = []
         self.assertEqual(expect, result)
@@ -247,7 +248,8 @@ class TestNavigator(unittest.TestCase):
             var = dataset.createVariable("forecast_reference_time", "d", ())
             var.units = "hours since 1970-01-01 00:00:00"
             var[:] = 0
-        navigator = navigate.FileSystem.file_type([self.path], "unified_model")
+        navigator = navigate.FileSystemNavigator.from_file_type(
+            [self.path], "unified_model")
         result = navigator.initial_times(pattern)
         expect = [dt.datetime(1970, 1, 1)]
         self.assertEqual(expect, result)
@@ -293,7 +295,7 @@ class TestNavigator(unittest.TestCase):
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        navigator = navigate.FileSystem([self.path])
+        navigator = navigate.FileSystemNavigator([self.path])
         result = navigator.valid_times(pattern, variable, initial_time)
         expect = valid_times
         np.testing.assert_array_equal(expect, result)
@@ -339,7 +341,7 @@ class TestNavigator(unittest.TestCase):
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        navigator = navigate.FileSystem([self.path])
+        navigator = navigate.FileSystemNavigator([self.path])
         result = navigator.pressures(pattern, variable, initial_time)
         expect = [1000.]
         np.testing.assert_array_equal(expect, result)
