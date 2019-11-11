@@ -76,7 +76,7 @@ def _load_from_intake(
     coord_names = [c1.name() for c1 in cube.coords()]
     if 'air_pressure' in coord_names:
         cube.coord('air_pressure').convert_units('hPa')
-    return cube[0]  # drop member dimension
+    return iris.util.squeeze(cube)  # drop member dimension
 
 INTAKE_TOOLTIPS = [
     ("Name", "@name"),
