@@ -15,17 +15,12 @@ import (
 	"os"
 )
 
-type SignedURL struct {
-	url    string
-	fields map[string]string
-}
-
 // Compile-time variable hidden from end-user
 // use go build -ldflags "-X main.endpoint=$ENDPOINT"
 var endpoint string
 
 // Debug setting to help developers see response contents
-var debug bool = false
+var debug bool = true
 
 type Namespace struct {
 	APIKey    string
@@ -77,11 +72,12 @@ func main() {
 			log.Fatal(err)
 		}
 		if debug {
-			fmt.Printf("upload: %s to %s\n", fileName, signed.url)
+			fmt.Printf("upload: %s to %s\n", fileName, signed.URL)
 		} else {
 			fmt.Printf("upload: %s to S3 bucket\n", fileName)
 		}
-		err = fileUpload(fileName, signed.url, signed.fields)
+		fmt.Println(signed.Fields)
+		err = fileUpload(fileName, signed.URL, signed.Fields)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -167,30 +163,16 @@ func apiKeyGet(url, key string) ([]byte, error) {
 	return content, nil
 }
 
-func parseResponse(content []byte) (SignedURL, error) {
-	var data interface{}
-	err := json.Unmarshal(content, &data)
-	if err != nil {
-		return SignedURL{}, err
-	}
-	mapping := data.(map[string]interface{})
-	if mapping["body"] == nil {
-		message := fmt.Sprintf("Could not parse: %s", content)
-		return SignedURL{}, errors.New(message)
-	}
-	body := mapping["body"].(string)
+type Response struct {
+	URL    string            `json:"url"`
+	Fields map[string]string `json:"fields"`
+}
 
-	var bodyData interface{}
-	err = json.Unmarshal([]byte(body), &bodyData)
+func parseResponse(content []byte) (Response, error) {
+	resp := Response{}
+	err := json.Unmarshal(content, &resp)
 	if err != nil {
-		return SignedURL{}, err
+		return Response{}, err
 	}
-	b := bodyData.(map[string]interface{})
-	s3url := b["url"].(string)
-	fields := b["fields"].(map[string]interface{})
-	s3fields := make(map[string]string)
-	for k, v := range fields {
-		s3fields[k] = v.(string)
-	}
-	return SignedURL{s3url, s3fields}, nil
+	return resp, nil
 }
