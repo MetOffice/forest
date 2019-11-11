@@ -84,7 +84,8 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
                   - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda:*"
-                  - !GetAtt HelloBucket.Arn
+                  - !Sub "arn:aws:s3:::${CollaborationBucketName}"
+                  - !Sub "arn:aws:s3:::${CollaborationBucketName}/*"
 
   HelloWorldLambda:
     Type: AWS::Lambda::Function
