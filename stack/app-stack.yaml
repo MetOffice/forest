@@ -80,9 +80,11 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                   - logs:CreateLogEvents
+                  - s3:PutObject
                 Resource:
                   - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda"
                   - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${UniqueEnvName}-${AWS::Region}-lambda:*"
+                  - !GetAtt HelloBucket.Arn
 
   HelloWorldLambda:
     Type: AWS::Lambda::Function
