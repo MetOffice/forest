@@ -3,14 +3,15 @@ Module for loading data from the Pangeo CMIP6n intake catalogue (usng the intake
 loader) created by NCAR.
 '''
 
-from datetime import datetime
-from collections import namedtuple
 import functools
 
-import bokeh
-import intake
 import iris
 import numpy
+
+try:
+    import intake
+except ModuleNotFoundError:
+    intake = None
 
 from forest import geo, gridded_forecast
 
