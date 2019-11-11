@@ -1,5 +1,6 @@
 BINARY=forest-upload
-LDFLAGS="-X main.endpoint=${ENDPOINT}"
+VERSION=0.1.1
+LDFLAGS="-X main.endpoint=${ENDPOINT} -X main.version=${VERSION}"
 
 all: build build-linux
 build:

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"os"
 	"testing"
 )
 
@@ -36,24 +35,23 @@ func TestParseResponse(t *testing.T) {
 }
 
 func TestParseArgs(t *testing.T) {
-	t.Run("given environment variable", func(t *testing.T) {
-		key := "ABC"
-		os.Setenv("FOREST_API_KEY", key)
-		got, err := parseArgs([]string{"file.nc"})
+	t.Run("file(s)", func(t *testing.T) {
+		args, err := parseArgs([]string{"cmd", "file.nc"})
 		if err != nil {
 			t.Errorf("got error: %s", err)
 		}
-		if got.APIKey != key {
-			t.Errorf("want %s got %s", key, got.APIKey)
+		if len(args.fileNames) != 1 {
+			t.Errorf("got: %s", args.fileNames)
 		}
 	})
 
-	t.Run("without api key environment variable", func(t *testing.T) {
-		os.Unsetenv("FOREST_API_KEY")
-		_, err := parseArgs([]string{"file.nc"})
-		if err == nil {
-			t.Error("expect error to be raised")
+	t.Run("-version", func(t *testing.T) {
+		args, err := parseArgs([]string{"cmd", "-version"})
+		if err != nil {
+			t.Errorf("got error: %s", err)
+		}
+		if args.version != true {
+			t.Errorf("want %t got %t", true, args.version)
 		}
 	})
-
 }

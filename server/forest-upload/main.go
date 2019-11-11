@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/cheggaaa/pb/v3"
@@ -13,45 +12,65 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"runtime"
 )
 
 // Compile-time variable hidden from end-user
 // use go build -ldflags "-X main.endpoint=$ENDPOINT"
 var endpoint string
+var version string
 
 // Debug setting to help developers see response contents
 var debug bool = false
 
 type Namespace struct {
-	APIKey    string
+	version   bool
 	fileNames []string
 }
 
 func parseArgs(argc []string) (Namespace, error) {
 	flagSet := flag.NewFlagSet(argc[0], flag.ContinueOnError)
-	APIKey, ok := os.LookupEnv("FOREST_API_KEY")
-	if !ok {
-		return Namespace{}, errors.New("FOREST_API_KEY environment variable not set")
-	}
+	versionPtr := flagSet.Bool("version", false, "print version and exit")
 	err := flagSet.Parse(argc[1:])
 	if err != nil {
 		return Namespace{}, err
 	}
-	return Namespace{APIKey, flagSet.Args()}, nil
+	return Namespace{*versionPtr, flagSet.Args()}, nil
 }
 
 func Usage() {
 	fmt.Printf("Usage: %s FILE [FILE ...]]\n", os.Args[0])
 }
 
+func printVersion() {
+	fmt.Printf("forest-upload version %s %s/%s\n",
+		version,
+		runtime.GOOS,
+		runtime.GOARCH)
+}
+
 func main() {
+	// Command line parsing
+	flag.Usage = func() {
+		Usage()
+		flag.PrintDefaults()
+	}
 	if endpoint == "" {
 		log.Println("REST endpoint not specified during compilation")
+		log.Fatalln("Contact an administrator")
+	}
+	forestAPIKey, ok := os.LookupEnv("FOREST_API_KEY")
+	if !ok {
+		log.Println("FOREST_API_KEY environment variable not set")
 		log.Fatalln("Contact an administrator")
 	}
 	args, err := parseArgs(os.Args)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if args.version {
+		printVersion()
+		return
 	}
 	if len(args.fileNames) == 0 {
 		Usage()
@@ -61,7 +80,7 @@ func main() {
 	for _, fileName := range args.fileNames {
 		fmt.Printf("pre-sign URL: %s\n", fileName)
 		url := endpoint + "?file=" + fileName
-		content, err := apiKeyGet(url, args.APIKey)
+		content, err := apiKeyGet(url, forestAPIKey)
 		if err != nil {
 			fmt.Printf("pre-signed URL generation failed: %s\n", fileName)
 			log.Fatal(err)
