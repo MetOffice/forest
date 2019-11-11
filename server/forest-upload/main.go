@@ -20,7 +20,7 @@ import (
 var endpoint string
 
 // Debug setting to help developers see response contents
-var debug bool = true
+var debug bool = false
 
 type Namespace struct {
 	APIKey    string
@@ -76,7 +76,6 @@ func main() {
 		} else {
 			fmt.Printf("upload: %s to S3 bucket\n", fileName)
 		}
-		fmt.Println(signed.Fields)
 		err = fileUpload(fileName, signed.URL, signed.Fields)
 		if err != nil {
 			log.Fatal(err)
