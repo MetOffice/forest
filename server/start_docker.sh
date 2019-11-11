@@ -23,6 +23,7 @@ exec sudo -u ec2-user /bin/bash - <<EOF
 
     mkdir ~/database
     aws s3 cp s3://met-office-rmed-forest/forest-informaticslab.db ~/database/
+    aws s3 cp s3://met-office-rmed-forest/philippines.db ~/database/
 
     cd
     docker run \
