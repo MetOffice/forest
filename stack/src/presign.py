@@ -6,7 +6,9 @@ from botocore.exceptions import ClientError
 
 
 def handler(event, context):
-    if "queryStringParameters" in event:
+    params = event["queryStringParameters"]
+    if "action" in params:
+        # Prototype multi-part upload
         action = event["queryStringParameters"]["action"]
         if action.lower() == "start":
             return {
@@ -23,15 +25,15 @@ def handler(event, context):
                 'statusCode': 400,
                 'body': 'uh-oh'
             }
-
-
-    object_name = os.path.basename(event["params"]["querystring"]["file"])
-    bucket_name = os.environ["BUCKET"]
-    response = presigned_post(bucket_name, object_name)
-    return {
-        'statusCode': 200,
-        'body': json.dumps(response)
-    }
+    else:
+        # Pre-sign URL
+        object_name = os.path.basename(params["file"])
+        bucket_name = os.environ["BUCKET"]
+        response = presigned_post(bucket_name, object_name)
+        return {
+            'statusCode': 200,
+            'body': json.dumps(response)
+        }
 
 
 def presigned_post(
