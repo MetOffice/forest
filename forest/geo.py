@@ -23,7 +23,7 @@ def stretch_image(lons, lats, values):
     image = stretch_y(gy)(values)
     if mask is not None:
         image_mask = stretch_y(gy)(mask)
-        image = np.ma.masked_array(image, mask=image_mask)
+        image = np.ma.masked_invalid(np.ma.masked_array(image, mask=image_mask))
 
     x = gx.min()
     y = gy.min()
