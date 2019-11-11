@@ -95,6 +95,10 @@ func main() {
 		} else {
 			fmt.Printf("upload: %s to S3 bucket\n", fileName)
 		}
+
+		if signed.URL == "" {
+			fmt.Println("Throttle detected!")
+		}
 		err = fileUpload(fileName, signed.URL, signed.Fields)
 		if err != nil {
 			log.Fatal(err)
