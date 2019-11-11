@@ -17,6 +17,15 @@ make build ENDPOINT=https://...amazonaws.com/lambda
 **Note:** If the ENDPOINT is not specified at compile
 time the application will fail to operate
 
+## Version
+
+To make it easier to see which version of the app you are using
+run
+
+```bash
+forest-upload -version
+```
+
 ## Usage
 
 The REST endpoint is secured using API keys. Instructions

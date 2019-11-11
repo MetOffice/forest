@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/cheggaaa/pb/v3"
@@ -13,50 +12,65 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"runtime"
 )
-
-type SignedURL struct {
-	url    string
-	fields map[string]string
-}
 
 // Compile-time variable hidden from end-user
 // use go build -ldflags "-X main.endpoint=$ENDPOINT"
 var endpoint string
+var version string
 
 // Debug setting to help developers see response contents
 var debug bool = false
 
 type Namespace struct {
-	APIKey    string
+	version   bool
 	fileNames []string
 }
 
 func parseArgs(argc []string) (Namespace, error) {
 	flagSet := flag.NewFlagSet(argc[0], flag.ContinueOnError)
-	APIKey, ok := os.LookupEnv("FOREST_API_KEY")
-	if !ok {
-		return Namespace{}, errors.New("FOREST_API_KEY environment variable not set")
-	}
+	versionPtr := flagSet.Bool("version", false, "print version and exit")
 	err := flagSet.Parse(argc[1:])
 	if err != nil {
 		return Namespace{}, err
 	}
-	return Namespace{APIKey, flagSet.Args()}, nil
+	return Namespace{*versionPtr, flagSet.Args()}, nil
 }
 
 func Usage() {
 	fmt.Printf("Usage: %s FILE [FILE ...]]\n", os.Args[0])
 }
 
+func printVersion() {
+	fmt.Printf("forest-upload version %s %s/%s\n",
+		version,
+		runtime.GOOS,
+		runtime.GOARCH)
+}
+
 func main() {
+	// Command line parsing
+	flag.Usage = func() {
+		Usage()
+		flag.PrintDefaults()
+	}
 	if endpoint == "" {
 		log.Println("REST endpoint not specified during compilation")
+		log.Fatalln("Contact an administrator")
+	}
+	forestAPIKey, ok := os.LookupEnv("FOREST_API_KEY")
+	if !ok {
+		log.Println("FOREST_API_KEY environment variable not set")
 		log.Fatalln("Contact an administrator")
 	}
 	args, err := parseArgs(os.Args)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if args.version {
+		printVersion()
+		return
 	}
 	if len(args.fileNames) == 0 {
 		Usage()
@@ -66,7 +80,7 @@ func main() {
 	for _, fileName := range args.fileNames {
 		fmt.Printf("pre-sign URL: %s\n", fileName)
 		url := endpoint + "?file=" + fileName
-		content, err := apiKeyGet(url, args.APIKey)
+		content, err := apiKeyGet(url, forestAPIKey)
 		if err != nil {
 			fmt.Printf("pre-signed URL generation failed: %s\n", fileName)
 			log.Fatal(err)
@@ -77,11 +91,11 @@ func main() {
 			log.Fatal(err)
 		}
 		if debug {
-			fmt.Printf("upload: %s to %s\n", fileName, signed.url)
+			fmt.Printf("upload: %s to %s\n", fileName, signed.URL)
 		} else {
 			fmt.Printf("upload: %s to S3 bucket\n", fileName)
 		}
-		err = fileUpload(fileName, signed.url, signed.fields)
+		err = fileUpload(fileName, signed.URL, signed.Fields)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -167,30 +181,16 @@ func apiKeyGet(url, key string) ([]byte, error) {
 	return content, nil
 }
 
-func parseResponse(content []byte) (SignedURL, error) {
-	var data interface{}
-	err := json.Unmarshal(content, &data)
-	if err != nil {
-		return SignedURL{}, err
-	}
-	mapping := data.(map[string]interface{})
-	if mapping["body"] == nil {
-		message := fmt.Sprintf("Could not parse: %s", content)
-		return SignedURL{}, errors.New(message)
-	}
-	body := mapping["body"].(string)
+type Response struct {
+	URL    string            `json:"url"`
+	Fields map[string]string `json:"fields"`
+}
 
-	var bodyData interface{}
-	err = json.Unmarshal([]byte(body), &bodyData)
+func parseResponse(content []byte) (Response, error) {
+	resp := Response{}
+	err := json.Unmarshal(content, &resp)
 	if err != nil {
-		return SignedURL{}, err
+		return Response{}, err
 	}
-	b := bodyData.(map[string]interface{})
-	s3url := b["url"].(string)
-	fields := b["fields"].(map[string]interface{})
-	s3fields := make(map[string]string)
-	for k, v := range fields {
-		s3fields[k] = v.(string)
-	}
-	return SignedURL{s3url, s3fields}, nil
+	return resp, nil
 }
