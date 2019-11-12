@@ -34,8 +34,24 @@ files:
     directory: wcssp
     file_type: unified_model
     locator: database
-  - label: TMA
+  - label: Met Office Tropical Africa (Demo)
+    pattern: '*takm4p4*.nc'
+    locator: database
+    file_type: unified_model
+  - label: Met Office Global (Demo)
+    pattern: '*ga6*.nc'
+    locator: database
+    file_type: unified_model
+  - label: Tanzania Met Agency WRF (Demo)
     pattern: '*.nc'
     directory: demo
     file_type: unified_model
     locator: database
+  - label: EIDA50 (Demo)
+    pattern: '*eida50*.nc'
+    directory: demo
+    file_type: eida50
+  - label: RDT (Demo)
+    pattern: '*rdt*.json'
+    directory: demo
+    file_type: rdt

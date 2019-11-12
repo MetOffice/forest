@@ -11,10 +11,6 @@ SERVER_CONFIG = os.path.join(os.path.dirname(__file__),
 
 @pytest.mark.parametrize("label,settings", [
     ("GA7", {"pattern": "*ga7*.nc"}),
-    ("TMA", {"pattern": "*.nc",
-             "directory": "demo",
-             "file_type": "unified_model",
-             "locator": "database"})
 ])
 def test_server_config(label, settings):
     with open(SERVER_CONFIG) as stream:
