@@ -32,6 +32,8 @@ from forest.util import timeout_cache
 
 from forest import geo
 
+from functools import lru_cache
+
 class saf(object):
     def __init__(self, pattern, label=None, locator=None):
         '''Object to process SAF NetCDF files
@@ -45,6 +47,7 @@ class saf(object):
         if(label):
             self.label = label
 
+    @lru_cache(maxsize=16)
     def image(self, state):
         '''gets actual data. 
 
@@ -57,11 +60,11 @@ class saf(object):
         :returns: Output data from :meth:`geo.stretch_image`'''
         data = empty_image()
         for nc in self.locator._sets: 
-            if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and state.variable in nc.variables:
+            if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and self.locator.varlist[state.variable] in nc.variables:
                 #regrid to regular grid
                 x = nc['lon'][:].flatten() # lat & lon both 2D arrays
                 y = nc['lat'][:].flatten() #
-                z = nc[state.variable][:].flatten()
+                z = nc[self.locator.varlist[state.variable]][:].flatten()
 
                 #define grid
                 xi, yi = np.meshgrid(
@@ -76,16 +79,19 @@ class saf(object):
                         method='linear',
                         fill_value=np.nan)
 
-                #zi = np.ma.masked_invalid(zi, copy=False)
-                zi = np.ma.masked_outside(zi, nc[state.variable].valid_range[0], nc[state.variable].valid_range[1], copy=False)
-
+                zi = np.ma.masked_invalid(zi, copy=False)
+                zi = np.ma.masked_outside(zi, nc[self.locator.varlist[state.variable]].valid_range[0], nc[self.locator.varlist[state.variable]].valid_range[1], copy=False)
                 data = geo.stretch_image(xi[0,:], yi[:,0], zi)
                 #data = geo.stretch_image(x[0,:], y[:,0], nc[state.variable][:])
                 data.update(coordinates(state.valid_time, state.initial_time, state.pressures, state.pressure))
                 data.update({
-                    'name': [str(nc[state.variable].long_name)],
-                    'units': [str(nc[state.variable].units)]
+                    'name': [str(nc[self.locator.varlist[state.variable]].long_name)],
                 })
+                if 'units' in nc[self.locator.varlist[state.variable]].ncattrs():
+                    data.update({
+                        'units': [str(nc[self.locator.varlist[state.variable]].units)]
+                    })
+
           
         return data
           
@@ -96,6 +102,15 @@ class Locator(object):
         for path in self.paths:
             #possibly use MFDataset which takes a glob pattern
             self._sets.append(netCDF4.Dataset(path)) 
+
+        #Get variable names and keys
+        self.varlist = {}
+        for nc in self._sets: 
+            for variable in nc.variables:
+                #only display vars with lon/lat coords
+                if('coordinates' in nc.variables[variable].ncattrs() and nc.variables[variable].coordinates == "lon lat"):
+                    self.varlist[nc.variables[variable].long_name] = variable
+
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
@@ -150,12 +165,9 @@ class Coordinates(object):
          :returns: list of strings of variable names
          '''
         self.locator = Locator(pattern)        
-        varlist  = []
-        for nc in self.locator._sets: 
-            varlist = varlist + list(nc.variables.keys())
-    
-        #return list of vars. coercing to set ensures uniqueness
-        return list(set(varlist))
+
+        #return list of vars from Locator
+        return self.locator.varlist.keys()
 
     def valid_times(self, pattern, variable):
         '''Gets valid times from input files
@@ -167,7 +179,7 @@ class Coordinates(object):
         self.locator = Locator(pattern)
         times = []
         for nc in self.locator._sets:
-            if variable is None or variable in nc.variables:
+            if variable is None or self.locator.varlist[variable] in nc.variables:
                 times.append(str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')))
         return times
 
