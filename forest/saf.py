@@ -32,6 +32,8 @@ from forest.util import timeout_cache
 
 from forest import geo
 
+from functools import lru_cache
+
 class saf(object):
     def __init__(self, pattern, label=None, locator=None):
         '''Object to process SAF NetCDF files
@@ -45,6 +47,7 @@ class saf(object):
         if(label):
             self.label = label
 
+    @lru_cache(maxsize=16)
     def image(self, state):
         '''gets actual data. 
 
@@ -61,7 +64,7 @@ class saf(object):
                 #regrid to regular grid
                 x = nc['lon'][:].flatten() # lat & lon both 2D arrays
                 y = nc['lat'][:].flatten() #
-                z = nc[state.variable][:].flatten()
+                z = nc[self.locator.varlist[state.variable]][:].flatten()
 
                 #define grid
                 xi, yi = np.meshgrid(
@@ -76,16 +79,19 @@ class saf(object):
                         method='linear',
                         fill_value=np.nan)
 
-                #zi = np.ma.masked_invalid(zi, copy=False)
-                zi = np.ma.masked_outside(zi, nc[state.variable].valid_range[0], nc[state.variable].valid_range[1], copy=False)
-
+                zi = np.ma.masked_invalid(zi, copy=False)
+                zi = np.ma.masked_outside(zi, nc[self.locator.varlist[state.variable]].valid_range[0], nc[self.locator.varlist[state.variable]].valid_range[1], copy=False)
                 data = geo.stretch_image(xi[0,:], yi[:,0], zi)
                 #data = geo.stretch_image(x[0,:], y[:,0], nc[state.variable][:])
                 data.update(coordinates(state.valid_time, state.initial_time, state.pressures, state.pressure))
                 data.update({
-                    'name': [str(nc[state.variable].long_name)],
-                    'units': [str(nc[state.variable].units)]
+                    'name': [str(nc[self.locator.varlist[state.variable]].long_name)],
                 })
+                if 'units' in nc[self.locator.varlist[state.variable]].ncattrs():
+                    data.update({
+                        'units': [str(nc[self.locator.varlist[state.variable]].units)]
+                    })
+
           
         return data
           
