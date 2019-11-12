@@ -48,10 +48,10 @@ files:
     file_type: unified_model
     locator: database
   - label: EIDA50 (Demo)
-    pattern: '*eida50*.nc'
+    pattern: 'EIDA50*.nc'
     directory: demo
     file_type: eida50
   - label: RDT (Demo)
-    pattern: '*rdt*.json'
+    pattern: 'RDT*.json'
     directory: demo
     file_type: rdt
