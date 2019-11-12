@@ -1,7 +1,31 @@
 import unittest
+import pytest
 import yaml
 import os
 import forest
+
+
+SERVER_CONFIG = os.path.join(os.path.dirname(__file__),
+                             '../server/config-philippines.yaml')
+
+
+@pytest.mark.parametrize("label,settings", [
+    ("GA7", {"pattern": "*ga7*.nc"}),
+    ("TMA", {"pattern": "*.nc",
+             "directory": "demo",
+             "file_type": "unified_model",
+             "locator": "database"})
+])
+def test_server_config(label, settings):
+    with open(SERVER_CONFIG) as stream:
+        data = yaml.load(stream)
+    labels = [ds["label"] for ds in data["files"]]
+    assert label in labels
+    for dataset in data["files"]:
+        if dataset["label"] == label:
+            for key, value in settings.items():
+                assert dataset[key] == value
+
 
 
 class TestIntegration(unittest.TestCase):

@@ -34,3 +34,8 @@ files:
     directory: wcssp
     file_type: unified_model
     locator: database
+  - label: TMA
+    pattern: '*.nc'
+    directory: demo
+    file_type: unified_model
+    locator: database
