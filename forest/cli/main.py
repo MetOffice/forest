@@ -19,23 +19,33 @@ def parse_args(args=None):
 
     # Bokeh serve pass-through arguments
     group = parser.add_argument_group('bokeh serve arguments')
-    group.add_argument(
-        "--dev", action="store_true",
-        help="run server in development mode")
-    group.add_argument(
-        "--port",
-        help="port to listen on")
-    group.add_argument(
-        "--show", action="store_true",
-        help="launch browser")
-    group.add_argument(
-        "--allow-websocket-origin", metavar="HOST[:PORT]",
-        help="public hostnames that may connect to the websocket")
+    add_bokeh_arguments(group)
+
+    # Only parse bokeh serve args do not touch forest.main args
+    _parser = argparse.ArgumentParser()
+    add_bokeh_arguments(_parser)
+    bk_args, extra = _parser.parse_known_args(args=args)
+    print(bk_args, extra)
 
     args = parser.parse_args(args=args)
     if len(args.files) == 0 and args.config_file is None:
         parser.error("please specify file(s) or a valid --config-file file")
     return args
+
+
+def add_bokeh_arguments(parser):
+    parser.add_argument(
+        "--dev", action="store_true",
+        help="run server in development mode")
+    parser.add_argument(
+        "--port",
+        help="port to listen on")
+    parser.add_argument(
+        "--show", action="store_true",
+        help="launch browser")
+    parser.add_argument(
+        "--allow-websocket-origin", metavar="HOST[:PORT]",
+        help="public hostnames that may connect to the websocket")
 
 
 def main():
