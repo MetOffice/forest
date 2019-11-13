@@ -31,8 +31,8 @@ def add_arguments(parser):
         "--file-type", default="unified_model", metavar="FILETYPE",
         help="keyword to navigate/display file(s)")
     parser.add_argument(
-        "--param", action="append", dest="params", type=key_value,
-        help="parameter to substitute in --config-file")
+        "--var", action="append", dest="variables", type=key_value,
+        help="variable to substitute in --config-file")
 
 
 def key_value(item):

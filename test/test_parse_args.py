@@ -15,10 +15,10 @@ def test_no_files_or_config_raises_system_exit():
       "--config-file", "file.yml"], "directory", "/some"),
     (["--database", "file.db",
       "--config-file", "file.yml"], "directory", None),
-    (["--param", "key:value", "file.nc"], "params", [("key", "value")]),
-    (["--param", "a:b:c", "file.nc"], "params", [("a", "b:c")]),
-    (["--param", "a:b",
-      "--param", "c:d", "file.nc"], "params", [("a", "b"), ("c", "d")])
+    (["--var", "key:value", "file.nc"], "variables", [("key", "value")]),
+    (["--var", "a:b:c", "file.nc"], "variables", [("a", "b:c")]),
+    (["--var", "a:b",
+      "--var", "c:d", "file.nc"], "variables", [("a", "b"), ("c", "d")])
 ])
 def test_parse_args(argv, attr, expect):
     result = getattr(parse_args(argv), attr)
