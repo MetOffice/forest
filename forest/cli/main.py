@@ -25,12 +25,11 @@ def parse_args(args=None):
     _parser = argparse.ArgumentParser(add_help=False)
     add_bokeh_arguments(_parser)
     bk_args, extra = _parser.parse_known_args(args=args)
-    print(bk_args, extra)
 
     args = parser.parse_args(args=args)
     if len(args.files) == 0 and args.config_file is None:
         parser.error("please specify file(s) or a valid --config-file file")
-    return args
+    return bk_args, extra
 
 
 def add_bokeh_arguments(parser):
@@ -49,11 +48,11 @@ def add_bokeh_arguments(parser):
 
 
 def main():
-    args = parse_args()
-    bokeh.command.bootstrap.main(bokeh_args(APP_PATH, args))
+    args, extra = parse_args()
+    bokeh.command.bootstrap.main(bokeh_args(APP_PATH, args, extra))
 
 
-def bokeh_args(app_path, args):
+def bokeh_args(app_path, args, extra):
     """translate from forest to bokeh serve command"""
     opts = ["bokeh", "serve", app_path]
     if args.dev:
@@ -64,17 +63,6 @@ def bokeh_args(app_path, args):
         opts += ["--port", str(args.port)]
     if args.allow_websocket_origin:
         opts += ["--allow-websocket-origin", str(args.allow_websocket_origin)]
-    extra = []
-    if args.config_file is not None:
-        extra += ["--config-file", str(args.config_file)]
-    if args.database is not None:
-        extra += ["--database", str(args.database)]
-    if args.directory is not None:
-        extra += ["--directory", str(args.directory)]
-    if args.file_type != "unified_model":
-        extra += ["--file-type", str(args.file_type)]
-    if len(args.files) > 0:
-        extra += args.files
     if len(extra) > 0:
         opts += ["--args"] + extra
     return opts
