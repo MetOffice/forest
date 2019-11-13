@@ -20,6 +20,7 @@ applications.
 .. autofunction:: from_files
 
 """
+import copy
 import os
 import string
 import yaml
@@ -27,6 +28,20 @@ from forest.export import export
 
 
 __all__ = []
+
+
+def combine_variables(os_environ, args_variables):
+    """Utility function to update environment with user-specified variables
+
+    .. note: When there is a key clash the user-specified args take precedence
+
+    :param os_environ: os.environ dict
+    :param args_variables: variables parsed from command line
+    :returns: merged dict
+    """
+    variables = copy.copy(os_environ)
+    variables.update(dict(args_variables))
+    return variables
 
 
 class Config(object):

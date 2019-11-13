@@ -5,6 +5,19 @@ import os
 import forest
 
 
+@pytest.mark.parametrize("env,args,expected", [
+        ({}, {}, {}),
+        ({}, {"k": "v"}, {"k": "v"}),
+        ({"k": "v"}, {}, {"k": "v"}),
+        ({"x": "environment"}, {"x": "user"}, {"x": "user"}),
+        ({"x": "environment"}, [("x", "a"), ("y", "b")], {"x": "a", "y": "b"}),
+        ({"z": "c"}, [("x", "a"), ("y", "b")], {"x": "a", "y": "b", "z": "c"}),
+    ])
+def test_config_combine_environ_with_args(env, args, expected):
+    actual = forest.config.combine_variables(env, args)
+    assert actual == expected
+
+
 def test_config_template_substitution(tmpdir):
     config_file = str(tmpdir / "test-config.yml")
     with open(config_file, "w") as stream:
