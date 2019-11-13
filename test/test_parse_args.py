@@ -15,6 +15,7 @@ def test_no_files_or_config_raises_system_exit():
       "--config-file", "file.yml"], "directory", "/some"),
     (["--database", "file.db",
       "--config-file", "file.yml"], "directory", None),
+    (["file.nc"], "variables", None),
     (["--var", "key:value", "file.nc"], "variables", [("key", "value")]),
     (["--var", "a:b:c", "file.nc"], "variables", [("a", "b:c")]),
     (["--var", "a:b",
