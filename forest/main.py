@@ -1,6 +1,7 @@
 import bokeh.plotting
 import bokeh.models
 import bokeh.events
+import bokeh.colors
 import numpy as np
 import os
 import glob
@@ -34,14 +35,15 @@ def main(argv=None):
     else:
         config = cfg.load_config(args.config_file)
 
+    database = None
     if args.database is not None:
         if args.database != ':memory:':
             assert os.path.exists(args.database), "{} must exist".format(args.database)
         database = db.Database.connect(args.database)
 
     # Full screen map
-    lon_range = (0, 30)
-    lat_range = (0, 30)
+    lon_range = (90, 140)
+    lat_range = (-23.5, 23.5)
     x_range, y_range = geo.web_mercator(
         lon_range,
         lat_range)
@@ -251,14 +253,7 @@ def main(argv=None):
         image_controls.select(name)
         break
 
-    if len(args.files) > 0:
-        navigator = navigate.FileSystem.file_type(
-                args.files,
-                args.file_type)
-    elif args.database is not None:
-        navigator = database
-    else:
-        navigator = navigate.Config(config)
+    navigator = navigate.Navigator(config, database)
 
     # Pre-select menu choices (if any)
     initial_state = {}
@@ -690,6 +685,8 @@ class MapperLimits(object):
             high = np.max([np.max(x) for x in images])
             self.color_mapper.low = low
             self.color_mapper.high = high
+            self.color_mapper.low_color = bokeh.colors.RGB(0, 0, 0, a=0)
+            self.color_mapper.high_color = bokeh.colors.RGB(0, 0, 0, a=0)
 
     @staticmethod
     def change(widget, prop, dtype):

@@ -18,6 +18,7 @@ except ImportError:
     pass
 from forest import (
         gridded_forecast,
+        saf,
         satellite,
         rdt,
         earth_networks,
@@ -370,56 +371,32 @@ class SeriesLoader(object):
             "y": values}
 
     def _load_cube(self, path, variable, lon0, lat0, pressure=None):
+        """ Constrain data loading to points required """
         import iris
-        cube = iris.load_cube(path, iris.Constraint(variable))
-        coord = cube.coord('time')
-        times = netCDF4.num2date(coord.points, units=str(coord.units))
-        lons = cube.coord('longitude').points
-        lats = cube.coord('latitude').points
-        if lons.ndim == 2:
-            lons = lons[0, :]
-        if lats.ndim == 2:
-            lats = lats[:, 0]
-        lons = geo.to_180(lons)
-        i = np.argmin(np.abs(lons - lon0))
-        j = np.argmin(np.abs(lats - lat0))
+        cube = iris.load_cube(path, variable)
+        # reference longitude axis by "axis='X'" and latitude axis as axis='Y',
+        # to accommodate various types of coordinate system.
+        # e.g. 'grid_longitude'. See iris.utils.guess_coord_axis.
+        if cube.coord(axis='X').points[-1] > 180.0:
+            # get circular longitude values
+            lon0 = iris.analysis.cartography.wrap_lons(np.asarray(lon0), 0, 360)
+        # Construct constraint
+        coord_values={cube.coord(axis='X').standard_name: lon0,
+                      cube.coord(axis='Y').standard_name: lat0,                     
+                      }
+        if pressure is not None and 'pressure' in [coord.name() for coord in cube.coords()]:
+            ptol = 0.01 * pressure
+            coord_values['pressure'] = (
+                lambda cell: (pressure - ptol) < cell < (pressure + ptol)
+            )
+        cube = cube.extract(iris.Constraint(coord_values=coord_values))
+        assert cube is not None
+        # Get validity times and data values
+        # list the validity times as datetime objects
+        time_coord = cube.coord('time')
+        times = time_coord.units.num2date(time_coord.points).tolist()
         values = cube.data
-
-        # Index array based on coordinate ordering
-        pts = []
-        for c in cube.coords():
-            if c.name() == 'longitude':
-                pts.append(i)
-            elif c.name() == 'latitude':
-                pts.append(j)
-            else:
-                pts.append(slice(None))
-        pts = tuple(pts)
-        values = values[pts]
-
-        # Filter time/pressure axes to select correct pressure
-        if self._has_dim(cube, 'pressure'):
-            pressures = cube.coord('pressure').points
-            if len(cube.ndim) == 3:
-                pts = self.search(pressures, pressure)
-                values = values[pts]
-                if isinstance(times, dt.datetime):
-                    times = [times]
-                else:
-                    times = times[pts]
-            else:
-                mask = self.search(pressures, pressure)
-                values = values[:, mask][:, 0]
         return times, values
-
-    @staticmethod
-    def _has_dim(cube, label):
-        import iris
-        try:
-            cube.coord(label)
-        except iris.exceptions.CoordinateNotFoundError:
-            return False
-        return True
 
     def _load_netcdf4(self, path, variable, lon0, lat0, pressure=None):
         with netCDF4.Dataset(path) as dataset:

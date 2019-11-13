@@ -7,6 +7,6 @@ PYTHONPATH=${REPO_DIR}:$PYTHONPATH bokeh serve \
     --allow-websocket-origin forest.informaticslab.co.uk \
      ${REPO_DIR}/forest \
          --args \
-         --config ${REPO_DIR}/forest/config.yaml \
+         --config ${REPO_DIR}/server/config-philippines.yaml \
          --directory ${BUCKET_DIR}/met-office-rmed-forest \
-         --database /database/forest-informaticslab.db
+         --database /database/philippines.db

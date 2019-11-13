@@ -26,10 +26,13 @@ from forest import (
         db,
         earth_networks,
         gridded_forecast,
+        ghrsstl4,
         unified_model,
         rdt,
         satellite,
-        intake_loader)
+        intake_loader,
+        saf,
+)
 
 
 __all__ = []
@@ -132,6 +135,7 @@ class Loader(object):
     @staticmethod
     def file_loader(file_type, pattern, label=None, locator=None):
         file_type = file_type.lower().replace("_", "")
+        print(file_type)
         if file_type == 'rdt':
             return rdt.Loader(pattern)
         elif file_type == 'gpm':
@@ -142,10 +146,14 @@ class Loader(object):
             return satellite.EIDA50(pattern)
         elif file_type == 'griddedforecast':
             return gridded_forecast.ImageLoader(label, pattern)
+        elif file_type == 'ghrsstl4':
+            return ghrsstl4.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
         elif file_type == 'intake':
             return intake_loader.IntakeLoader(pattern)
+        elif file_type == 'saf':
+            return saf.saf(pattern, label, locator)
         else:
             raise Exception("unrecognised file_type: {}".format(file_type))
 

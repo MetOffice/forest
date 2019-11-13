@@ -9,6 +9,7 @@ class UMView(object):
     def __init__(self, loader, color_mapper):
         self.loader = loader
         self.color_mapper = color_mapper
+        self.color_mapper.nan_color = bokeh.colors.RGB(0, 0, 0, a=0) 
         self.source = bokeh.models.ColumnDataSource({
                 "x": [],
                 "y": [],
