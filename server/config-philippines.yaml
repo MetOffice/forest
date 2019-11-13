@@ -35,15 +35,15 @@ files:
     file_type: unified_model
     locator: database
   - label: Met Office Tropical Africa (Demo)
-    pattern: 20190830T0000Z_op_takm4p4.nc
+    pattern: '*20190830T0000Z_op_takm4p4.nc'
     locator: database
     file_type: unified_model
   - label: Met Office Global (Demo)
-    pattern: 20190830T0000Z_op_ga6.nc
+    pattern: '*20190830T0000Z_op_ga6.nc'
     locator: database
     file_type: unified_model
   - label: Tanzania Met Agency WRF (Demo)
-    pattern: 20190830T0000Z_tma_wrf.nc
+    pattern: '*20190830T0000Z_tma_wrf.nc'
     directory: demo
     file_type: unified_model
     locator: database
