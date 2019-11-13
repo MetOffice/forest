@@ -1,7 +1,21 @@
+import pytest
 import unittest
 import yaml
 import os
 import forest
+
+
+def test_config_template_substitution(tmpdir):
+    config_file = str(tmpdir / "test-config.yml")
+    with open(config_file, "w") as stream:
+        stream.write(yaml.dump({
+            "parameter": "${X}/file.nc"
+        }))
+    variables = {
+            "X": "/expand"
+    }
+    config = forest.config.Config.load(config_file, variables)
+    assert config.data == {"parameter": "/expand/file.nc"}
 
 
 class TestIntegration(unittest.TestCase):
