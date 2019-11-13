@@ -10,6 +10,27 @@ from forest.parse_args import add_arguments
 APP_PATH = os.path.join(os.path.dirname(__file__), "..")
 
 
+def main(argv=None):
+    bokeh.command.bootstrap.main(bokeh_command(APP_PATH, argv=argv))
+
+
+def bokeh_command(app_path, argv):
+    """Translate from forest to bokeh serve command"""
+    args, extra = parse_args(args=argv)
+    opts = ["bokeh", "serve", app_path]
+    if args.dev:
+        opts += ["--dev"]
+    if args.show:
+        opts += ["--show"]
+    if args.port:
+        opts += ["--port", str(args.port)]
+    if args.allow_websocket_origin:
+        opts += ["--allow-websocket-origin", str(args.allow_websocket_origin)]
+    if len(extra) > 0:
+        opts += ["--args"] + extra
+    return opts
+
+
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description=__doc__)
 
@@ -45,24 +66,3 @@ def add_bokeh_arguments(parser):
     parser.add_argument(
         "--allow-websocket-origin", metavar="HOST[:PORT]",
         help="public hostnames that may connect to the websocket")
-
-
-def main():
-    args, extra = parse_args()
-    bokeh.command.bootstrap.main(bokeh_args(APP_PATH, args, extra))
-
-
-def bokeh_args(app_path, args, extra):
-    """translate from forest to bokeh serve command"""
-    opts = ["bokeh", "serve", app_path]
-    if args.dev:
-        opts += ["--dev"]
-    if args.show:
-        opts += ["--show"]
-    if args.port:
-        opts += ["--port", str(args.port)]
-    if args.allow_websocket_origin:
-        opts += ["--allow-websocket-origin", str(args.allow_websocket_origin)]
-    if len(extra) > 0:
-        opts += ["--args"] + extra
-    return opts
