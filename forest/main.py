@@ -29,6 +29,7 @@ import datetime as dt
 
 def main(argv=None):
     args = parse_args.parse_args(argv)
+    print(args)
     if len(args.files) > 0:
         config = cfg.from_files(args.files, args.file_type)
     else:
