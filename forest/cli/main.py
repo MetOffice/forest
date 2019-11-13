@@ -22,7 +22,7 @@ def parse_args(args=None):
     add_bokeh_arguments(group)
 
     # Only parse bokeh serve args do not touch forest.main args
-    _parser = argparse.ArgumentParser()
+    _parser = argparse.ArgumentParser(add_help=False)
     add_bokeh_arguments(_parser)
     bk_args, extra = _parser.parse_known_args(args=args)
     print(bk_args, extra)
