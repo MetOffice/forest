@@ -33,7 +33,11 @@ def main(argv=None):
     if len(args.files) > 0:
         config = cfg.from_files(args.files, args.file_type)
     else:
-        config = cfg.load_config(args.config_file)
+        config = cfg.Config.load(
+                args.config_file,
+                variables=cfg.combine_variables(
+                    os.environ,
+                    args.variables))
 
     database = None
     if args.database is not None:

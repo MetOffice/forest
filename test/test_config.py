@@ -6,6 +6,7 @@ import forest
 
 
 @pytest.mark.parametrize("env,args,expected", [
+        ({"env": "variable"}, None, {"env": "variable"}),
         ({}, {}, {}),
         ({}, [], {}),
         ({}, {"k": "v"}, {"k": "v"}),
