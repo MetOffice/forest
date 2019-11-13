@@ -20,7 +20,6 @@ applications.
 .. autofunction:: from_files
 
 """
-import copy
 import os
 import string
 import yaml
@@ -39,7 +38,7 @@ def combine_variables(os_environ, args_variables):
     :param args_variables: variables parsed from command line
     :returns: merged dict
     """
-    variables = copy.copy(os_environ)
+    variables = dict(os_environ)
     variables.update(dict(args_variables))
     return variables
 
