@@ -64,7 +64,7 @@ flag. Multiple ``--var`` flags can be specified to substitute
 more than one variable.
 
 .. code-block:: yaml
-   :caption: some.yaml
+   :caption: example.yaml
 
    files:
      - label: UM
@@ -75,7 +75,7 @@ more than one variable.
 Would be equivalent to the following file
 
 .. code-block:: yaml
-   :caption: some.yaml.processed
+   :caption: example.yaml.processed
 
    files:
      - label: UM
