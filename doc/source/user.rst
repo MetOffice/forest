@@ -66,7 +66,6 @@ more than one variable.
 .. code-block:: yaml
    :caption: some.yaml
 
-   # some.yaml
    files:
      - label: UM
        pattern: ${HOME}/file.nc

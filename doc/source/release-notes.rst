@@ -8,9 +8,9 @@ here to aid future users and maintainers.
 -----
 
 - Add template substitution using environment
-  variables or ``--var 'key:value'``
+  variables or ``--var key value``
   when using ``--config-file`` flag. E.g.
-  using ``forest --var prefix:/some/dir --config-file some.yaml``
+  using ``forest --var prefix /some/dir --config-file some.yaml``
 
 .. code-block:: yaml
 
