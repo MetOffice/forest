@@ -16,18 +16,19 @@ def main(argv=None):
 
 def bokeh_command(app_path, argv):
     """Translate from forest to bokeh serve command"""
-    args, extra = parse_args(args=argv)
+    # Note: forest_opts is a list of command line flags
+    bokeh_args, forest_opts = parse_args(args=argv)
     opts = ["bokeh", "serve", app_path]
-    if args.dev:
+    if bokeh_args.dev:
         opts += ["--dev"]
-    if args.show:
+    if bokeh_args.show:
         opts += ["--show"]
-    if args.port:
-        opts += ["--port", str(args.port)]
-    if args.allow_websocket_origin:
-        opts += ["--allow-websocket-origin", str(args.allow_websocket_origin)]
-    if len(extra) > 0:
-        opts += ["--args"] + extra
+    if bokeh_args.port:
+        opts += ["--port", str(bokeh_args.port)]
+    if bokeh_args.allow_websocket_origin:
+        opts += ["--allow-websocket-origin", str(bokeh_args.allow_websocket_origin)]
+    if len(forest_opts) > 0:
+        opts += ["--args"] + forest_opts
     return opts
 
 
