@@ -50,7 +50,8 @@ def specs(data):
     labels = [ds["label"] for ds in datasets]
     drivers = [ds["driver"] for ds in datasets]
     return [
-            DatasetSpec(label, DriverSpec(driver["name"], driver["settings"]))
+            DatasetSpec(label,
+                DriverSpec(driver["name"], driver["settings"]))
             for label, driver in zip(labels, drivers)]
 
 
@@ -76,6 +77,10 @@ class Config(object):
         return "{}({})".format(
                 self.__class__.__name__,
                 self.data)
+
+    @property
+    def specs(self):
+        return specs(self.data)
 
     @property
     def patterns(self):

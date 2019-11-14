@@ -20,7 +20,7 @@ import forest
         ]),
     ])
 def test_specs(data, expected):
-    actual = forest.config.specs(data)
+    actual = forest.config.Config(data).specs
     assert actual == expected
 
 
