@@ -28,7 +28,8 @@ def test_build_loader_given_database(tmpdir):
         "files": [
             {
                 "label": "UM",
-                "pattern": "*.nc",
+                "sql_pattern": "*.nc",
+                "replace_dir": "/replace",
                 "locator": "database"
             }
         ]
@@ -45,7 +46,7 @@ def test_build_loader_given_database(tmpdir):
     loader = forest.Loader.group_args(group, args, database=database)
     database.close()
     assert hasattr(loader.locator, "connection")
-    assert loader.locator.directory == ""
+    assert loader.locator.directory == "/replace"
 
 
 def test_build_loader_given_config_file_pattern(tmpdir):

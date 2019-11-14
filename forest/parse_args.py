@@ -15,15 +15,18 @@ def parse_args(argv=None):
 
 def add_arguments(parser):
     parser.add_argument(
+        "files", nargs="*", metavar="FILE",
+        help="FILE(s) to display")
+    parser.add_argument(
         "--database",
         help="SQL database to optimise menu system")
+    parser.add_argument(
+        "--replace-dir",
+        help="Replace directory of SQL query file names")
     parser.add_argument(
         "--config-file",
         metavar="YAML_FILE",
         help="YAML file to configure application")
-    parser.add_argument(
-        "files", nargs="*", metavar="FILE",
-        help="FILE(s) to display")
     parser.add_argument(
         "--file-type", default="unified_model", metavar="FILETYPE",
         help="keyword to navigate/display file(s)")

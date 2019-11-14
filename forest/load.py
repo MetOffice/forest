@@ -56,8 +56,8 @@ class Loader(object):
                     database.connection,
                     group.file_type,
                     group.label,
-                    group.pattern,
-                    replacement_dir=os.path.dirname(group.pattern))
+                    group.sql_pattern,
+                    replacement_dir=group.replace_dir)
         elif group.locator == "file_system":
             if args.config_file is None:
                 return cls.from_files(

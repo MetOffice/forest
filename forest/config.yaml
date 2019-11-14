@@ -1,21 +1,22 @@
 files:
         - label: Operational GA6 Africa
-          pattern: '${BUCKET_DIR}/unified_model/global_africa*.nc'
           sql_pattern: '*global_africa*.nc'
+          replace_dir: '${BUCKET_DIR}/unified_model'
           locator: database
           file_type: unified_model
         - label: Operational GA6 SE Asia
-          pattern: '${BUCKET_DIR}/unified_model/oper_global_south_east_asia*.nc'
           sql_pattern: '*oper_global_south_east_asia*.nc'
+          replace_dir: '${BUCKET_DIR}/unified_model'
           locator: database
           file_type: unified_model
         - label: Operational Tropical Africa
-          pattern: '${BUCKET_DIR}/unified_model/*os42_ea*.nc'
+          sql_pattern: '*os42_ea*.nc'
+          replace_dir: '${BUCKET_DIR}/unified_model'
           locator: database
           file_type: unified_model
         - label: Tanzania WRF
-          pattern: '${BUCKET_DIR}/tma_wrf/wrf_sampledata.nc'
           sql_pattern: '*wrf_sampledata.nc'
+          replace_dir: '${BUCKET_DIR}/tma_wrf'
           locator: database
           file_type: unified_model
         - label: EIDA50

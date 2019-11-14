@@ -140,6 +140,9 @@ class FileGroup(object):
     contained within the files or how data is catalogued
     and searched.
 
+    .. note:: This class violates the integration separation principle (ISP)
+              all driver settings are included in the same constructor
+
     :param label: decription used by buttons and tooltips
     :param pattern: wildcard pattern used by either SQL or glob
     :param locator: keyword describing search method (default: 'file_system')
@@ -147,13 +150,15 @@ class FileGroup(object):
     """
     def __init__(self,
             label,
-            pattern,
+            pattern=None,
             locator="file_system",
             file_type="unified_model",
-            sql_pattern=None):
+            sql_pattern=None,
+            replace_dir=None):
         self.label = label
         self.pattern = pattern
         self.sql_pattern = sql_pattern
+        self.replace_dir = replace_dir
         self.locator = locator
         self.file_type = file_type
 
