@@ -38,10 +38,9 @@ def combine_variables(os_environ, args_variables):
     :param args_variables: variables parsed from command line
     :returns: merged dict
     """
-    if args_variables is None:
-        return dict(os_environ)
     variables = dict(os_environ)
-    variables.update(dict(args_variables))
+    if args_variables is not None:
+        variables.update(dict(args_variables))
     return variables
 
 
