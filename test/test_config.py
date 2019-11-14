@@ -13,7 +13,7 @@ import forest
         ({"k": "v"}, {}, {"k": "v"}),
         ({"x": "environment"}, {"x": "user"}, {"x": "user"}),
         ({"x": "environment"}, [("x", "a"), ("y", "b")], {"x": "a", "y": "b"}),
-        ({"z": "c"}, [("x", "a"), ("y", "b")], {"x": "a", "y": "b", "z": "c"}),
+        ({"z": "c"}, [["x", "a"], ["y", "b"]], {"x": "a", "y": "b", "z": "c"}),
     ])
 def test_config_combine_os_environ_with_args(env, args, expected):
     actual = forest.config.combine_variables(env, args)
