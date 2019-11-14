@@ -10,35 +10,6 @@ from forest import (
 
 
 @unittest.skip("green light")
-class TestUMLoader(unittest.TestCase):
-    def setUp(self):
-        self.paths = [
-            "/Users/andrewryan/cache/highway_ga6_20190315T0000Z.nc"]
-        self.loader = data.UMLoader(self.paths)
-
-    def test_image(self):
-        variable = "air_temperature"
-        ipressure = 0
-        itime = 0
-        result = self.loader.image(
-                variable,
-                ipressure,
-                itime)
-
-    def test_find_path(self):
-        self.paths = [
-            "highway_ga6_20190315T0000Z.nc",
-            "highway_ga6_20190315T1200Z.nc"
-        ]
-        self.finder = data.Finder(self.paths)
-        path = self.finder.find(
-                dt.datetime(2019, 3, 15, 12))
-        result = os.path.basename(path)
-        expect = "highway_ga6_20190315T1200Z.nc"
-        self.assertEqual(expect, result)
-
-
-@unittest.skip("green light")
 class TestEIDA50(unittest.TestCase):
     def setUp(self):
         self.path = os.path.expanduser("~/cache/EIDA50_takm4p4_20190417.nc")
