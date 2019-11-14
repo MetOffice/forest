@@ -364,8 +364,7 @@ def main(argv=None):
             "y": []})
     series_view = series.SeriesView.from_groups(
             series_figure,
-            config.file_groups,
-            directory=args.directory)
+            config.file_groups)
     series_view.subscribe(store.dispatch)
     series_args = (rx.Stream()
                 .listen_to(store)

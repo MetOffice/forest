@@ -28,7 +28,8 @@ def test_build_loader_given_database(tmpdir):
         "files": [
             {
                 "label": "UM",
-                "pattern": "*.nc",
+                "sql_pattern": "*.nc",
+                "replace_dir": "/replace",
                 "locator": "database"
             }
         ]
@@ -45,28 +46,7 @@ def test_build_loader_given_database(tmpdir):
     loader = forest.Loader.group_args(group, args, database=database)
     database.close()
     assert hasattr(loader.locator, "connection")
-    assert loader.locator.directory is None
-
-
-def test_build_loader_given_database_and_directory(tmpdir):
-    database_file = str(tmpdir / "database.db")
-    config_file = str(tmpdir / "config.yml")
-    args = main.parse_args.parse_args([
-        "--database", database_file,
-        "--config-file", config_file])
-    label = "UM"
-    pattern = "*.nc"
-    directory = "/some/dir"
-    group = forest.config.FileGroup(
-            label,
-            pattern,
-            directory=directory,
-            locator="database")
-    database = forest.db.Database.connect(database_file)
-    loader = forest.Loader.group_args(group, args, database=database)
-    database.close()
-    assert hasattr(loader.locator, "connection")
-    assert loader.locator.directory == directory
+    assert loader.locator.directory == "/replace"
 
 
 def test_build_loader_given_config_file_pattern(tmpdir):
@@ -77,12 +57,10 @@ def test_build_loader_given_config_file_pattern(tmpdir):
     args = main.parse_args.parse_args([
         "--config-file", config_file])
     label = "UM"
-    pattern = "*.nc"
-    directory = str(tmpdir)
+    pattern = str(tmpdir/ "file_*.nc")
     group = forest.config.FileGroup(
             label,
             pattern,
-            directory=directory,
             locator="file_system")
     loader = forest.Loader.group_args(group, args)
     assert loader.locator.paths == [path]
@@ -102,53 +80,3 @@ def test_build_loader_given_rdt_file_type():
             "Label", "*.json", "rdt")
     assert isinstance(loader, forest.rdt.Loader)
     assert isinstance(loader.locator, forest.rdt.Locator)
-
-
-def test_replace_dir_given_args_dir_only():
-    check_replace_dir("args/dir", None, "args/dir")
-
-
-def test_replace_dir_given_group_dir_only():
-    check_replace_dir(None, "group/dir", "group/dir")
-
-
-def test_replace_dir_given_relative_group_dir_appends_to_args_dir():
-    check_replace_dir("args/dir", "leaf", "args/dir/leaf")
-
-
-def test_replace_dir_given_absolute_group_dir_overrides_rel_args_dir():
-    check_replace_dir("args/relative", "/group/absolute", "/group/absolute")
-
-
-def test_replace_dir_given_absolute_group_dir_overrides_abs_args_dir():
-    check_replace_dir("/args/absolute", "/group/absolute", "/group/absolute")
-
-
-def check_replace_dir(args_dir, group_dir, expected):
-    actual = forest.Loader.replace_dir(args_dir, group_dir)
-    assert actual == expected
-
-
-def test_full_pattern_given_name_only():
-    check_full_pattern("file.nc", None, None, "file.nc")
-
-
-def test_full_pattern_given_relative_prefix_dir():
-    check_full_pattern("file.nc", None, "prefix", "prefix/file.nc")
-
-
-def test_full_pattern_given_relative_leaf_and_prefix_dir():
-    check_full_pattern("file.nc", "leaf", "prefix", "prefix/leaf/file.nc")
-
-
-def test_full_pattern_given_absolute_leaf_ignores_relative_prefix():
-    check_full_pattern("file.nc", "/leaf", "prefix", "/leaf/file.nc")
-
-
-def test_full_pattern_given_absolute_leaf_ignores_absolute_prefix():
-    check_full_pattern("file.nc", "/leaf", "/prefix", "/leaf/file.nc")
-
-
-def check_full_pattern(name, leaf, prefix, expected):
-    actual = forest.Loader.full_pattern(name, leaf, prefix)
-    assert actual == expected
