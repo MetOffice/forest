@@ -39,22 +39,6 @@ class DatasetSpec(typing.NamedTuple):
     driver: DriverSpec
 
 
-def specs(data):
-    """Map configuration data to specs
-
-    :returns: list of DatasetSpecs
-    """
-    if "datasets" not in data:
-        return []
-    datasets = data["datasets"]
-    labels = [ds["label"] for ds in datasets]
-    drivers = [ds["driver"] for ds in datasets]
-    return [
-            DatasetSpec(label,
-                DriverSpec(driver["name"], driver["settings"]))
-            for label, driver in zip(labels, drivers)]
-
-
 class Config(object):
     """Configuration data structure
 
@@ -80,7 +64,19 @@ class Config(object):
 
     @property
     def specs(self):
-        return specs(self.data)
+        return self._specs(self.data)
+
+    @staticmethod
+    def _specs(data):
+        if "datasets" not in data:
+            return []
+        datasets = data["datasets"]
+        labels = [ds["label"] for ds in datasets]
+        drivers = [ds["driver"] for ds in datasets]
+        return [
+                DatasetSpec(label,
+                    DriverSpec(driver["name"], driver["settings"]))
+                for label, driver in zip(labels, drivers)]
 
     @property
     def patterns(self):

@@ -25,7 +25,7 @@ def test_specs(data, expected):
 
 
 def test_specs_attribute_access():
-    specs = forest.config.specs({"datasets": [{
+    spec = forest.config.Config({"datasets": [{
         "label": "Label",
         "driver": {
             "name": "rdt",
@@ -33,8 +33,7 @@ def test_specs_attribute_access():
                 "pattern": "*.json"
             }
         }
-    }]})
-    spec = specs[0]
+    }]}).specs[0]
     assert spec.label == "Label"
     assert spec.driver.name == "rdt"
     assert spec.driver.settings == {"pattern": "*.json"}
