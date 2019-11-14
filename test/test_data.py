@@ -161,28 +161,6 @@ class TestDBLoader(unittest.TestCase):
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
 
-    @unittest.skip("waiting on database refactor")
-    def test_image_given_surface_field(self):
-        path = "file.nc"
-        variable = "variable"
-        initial_time = "2019-01-01 00:00:00"
-        valid_time = "2019-01-01 00:00:00"
-        pressure = 1000.
-        database = db.Database.connect(":memory:")
-        database.insert_file_name(path, initial_time)
-        database.insert_time(path, variable, valid_time, i=0)
-        locator = db.Locator(database.connection)
-        state = db.State(
-            variable=variable,
-            initial_time=initial_time,
-            valid_time=valid_time,
-            pressure=pressure,
-            pressures=[])
-        loader = data.DBLoader(None, "*.nc", locator)
-        result = loader.image(state)
-        expect = {}
-        self.assert_dict_equal(expect, result)
-
     def assert_dict_equal(self, expect, result):
         self.assertEqual(set(expect.keys()), set(result.keys()))
         for key in expect.keys():
