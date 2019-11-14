@@ -342,8 +342,7 @@ def main(argv=None):
             "y": []})
     series = Series.from_groups(
             series_figure,
-            config.file_groups,
-            directory=args.directory)
+            config.file_groups)
     old_states.subscribe(series.on_state)
     for f in figures:
         f.on_event(bokeh.events.Tap, series.on_tap)
@@ -463,14 +462,11 @@ class Series(object):
         self.state = {}
 
     @classmethod
-    def from_groups(cls, figure, groups, directory=None):
+    def from_groups(cls, figure, groups):
         loaders = {}
         for group in groups:
             if group.file_type == "unified_model":
-                if directory is None:
-                    pattern = group.full_pattern
-                else:
-                    pattern = os.path.join(directory, group.full_pattern)
+                pattern = os.path.expanduser(group.pattern)
                 loaders[group.label] = data.SeriesLoader.from_pattern(pattern)
         return cls(figure, loaders)
 

@@ -15,9 +15,6 @@ def parse_args(argv=None):
 
 def add_arguments(parser):
     parser.add_argument(
-        "--directory",
-        help="directory to use with paths returned from database")
-    parser.add_argument(
         "--database",
         help="SQL database to optimise menu system")
     parser.add_argument(
