@@ -157,10 +157,6 @@ class FileGroup(object):
         self.locator = locator
         self.file_type = file_type
 
-    @property
-    def full_pattern(self):
-        return self.pattern
-
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             raise Exception("Can not compare")
