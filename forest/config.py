@@ -34,6 +34,11 @@ class DriverSpec(typing.NamedTuple):
     settings: dict = {}
 
 
+class DatasetSpec(typing.NamedTuple):
+    label: str
+    driver: DriverSpec
+
+
 class Config(object):
     """Configuration data structure
 
