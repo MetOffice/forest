@@ -1,0 +1,36 @@
+files:
+  - label: GA7
+    pattern: '*ga7*.nc'
+    directory: wcssp
+    file_type: unified_model
+    locator: database
+  - label: GA6
+    pattern: '*ga6*.nc'
+    directory: wcssp
+    file_type: unified_model
+    locator: database
+  - label: 4p4km
+    pattern: '*4p4km*.nc'
+    directory: wcssp
+    file_type: unified_model
+    locator: database
+  - label: Philippines
+    pattern: '*philippines*.nc'
+    directory: wcssp
+    file_type: unified_model
+    locator: database
+  - label: Malaysia
+    pattern: '*malaysia*.nc'
+    directory: wcssp
+    file_type: unified_model
+    locator: database
+  - label: Indonesia
+    pattern: '*indonesia*.nc'
+    directory: wcssp
+    file_type: unified_model
+    locator: database
+  - label: Vietnam
+    pattern: '*vietnam*.nc'
+    directory: wcssp
+    file_type: unified_model
+    locator: database

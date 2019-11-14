@@ -23,14 +23,17 @@ exec sudo -u ec2-user /bin/bash - <<EOF
 
     mkdir ~/database
     aws s3 cp s3://met-office-rmed-forest/forest-informaticslab.db ~/database/
+    aws s3 cp s3://met-office-rmed-forest/philippines.db ~/database/
 
     cd
+    # Note: /s3/met-office-rmed-forest needs to be mounted since
+    #       mounting one directory level up results in a stale inode
     docker run \
       --name forest-container \
       -d \
       -p 80:8080 \
       -v /home/ec2-user/forest:/repo/forest \
       -v /home/ec2-user/database:/database \
-      -v /s3:/s3 \
+      -v /s3/met-office-rmed-forest:/s3/met-office-rmed-forest \
       informaticslab/forest bash -c '. /repo/forest/server/run-ec2.sh /repo/forest /s3'
 EOF
