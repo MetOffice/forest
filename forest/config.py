@@ -40,12 +40,18 @@ class DatasetSpec(typing.NamedTuple):
 
 
 def specs(data):
-    """Map configuration data to specs"""
+    """Map configuration data to specs
+
+    :returns: list of DatasetSpecs
+    """
     if "datasets" not in data:
         return []
+    datasets = data["datasets"]
+    labels = [ds["label"] for ds in datasets]
+    drivers = [ds["driver"] for ds in datasets]
     return [
-            (ds["label"], (ds["driver"]["name"], ds["driver"]["settings"]))
-            for ds in data["datasets"]]
+            DatasetSpec(label, DriverSpec(driver["name"], driver["settings"]))
+            for label, driver in zip(labels, drivers)]
 
 
 class Config(object):
