@@ -21,11 +21,17 @@ applications.
 
 """
 import os
+import typing
 import yaml
 from forest.export import export
 
 
 __all__ = []
+
+
+class DriverSpec(typing.NamedTuple):
+    name: str
+    settings: dict = {}
 
 
 class Config(object):
