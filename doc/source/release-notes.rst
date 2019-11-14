@@ -9,3 +9,4 @@ here to aid future users and maintainers.
 
 - Remove ``--directory`` flag in favour of environment
   variables or ``--var 'key:value'`` template substitution
+  when using ``--config-file`` flag
