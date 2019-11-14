@@ -1,4 +1,27 @@
+import pytest
 import forest
+
+
+@pytest.mark.parametrize("data,expected", [
+        ({}, []),
+        ({"datasets": []}, []),
+        ({"datasets": [
+            {
+                "label": "Label",
+                "driver": {
+                    "name": "rdt",
+                    "settings": {
+                        "pattern": "/some/*.nc"
+                    }
+                }
+            }
+            ]}, [
+                ("Label", ("rdt", {"pattern": "/some/*.nc"}))
+        ]),
+    ])
+def test_specs(data, expected):
+    actual = forest.config.specs(data)
+    assert actual == expected
 
 
 def test_dataset_spec():

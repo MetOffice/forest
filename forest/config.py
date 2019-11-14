@@ -39,6 +39,15 @@ class DatasetSpec(typing.NamedTuple):
     driver: DriverSpec
 
 
+def specs(data):
+    """Map configuration data to specs"""
+    if "datasets" not in data:
+        return []
+    return [
+            (ds["label"], (ds["driver"]["name"], ds["driver"]["settings"]))
+            for ds in data["datasets"]]
+
+
 class Config(object):
     """Configuration data structure
 
