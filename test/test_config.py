@@ -1,7 +1,42 @@
+import pytest
 import unittest
 import yaml
 import os
 import forest
+
+
+@pytest.mark.parametrize("env,args,expected", [
+        ({"env": "variable"}, None, {"env": "variable"}),
+        ({}, {}, {}),
+        ({}, [], {}),
+        ({}, {"k": "v"}, {"k": "v"}),
+        ({"k": "v"}, {}, {"k": "v"}),
+        ({"x": "environment"}, {"x": "user"}, {"x": "user"}),
+        ({"x": "environment"}, [("x", "a"), ("y", "b")], {"x": "a", "y": "b"}),
+        ({"z": "c"}, [["x", "a"], ["y", "b"]], {"x": "a", "y": "b", "z": "c"}),
+    ])
+def test_config_combine_os_environ_with_args(env, args, expected):
+    actual = forest.config.combine_variables(env, args)
+    assert actual == expected
+
+
+def test_combine_variables_copies_environment():
+    forest.config.combine_variables(os.environ, dict(custom="value"))
+    with pytest.raises(KeyError):
+        os.environ["custom"]
+
+
+def test_config_template_substitution(tmpdir):
+    config_file = str(tmpdir / "test-config.yml")
+    with open(config_file, "w") as stream:
+        stream.write(yaml.dump({
+            "parameter": "${X}/file.nc"
+        }))
+    variables = {
+            "X": "/expand"
+    }
+    config = forest.config.Config.load(config_file, variables)
+    assert config.data == {"parameter": "/expand/file.nc"}
 
 
 class TestIntegration(unittest.TestCase):

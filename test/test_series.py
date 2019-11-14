@@ -171,7 +171,6 @@ class TestSeries(unittest.TestCase):
         if os.path.exists(self.path):
             os.remove(self.path)
 
-    @unittest.skip('awaiting development')
     def test_series_given_missing_variable_returns_empty(self):
         pressure = 500
         lon = 1
