@@ -12,58 +12,25 @@ for now it is only a light weight viewer.
 Installation
 ~~~~~~~~~~~~
 
-The first step is to clone the GitHub repository, then to install
-either inside a virtual or conda environment with the setup.py script
+FOREST is available on conda-forge. To install it inside a conda
+environment run the following command.
 
 .. code-block:: sh
 
-   git clone git@github.com:informatics-lab/forest.git
+    conda install -c conda-forge
 
-
-There is a conda-spec.txt file shipped with the repository or create
-a fresh conda environment with bokeh and iris should be sufficient to
-run the forest command.
-
-.. code-block:: sh
-
-   conda create -n forest python=3.6
-   conda activate forest
-   conda install -c conda-forge bokeh iris
-
-Then once the dependencies are available inside your virtual environment
-it is possible to install forest in development mode.
-
-.. code-block:: sh
-
-   cd /path/to/repo/
-   python setup.py develop
-
-
-You can check if you have a successful install by bringing up the
-help message
-
-.. code::
-
-   forest -h
-
-.. note:: Future releases will simply use ``conda install -c conda-forge forest``
 
 Basic usage
 ~~~~~~~~~~~
 
-A typical approach to running forest is to craft a configuration file
-that lets forest know where each dataset lives on the file system.
+FOREST can be run as a command to quickly view files on disk.
 
-.. code-block:: yaml
+.. code-block:: sh
 
-   models:
-           - name: Operational GA6
-             pattern: '*global_africa*.nc'
-           - name: Operational Tropical Africa
-             pattern: '*os42_ea*.nc'
+   forest --show file.nc
 
-At present the ``--database`` flag and ``--config`` flags are mandatory,
-this will change in the very near future.
+Database
+~~~~~~~~
 
 To construct a database run the ``forestdb --database file.db *.nc`` command
 on the files you intend to navigate through. This is a highly unnecessary step
@@ -80,12 +47,41 @@ following:
       --port 8080 \
       --allow-websocket-origin eld388:8080 \
       --database /path/to/file.db \
-      --config /path/to/file.yaml \
-      --directory /replacement/directory
+      --config /path/to/file.yaml
 
 Where the various ``bokeh serve`` options are passed straight through
-to the underlying bokeh server. FOREST specific options will be refined
-in the coming releases.
+to the underlying bokeh server.
 
-.. warning:: While the intention is to support file(s) directly on the
-             command line, at present this functionality is not supported
+
+Configuration file
+~~~~~~~~~~~~~~~~~~
+
+A configuration file is a convenient way to compare multiple
+datasets spread across file systems and web based catalogues.
+There is support for variable substitution of either
+environment variables or through the command line ``--var KEY VALUE``
+flag. Multiple ``--var`` flags can be specified to substitute
+more than one variable.
+
+.. code-block:: yaml
+   :caption: some.yaml
+
+   # some.yaml
+   files:
+     - label: UM
+       pattern: ${HOME}/file.nc
+     - label: RDT
+       pattern: ${prefix}/file.json
+
+Would be equivalent to the following file
+
+.. code-block:: yaml
+   :caption: some.yaml.processed
+
+   files:
+     - label: UM
+       pattern: /Users/Bob/file.nc
+     - label: RDT
+       pattern: /some/dir/file.json
+
+
