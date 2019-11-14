@@ -11,7 +11,11 @@ from datetime import datetime
 import collections
 
 import numpy as np
-import iris
+try:
+    import iris
+except ModuleNotFoundError:
+    # ReadTheDocs can't import iris
+    iris = None
 
 from forest import geo
 
