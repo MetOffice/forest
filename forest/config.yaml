@@ -27,3 +27,6 @@ files:
           pattern: 'rdt_json/*.json'
           locator: file_system
           file_type: rdt
+        - label: NCAR ESM
+          pattern: temporary
+          file_type: intake

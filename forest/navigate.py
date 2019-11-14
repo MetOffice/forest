@@ -12,7 +12,9 @@ from forest import (
         unified_model,
         eida50,
         rdt,
-        saf)
+        intake_loader,
+        saf,
+)
 
 
 class Navigator:
@@ -83,6 +85,8 @@ class FileSystemNavigator:
         elif file_type.lower() == 'griddedforecast':
             # XXX This needs a "Group" object ... not "paths"
             return gridded_forecast.Navigator(paths)
+        elif file_type.lower() == 'intake':
+            return intake_loader.Navigator()
         elif file_type.lower() == 'ghrsstl4':
             return ghrsstl4.Navigator(paths)
         elif file_type.lower() == "unified_model":

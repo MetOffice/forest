@@ -19,6 +19,7 @@ from forest import (
         keys,
         redux,
         unified_model,
+        intake_loader,
         navigate,
         parse_args)
 import forest.config as cfg
@@ -134,6 +135,10 @@ def main(argv=None):
             viewer = view.GPMView(loader, color_mapper)
         elif isinstance(loader, satellite.EIDA50):
             viewer = view.EIDA50(loader, color_mapper)
+        elif isinstance(loader, intake_loader.IntakeLoader):
+            viewer = view.UMView(loader, color_mapper)
+            viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
+                                        intake_loader.INTAKE_FORMATTERS)
         else:
             viewer = view.UMView(loader, color_mapper)
         viewers[name] = viewer

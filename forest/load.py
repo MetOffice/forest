@@ -30,7 +30,9 @@ from forest import (
         unified_model,
         rdt,
         satellite,
-        saf)
+        intake_loader,
+        saf,
+)
 
 
 __all__ = []
@@ -148,6 +150,8 @@ class Loader(object):
             return ghrsstl4.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
+        elif file_type == 'intake':
+            return intake_loader.IntakeLoader(pattern)
         elif file_type == 'saf':
             return saf.saf(pattern, label, locator)
         else:
