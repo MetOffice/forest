@@ -1,4 +1,7 @@
-"""Matplotlib-esque usage of barbs in Typescript/Bokeh"""
+"""Matplotlib-esque usage of barbs in Typescript/Bokeh
+
+Additional comment
+"""
 import bokeh.plotting
 from forest import wind # Magic to extend bokeh.Figure
 
