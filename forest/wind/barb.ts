@@ -4,7 +4,8 @@ import {Class} from "core/class"
 import {Line, Fill} from "core/visuals"
 import {Context2d} from "core/util/canvas"
 // import * as p from "core/properties"
-// import * as barbs from './dist/barbs'
+//declare var barbs: any;
+import * as barbs from './lib/barbs'
 
 
 function _one_barb(
@@ -14,6 +15,12 @@ function _one_barb(
         line: Line,
         fill: Fill): void {
       console.log(i, r)
+      barbs.draw(
+          ctx,
+          10,
+          10,
+          r
+      )
 //        barbs.draw(
 //            ctx,
 //            this._u[i],
