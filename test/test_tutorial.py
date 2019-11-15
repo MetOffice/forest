@@ -72,7 +72,7 @@ def test_build_all_builds_um_config_file(tmpdir):
     forest.tutorial.build_all(build_dir)
     path = str(tmpdir / forest.tutorial.UM_CFG_FILE)
     with open(path) as stream:
-        result = yaml.load(stream)
+        result = yaml.safe_load(stream)
     expect = {
         "files": [{
             "label": "Unified Model",
@@ -89,7 +89,7 @@ def test_build_all_builds_config_file(tmpdir):
     forest.tutorial.build_all(build_dir)
     path = str(tmpdir / forest.tutorial.MULTI_CFG_FILE)
     with open(path) as stream:
-        result = yaml.load(stream)
+        result = yaml.safe_load(stream)
     expect = {
         "files": [{
             "label": "UM",
