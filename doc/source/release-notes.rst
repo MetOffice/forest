@@ -7,6 +7,7 @@ here to aid future users and maintainers.
 0.5.0
 -----
 
+- Add Python 3.8 support by modifying sqlite3 usage
 - Add template substitution using environment
   variables or ``--var key value``
   when using ``--config-file`` flag. E.g.
