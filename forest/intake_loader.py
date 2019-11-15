@@ -322,14 +322,11 @@ class Navigator:
         return valid_times
 
     def pressures(self, pattern, variable, initial_time):
-        print(f'retrieving pressures for variable {variable}')
         if self.variable_id != variable:
             self.variable_id = variable
             self._cube = None
         self._parse_pattern(pattern)
         cube = self.cube
-        print(pattern)
-        print(variable)
         try:
             # get pressures and sorted from largest to smallest, so that
             # closer to the surface shows higher up the list.
