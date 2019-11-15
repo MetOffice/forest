@@ -5,6 +5,7 @@ env:
   matrix:
     - PYTHON_VERSION="3.6"
     - PYTHON_VERSION="3.7"
+    - PYTHON_VERSION="3.8"
 
 git:
   # We need a deep clone so that we can compute the age of the files using their git history.
