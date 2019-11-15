@@ -1,40 +1,57 @@
+import {RenderOne} from "models/markers/defs"
 import {Marker, MarkerView} from "models/markers/marker"
+import {Class} from "core/class"
 import {Line, Fill} from "core/visuals"
 import {Context2d} from "core/util/canvas"
 // import * as p from "core/properties"
 // import * as barbs from './dist/barbs'
 
-class BarbView extends MarkerView {
-    _one_barb(
-            ctx: Context2d,
-            i: number,
-            r: number,
-            line: Line,
-            fill: Fill): void {
-          console.log(i, r)
+
+function _one_barb(
+        ctx: Context2d,
+        i: number,
+        r: number,
+        line: Line,
+        fill: Fill): void {
+      console.log(i, r)
 //        barbs.draw(
 //            ctx,
 //            this._u[i],
 //            this._v[i],
 //            r
 //        )
-        if (fill.doit) {
-            fill.set_vectorize(ctx, i)
-            ctx.fill()
-        }
-        if (line.doit) {
-            line.set_vectorize(ctx, i)
-            ctx.stroke()
-        }
+    if (fill.doit) {
+        fill.set_vectorize(ctx, i)
+        ctx.fill()
+    }
+    if (line.doit) {
+        line.set_vectorize(ctx, i)
+        ctx.stroke()
     }
 }
 
 
-export class Barb extends Marker {
-    default_view = BarbView
-    type = "Barb"
+function _mk_model(f: RenderOne): Class<Marker> {
+    // Replicate approach in markers/defs.ts
+
+    const view = class extends MarkerView {
+        static initClass(): void {
+            this.prototype._render_one = f
+        }
+    }
+    view.initClass()
+
+    const model = class extends Marker {
+        static __name__ = "Barb"
+        static initClass(): void {
+            this.prototype.default_view = view
+        }
+    }
+    model.initClass()
+    return model
 }
-Barb.define({})
+
+export const Barb = _mk_model(_one_barb)
 
 // Barb.define({
 //     "u": [p.DistanceSpec,
