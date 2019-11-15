@@ -2,7 +2,7 @@ import yaml
 
 
 def test_load_given_str():
-    assert yaml.load("""
+    assert yaml.safe_load("""
     labels:
         - hello
         - world
