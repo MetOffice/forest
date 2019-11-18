@@ -203,6 +203,15 @@ class IntakeLoader:
         pressure = selector.pressure
         pressures = selector.pressures
 
+        # Criteria to generate an image
+        if any(value is None for value in [
+                variable,
+                valid_time,
+                initial_time,
+                pressure,
+                pressures]):
+            return gridded_forecast.empty_image()
+
         if self.variable_id != variable:
             self.variable_id = variable
             self._cube = None
