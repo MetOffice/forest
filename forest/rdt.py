@@ -129,19 +129,20 @@ class View(object):
     def render(self, state):
         """Gets called when a menu button is clicked (or when application state changes)"""
         selector = selectors.Selector(state)
-        if selector.valid_time is not None:
-            date = dt.datetime.strptime(selector.valid_time, '%Y-%m-%d %H:%M:%S')
-            try:
-                (self.source.geojson,
-                 self.tail_line_source.data,
-                 self.tail_point_source.data,
-                 self.centre_point_source.data) = self.loader.load_date(date)
-            except FileNotFound:
-                print("rdt.View.render caught FileNotFound", date)
-                self.source.geojson = self.empty_geojson
-                self.tail_line_source.data = self.empty_tail_line
-                self.tail_point_source.data = self.empty_tail_point
-                self.centre_point_source.data = self.empty_centre_point
+        if selector.valid_time is None:
+            return
+        date = selector.valid_time
+        try:
+            (self.source.geojson,
+             self.tail_line_source.data,
+             self.tail_point_source.data,
+             self.centre_point_source.data) = self.loader.load_date(date)
+        except FileNotFound:
+            print("rdt.View.render caught FileNotFound", date)
+            self.source.geojson = self.empty_geojson
+            self.tail_line_source.data = self.empty_tail_line
+            self.tail_point_source.data = self.empty_tail_point
+            self.centre_point_source.data = self.empty_centre_point
 
     def add_figure(self, figure):
         """This is where all the plotting happens (e.g. when the applciation is loaded)"""

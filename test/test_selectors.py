@@ -1,4 +1,5 @@
 import pytest
+import datetime as dt
 from forest import selectors, db
 
 
@@ -10,11 +11,11 @@ from forest import selectors, db
     ("variable", {"variable": "air_temperature"}, "air_temperature"),
     ("variable", db.State(variable="mslp"), "mslp"),
     ("initial_time", {}, None),
-    ("initial_time", {"initial_time": "2019-01-01 00:00:00"}, "2019-01-01 00:00:00"),
-    ("initial_time", db.State(initial_time="2019-01-01 00:00:00"), "2019-01-01 00:00:00"),
+    ("initial_time", {"initial_time": "2019-01-01 00:00:00"}, dt.datetime(2019, 1, 1)),
+    ("initial_time", db.State(initial_time="2019-01-01 00:00:00"), dt.datetime(2019, 1, 1)),
     ("valid_time", {}, None),
-    ("valid_time", {"valid_time": "2019-01-01 00:00:00"}, "2019-01-01 00:00:00"),
-    ("valid_time", db.State(valid_time="2019-01-01 00:00:00"), "2019-01-01 00:00:00"),
+    ("valid_time", {"valid_time": "2019-01-01 00:00:00"}, dt.datetime(2019, 1, 1)),
+    ("valid_time", db.State(valid_time="2019-01-01 00:00:00"), dt.datetime(2019, 1, 1)),
     ("pressures", {}, None),
     ("pressures", {"pressure": 1000.}, None),
     ("pressures", {"pressures": [1000.]}, [1000.]),
