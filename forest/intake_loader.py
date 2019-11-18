@@ -13,7 +13,7 @@ try:
 except ModuleNotFoundError:
     intake = None
 
-from forest import geo, gridded_forecast
+from forest import geo, gridded_forecast, selectors
 
 # Location of the Pangeo-CMIP6 intake catalogue file.
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
@@ -128,7 +128,7 @@ def _get_bokeh_image(cube,
         return abs(select_pressure - data_pressure.point) < 1.0
 
     if cube is None or initial_time is None:
-        data = gridded_forecast.empty_image()
+        return gridded_forecast.empty_image()
     else:
         constraint_dict = {'time': functools.partial(time_comp,
                                                      selected_time),
@@ -196,14 +196,16 @@ class IntakeLoader:
         Main image loading function. This function will actually realise the
         data,
         """
-        if self.variable_id != state.variable:
-            self.variable_id = state.variable
+        selector = selectors.Selector(state)
+        variable = selector.variable
+        valid_time = selector.valid_time
+        initial_time = selector.initial_time
+        pressure = selector.pressure
+        pressures = selector.pressures
+
+        if self.variable_id != variable:
+            self.variable_id = variable
             self._cube = None
-
-        valid_time = state.valid_time
-        pressure = state.pressure
-
-        selected_time = gridded_forecast._to_datetime(valid_time)
 
         # the guts of creating the bokeh object has been put into a separate
         # function so that it can be cached, so if image is called multiple
@@ -216,13 +218,13 @@ class IntakeLoader:
 
         data = _get_bokeh_image(cube, self.experiment_id,
                                 self.variable_id,
-                                self.institution_id, state.initial_time,
-                                self.member_id, selected_time, pressure)
+                                self.institution_id, initial_time,
+                                self.member_id, valid_time, pressure)
 
-        data.update(gridded_forecast.coordinates(str(selected_time),
-                                                 state.initial_time,
-                                                 state.pressures,
-                                                 pressure))
+        data.update(
+                gridded_forecast.time_coordinates(str(valid_time), initial_time))
+        data.update(
+                gridded_forecast.pressure_coordinates(pressures, pressure))
         data.update({
             'name': [self._label],
             'units': [str(cube.units)],
