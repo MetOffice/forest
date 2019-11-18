@@ -273,38 +273,39 @@ class DBLoader(object):
 
     def image(self, state):
         selector = selectors.Selector(state)
-        if not self.valid(
-                selector.variable,
-                selector.initial_time,
-                selector.valid_time,
-                selector.pressure,
-                selector.pressures):
+        variable = selector.variable
+        initial_time = selector.initial_time
+        valid_time = selector.valid_time
+        pressure = selector.pressure
+        pressures = selector.pressures
+
+        if not self.valid(variable, initial_time, valid_time, pressure, pressures):
             return gridded_forecast.empty_image()
 
         try:
             path, pts = self.locator.locate(
                 self.pattern,
-                selector.variable,
-                selector.initial_time,
-                selector.valid_time,
-                selector.pressure)
+                variable,
+                initial_time,
+                valid_time,
+                pressure)
         except SearchFail:
             return gridded_forecast.empty_image()
 
-        units = self.read_units(path, selector.variable)
+        units = self.read_units(path, variable)
         data = load_image_pts(
                 path,
-                selector.variable,
+                variable,
                 pts,
                 pts)
-        if (len(selector.pressures) > 0) and (selector.pressure is not None):
-            level = "{} hPa".format(int(selector.pressure))
+        if (len(pressures) > 0) and (pressure is not None):
+            level = "{} hPa".format(int(pressure))
         else:
             level = "Surface"
-        data.update(gridded_forecast.coordinates(selector.valid_time,
-                                                 selector.initial_time,
-                                                 selector.pressures,
-                                                 selector.pressure))
+        data.update(gridded_forecast.coordinates(valid_time,
+                                                 initial_time,
+                                                 pressures,
+                                                 pressure))
         data["name"] = [self.name]
         data["units"] = [units]
         return data
