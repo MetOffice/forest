@@ -11,7 +11,7 @@ from forest import selectors, db
     ("variable", db.State(variable="mslp"), "mslp"),
     ("initial_time", {}, None),
     ("initial_time", {"initial_time": "2019-01-01 00:00:00"}, "2019-01-01 00:00:00"),
-    ("initial_time", db.State(initial_time=750.), 750.),
+    ("initial_time", db.State(initial_time="2019-01-01 00:00:00"), "2019-01-01 00:00:00"),
     ("valid_time", {}, None),
     ("valid_time", {"valid_time": "2019-01-01 00:00:00"}, "2019-01-01 00:00:00"),
     ("valid_time", db.State(valid_time="2019-01-01 00:00:00"), "2019-01-01 00:00:00"),

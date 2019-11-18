@@ -282,10 +282,10 @@ def main(argv=None):
     controls = db.ControlView()
     controls.subscribe(store.dispatch)
     store.subscribe(controls.render)
+    store.subscribe(artist.on_state)
     old_states = (db.Stream()
                     .listen_to(store)
                     .map(lambda x: db.State(**x)))
-    old_states.subscribe(artist.on_state)
 
     # Ensure all listeners are pointing to the current state
     store.notify(store.state)

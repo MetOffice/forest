@@ -11,7 +11,8 @@ import json
 import numpy as np
 from forest import (
         geo,
-        locate)
+        locate,
+        selectors)
 from forest.util import timeout_cache
 from forest.exceptions import FileNotFound
 from bokeh.palettes import GnBu3, OrRd3
@@ -127,8 +128,9 @@ class View(object):
 
     def render(self, state):
         """Gets called when a menu button is clicked (or when application state changes)"""
-        if state.valid_time is not None:
-            date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
+        selector = selectors.Selector(state)
+        if selector.valid_time is not None:
+            date = dt.datetime.strptime(selector.valid_time, '%Y-%m-%d %H:%M:%S')
             try:
                 (self.source.geojson,
                  self.tail_line_source.data,
