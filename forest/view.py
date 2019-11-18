@@ -1,7 +1,7 @@
 import datetime as dt
 import numpy as np
 import bokeh.models
-from forest import geo
+from forest import geo, selectors
 from forest.exceptions import FileNotFound, IndexNotFound
 
 
@@ -31,7 +31,13 @@ class UMView(object):
         }
 
     def render(self, state):
-        self.source.data = self.loader.image(state)
+        selector = selectors.Selector(state)
+        self.source.data = self.loader.image(
+                selector.variable,
+                selector.initial_time,
+                selector.valid_time,
+                selector.pressure,
+                selector.pressures)
 
     def set_hover_properties(self, tooltips, formatters):
         self.tooltips = tooltips

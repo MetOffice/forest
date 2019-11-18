@@ -1,7 +1,8 @@
 import unittest
 from forest import (
         data,
-        db)
+        db,
+        selectors)
 
 
 class TestDBLoader(unittest.TestCase):
@@ -25,8 +26,14 @@ class TestDBLoader(unittest.TestCase):
         pattern = None
         locator = None
         state = db.State()
+        selector = selectors.Selector(state)
         loader = data.DBLoader(name, pattern, locator)
-        result = loader.image(state)
+        result = loader.image(
+                selector.variable,
+                selector.initial_time,
+                selector.valid_time,
+                selector.pressure,
+                selector.pressures)
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
 
@@ -40,8 +47,14 @@ class TestDBLoader(unittest.TestCase):
             initial_time="2019-01-01 00:00:00",
             valid_time="2019-01-01 00:00:00",
             pressure=1000.)
+        selector = selectors.Selector(state)
         loader = data.DBLoader(name, pattern, locator)
-        result = loader.image(state)
+        result = loader.image(
+                selector.variable,
+                selector.initial_time,
+                selector.valid_time,
+                selector.pressure,
+                selector.pressures)
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
 
@@ -62,8 +75,14 @@ class TestDBLoader(unittest.TestCase):
             valid_time=valid_time,
             pressure=pressure,
             pressures=[925.])
+        selector = selectors.Selector(state)
         loader = data.DBLoader(None, "*.nc", locator)
-        result = loader.image(state)
+        result = loader.image(
+                selector.variable,
+                selector.initial_time,
+                selector.valid_time,
+                selector.pressure,
+                selector.pressures)
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
 
