@@ -104,26 +104,13 @@ class EIDA50(object):
                 self.empty)
 
     def render(self, state):
-        if state.valid_time is not None:
-            self.image(self.to_datetime(state.valid_time))
+        selector = selectors.Selector(state)
+        if selector.valid_time is not None:
+            self.image(selector.valid_time)
 
-    @staticmethod
-    def to_datetime(d):
-        if isinstance(d, dt.datetime):
-            return d
-        elif isinstance(d, str):
-            try:
-                return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
-        elif isinstance(d, np.datetime64):
-            return d.astype(dt.datetime)
-        else:
-            raise Exception("Unknown value: {}".format(d))
-
-    def image(self, time):
+    def image(self, valid_time):
         try:
-            self.source.data = self.loader.image(time)
+            self.source.data = self.loader.image(valid_time)
         except (FileNotFound, IndexNotFound):
             self.source.data = self.empty
 

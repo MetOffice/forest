@@ -1,5 +1,6 @@
 """Indirect access to State properties"""
 import datetime as dt
+import numpy as np
 
 
 class Selector:
@@ -21,24 +22,31 @@ class Selector:
 
     @property
     def valid_time(self):
-        if isinstance(self.state, tuple):
-            return self.asdatetime(self.state.valid_time)
-        return self.asdatetime(self.state.get("valid_time", None))
+        value = self._get("valid_time")
+        if value is None:
+            return
+        return self.to_datetime(value)
 
     @property
     def initial_time(self):
-        if isinstance(self.state, tuple):
-            return self.asdatetime(self.state.initial_time)
-        return self.asdatetime(self.state.get("initial_time", None))
+        value = self._get("initial_time")
+        if value is None:
+            return
+        return self.to_datetime(value)
 
     @staticmethod
-    def asdatetime(value):
-        if value is None:
-            return value
-        if isinstance(value, str):
-            pattern = "%Y-%m-%d %H:%M:%S"
-            return dt.datetime.strptime(value, pattern)
-        return value
+    def to_datetime(d):
+        if isinstance(d, dt.datetime):
+            return d
+        elif isinstance(d, str):
+            try:
+                return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
+        elif isinstance(d, np.datetime64):
+            return d.astype(dt.datetime)
+        else:
+            raise Exception("Unknown value: {}".format(d))
 
     def __getattr__(self, attr):
         if attr in self._props:

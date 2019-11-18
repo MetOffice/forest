@@ -3,8 +3,14 @@ import os
 import datetime as dt
 import netCDF4
 import numpy as np
-from forest import (eida50, satellite, navigate)
+from forest import (eida50, satellite, navigate, view)
 from forest.exceptions import FileNotFound, IndexNotFound
+
+
+def test_render():
+    viewer = view.EIDA50(None, None)
+    viewer.render({})
+    assert viewer.source.data == {'x': [], 'y': [], 'dw': [], 'dh': [], 'image': []}
 
 
 class TestLocator(unittest.TestCase):
