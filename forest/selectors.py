@@ -3,6 +3,13 @@
 
 class Selector:
     """Access data stored in state"""
+    _props = [
+        "pressure",
+        "pressures",
+        "valid_time",
+        "initial_time",
+        "variable"
+    ]
     def __init__(self, state):
         self.state = state
 
@@ -12,13 +19,10 @@ class Selector:
             return getattr(self.state, attr, None) is not None
         return attr in self.state
 
-    @property
-    def pressure(self):
-        return self._get("pressure")
-
-    @property
-    def pressures(self):
-        return self._get("pressures")
+    def __getattr__(self, attr):
+        if attr in self._props:
+            return self._get(attr)
+        return self.__dict__.get(attr)
 
     def _get(self, attr):
         if isinstance(self.state, tuple):
