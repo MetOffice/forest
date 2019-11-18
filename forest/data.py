@@ -273,7 +273,12 @@ class DBLoader(object):
 
     def image(self, state):
         selector = selectors.Selector(state)
-        if not self.valid(state):
+        if not self.valid(
+                selector.variable,
+                selector.initial_time,
+                selector.valid_time,
+                selector.pressure,
+                selector.pressures):
             return gridded_forecast.empty_image()
 
         try:
@@ -314,20 +319,19 @@ class DBLoader(object):
         return units
 
 
-    def valid(self, state):
-        selector = selectors.Selector(state)
-        if selector.variable is None:
+    def valid(self, variable, initial_time, valid_time, pressure, pressures):
+        if variable is None:
             return False
-        if selector.initial_time is None:
+        if initial_time is None:
             return False
-        if selector.valid_time is None:
+        if valid_time is None:
             return False
-        if selector.pressures is None:
+        if pressures is None:
             return False
-        if len(selector.pressures) > 0:
-            if selector.pressure is None:
+        if len(pressures) > 0:
+            if pressure is None:
                 return False
-            if not self.has_pressure(selector.pressures, selector.pressure):
+            if not self.has_pressure(pressures, pressure):
                 return False
         return True
 
