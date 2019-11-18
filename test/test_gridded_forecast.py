@@ -18,60 +18,35 @@ class Test_empty_image(unittest.TestCase):
             self.assertEqual(value, [])
 
 
-class Test_to_datetime(unittest.TestCase):
-    def test_datetime(self):
-        dt = datetime.now()
-        result = gridded_forecast._to_datetime(dt)
-        self.assertEqual(result, dt)
-
-    def test_str_with_space(self):
-        result = gridded_forecast._to_datetime('2019-10-10 01:02:34')
-        self.assertEqual(result, datetime(2019, 10, 10, 1, 2, 34))
-
-    def test_str_iso8601(self):
-        result = gridded_forecast._to_datetime('2019-10-10T01:02:34')
-        self.assertEqual(result, datetime(2019, 10, 10, 1, 2, 34))
-
-    def test_datetime64(self):
-        dt = np.datetime64('2019-10-10T11:22:33')
-        result = gridded_forecast._to_datetime(dt)
-        self.assertEqual(result, datetime(2019, 10, 10, 11, 22, 33))
-
-    def test_unsupported(self):
-        with self.assertRaisesRegex(Exception, 'Unknown value'):
-            gridded_forecast._to_datetime(12)
-
-
-@patch('forest.gridded_forecast._to_datetime')
 class Test_coordinates(unittest.TestCase):
-    def test_surface_and_times(self, to_datetime):
+    def test_surface_and_times(self):
         valid = datetime(2019, 10, 10, 9)
         initial = datetime(2019, 10, 10, 3)
-        to_datetime.side_effect = [valid, initial]
 
-        result = gridded_forecast.coordinates(sentinel.valid, sentinel.initial,
-                                              [], None)
+        result = gridded_forecast.time_coordinates(valid, initial)
 
-        self.assertEqual(to_datetime.mock_calls, [call(sentinel.valid),
-                                                  call(sentinel.initial)])
         self.assertEqual(result, {'valid': [valid], 'initial': [initial],
-                                  'length': ['T+6'], 'level': ['Surface']})
+                                  'length': ['T+6']})
 
-    def test_surface_no_pressures(self, to_datetime):
-        result = gridded_forecast.coordinates(None, None, [], 950)
+    def test_surface_given_empty_list_and_none(self):
+        result = gridded_forecast.pressure_coordinates([], None)
+        self.assertEqual(result, {'level': ['Surface']})
+
+    def test_surface_no_pressures(self):
+        result = gridded_forecast.pressure_coordinates([], 950)
 
         self.assertEqual(result['level'], ['Surface'])
 
-    def test_surface_no_pressure(self, to_datetime):
-        result = gridded_forecast.coordinates(None, None, [1000, 900], None)
+    def test_surface_no_pressure(self):
+        result = gridded_forecast.pressure_coordinates([1000, 900], None)
 
         self.assertEqual(result['level'], ['Surface'])
 
-    def test_pressure(self, to_datetime):
-        result = gridded_forecast.coordinates(None, None, [1000, 900], 900)
+    def test_pressure(self):
+        result = gridded_forecast.pressure_coordinates([1000, 900], 900)
 
         self.assertEqual(result['level'], ['900 hPa'])
-    
+
 
 class Test_is_valid_cube(unittest.TestCase):
     def setUp(self):
@@ -174,31 +149,27 @@ class Test_ImageLoader(unittest.TestCase):
 
     @patch('forest.gridded_forecast.empty_image')
     @patch('iris.Constraint')
-    @patch('forest.gridded_forecast._to_datetime')
-    def test_empty(self, to_datetime, constraint, empty_image):
+    def test_empty(self, constraint, empty_image):
         # To avoid re-testing the constructor, just make a fake ImageLoader
         # instance.
         original_cube = Mock()
         original_cube.extract.return_value = None
         image_loader = Mock(_cubes={'foo': original_cube})
 
-        to_datetime.return_value = sentinel.valid_datetime
         constraint.return_value = sentinel.constraint
         empty_image.return_value = sentinel.empty_image
 
-        result = gridded_forecast.ImageLoader.image(
-            image_loader, Mock(variable='foo', valid_time=sentinel.valid))
+        state = {
+            "variable": "foo",
+        }
+        result = gridded_forecast.ImageLoader.image(image_loader, state)
 
-        to_datetime.assert_called_once_with(sentinel.valid)
-        constraint.assert_called_once_with(time=sentinel.valid_datetime)
         original_cube.extract.assert_called_once_with(sentinel.constraint)
         self.assertEqual(result, sentinel.empty_image)
 
-    @patch('forest.gridded_forecast.coordinates')
     @patch('forest.geo.stretch_image')
     @patch('iris.Constraint')
-    @patch('forest.gridded_forecast._to_datetime')
-    def test_image(self, to_datetime, constraint, stretch_image, coordinates):
+    def test_image(self, constraint, stretch_image):
         # To avoid re-testing the constructor, just make a fake ImageLoader
         # instance.
         cube = Mock()
@@ -209,26 +180,32 @@ class Test_ImageLoader(unittest.TestCase):
         original_cube.extract.return_value = cube
         image_loader = Mock(_cubes={'foo': original_cube}, _label='my-label')
 
-        to_datetime.return_value = sentinel.valid_datetime
         constraint.return_value = sentinel.constraint
         stretch_image.return_value = {'stretched_image': True}
-        coordinates.return_value = {'coordinates': True}
 
-        result = gridded_forecast.ImageLoader.image(
-            image_loader, Mock(variable='foo', valid_time=sentinel.valid,
-                               initial_time=sentinel.initial,
-                               pressures=sentinel.pressures,
-                               pressure=sentinel.pressure))
+        state = {
+            "variable": "foo",
+            "valid_time": "2019-01-01 00:00:00",
+            "initial_time": "2019-01-01 00:00:00",
+            "pressure": 1000.,
+            "pressures": [1000.],
+        }
+        result = gridded_forecast.ImageLoader.image(image_loader, state)
 
         self.assertEqual(cube.coord.mock_calls, [call('longitude'),
                                                  call('latitude')])
         stretch_image.assert_called_once_with(sentinel.longitudes,
                                               sentinel.latitudes, cube.data)
-        coordinates.assert_called_once_with(sentinel.valid, sentinel.initial,
-                                            sentinel.pressures,
-                                            sentinel.pressure)
-        self.assertEqual(result, {'stretched_image': True, 'coordinates': True,
-                                  'name': ['my-label'], 'units': ['my-units']})
+        expect = {
+            'stretched_image': True,
+            'name': ['my-label'],
+            'units': ['my-units'],
+            'valid': [datetime(2019, 1, 1)],
+            'initial': [datetime(2019, 1, 1)],
+            'level': ['1000 hPa'],
+            'length': ['T+0']
+        }
+        self.assertEqual(result, expect)
 
 
 class Test_Navigator(unittest.TestCase):

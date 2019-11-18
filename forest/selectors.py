@@ -1,6 +1,7 @@
 """Indirect access to State properties"""
 import datetime as dt
 import numpy as np
+import cftime
 
 
 class Selector:
@@ -38,6 +39,8 @@ class Selector:
     def to_datetime(d):
         if isinstance(d, dt.datetime):
             return d
+        if isinstance(d, cftime.DatetimeNoLeap):
+            return datetime(d.year, d.month, d.day, d.hour, d.minute, d.second)
         elif isinstance(d, str):
             try:
                 return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")

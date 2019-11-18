@@ -27,7 +27,10 @@ from scipy.interpolate import griddata
 #from metpy.interpolate import interpolate_to_grid
 import netCDF4
 
-from forest.gridded_forecast import _to_datetime, empty_image, coordinates
+from forest.gridded_forecast import (
+        empty_image,
+        time_coordinates,
+        pressure_coordinates)
 from forest.util import timeout_cache
 
 from forest import geo
@@ -83,7 +86,8 @@ class saf(object):
                 zi = np.ma.masked_outside(zi, nc[self.locator.varlist[state.variable]].valid_range[0], nc[self.locator.varlist[state.variable]].valid_range[1], copy=False)
                 data = geo.stretch_image(xi[0,:], yi[:,0], zi)
                 #data = geo.stretch_image(x[0,:], y[:,0], nc[state.variable][:])
-                data.update(coordinates(state.valid_time, state.initial_time, state.pressures, state.pressure))
+                data.update(time_coordinates(state.valid_time, state.initial_time))
+                data.update(pressure_coordinates(state.pressures, state.pressure))
                 data.update({
                     'name': [str(nc[self.locator.varlist[state.variable]].long_name)],
                 })

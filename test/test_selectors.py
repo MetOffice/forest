@@ -39,3 +39,19 @@ def test_selector_getattr(attr, state, expect):
 def test_selector_defined(attr, state, expect):
     selector = selectors.Selector(state)
     assert selector.defined(attr) == expect
+
+
+@pytest.mark.parametrize("time,expect", [
+        (dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 1)),
+        ("2019-10-10 01:02:34", dt.datetime(2019, 10, 10, 1, 2, 34)),
+        ("2019-10-10T01:02:34", dt.datetime(2019, 10, 10, 1, 2, 34)),
+        (np.datetime64('2019-10-10T11:22:33'), dt.datetime(2019, 10, 10, 11, 22, 33)),
+    ])
+def test_to_datetime(time, expect):
+    result = selectors.Selector.to_datetime(time)
+    assert result == expect
+
+
+def test_unsupported():
+    with pytest.raises(Exception, match='Unknown value'):
+        selectors.Selector.to_datetime(12)

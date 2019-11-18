@@ -1,4 +1,3 @@
-from datetime import datetime
 import collections
 
 import numpy as np
@@ -8,9 +7,8 @@ except ModuleNotFoundError:
     # ReadTheDocs can't import iris
     iris = None
 
-import cftime
 
-from forest import geo
+from forest import geo, selectors
 
 
 def empty_image():
@@ -29,36 +27,22 @@ def empty_image():
     }
 
 
-def _to_datetime(d):
-
-    if isinstance(d, datetime):
-        return d
-    if isinstance(d, cftime.DatetimeNoLeap):
-        return datetime(d.year, d.month, d.day, d.hour, d.minute, d.second)
-    elif isinstance(d, str):
-        try:
-            return datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            return datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
-    elif isinstance(d, np.datetime64):
-        return d.astype(datetime)
-    else:
-        raise Exception("Unknown value: {}".format(d))
-
-
-def coordinates(valid_time, initial_time, pressures, pressure):
-    valid = _to_datetime(valid_time)
-    initial = _to_datetime(initial_time)
+def time_coordinates(valid, initial):
     hours = (valid - initial).total_seconds() / (60*60)
     length = "T{:+}".format(int(hours))
+    return {
+        'valid': [valid],
+        'initial': [initial],
+        'length': [length],
+    }
+
+
+def pressure_coordinates(pressures, pressure):
     if (len(pressures) > 0) and (pressure is not None):
         level = "{} hPa".format(int(pressure))
     else:
         level = "Surface"
     return {
-        'valid': [valid],
-        'initial': [initial],
-        'length': [length],
         'level': [level]
     }
 
@@ -109,16 +93,22 @@ class ImageLoader:
         self._cubes = _load(pattern)
 
     def image(self, state):
-        cube = self._cubes[state.variable]
-        valid_datetime = _to_datetime(state.valid_time)
-        cube = cube.extract(iris.Constraint(time=valid_datetime))
+        selector = selectors.Selector(state)
+        variable = selector.variable
+        valid_time = selector.valid_time  # None or datetime
+        initial_time = selector.initial_time  # None or datetime
+        pressure = selector.pressure
+        pressures = selector.pressures
+
+        cube = self._cubes[variable]
+        cube = cube.extract(iris.Constraint(time=valid_time))
         if cube is None:
             data = empty_image()
         else:
             data = geo.stretch_image(cube.coord('longitude').points,
                                      cube.coord('latitude').points, cube.data)
-            data.update(coordinates(state.valid_time, state.initial_time,
-                                    state.pressures, state.pressure))
+            data.update(time_coordinates(valid_time, initial_time))
+            data.update(pressure_coordinates(pressures, pressure))
             data.update({
                 'name': [self._label],
                 'units': [str(cube.units)]
