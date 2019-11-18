@@ -294,10 +294,10 @@ class DBLoader(object):
             level = "{} hPa".format(int(pressure))
         else:
             level = "Surface"
-        data.update(gridded_forecast.coordinates(valid_time,
-                                                 initial_time,
-                                                 pressures,
-                                                 pressure))
+        data.update(
+                gridded_forecast.time_coordinates(valid_time, initial_time))
+        data.update(
+                gridded_forecast.pressure_coordinates(pressures, pressure))
         data["name"] = [self.name]
         data["units"] = [units]
         return data
