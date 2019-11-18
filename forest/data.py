@@ -292,13 +292,13 @@ class DBLoader(object):
                 state.variable,
                 pts,
                 pts)
-        if (len(state.pressures) > 0) and (selector.pressure is not None):
-            level = "{} hPa".format(int(state.pressure))
+        if (len(selector.pressures) > 0) and (selector.pressure is not None):
+            level = "{} hPa".format(int(selector.pressure))
         else:
             level = "Surface"
         data.update(gridded_forecast.coordinates(state.valid_time,
                                                  state.initial_time,
-                                                 state.pressures,
+                                                 selector.pressures,
                                                  selector.pressure))
         data["name"] = [self.name]
         data["units"] = [units]
@@ -315,18 +315,19 @@ class DBLoader(object):
 
 
     def valid(self, state):
+        selector = selectors.Selector(state)
         if state.variable is None:
             return False
         if state.initial_time is None:
             return False
         if state.valid_time is None:
             return False
-        if state.pressures is None:
+        if selector.pressures is None:
             return False
-        if len(state.pressures) > 0:
-            if state.pressure is None:
+        if len(selector.pressures) > 0:
+            if selector.pressure is None:
                 return False
-            if not self.has_pressure(state.pressures, state.pressure):
+            if not self.has_pressure(selector.pressures, selector.pressure):
                 return False
         return True
 

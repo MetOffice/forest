@@ -7,6 +7,13 @@ class Selector:
 
     @property
     def pressure(self):
+        return self._get("pressure")
+
+    @property
+    def pressures(self):
+        return self._get("pressures")
+
+    def _get(self, attr):
         if isinstance(self.state, tuple):
-            return self.state.pressure
-        return self.state.get("pressure", None)
+            return getattr(self.state, attr, None)
+        return self.state.get(attr, None)
