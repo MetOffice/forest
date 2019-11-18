@@ -279,25 +279,25 @@ class DBLoader(object):
         try:
             path, pts = self.locator.locate(
                 self.pattern,
-                state.variable,
-                state.initial_time,
-                state.valid_time,
+                selector.variable,
+                selector.initial_time,
+                selector.valid_time,
                 selector.pressure)
         except SearchFail:
             return gridded_forecast.empty_image()
 
-        units = self.read_units(path, state.variable)
+        units = self.read_units(path, selector.variable)
         data = load_image_pts(
                 path,
-                state.variable,
+                selector.variable,
                 pts,
                 pts)
         if (len(selector.pressures) > 0) and (selector.pressure is not None):
             level = "{} hPa".format(int(selector.pressure))
         else:
             level = "Surface"
-        data.update(gridded_forecast.coordinates(state.valid_time,
-                                                 state.initial_time,
+        data.update(gridded_forecast.coordinates(selector.valid_time,
+                                                 selector.initial_time,
                                                  selector.pressures,
                                                  selector.pressure))
         data["name"] = [self.name]
@@ -316,11 +316,11 @@ class DBLoader(object):
 
     def valid(self, state):
         selector = selectors.Selector(state)
-        if state.variable is None:
+        if selector.variable is None:
             return False
-        if state.initial_time is None:
+        if selector.initial_time is None:
             return False
-        if state.valid_time is None:
+        if selector.valid_time is None:
             return False
         if selector.pressures is None:
             return False
