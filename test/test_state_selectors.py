@@ -8,4 +8,4 @@ from forest import selectors, db
     (db.State(pressure=750.), 750.)
 ])
 def test_pressure(state, expect):
-    assert selectors.pressure(state) == expect
+    assert selectors.Selector(state).pressure == expect

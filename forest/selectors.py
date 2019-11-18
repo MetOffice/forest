@@ -1,7 +1,12 @@
 """Indirect access to State properties"""
 
 
-def pressure(state):
-    if isinstance(state, tuple):
-        return state.pressure
-    return state.get("pressure", None)
+class Selector:
+    def __init__(self, state):
+        self.state = state
+
+    @property
+    def pressure(self):
+        if isinstance(self.state, tuple):
+            return self.state.pressure
+        return self.state.get("pressure", None)

@@ -20,6 +20,7 @@ from forest import (
         gridded_forecast,
         saf,
         satellite,
+        selectors,
         rdt,
         earth_networks,
         geo,
@@ -271,6 +272,7 @@ class DBLoader(object):
         self.locator = locator
 
     def image(self, state):
+        selector = selectors.Selector(state)
         if not self.valid(state):
             return gridded_forecast.empty_image()
 
@@ -280,7 +282,7 @@ class DBLoader(object):
                 state.variable,
                 state.initial_time,
                 state.valid_time,
-                state.pressure)
+                selector.pressure)
         except SearchFail:
             return gridded_forecast.empty_image()
 
@@ -290,14 +292,14 @@ class DBLoader(object):
                 state.variable,
                 pts,
                 pts)
-        if (len(state.pressures) > 0) and (state.pressure is not None):
+        if (len(state.pressures) > 0) and (selector.pressure is not None):
             level = "{} hPa".format(int(state.pressure))
         else:
             level = "Surface"
         data.update(gridded_forecast.coordinates(state.valid_time,
                                                  state.initial_time,
                                                  state.pressures,
-                                                 state.pressure))
+                                                 selector.pressure))
         data["name"] = [self.name]
         data["units"] = [units]
         return data
