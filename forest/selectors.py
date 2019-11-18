@@ -2,4 +2,6 @@
 
 
 def pressure(state):
-    pass
+    if isinstance(state, tuple):
+        return state.pressure
+    return state.get("pressure", None)
