@@ -64,6 +64,7 @@ def _load(pattern):
     """Return all the valid gridded forecast cubes that can be loaded
     from the given filename pattern."""
     cubes = iris.load(pattern)
+    print(cubes)
 
     # Ensure that we only retain cubes that meet our entry criteria
     # for "gridded forecast"
@@ -93,6 +94,7 @@ class ImageLoader:
         self._cubes = _load(pattern)
 
     def image(self, state):
+        print(state)
         selector = selectors.Selector(state)
         variable = selector.variable
         valid_time = selector.valid_time  # None or datetime

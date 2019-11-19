@@ -478,7 +478,7 @@ class Series(object):
                 "variable",
                 "pressure"]
         for attr in attrs:
-            if getattr(app_state, attr) is not None:
+            if hasattr(app_state, attr):
                 next_state[attr] = getattr(app_state, attr)
         state_change = any(
                 next_state.get(k, None) != self.state.get(k, None)
