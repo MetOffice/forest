@@ -5,7 +5,7 @@ import numpy as np
 import numpy.testing as npt
 import datetime as dt
 import bokeh.plotting
-from forest import data, series
+from forest import series
 
 
 def variable_dim0(
@@ -169,6 +169,81 @@ def test_series_view():
     series.SeriesView(figure, {})
 
 
+def test_3d_variable_scalar_time(tmpdir):
+    path = str(tmpdir / "file.nc")
+    variable = "relative_humidity"
+    time = dt.datetime(2019, 1, 1)
+    pressures = [
+            1000.001,
+            500,
+            250]
+    longitudes = [0, 1]
+    latitudes = [0, 1]
+    values = np.arange(3*2*2).reshape(3, 2, 2)
+    with netCDF4.Dataset(path, "w") as dataset:
+        variable_3d_scalar_time(
+                dataset,
+                variable,
+                time,
+                pressures,
+                longitudes,
+                latitudes,
+                values)
+    lon, lat = 0.1, 0.1
+    loader = series.SeriesLoader([path])
+    result = loader._load_netcdf4(
+            path,
+            variable,
+            lon,
+            lat,
+            pressure=500)
+    expect = {
+        "x": [time],
+        "y": [values[1, 0, 0]]
+    }
+    npt.assert_array_equal(expect["x"], result["x"])
+    npt.assert_array_equal(expect["y"], result["y"])
+
+
+def test_4d_variable(tmpdir):
+    path = str(tmpdir / "file.nc")
+    variable = "wet_bulb_potential_temperature"
+    times = [
+            dt.datetime(2019, 1, 1),
+            dt.datetime(2019, 1, 1, 6),
+            dt.datetime(2019, 1, 1, 12)]
+    pressures = [
+            1000.001,
+            500,
+            250]
+    longitudes = [0, 1, 2]
+    latitudes = [0, 1, 2]
+    values = np.arange(3*3*3*3).reshape(3, 3, 3, 3)
+    with netCDF4.Dataset(path, "w") as dataset:
+        variable_4d(
+                dataset,
+                variable,
+                times,
+                pressures,
+                longitudes,
+                latitudes,
+                values)
+    lon, lat = 0.1, 0.1
+    loader = series.SeriesLoader([path])
+    result = loader._load_netcdf4(
+            path,
+            variable,
+            lon,
+            lat,
+            pressure=500)
+    expect = {
+        "x": times,
+        "y": values[:, 1, 0, 0]
+    }
+    npt.assert_array_equal(expect["x"], result["x"])
+    npt.assert_array_equal(expect["y"], result["y"])
+
+
 class TestSeries(unittest.TestCase):
     def setUp(self):
         self.path = "test-series.nc"
@@ -197,7 +272,7 @@ class TestSeries(unittest.TestCase):
                 longitudes,
                 latitudes,
                 values)
-        loader = data.SeriesLoader([self.path])
+        loader = series.SeriesLoader([self.path])
         variable = "not_in_file"
         result = loader.series_file(
                 self.path, variable, lon, lat, pressure)
@@ -229,7 +304,7 @@ class TestSeries(unittest.TestCase):
                 longitudes,
                 latitudes,
                 values)
-        loader = data.SeriesLoader([self.path])
+        loader = series.SeriesLoader([self.path])
         result = loader.series_file(
                 self.path, variable, lon, lat, pressure)
         i, j = 1, 1
@@ -258,83 +333,12 @@ class TestSeries(unittest.TestCase):
                     values)
         lon = 0
         lat = 1
-        loader = data.SeriesLoader([self.path])
+        loader = series.SeriesLoader([self.path])
         result = loader.series_file(
                 self.path, variable, lon, lat)
         expect = {
             "x": times,
             "y": values[:, 1, 0]
-        }
-        npt.assert_array_equal(expect["x"], result["x"])
-        npt.assert_array_equal(expect["y"], result["y"])
-
-    def test_4d_variable(self):
-        variable = "wet_bulb_potential_temperature"
-        times = [
-                dt.datetime(2019, 1, 1),
-                dt.datetime(2019, 1, 1, 6),
-                dt.datetime(2019, 1, 1, 12)]
-        pressures = [
-                1000.001,
-                500,
-                250]
-        longitudes = [0, 1, 2]
-        latitudes = [0, 1, 2]
-        values = np.arange(3*3*3*3).reshape(3, 3, 3, 3)
-        with netCDF4.Dataset(self.path, "w") as dataset:
-            variable_4d(
-                    dataset,
-                    variable,
-                    times,
-                    pressures,
-                    longitudes,
-                    latitudes,
-                    values)
-        lon, lat = 0.1, 0.1
-        loader = data.SeriesLoader([self.path])
-        result = loader.series_file(
-                self.path,
-                variable,
-                lon,
-                lat,
-                pressure=500)
-        expect = {
-            "x": times,
-            "y": values[:, 1, 0, 0]
-        }
-        npt.assert_array_equal(expect["x"], result["x"])
-        npt.assert_array_equal(expect["y"], result["y"])
-
-    def test_3d_variable_scalar_time(self):
-        variable = "relative_humidity"
-        time = dt.datetime(2019, 1, 1)
-        pressures = [
-                1000.001,
-                500,
-                250]
-        longitudes = [0, 1]
-        latitudes = [0, 1]
-        values = np.arange(3*2*2).reshape(3, 2, 2)
-        with netCDF4.Dataset(self.path, "w") as dataset:
-            variable_3d_scalar_time(
-                    dataset,
-                    variable,
-                    time,
-                    pressures,
-                    longitudes,
-                    latitudes,
-                    values)
-        lon, lat = 0.1, 0.1
-        loader = data.SeriesLoader([self.path])
-        result = loader.series_file(
-                self.path,
-                variable,
-                lon,
-                lat,
-                pressure=500)
-        expect = {
-            "x": [time],
-            "y": [values[1, 0, 0]]
         }
         npt.assert_array_equal(expect["x"], result["x"])
         npt.assert_array_equal(expect["y"], result["y"])
@@ -349,7 +353,7 @@ class TestSeries(unittest.TestCase):
             "/some/file_20190101T1200Z_012.nc",
         ]
         reference_time = dt.datetime(2019, 1, 1, 12)
-        locator = data.SeriesLocator(paths)
+        locator = series.SeriesLocator(paths)
         result = locator[reference_time]
         expect = [
             "/some/file_20190101T1200Z_000.nc",
@@ -368,7 +372,7 @@ class TestSeries(unittest.TestCase):
             "/some/file_20190101T1200Z_012.nc",
         ]
         reference_time = np.datetime64('2019-01-01T12:00:00', 's')
-        locator = data.SeriesLocator(paths)
+        locator = series.SeriesLocator(paths)
         result = locator[reference_time]
         expect = [
             "/some/file_20190101T1200Z_000.nc",
@@ -386,7 +390,7 @@ class TestSeries(unittest.TestCase):
             "/some/file_20190101T1200Z_006.nc",
             "/some/file_20190101T1200Z_012.nc",
         ]
-        locator = data.SeriesLocator(paths)
+        locator = series.SeriesLocator(paths)
         result = locator.initial_times()
         expect = np.array([
             '2019-01-01 00:00',
@@ -395,12 +399,12 @@ class TestSeries(unittest.TestCase):
 
     def test_pressures_matches_large_pressures(self):
         pressures = np.array([1000.001, 1000.01, 1000.1, 950])
-        result = data.SeriesLoader.search(pressures, 1000)
+        result = series.SeriesLoader.search(pressures, 1000)
         expect = np.array([True, True, True, False])
         npt.assert_array_equal(expect, result)
 
     def test_pressures_matches_small_pressures(self):
         pressures = np.array([0.03001, 0.020001, 0.010001])
-        result = data.SeriesLoader.search(pressures, 0.02)
+        result = series.SeriesLoader.search(pressures, 0.02)
         expect = np.array([False, True, False])
         npt.assert_array_equal(expect, result)
