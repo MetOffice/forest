@@ -5,19 +5,29 @@ import cftime
 
 
 class Selector:
-    """Access data stored in state"""
-    _props = [
-        "pressure",
-        "pressures",
-        "initial_time",
-        "variable"
-    ]
+    """Access data stored in state
+
+    Provides interface for other consumers of state to
+    access values stored in state
+    """
     def __init__(self, state):
         self.state = state
 
     def defined(self, attr):
         """Determine if property defined"""
         return attr in self.state
+
+    @property
+    def pressure(self):
+        return self.state.get("pressure", None)
+
+    @property
+    def pressures(self):
+        return self.state.get("pressures", None)
+
+    @property
+    def variable(self):
+        return self.state.get("variable", None)
 
     @property
     def valid_time(self):
@@ -48,8 +58,3 @@ class Selector:
             return d.astype(dt.datetime)
         else:
             raise Exception("Unknown value: {}".format(d))
-
-    def __getattr__(self, attr):
-        if attr in self._props:
-            return self.state.get(attr, None)
-        return self.__dict__.get(attr)
