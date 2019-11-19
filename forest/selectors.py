@@ -17,20 +17,18 @@ class Selector:
 
     def defined(self, attr):
         """Determine if property defined"""
-        if isinstance(self.state, tuple):
-            return getattr(self.state, attr, None) is not None
         return attr in self.state
 
     @property
     def valid_time(self):
-        value = self._get("valid_time")
+        value = self.state.get("valid_time", None)
         if value is None:
             return
         return self.to_datetime(value)
 
     @property
     def initial_time(self):
-        value = self._get("initial_time")
+        value = self.state.get("initial_time", None)
         if value is None:
             return
         return self.to_datetime(value)
@@ -53,10 +51,5 @@ class Selector:
 
     def __getattr__(self, attr):
         if attr in self._props:
-            return self._get(attr)
+            return self.state.get(attr, None)
         return self.__dict__.get(attr)
-
-    def _get(self, attr):
-        if isinstance(self.state, tuple):
-            return getattr(self.state, attr, None)
-        return self.state.get(attr, None)
