@@ -107,8 +107,7 @@ class TestDBLoader(unittest.TestCase):
         name = None
         pattern = None
         locator = None
-        state = db.State()
-        selector = selectors.Selector(state)
+        selector = selectors.Selector({})
         loader = data.DBLoader(name, pattern, locator)
         result = loader.image(
                 selector.variable,
@@ -124,7 +123,7 @@ class TestDBLoader(unittest.TestCase):
         pattern = None
         database = db.Database.connect(":memory:")
         locator = db.Locator(database.connection)
-        state = db.State(
+        state = dict(
             variable="variable",
             initial_time="2019-01-01 00:00:00",
             valid_time="2019-01-01 00:00:00",
@@ -151,7 +150,7 @@ class TestDBLoader(unittest.TestCase):
         database.insert_pressure(path, variable, pressure, i=0)
         database.insert_time(path, variable, valid_time, i=0)
         locator = db.Locator(database.connection)
-        state = db.State(
+        state = dict(
             variable=variable,
             initial_time=initial_time,
             valid_time=valid_time,

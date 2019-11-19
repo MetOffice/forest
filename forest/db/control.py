@@ -11,9 +11,7 @@ from forest.observe import Observable
 from forest.export import export
 
 
-__all__ = [
-    "State",
-]
+__all__ = []
 
 
 SET_VALUE = "SET_VALUE"
@@ -52,26 +50,6 @@ def previous_initial_time():
 @export
 def previous_value(item_key, items_key):
     return dict(kind=PREVIOUS_VALUE, payload=locals())
-
-
-State = namedtuple("State", (
-    "pattern",
-    "patterns",
-    "variable",
-    "variables",
-    "initial_time",
-    "initial_times",
-    "valid_time",
-    "valid_times",
-    "pressure",
-    "pressures",
-    "valid_format"))
-State.__new__.__defaults__ = (None,) * len(State._fields)
-
-def statehash(self):
-    return hash((self.pattern, str(self.patterns), self.variable, self.initial_time, str(self.initial_times), self.valid_time, str(self.valid_times), self.pressure, str(self.pressures), self.valid_format))
-
-State.__hash__ = statehash
 
 
 @export

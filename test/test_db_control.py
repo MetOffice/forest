@@ -422,17 +422,3 @@ class TestPressureMiddleware(unittest.TestCase):
             "pressures": pressures
         }
         self.assertEqual(expect, result)
-
-
-class TestStateStream(unittest.TestCase):
-    def test_support_old_style_state(self):
-        """Not all components are ready to accept dict() states"""
-        listener = unittest.mock.Mock()
-        store = redux.Store(db.reducer)
-        old_states = (db.Stream()
-                  .listen_to(store)
-                  .map(lambda x: db.State(**x)))
-        old_states.subscribe(listener)
-        store.dispatch(db.set_value("pressure", 1000))
-        expect = db.State(pressure=1000)
-        listener.assert_called_once_with(expect)
