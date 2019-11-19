@@ -106,25 +106,26 @@ class SeriesView(object):
                 next_state.get(k, None) != self.state.get(k, None)
                 for k in attrs)
         if state_change:
-            self.render()
+            self.render(self.state)
         self.state = next_state
 
     def on_tap(self, event):
+        # TODO: Should emit SET_POSITION action not render()
         self.state["x"] = event.x
         self.state["y"] = event.y
-        self.render()
+        self.render(self.state)
 
-    def render(self):
+    def render(self, state):
         for attr in ["x", "y", "variable", "initial_time"]:
-            if attr not in self.state:
+            if attr not in state:
                 return
-        x = self.state["x"]
-        y = self.state["y"]
-        variable = self.state["variable"]
+        x = state["x"]
+        y = state["y"]
+        variable = state["variable"]
         initial_time = dt.datetime.strptime(
-                self.state["initial_time"],
+                state["initial_time"],
                 "%Y-%m-%d %H:%M:%S")
-        pressure = self.state.get("pressure", None)
+        pressure = state.get("pressure", None)
         self.figure.title.text = variable
         for name, source in self.sources.items():
             loader = self.loaders[name]
