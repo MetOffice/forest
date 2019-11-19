@@ -18,55 +18,6 @@ class Test_empty_image(unittest.TestCase):
             self.assertEqual(value, [])
 
 
-class Test_to_datetime(unittest.TestCase):
-    def test_datetime(self):
-        dt = datetime.now()
-        result = ghrsstl4._to_datetime(dt)
-        self.assertEqual(result, dt)
-
-    def test_str_with_space(self):
-        result = ghrsstl4._to_datetime('2019-10-10 01:02:34')
-        self.assertEqual(result, datetime(2019, 10, 10, 1, 2, 34))
-
-    def test_str_iso8601(self):
-        result = ghrsstl4._to_datetime('2019-10-10T01:02:34')
-        self.assertEqual(result, datetime(2019, 10, 10, 1, 2, 34))
-
-    def test_datetime64(self):
-        dt = np.datetime64('2019-10-10T11:22:33')
-        result = ghrsstl4._to_datetime(dt)
-        self.assertEqual(result, datetime(2019, 10, 10, 11, 22, 33))
-
-    def test_unsupported(self):
-        with self.assertRaisesRegex(Exception, 'Unknown value'):
-            ghrsstl4._to_datetime(12)
-
-
-@patch('forest.ghrsstl4._to_datetime')
-class Test_coordinates(unittest.TestCase):
-    def test_surface_and_times(self, to_datetime):
-        valid = datetime(2019, 10, 10, 9)
-        initial = datetime(2019, 10, 10, 3)
-        to_datetime.side_effect = [valid, initial]
-
-        result = ghrsstl4.coordinates(sentinel.valid, sentinel.initial,
-                                              [], None)
-
-        self.assertEqual(to_datetime.mock_calls, [call(sentinel.valid),
-                                                  call(sentinel.initial)])
-        self.assertEqual(result, {'valid': [valid], 'initial': [initial],
-                                  'length': ['T+6'], 'level': ['Sea Surface']})
-
-    def test_surface_no_pressures(self, to_datetime):
-        result = ghrsstl4.coordinates(None, None, [], 950)
-
-        self.assertEqual(result['level'], ['Sea Surface'])
-
-    def test_surface_no_pressure(self, to_datetime):
-        result = ghrsstl4.coordinates(None, None, [1000, 900], None)
-
-        self.assertEqual(result['level'], ['Sea Surface'])
-
 class Test_is_valid_cube(unittest.TestCase):
     def setUp(self):
         lon = iris.coords.DimCoord(range(5), 'longitude')
@@ -162,31 +113,27 @@ class Test_ImageLoader(unittest.TestCase):
 
     @patch('forest.ghrsstl4.empty_image')
     @patch('iris.Constraint')
-    @patch('forest.ghrsstl4._to_datetime')
-    def test_empty(self, to_datetime, constraint, empty_image):
+    def test_empty(self, constraint, empty_image):
         # To avoid re-testing the constructor, just make a fake ImageLoader
         # instance.
         original_cube = Mock()
         original_cube.extract.return_value = None
         image_loader = Mock(_cubes={'foo': original_cube})
 
-        to_datetime.return_value = sentinel.valid_datetime
         constraint.return_value = sentinel.constraint
         empty_image.return_value = sentinel.empty_image
 
         result = ghrsstl4.ImageLoader.image(
-            image_loader, Mock(variable='foo', valid_time=sentinel.valid))
+                image_loader, dict(variable='foo', valid_time="2019-01-01 00:00:00"))
 
-        to_datetime.assert_called_once_with(sentinel.valid)
-        constraint.assert_called_once_with(time=sentinel.valid_datetime)
+        constraint.assert_called_once_with(time=datetime(2019, 1, 1))
         original_cube.extract.assert_called_once_with(sentinel.constraint)
         self.assertEqual(result, sentinel.empty_image)
 
-    @patch('forest.ghrsstl4.coordinates')
+    @patch('forest.ghrsstl4.time_coordinates')
     @patch('forest.geo.stretch_image')
     @patch('iris.Constraint')
-    @patch('forest.ghrsstl4._to_datetime')
-    def test_image(self, to_datetime, constraint, stretch_image, coordinates):
+    def test_image(self, constraint, stretch_image, coordinates):
         # To avoid re-testing the constructor, just make a fake ImageLoader
         # instance.
         cube = Mock()
@@ -197,26 +144,27 @@ class Test_ImageLoader(unittest.TestCase):
         original_cube.extract.return_value = cube
         image_loader = Mock(_cubes={'foo': original_cube}, _label='my-label')
 
-        to_datetime.return_value = sentinel.valid_datetime
         constraint.return_value = sentinel.constraint
         stretch_image.return_value = {'stretched_image': True}
         coordinates.return_value = {'coordinates': True}
 
         result = ghrsstl4.ImageLoader.image(
-            image_loader, Mock(variable='foo', valid_time=sentinel.valid,
-                               initial_time=sentinel.initial,
-                               pressures=sentinel.pressures,
-                               pressure=sentinel.pressure))
+            image_loader, dict(variable='foo',
+                valid_time="2019-01-01 00:00:00",
+                initial_time="2019-01-01 00:00:00",
+                pressures=sentinel.pressures,
+                pressure=sentinel.pressure))
 
         self.assertEqual(cube.coord.mock_calls, [call('longitude'),
                                                  call('latitude')])
         stretch_image.assert_called_once_with(sentinel.longitudes,
                                               sentinel.latitudes, cube.data)
-        coordinates.assert_called_once_with(sentinel.valid, sentinel.initial,
-                                            sentinel.pressures,
-                                            sentinel.pressure)
+        coordinates.assert_called_once_with(
+                datetime(2019, 1, 1),
+                datetime(2019, 1, 1))
         self.assertEqual(result, {'stretched_image': True, 'coordinates': True,
-                                  'name': ['my-label'], 'units': ['my-units']})
+                                  'name': ['my-label'], 'units': ['my-units'],
+                                  'level': ['Sea Surface']})
 
 
 class Test_Navigator(unittest.TestCase):

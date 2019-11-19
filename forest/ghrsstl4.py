@@ -17,7 +17,8 @@ except ModuleNotFoundError:
     # ReadTheDocs can't import iris
     iris = None
 
-from forest import geo
+from forest import geo, selectors
+from forest.gridded_forecast import time_coordinates
 
 
 def empty_image():
@@ -33,34 +34,6 @@ def empty_image():
         "initial": [],
         "length": [],
         "level": []
-    }
-
-
-def _to_datetime(d):
-    if isinstance(d, datetime):
-        return d
-    elif isinstance(d, str):
-        try:
-            return datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            return datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
-    elif isinstance(d, np.datetime64):
-        return d.astype(datetime)
-    else:
-        raise Exception("Unknown value: {}".format(d))
-
-
-def coordinates(valid_time, initial_time, pressures, pressure):
-    valid = _to_datetime(valid_time)
-    initial = _to_datetime(initial_time)
-    hours = (valid - initial).total_seconds() / (60*60)
-    length = "T{:+}".format(int(hours))
-    level = "Sea Surface"
-    return {
-        'valid': [valid],
-        'initial': [initial],
-        'length': [length],
-        'level': [level]
     }
 
 
@@ -108,20 +81,20 @@ class ImageLoader:
         self._cubes = _load(pattern)
 
     def image(self, state):
-        cube = self._cubes[state.variable]
-        valid_datetime = _to_datetime(state.valid_time)
-        cube = cube.extract(iris.Constraint(time=valid_datetime))
+        selector = selectors.Selector(state)
+        cube = self._cubes[selector.variable]
+        cube = cube.extract(iris.Constraint(time=selector.valid_time))
 
         if cube is None:
             data = empty_image()
         else:
             data = geo.stretch_image(cube.coord('longitude').points,
                                      cube.coord('latitude').points, cube.data)
-            data.update(coordinates(state.valid_time, state.initial_time,
-                                    state.pressures, state.pressure))
+            data.update(time_coordinates(selector.valid_time, selector.initial_time))
             data.update({
                 'name': [self._label],
-                'units': [str(cube.units)]
+                'units': [str(cube.units)],
+                'level': ["Sea Surface"]
             })
         return data
 
