@@ -4,7 +4,8 @@ import netCDF4
 import numpy as np
 import numpy.testing as npt
 import datetime as dt
-from forest import data
+import bokeh.plotting
+from forest import data, series
 
 
 def variable_dim0(
@@ -161,6 +162,11 @@ def variable_4d(
     var.grid_mapping = "latitude_longitude"
     var.coordinates = "forecast_period_1 forecast_reference_time"
     var[:] = values
+
+
+def test_series_view():
+    figure = bokeh.plotting.figure()
+    series.SeriesView(figure, {})
 
 
 class TestSeries(unittest.TestCase):
