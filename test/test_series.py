@@ -8,6 +8,16 @@ import bokeh.plotting
 from forest import series
 
 
+def test_series_set_position_action():
+    action = series.set_position(0, 0)
+    assert action == {"kind": series.SET_POSITION, "payload": {"x": 0, "y": 0}}
+
+
+def test_series_reducer():
+    state = series.reducer({}, series.set_position(0, 0))
+    assert state == {"position": {"x": 0, "y": 0}}
+
+
 def variable_dim0(
         dataset,
         pressures,

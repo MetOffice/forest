@@ -8,6 +8,19 @@ from forest import geo
 from forest.util import initial_time as _initial_time
 
 
+SET_POSITION = "SET_POSITION"
+
+
+def set_position(x, y):
+    return {"kind": SET_POSITION, "payload": {"x": x, "y": y}}
+
+
+def reducer(state, action):
+    if action["kind"] == SET_POSITION:
+        state["position"] = action["payload"]
+    return state
+
+
 class SeriesView(object):
     def __init__(self, figure, loaders):
         self.figure = figure
