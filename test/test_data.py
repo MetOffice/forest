@@ -46,12 +46,13 @@ def test_dbloader_image(tmpdir):
         _um_file(dataset, times, pressures, lats, lons)
     locator = unified_model.Locator([path])
     loader = data.DBLoader("Label", "*.nc", locator)
-    result = loader.image(
-            "air_temperature",
-            times[0],
-            times[0],
-            pressures[0],
-            pressures)
+    state = dict(
+        variable="air_temperature",
+        initial_time=times[0],
+        valid_time=times[0],
+        pressure=pressures[0],
+        pressures=pressures)
+    result = loader.image(state)
     assert set(result.keys()) == set([
         "x", "y", "dw", "dh", "image",
         "name", "units", "initial", "valid", "length", "level"])
@@ -107,14 +108,8 @@ class TestDBLoader(unittest.TestCase):
         name = None
         pattern = None
         locator = None
-        selector = selectors.Selector({})
         loader = data.DBLoader(name, pattern, locator)
-        result = loader.image(
-                selector.variable,
-                selector.initial_time,
-                selector.valid_time,
-                selector.pressure,
-                selector.pressures)
+        result = loader.image({})
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
 
@@ -128,14 +123,8 @@ class TestDBLoader(unittest.TestCase):
             initial_time="2019-01-01 00:00:00",
             valid_time="2019-01-01 00:00:00",
             pressure=1000.)
-        selector = selectors.Selector(state)
         loader = data.DBLoader(name, pattern, locator)
-        result = loader.image(
-                selector.variable,
-                selector.initial_time,
-                selector.valid_time,
-                selector.pressure,
-                selector.pressures)
+        result = loader.image(state)
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
 
@@ -156,14 +145,8 @@ class TestDBLoader(unittest.TestCase):
             valid_time=valid_time,
             pressure=pressure,
             pressures=[925.])
-        selector = selectors.Selector(state)
         loader = data.DBLoader(None, "*.nc", locator)
-        result = loader.image(
-                selector.variable,
-                selector.initial_time,
-                selector.valid_time,
-                selector.pressure,
-                selector.pressures)
+        result = loader.image(state)
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
 

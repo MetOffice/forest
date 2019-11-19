@@ -20,6 +20,7 @@ from forest import (
         gridded_forecast,
         saf,
         satellite,
+        selectors,
         rdt,
         earth_networks,
         geo,
@@ -270,7 +271,13 @@ class DBLoader(object):
         self.pattern = pattern
         self.locator = locator
 
-    def image(self, variable, initial_time, valid_time, pressure, pressures):
+    def image(self, state):
+        selector = selectors.Selector(state)
+        variable = selector.variable
+        initial_time = selector.initial_time
+        valid_time = selector.valid_time
+        pressure = selector.pressure
+        pressures = selector.pressures
         if not self.valid(variable, initial_time, valid_time, pressure, pressures):
             return gridded_forecast.empty_image()
 

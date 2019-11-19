@@ -31,13 +31,7 @@ class UMView(object):
         }
 
     def render(self, state):
-        selector = selectors.Selector(state)
-        self.source.data = self.loader.image(
-                selector.variable,
-                selector.initial_time,
-                selector.valid_time,
-                selector.pressure,
-                selector.pressures)
+        self.source.data = self.loader.image(state)
 
     def set_hover_properties(self, tooltips, formatters):
         self.tooltips = tooltips
@@ -105,7 +99,7 @@ class EIDA50(object):
 
     def render(self, state):
         selector = selectors.Selector(state)
-        if selector.valid_time is not None:
+        if selector.defined("valid_time"):
             self.image(selector.valid_time)
 
     def image(self, valid_time):
