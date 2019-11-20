@@ -120,11 +120,15 @@ def select_args(state):
                 "initial_time",
                 "position"]):
         return
+    if "pressure" in state:
+        optional = (state["pressure"],)
+    else:
+        optional = ()
     return (
             _to_datetime(state["initial_time"]),
             state["variable"],
             state["position"]["x"],
-            state["position"]["y"])
+            state["position"]["y"]) + optional
 
 
 class SeriesView(Observable):

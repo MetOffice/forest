@@ -16,7 +16,14 @@ from forest import series, redux, rx, db, config
         ({
             "variable": "mslp",
             "initial_time": "2019-01-01 00:00:00",
-            "position": {"x": 1, "y": 2}}, (dt.datetime(2019, 1, 1), "mslp", 1, 2)),
+            "position": {"x": 1, "y": 2}},
+            (dt.datetime(2019, 1, 1), "mslp", 1, 2)),
+        ({
+            "variable": "air_temperature",
+            "pressure": 1000.,
+            "initial_time": "2019-01-01 00:00:00",
+            "position": {"x": 1, "y": 2}},
+            (dt.datetime(2019, 1, 1), "air_temperature", 1, 2, 1000.)),
     ])
 def test_select_args(state, expect):
     result = series.select_args(state)
