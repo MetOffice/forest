@@ -354,16 +354,13 @@ def main(argv=None):
             config.file_groups,
             directory=args.directory)
     series_view.subscribe(store.dispatch)
-    stream = (rx.Stream()
+    series_args = (rx.Stream()
                 .listen_to(store)
                 .map(series.select_args)
                 .filter(lambda x: x is not None)
                 .distinct())
-    stream.map(print)  # Note: map(print) creates None stream
-
-    # TODO: Wire up store to series.SeriesView.render using rx.Stream
-    #       and combine reducers to access state["position"]["x"] etc.
-    # old_states.subscribe(series_view.on_state)
+    series_args.map(lambda a: series_view.render(*a))
+    series_args.map(print)  # Note: map(print) creates None stream
     for f in figures:
         f.on_event(bokeh.events.Tap, series_view.on_tap)
         f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
