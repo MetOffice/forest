@@ -88,7 +88,8 @@ class Locator(object):
                 dates, mask=mask, dtype='datetime64[s]')
         return np.ma.argmax(before_dates)
 
-    def find_index(self, times, time, length):
+    @staticmethod
+    def find_index(times, time, length):
         dtype = 'datetime64[s]'
         if isinstance(times, list):
             times = np.asarray(times, dtype=dtype)
