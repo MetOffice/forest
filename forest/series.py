@@ -94,6 +94,9 @@ def set_position(x, y):
 def reducer(state, action):
     """Time series specific reducer
 
+    Given :func:`set_position` action adds "position" data
+    to state
+
     :param state: data structure representing current state
     :type state: dict
     :param action: data structure representing action
