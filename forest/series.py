@@ -1,3 +1,36 @@
+"""
+Time series
+-----------
+
+Support for time series uses the redux
+design pattern. The View reacts to State
+changes.
+
+.. autoclass:: SeriesView
+    :members:
+
+.. autoclass:: SeriesLoader
+    :members:
+
+.. autoclass:: SeriesLocator
+    :members:
+
+Actions
+~~~~~~~
+
+.. autofunction:: set_position
+
+Reducer
+~~~~~~~
+
+.. autofunction:: reducer
+
+Selector
+~~~~~~~~
+
+.. autofunction:: select_args
+
+"""
 import datetime as dt
 import glob
 import os
@@ -16,10 +49,13 @@ SET_POSITION = "SET_POSITION"
 
 
 def set_position(x, y):
+    """Action that represents a position has been selected
+    """
     return {"kind": SET_POSITION, "payload": {"x": x, "y": y}}
 
 
 def reducer(state, action):
+    """Time series specific reducer"""
     if action["kind"] == SET_POSITION:
         state["position"] = action["payload"]
     return state
@@ -46,6 +82,7 @@ def select_args(state):
 
 
 class SeriesView(Observable):
+    """Time series view"""
     def __init__(self, figure, loaders):
         self.figure = figure
         self.loaders = loaders
@@ -135,6 +172,7 @@ class SeriesView(Observable):
 
 
 class SeriesLoader(object):
+    """Time series loader"""
     def __init__(self, paths):
         self.locator = SeriesLocator(paths)
 

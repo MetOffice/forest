@@ -10,6 +10,8 @@ forecasts alongside observations.
 
 .. automodule:: forest.observe
 
+.. automodule:: forest.series
+
 .. automodule:: forest.keys
 
 .. automodule:: forest.config
