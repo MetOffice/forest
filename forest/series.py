@@ -18,15 +18,30 @@ changes.
 Actions
 ~~~~~~~
 
+Actions are tiny blobs of data used to
+communicate with other parts of the system. They
+help de-couple the entity creating an action from
+the components that depend on state changes
+
 .. autofunction:: set_position
 
 Reducer
 ~~~~~~~
 
+A reducer is a pure function that combines a
+state and an action to return a new state. Reducers
+can be combined so that individual reducers are
+responsible only for a limited set of actions
+
 .. autofunction:: reducer
 
 Selector
 ~~~~~~~~
+
+The full application state can be unwieldy for individual
+views to parse, especially if the details of its internals
+change. Instead of relying on Views to translate state
+into values, selectors can do that job on behalf of the view.
 
 .. autofunction:: select_args
 
@@ -55,21 +70,40 @@ SET_POSITION = "SET_POSITION"
 
 def set_position(x, y):
     """Action that represents a position has been selected
+
+    .. code-block:: python
+
+        {
+            "kind": "SET_POSITION",
+            "payload": {
+                "x": x,
+                "y": y
+            }
+        }
+
+    :returns: data representing action
+    :rtype: dict
     """
     return {"kind": SET_POSITION, "payload": {"x": x, "y": y}}
 
 
 def reducer(state, action):
-    """Time series specific reducer"""
+    """Time series specific reducer
+
+    :param state: data structure representing current state
+    :type state: dict
+    :param action: data structure representing action
+    :type action: dict
+    """
     if action["kind"] == SET_POSITION:
         state["position"] = action["payload"]
     return state
 
 
 def select_args(state):
-    """Select args needed by SeriesView.render
+    """Select args needed by :func:`SeriesView.render`
 
-    .. note:: if all criteria are not present None is returned
+    .. note:: If all criteria are not present None is returned
 
     :returns: args tuple or None
     """
@@ -87,7 +121,11 @@ def select_args(state):
 
 
 class SeriesView(Observable):
-    """Time series view"""
+    """Time series view
+
+    Responsible for keeping the lines on the series figure
+    up to date.
+    """
     def __init__(self, figure, loaders):
         self.figure = figure
         self.loaders = loaders
@@ -148,6 +186,7 @@ class SeriesView(Observable):
 
     @classmethod
     def from_groups(cls, figure, groups, directory=None):
+        """Factory method to load from :class:`~forest.config.FileGroup` objects"""
         loaders = {}
         for group in groups:
             if group.file_type == "unified_model":
@@ -162,6 +201,7 @@ class SeriesView(Observable):
         self.notify(set_position(event.x, event.y))
 
     def render(self, initial_time, variable, x, y, pressure=None):
+        """Update data for a particular application setting"""
         assert isinstance(initial_time, dt.datetime), "only support datetime"
         self.figure.title.text = variable
         for name, source in self.sources.items():
