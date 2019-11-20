@@ -93,41 +93,36 @@ class TestLocator(unittest.TestCase):
         var[:] = netCDF4.date2num(times, units=units)
 
 
-class Formatter(object):
-    def __init__(self, dataset):
-        self.dataset = dataset
-
-    def define(self, times):
-        dataset = self.dataset
-        dataset.createDimension("time", len(times))
-        dataset.createDimension("longitude", 1)
-        dataset.createDimension("latitude", 1)
-        units = "hours since 1970-01-01 00:00:00"
-        var = dataset.createVariable(
-                "time", "d", ("time",))
-        var.axis = "T"
-        var.units = units
-        var.standard_name = "time"
-        var.calendar = "gregorian"
-        var[:] = netCDF4.date2num(times, units=units)
-        var = dataset.createVariable(
-                "longitude", "f", ("longitude",))
-        var.axis = "X"
-        var.units = "degrees_east"
-        var.standard_name = "longitude"
-        var[:] = 0
-        var = dataset.createVariable(
-                "latitude", "f", ("latitude",))
-        var.axis = "Y"
-        var.units = "degrees_north"
-        var.standard_name = "latitude"
-        var[:] = 0
-        var = dataset.createVariable(
-                "data", "f", ("time", "latitude", "longitude"))
-        var.standard_name = "toa_brightness_temperature"
-        var.long_name = "toa_brightness_temperature"
-        var.units = "K"
-        var[:] = 0
+def _eida50(dataset, times, lons=[0], lats=[0]):
+    dataset.createDimension("time", len(times))
+    dataset.createDimension("longitude", len(lons))
+    dataset.createDimension("latitude", len(lats))
+    units = "hours since 1970-01-01 00:00:00"
+    var = dataset.createVariable(
+            "time", "d", ("time",))
+    var.axis = "T"
+    var.units = units
+    var.standard_name = "time"
+    var.calendar = "gregorian"
+    var[:] = netCDF4.date2num(times, units=units)
+    var = dataset.createVariable(
+            "longitude", "f", ("longitude",))
+    var.axis = "X"
+    var.units = "degrees_east"
+    var.standard_name = "longitude"
+    var[:] = lons
+    var = dataset.createVariable(
+            "latitude", "f", ("latitude",))
+    var.axis = "Y"
+    var.units = "degrees_north"
+    var.standard_name = "latitude"
+    var[:] = lats
+    var = dataset.createVariable(
+            "data", "f", ("time", "latitude", "longitude"))
+    var.standard_name = "toa_brightness_temperature"
+    var.long_name = "toa_brightness_temperature"
+    var.units = "K"
+    var[:] = 0
 
 
 class TestCoordinates(unittest.TestCase):
@@ -141,8 +136,7 @@ class TestCoordinates(unittest.TestCase):
     def test_valid_times_given_eida50_toa_brightness_temperature(self):
         times = [dt.datetime(2019, 1, 1)]
         with netCDF4.Dataset(self.path, "w") as dataset:
-            writer = Formatter(dataset)
-            writer.define(times)
+            _eida50(dataset, times)
 
         coord = eida50.Coordinates()
         result = coord.valid_times(self.path, "toa_brightness_temperature")
@@ -150,64 +144,61 @@ class TestCoordinates(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
-@unittest.skip("green light")
-class TestEIDA50Skipped(unittest.TestCase):
-    def setUp(self):
-        self.path = os.path.expanduser("~/cache/EIDA50_takm4p4_20190417.nc")
-        self.fixture = satellite.EIDA50([self.path])
+# Sample data similar to a typical EIDA50 file
+TIMES = [dt.datetime(2019, 4, 17) + i * dt.timedelta(minutes=15)
+        for i in range(94)]
+LONS = np.linspace(-19, 53, 180)  # 10 times fewer for speed
+LATS = np.linspace(-13, 23, 90) # 10 times fewer for speed
 
-    def test_image(self):
-        time = dt.datetime(2019, 4, 17, 12)
-        image = self.fixture.image(time)
-        result = set(image.keys())
-        expect = set(["x", "y", "dw", "dh", "image"])
-        self.assertEqual(expect, result)
 
-    def test_parse_date(self):
-        path = os.path.expanduser("~/cache/EIDA50_takm4p4_20190417.nc")
-        result = satellite.EIDA50.parse_date(path)
-        expect = dt.datetime(2019, 4, 17)
-        self.assertEqual(expect, result)
+def test_image(tmpdir):
+    path = str(tmpdir / "file_20190417.nc")
+    with netCDF4.Dataset(path, "w") as dataset:
+        _eida50(dataset, TIMES, LONS, LATS)
+    time = dt.datetime(2019, 4, 17, 12)
+    loader = satellite.EIDA50(path)
+    image = loader.image(time)
+    result = set(image.keys())
+    expect = set(["x", "y", "dw", "dh", "image"])
+    assert expect == result
 
-    def test_longitudes(self):
-        result = self.fixture.longitudes
-        with netCDF4.Dataset(self.path) as dataset:
-            expect = dataset.variables["longitude"][:]
-        np.testing.assert_array_almost_equal(expect, result)
 
-    def test_latitudes(self):
-        result = self.fixture.latitudes
-        with netCDF4.Dataset(self.path) as dataset:
-            expect = dataset.variables["latitude"][:]
-        np.testing.assert_array_almost_equal(expect, result)
+def test_parse_date():
+    path = "/some/EIDA50_takm4p4_20190417.nc"
+    result = satellite.Locator.parse_date(path)
+    expect = dt.datetime(2019, 4, 17)
+    assert expect == result
 
-    def test_times(self):
-        result = self.fixture.times(self.path)
-        with netCDF4.Dataset(self.path) as dataset:
-            var = dataset.variables["time"]
-            expect = netCDF4.num2date(var[:], units=var.units)
-        np.testing.assert_array_equal(expect, result)
 
-    def test_index(self):
-        times = np.array([
-            dt.datetime(2019, 4, 17, 0),
-            dt.datetime(2019, 4, 17, 0, 15),
-            dt.datetime(2019, 4, 17, 0, 30)])
-        time = dt.datetime(2019, 4, 17, 0, 15)
-        result = self.fixture.nearest_index(times, time)
-        expect = 1
-        self.assertEqual(expect, result)
+def test_longitudes(tmpdir):
+    path = str(tmpdir / "eida50_20190417.nc")
+    with netCDF4.Dataset(path, "w") as dataset:
+        _eida50(dataset, TIMES, LONS, LATS)
+    loader = satellite.EIDA50(path)
+    result = loader.longitudes
+    with netCDF4.Dataset(path) as dataset:
+        expect = dataset.variables["longitude"][:]
+    np.testing.assert_array_almost_equal(expect, result)
 
-    def test_index_given_date_between_dates_returns_lower(self):
-        times = np.array([
-            dt.datetime(2019, 4, 17, 0),
-            dt.datetime(2019, 4, 17, 0, 15),
-            dt.datetime(2019, 4, 17, 0, 30),
-            dt.datetime(2019, 4, 17, 0, 45)])
-        time = dt.datetime(2019, 4, 17, 0, 35)
-        result = self.fixture.nearest_index(times, time)
-        expect = 2
-        self.assertEqual(expect, result)
+def test_latitudes(tmpdir):
+    path = str(tmpdir / "eida50_20190417.nc")
+    with netCDF4.Dataset(path, "w") as dataset:
+        _eida50(dataset, TIMES, LONS, LATS)
+    loader = satellite.EIDA50(path)
+    result = loader.latitudes
+    with netCDF4.Dataset(path) as dataset:
+        expect = dataset.variables["latitude"][:]
+    np.testing.assert_array_almost_equal(expect, result)
+
+def test_times(tmpdir):
+    path = str(tmpdir / "eida50_20190417.nc")
+    with netCDF4.Dataset(path, "w") as dataset:
+        _eida50(dataset, TIMES, LONS, LATS)
+    result = satellite.Locator.load_time_axis(path)
+    with netCDF4.Dataset(path) as dataset:
+        var = dataset.variables["time"]
+        expect = netCDF4.num2date(var[:], units=var.units)
+    np.testing.assert_array_equal(expect, result)
 
 
 class TestEIDA50(unittest.TestCase):
@@ -228,16 +219,14 @@ class TestEIDA50(unittest.TestCase):
 
     def test_initial_times(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            writer = Formatter(dataset)
-            writer.define(self.times)
+            _eida50(dataset, self.times)
         result = self.navigator.initial_times(self.path)
         expect = [self.times[0]]
         self.assertEqual(expect, result)
 
     def test_valid_times(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            writer = Formatter(dataset)
-            writer.define(self.times)
+            _eida50(dataset, self.times)
         result = self.navigator.valid_times(
                 self.path,
                 "toa_brightness_temperature",
@@ -247,8 +236,7 @@ class TestEIDA50(unittest.TestCase):
 
     def test_pressures(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            writer = Formatter(dataset)
-            writer.define(self.times)
+            _eida50(dataset, self.times)
         result = self.navigator.pressures(
                 self.path,
                 "toa_brightness_temperature",
