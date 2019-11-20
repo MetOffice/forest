@@ -5,7 +5,12 @@ loader) created by NCAR.
 
 import functools
 
-import iris
+try:
+    import iris
+except ModuleNotFoundError:
+    iris = None
+    # ReadTheDocs can't import iris
+
 import numpy
 
 try:
