@@ -99,9 +99,6 @@ class SeriesView(Observable):
                 renderers=circles)
         self.figure.add_tools(tool)
 
-        # Underlying state
-        self.state = {}
-
         super().__init__()
 
     @classmethod
@@ -116,36 +113,11 @@ class SeriesView(Observable):
                 loaders[group.label] = data.SeriesLoader.from_pattern(pattern)
         return cls(figure, loaders)
 
-    def on_state(self, app_state):
-        next_state = dict(self.state)
-        attrs = [
-                "initial_time",
-                "variable",
-                "pressure"]
-        for attr in attrs:
-            if getattr(app_state, attr) is not None:
-                next_state[attr] = getattr(app_state, attr)
-        state_change = any(
-                next_state.get(k, None) != self.state.get(k, None)
-                for k in attrs)
-        if state_change:
-            self.render(self.state)
-        self.state = next_state
-
     def on_tap(self, event):
         self.notify(set_position(event.x, event.y))
 
-    def render(self, state):
-        for attr in ["x", "y", "variable", "initial_time"]:
-            if attr not in state:
-                return
-        x = state["x"]
-        y = state["y"]
-        variable = state["variable"]
-        initial_time = dt.datetime.strptime(
-                state["initial_time"],
-                "%Y-%m-%d %H:%M:%S")
-        pressure = state.get("pressure", None)
+    def render(self, initial_time, variable, x, y, pressure=None):
+        assert isinstance(initial_time, dt.datetime), "only support datetime"
         self.figure.title.text = variable
         for name, source in self.sources.items():
             loader = self.loaders[name]

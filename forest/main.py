@@ -346,7 +346,9 @@ def main(argv=None):
             series_figure,
             config.file_groups,
             directory=args.directory)
-    old_states.subscribe(series_view.on_state)
+    # TODO: Wire up store to series.SeriesView.render using rx.Stream
+    #       and combine reducers to access state["position"]["x"] etc.
+    # old_states.subscribe(series_view.on_state)
     for f in figures:
         f.on_event(bokeh.events.Tap, series_view.on_tap)
         f.on_event(bokeh.events.Tap, place_marker(f, marker_source))

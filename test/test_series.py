@@ -94,7 +94,11 @@ def test_series_view():
 def test_series_view_render():
     figure = bokeh.plotting.figure()
     view = series.SeriesView(figure, {})
-    view.render({})
+    time = dt.datetime.now()
+    variable = "mslp"
+    x = 0
+    y = 0
+    view.render(time, variable, x, y)
 
 
 def test_series_on_tap_emits_action():
