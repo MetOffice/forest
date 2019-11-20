@@ -22,8 +22,13 @@ def reducer(state, action):
     return state
 
 
-def select(state):
-    """Subset of state needed by SeriesView"""
+def select_args(state):
+    """Select args needed by SeriesView.render
+
+    .. note:: if all criteria are not present None is returned
+
+    :returns: args tuple or None
+    """
     if any(att not in state
             for att in [
                 "variable",

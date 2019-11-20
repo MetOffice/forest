@@ -6,7 +6,7 @@ import numpy as np
 import numpy.testing as npt
 import datetime as dt
 import bokeh.plotting
-from forest import series, rx
+from forest import series, redux, rx, db
 
 
 @pytest.mark.parametrize("state,expect", [
@@ -18,8 +18,8 @@ from forest import series, rx
             "initial_time": "2019-01-01 00:00:00",
             "position": {"x": 1, "y": 2}}, ("2019-01-01 00:00:00", "mslp", 1, 2)),
     ])
-def test_selector(state, expect):
-    result = series.select(state)
+def test_select_args(state, expect):
+    result = series.select_args(state)
     assert expect == result
 
 
@@ -66,6 +66,24 @@ def test_series_set_position_action():
 def test_series_reducer():
     state = series.reducer({}, series.set_position(0, 0))
     assert state == {"position": {"x": 0, "y": 0}}
+
+
+@pytest.mark.parametrize("actions,expect", [
+    ([], {}),
+    ([series.set_position(0, 0)], {"position": {"x": 0, "y": 0}}),
+    ([db.set_value("key", "value")], {"key": "value"}),
+    ([
+        series.set_position(0, 0),
+        db.set_value("key", "value")], {
+            "key": "value",
+            "position": {"x": 0, "y": 0}}),
+])
+def test_combine_reducers(actions, expect):
+    reducer = redux.combine_reducers(series.reducer, db.reducer)
+    state = {}
+    for action in actions:
+        state = reducer(state, action)
+    assert state == expect
 
 
 def test_series_view():
