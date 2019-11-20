@@ -9,6 +9,7 @@ import netCDF4
 from forest import geo
 from forest.observe import Observable
 from forest.util import initial_time as _initial_time
+from forest.gridded_forecast import _to_datetime
 
 
 SET_POSITION = "SET_POSITION"
@@ -38,7 +39,7 @@ def select_args(state):
                 "position"]):
         return
     return (
-            state["initial_time"],
+            _to_datetime(state["initial_time"]),
             state["variable"],
             state["position"]["x"],
             state["position"]["y"])
