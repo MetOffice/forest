@@ -43,6 +43,11 @@ from forest import geo
 from forest.observe import Observable
 from forest.util import initial_time as _initial_time
 from forest.gridded_forecast import _to_datetime
+try:
+    import iris
+except ModuleNotFoundError:
+    iris = None
+    # ReadTheDocs can't import iris
 
 
 SET_POSITION = "SET_POSITION"
@@ -207,7 +212,6 @@ class SeriesLoader(object):
 
     def _load_cube(self, path, variable, lon0, lat0, pressure=None):
         """ Constrain data loading to points required """
-        import iris
         cube = iris.load_cube(path, variable)
         # reference longitude axis by "axis='X'" and latitude axis as axis='Y',
         # to accommodate various types of coordinate system.
