@@ -278,15 +278,22 @@ def main(argv=None):
         })
     ]
     store = redux.Store(
-        db.reducer,
+        redux.combine_reducers(
+            db.reducer,
+            series.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
     controls = db.ControlView()
     controls.subscribe(store.dispatch)
     store.subscribe(controls.render)
+
+    def old_world(state):
+        kwargs = {k: state.get(k, None) for k in db.State._fields}
+        return db.State(**kwargs)
+
     old_states = (rx.Stream()
                     .listen_to(store)
-                    .map(lambda x: db.State(**x)))
+                    .map(old_world))
     old_states.subscribe(artist.on_state)
 
     # Ensure all listeners are pointing to the current state
@@ -346,6 +353,14 @@ def main(argv=None):
             series_figure,
             config.file_groups,
             directory=args.directory)
+    series_view.subscribe(store.dispatch)
+    stream = (rx.Stream()
+                .listen_to(store)
+                .map(series.select_args)
+                .filter(lambda x: x is not None)
+                .distinct())
+    stream.map(print)  # Note: map(print) creates None stream
+
     # TODO: Wire up store to series.SeriesView.render using rx.Stream
     #       and combine reducers to access state["position"]["x"] etc.
     # old_states.subscribe(series_view.on_state)

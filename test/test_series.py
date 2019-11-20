@@ -6,7 +6,7 @@ import numpy as np
 import numpy.testing as npt
 import datetime as dt
 import bokeh.plotting
-from forest import series, redux, rx, db
+from forest import series, redux, rx, db, config
 
 
 @pytest.mark.parametrize("state,expect", [
@@ -110,6 +110,12 @@ def test_series_on_tap_emits_action():
     view.subscribe(listener)
     view.on_tap(event)
     listener.assert_called_once_with(series.set_position(x, y))
+
+
+def test_series_view_from_groups():
+    figure = bokeh.plotting.figure()
+    group = config.FileGroup("label", "pattern")
+    series.SeriesView.from_groups(figure, [group])
 
 
 def variable_dim0(

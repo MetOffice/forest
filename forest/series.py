@@ -1,4 +1,6 @@
 import datetime as dt
+import glob
+import os
 from itertools import cycle
 from collections import defaultdict
 import bokeh.palettes
@@ -110,7 +112,7 @@ class SeriesView(Observable):
                     pattern = group.full_pattern
                 else:
                     pattern = os.path.join(directory, group.full_pattern)
-                loaders[group.label] = data.SeriesLoader.from_pattern(pattern)
+                loaders[group.label] = SeriesLoader.from_pattern(pattern)
         return cls(figure, loaders)
 
     def on_tap(self, event):
