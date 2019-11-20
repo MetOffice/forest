@@ -25,15 +25,35 @@ def test_selector(state, expect):
 
 @pytest.mark.parametrize("values,expect", [
         ([], []),
-        ([1, 2, 3, 3, 4], [1, 2, 3, 4])
+        ([1, 2, 3, 3, 4], [1, 2, 3, 4]),
+        ([None, None, None, None], [None]),
+        ([{"x": 2}, {"x": 1}, {"x": 1}], [{"x": 2}, {"x": 1}]),
     ])
-def test_stream_dedupe(values, expect):
-    source = rx.Stream()
-    deduped = source.distinct()
+def test_stream_distinct(values, expect):
+    stream = rx.Stream()
+    deduped = stream.distinct()
     listener = unittest.mock.Mock()
     deduped.subscribe(listener)
     for value in values:
-        source.notify(value)
+        stream.notify(value)
+    calls = [unittest.mock.call(v) for v in expect]
+    listener.assert_has_calls(calls)
+    assert listener.call_count == len(calls)
+
+
+@pytest.mark.parametrize("values,predicate,expect", [
+    ([], lambda x: True, []),
+    ([1, 2, 3], lambda x: True, [1, 2, 3]),
+    ([1, 2, 3, 4], lambda x: x > 2, [3, 4]),
+    ([1, 2, None, 3, 4], lambda x: x is not None, [1, 2, 3, 4]),
+    ])
+def test_stream_filter(values, predicate, expect):
+    stream = rx.Stream()
+    filtered = stream.filter(predicate)
+    listener = unittest.mock.Mock()
+    filtered.subscribe(listener)
+    for value in values:
+        stream.notify(value)
     calls = [unittest.mock.call(v) for v in expect]
     listener.assert_has_calls(calls)
 
