@@ -29,6 +29,17 @@ def test_series_view_render():
     view.render({})
 
 
+def test_series_on_tap_emits_action():
+    x, y = 1, 2  # different values to assert order
+    listener = unittest.mock.Mock()
+    figure = bokeh.plotting.figure()
+    event = bokeh.events.Tap(figure, x=x, y=y)
+    view = series.SeriesView(figure, {})
+    view.subscribe(listener)
+    view.on_tap(event)
+    listener.assert_called_once_with(series.set_position(x, y))
+
+
 def variable_dim0(
         dataset,
         pressures,

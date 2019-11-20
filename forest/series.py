@@ -5,6 +5,7 @@ import bokeh.palettes
 import numpy as np
 import netCDF4
 from forest import geo
+from forest.observe import Observable
 from forest.util import initial_time as _initial_time
 
 
@@ -21,7 +22,7 @@ def reducer(state, action):
     return state
 
 
-class SeriesView(object):
+class SeriesView(Observable):
     def __init__(self, figure, loaders):
         self.figure = figure
         self.loaders = loaders
@@ -81,6 +82,8 @@ class SeriesView(object):
         # Underlying state
         self.state = {}
 
+        super().__init__()
+
     @classmethod
     def from_groups(cls, figure, groups, directory=None):
         loaders = {}
@@ -110,10 +113,7 @@ class SeriesView(object):
         self.state = next_state
 
     def on_tap(self, event):
-        # TODO: Should emit SET_POSITION action not render()
-        self.state["x"] = event.x
-        self.state["y"] = event.y
-        self.render(self.state)
+        self.notify(set_position(event.x, event.y))
 
     def render(self, state):
         for attr in ["x", "y", "variable", "initial_time"]:
