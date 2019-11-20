@@ -23,6 +23,10 @@ communicate with other parts of the system. They
 help de-couple the entity creating an action from
 the components that depend on state changes
 
+.. data:: SET_POSITION
+
+    Constant to indicate set position action
+
 .. autofunction:: set_position
 
 Reducer
