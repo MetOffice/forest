@@ -1,3 +1,4 @@
+import pytest
 import unittest
 import os
 import netCDF4
@@ -5,7 +6,36 @@ import numpy as np
 import numpy.testing as npt
 import datetime as dt
 import bokeh.plotting
-from forest import series
+from forest import series, rx
+
+
+@pytest.mark.parametrize("state,expect", [
+        ({}, None),
+        ({"position": {"x": 0, "y": 0}}, None),
+        ({"variable": "mslp", "position": {"x": 1, "y": 2}}, None),
+        ({
+            "variable": "mslp",
+            "initial_time": "2019-01-01 00:00:00",
+            "position": {"x": 1, "y": 2}}, ("2019-01-01 00:00:00", "mslp", 1, 2)),
+    ])
+def test_selector(state, expect):
+    result = series.select(state)
+    assert expect == result
+
+
+@pytest.mark.parametrize("values,expect", [
+        ([], []),
+        ([1, 2, 3, 3, 4], [1, 2, 3, 4])
+    ])
+def test_stream_dedupe(values, expect):
+    source = rx.Stream()
+    deduped = source.distinct()
+    listener = unittest.mock.Mock()
+    deduped.subscribe(listener)
+    for value in values:
+        source.notify(value)
+    calls = [unittest.mock.call(v) for v in expect]
+    listener.assert_has_calls(calls)
 
 
 def test_series_set_position_action():

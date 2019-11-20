@@ -19,6 +19,7 @@ from forest import (
         db,
         keys,
         redux,
+        rx,
         unified_model,
         intake_loader,
         navigate,
@@ -283,7 +284,7 @@ def main(argv=None):
     controls = db.ControlView()
     controls.subscribe(store.dispatch)
     store.subscribe(controls.render)
-    old_states = (db.Stream()
+    old_states = (rx.Stream()
                     .listen_to(store)
                     .map(lambda x: db.State(**x)))
     old_states.subscribe(artist.on_state)

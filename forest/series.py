@@ -22,6 +22,21 @@ def reducer(state, action):
     return state
 
 
+def select(state):
+    """Subset of state needed by SeriesView"""
+    if any(att not in state
+            for att in [
+                "variable",
+                "initial_time",
+                "position"]):
+        return
+    return (
+            state["initial_time"],
+            state["variable"],
+            state["position"]["x"],
+            state["position"]["y"])
+
+
 class SeriesView(Observable):
     def __init__(self, figure, loaders):
         self.figure = figure

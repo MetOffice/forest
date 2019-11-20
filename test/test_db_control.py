@@ -2,7 +2,7 @@ import unittest
 import unittest.mock
 import datetime as dt
 import numpy as np
-from forest import db, redux
+from forest import db, redux, rx
 
 
 def test_convert_datetime64_array_to_strings():
@@ -429,7 +429,7 @@ class TestStateStream(unittest.TestCase):
         """Not all components are ready to accept dict() states"""
         listener = unittest.mock.Mock()
         store = redux.Store(db.reducer)
-        old_states = (db.Stream()
+        old_states = (rx.Stream()
                   .listen_to(store)
                   .map(lambda x: db.State(**x)))
         old_states.subscribe(listener)
