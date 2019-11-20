@@ -25,6 +25,8 @@ existing behaviour.
 
 .. autofunction:: middleware
 
+.. autofunction:: combine_reducers
+
 """
 import copy
 from functools import wraps

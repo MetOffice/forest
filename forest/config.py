@@ -100,7 +100,7 @@ class Config(object):
                   file_type: rdt
 
         :param path: JSON/YAML file to load
-        :param variables: dict of key/value pairs used by :py:`string.Template`
+        :param variables: dict of key/value pairs used by :py:class:`string.Template`
         :returns: instance of :class:`Config`
         """
         with open(path) as stream:
