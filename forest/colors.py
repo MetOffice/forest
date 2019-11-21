@@ -11,6 +11,7 @@ from forest.db.util import autolabel
 
 
 SET_FIXED = "SET_FIXED"
+SET_REVERSE = "SET_REVERSE"
 SET_PALETTE_NAME = "SET_PALETTE_NAME"
 SET_PALETTE_NUMBER = "SET_PALETTE_NUMBER"
 SET_PALETTE_NUMBERS = "SET_PALETTE_NUMBERS"
@@ -22,6 +23,10 @@ def fixed_on():
 
 def fixed_off():
     return {"kind": SET_FIXED, "payload": {"status": "off"}}
+
+
+def set_reverse(flag):
+    return {"kind": SET_REVERSE, "payload": {"flag": flag}}
 
 
 def set_palette_name(name):
@@ -177,10 +182,7 @@ class Controls(Observable):
         self.notify(set_palette_number(int(new)))
 
     def on_reverse(self, attr, old, new):
-        if len(new) == 1:
-            self.reverse = True
-        else:
-            self.reverse = False
+        self.notify(set_reverse(len(new) == 1))
 
     def render(self, state):
         if "colorbar" not in state:
@@ -194,7 +196,10 @@ class Controls(Observable):
         if ("name" in settings) and ("number" in settings):
             name = settings["name"]
             number = settings["number"]
-            palette = bokeh.palettes.all_palettes[name][number]
+            reverse = settings.get("reverse", False)
+            palette = self.palette(name, number)
+            if reverse:
+                palette = palette[::-1]
             self.color_mapper.palette = palette
         if "names" in settings:
             values = settings["names"]
@@ -202,3 +207,7 @@ class Controls(Observable):
         if "numbers" in settings:
             values = [str(n) for n in settings["numbers"]]
             self.dropdowns["numbers"].menu = list(zip(values, values))
+
+    @staticmethod
+    def palette(name, number):
+        return bokeh.palettes.all_palettes[name][number]

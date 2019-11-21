@@ -69,13 +69,13 @@ def test_controls_on_number():
     listener.assert_called_once_with(colors.set_palette_number(5))
 
 
-@pytest.mark.skip()
 def test_controls_on_reverse():
-    attr, old, new = None, [], [0]
+    listener = unittest.mock.Mock()
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
-    controls.on_reverse(attr, old, new)
-    assert color_mapper.palette == ['#fdc086', '#beaed4', '#7fc97f']
+    controls.subscribe(listener)
+    controls.on_reverse(None, None, [0])
+    listener.assert_called_once_with(colors.set_reverse(True))
 
 
 @pytest.mark.parametrize("state,name,number", [
@@ -88,9 +88,6 @@ def test_controls_render(state, name, number):
     controls.render(state)
     assert controls.dropdowns["names"].value == name
     assert controls.dropdowns["numbers"].value == number
-    if name is None:
-        return
-    assert color_mapper.palette == bokeh.palettes.all_palettes[name][int(number)]
 
 
 def test_controls_render_sets_menu():
@@ -106,6 +103,21 @@ def test_controls_render_sets_menu():
             ("A", "A"), ("B", "B")]
     assert controls.dropdowns["numbers"].menu == [
             ("1", "1"), ("2", "2")]
+
+
+
+@pytest.mark.parametrize("state,palette", [
+        ({}, None),
+        ({"colorbar": {"name": "Accent", "number": 3}},
+            ["#7fc97f", "#beaed4", "#fdc086"]),
+        ({"colorbar": {"name": "Accent", "number": 3, "reverse": True}},
+            ["#fdc086", "#beaed4", "#7fc97f"])
+    ])
+def test_controls_render_palette(state, palette):
+    color_mapper = bokeh.models.LinearColorMapper()
+    controls = colors.Controls(color_mapper)
+    controls.render(state)
+    assert color_mapper.palette == palette
 
 
 def test_mapper_limits():
