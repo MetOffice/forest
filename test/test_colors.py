@@ -1,3 +1,4 @@
+import unittest.mock
 from forest import colors, main
 import bokeh.models
 import numpy as np
@@ -19,6 +20,7 @@ def test_colors_on_reverse():
     number = 3
     controls = colors.Controls(color_mapper, name, number)
     controls.on_reverse(attr, old, new)
+    assert color_mapper.palette == ['#fdc086', '#beaed4', '#7fc97f']
 
 
 def test_mapper_limits():
@@ -33,3 +35,18 @@ def test_mapper_limits():
     mapper_limits.on_source_change(attr, old, new)
     assert color_mapper.low == 0
     assert color_mapper.high == 8
+
+
+def test_mapper_limits_on_checkbox_change_emit_fixed():
+    attr, old, new = None, [], [0]
+    color_mapper = bokeh.models.LinearColorMapper()
+    sources = [bokeh.models.ColumnDataSource({
+        "image": [
+            np.arange(9).reshape(3, 3)
+        ]
+    })]
+    mapper_limits = colors.MapperLimits(sources, color_mapper)
+    listener = unittest.mock.Mock()
+    mapper_limits.subscribe(listener)
+    mapper_limits.on_checkbox_change(attr, old, new)
+    listener.assert_called_once_with(colors.fixed_on())

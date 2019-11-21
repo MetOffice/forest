@@ -5,10 +5,18 @@ import bokeh.palettes
 import bokeh.colors
 import bokeh.layouts
 import numpy as np
+from forest.observe import Observable
 from forest.db.util import autolabel
 
 
-class MapperLimits(object):
+FIXED_ON = "FIXED_ON"
+
+
+def fixed_on():
+    return {"kind": FIXED_ON, "payload": {"status": "on"}}
+
+
+class MapperLimits(Observable):
     def __init__(self, sources, color_mapper, fixed=False):
         self.fixed = fixed
         self.sources = sources
@@ -29,10 +37,12 @@ class MapperLimits(object):
                 labels=["Fixed"],
                 active=[])
         self.checkbox.on_change("active", self.on_checkbox_change)
+        super().__init__()
 
     def on_checkbox_change(self, attr, old, new):
         if len(new) == 1:
             self.fixed = True
+            self.notify(fixed_on())
         else:
             self.fixed = False
 
