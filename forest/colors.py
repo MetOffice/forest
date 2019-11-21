@@ -4,7 +4,63 @@ Helpers to choose color palette(s), limits etc.
 import bokeh.palettes
 import bokeh.colors
 import bokeh.layouts
+import numpy as np
 from forest.db.util import autolabel
+
+
+class MapperLimits(object):
+    def __init__(self, sources, color_mapper, fixed=False):
+        self.fixed = fixed
+        self.sources = sources
+        for source in self.sources:
+            source.on_change("data", self.on_source_change)
+        self.color_mapper = color_mapper
+        self.low_input = bokeh.models.TextInput(title="Low:")
+        self.low_input.on_change("value",
+                self.change(color_mapper, "low", float))
+        self.color_mapper.on_change("low",
+                self.change(self.low_input, "value", str))
+        self.high_input = bokeh.models.TextInput(title="High:")
+        self.high_input.on_change("value",
+                self.change(color_mapper, "high", float))
+        self.color_mapper.on_change("high",
+                self.change(self.high_input, "value", str))
+        self.checkbox = bokeh.models.CheckboxGroup(
+                labels=["Fixed"],
+                active=[])
+        self.checkbox.on_change("active", self.on_checkbox_change)
+
+    def on_checkbox_change(self, attr, old, new):
+        if len(new) == 1:
+            self.fixed = True
+        else:
+            self.fixed = False
+
+    def on_source_change(self, attr, old, new):
+        if self.fixed:
+            return
+        images = []
+        for source in self.sources:
+            if len(source.data["image"]) == 0:
+                continue
+            images.append(source.data["image"][0])
+        if len(images) > 0:
+            low = np.min([np.min(x) for x in images])
+            high = np.max([np.max(x) for x in images])
+            self.color_mapper.low = low
+            self.color_mapper.high = high
+            self.color_mapper.low_color = bokeh.colors.RGB(0, 0, 0, a=0)
+            self.color_mapper.high_color = bokeh.colors.RGB(0, 0, 0, a=0)
+
+    @staticmethod
+    def change(widget, prop, dtype):
+        def wrapper(attr, old, new):
+            if old == new:
+                return
+            if getattr(widget, prop) == dtype(new):
+                return
+            setattr(widget, prop, dtype(new))
+        return wrapper
 
 
 class Controls(object):

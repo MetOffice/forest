@@ -19,7 +19,7 @@ def test_mapper_limits():
             np.arange(9).reshape(3, 3)
         ]
     })
-    mapper_limits = main.MapperLimits([source], color_mapper)
+    mapper_limits = colors.MapperLimits([source], color_mapper)
     mapper_limits.on_source_change(attr, old, new)
     assert color_mapper.low == 0
     assert color_mapper.high == 8
