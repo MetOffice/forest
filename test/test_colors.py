@@ -145,18 +145,27 @@ def test_controls_render_palette(state, palette):
     assert color_mapper.palette == palette
 
 
+@pytest.mark.skip("implementing set_limit actions")
 def test_mapper_limits():
     attr, old, new = None, None, None  # not used by callback
     color_mapper = bokeh.models.LinearColorMapper()
-    source = bokeh.models.ColumnDataSource({
-        "image": [
-            np.arange(9).reshape(3, 3)
-        ]
-    })
-    mapper_limits = colors.MapperLimits([source], color_mapper)
+    mapper_limits = colors.MapperLimits(color_mapper)
     mapper_limits.on_source_change(attr, old, new)
     assert color_mapper.low == 0
     assert color_mapper.high == 8
+
+
+def test_mapper_limits_render():
+    color_mapper = bokeh.models.LinearColorMapper()
+    mapper_limits = colors.MapperLimits(color_mapper)
+    mapper_limits.render({
+        "colorbar": {
+            "low": -1,
+            "high": 1
+        }
+    })
+    assert color_mapper.low == -1
+    assert color_mapper.high == 1
 
 
 @pytest.mark.parametrize("new,action", [
@@ -165,11 +174,27 @@ def test_mapper_limits():
 ])
 def test_mapper_limits_on_fixed(new, action):
     color_mapper = bokeh.models.LinearColorMapper()
-    sources = [bokeh.models.ColumnDataSource({
-        "image": [np.arange(9).reshape(3, 3)]
-    })]
-    mapper_limits = colors.MapperLimits(sources, color_mapper)
+    mapper_limits = colors.MapperLimits(color_mapper)
     listener = unittest.mock.Mock()
     mapper_limits.subscribe(listener)
     mapper_limits.on_checkbox_change(None, None, new)
     listener.assert_called_once_with(action)
+
+
+@pytest.fixture
+def listener():
+    return unittest.mock.Mock()
+
+
+@pytest.mark.parametrize("sources,low,high", [
+    ([], 0, 1),
+    ([
+        bokeh.models.ColumnDataSource(
+            {"image": [np.linspace(-1, 1, 4).reshape(2, 2)]}
+        )], -1, 1)
+])
+def test_high_low_on_source_change_emits_action(listener, sources, low, high):
+    high_low = colors.HighLow(sources)
+    high_low.subscribe(listener)
+    high_low.on_change(None, None, None)  # attr, old, new
+    listener.assert_called_once_with(colors.set_source_limits(low, high))

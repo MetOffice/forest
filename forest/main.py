@@ -225,7 +225,10 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
-    mapper_limits = colors.MapperLimits(image_sources, color_mapper)
+    high_low = colors.HighLow(image_sources)
+    high_low.subscribe(print)
+
+    mapper_limits = colors.MapperLimits(color_mapper)
 
     menu = []
     for k, _ in config.patterns:

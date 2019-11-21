@@ -11,6 +11,7 @@ from forest.db.util import autolabel
 
 
 SET_PALETTE = "SET_PALETTE"
+SET_LIMITS = "SET_LIMITS"
 
 
 def set_fixed(flag):
@@ -35,6 +36,12 @@ def set_palette_numbers(numbers):
 
 def set_palette_names(names):
     return {"kind": SET_PALETTE, "payload": {"key": "names", "value": names}}
+
+
+def set_source_limits(low, high):
+    return {"kind": SET_LIMITS,
+            "payload": {"low": low, "high": high},
+            "meta": {"origin": "column_data_source"}}
 
 
 def reducer(state, action):
@@ -70,12 +77,32 @@ def palette_numbers(name):
     return list(sorted(bokeh.palettes.all_palettes[name].keys()))
 
 
-class MapperLimits(Observable):
-    def __init__(self, sources, color_mapper, fixed=False):
-        self.fixed = fixed
+class HighLow(Observable):
+    """Event stream listening to collection of ColumnDataSources"""
+    def __init__(self, sources):
         self.sources = sources
         for source in self.sources:
-            source.on_change("data", self.on_source_change)
+            source.on_change("data", self.on_change)
+        super().__init__()
+
+    def on_change(self, attr, old, new):
+        images = []
+        for source in self.sources:
+            if len(source.data["image"]) == 0:
+                continue
+            images.append(source.data["image"][0])
+        if len(images) > 0:
+            low = np.min([np.min(x) for x in images])
+            high = np.max([np.max(x) for x in images])
+            self.notify(set_source_limits(low, high))
+        else:
+            self.notify(set_source_limits(0, 1))
+
+
+class MapperLimits(Observable):
+    """User controlled color mapper limits"""
+    def __init__(self, color_mapper, fixed=False):
+        self.fixed = fixed
         self.color_mapper = color_mapper
         self.low_input = bokeh.models.TextInput(title="Low:")
         self.low_input.on_change("value",
@@ -93,6 +120,10 @@ class MapperLimits(Observable):
         self.checkbox.on_change("active", self.on_checkbox_change)
         super().__init__()
 
+    def render(self, state):
+        self.color_mapper.low = state["colorbar"]["low"]
+        self.color_mapper.high = state["colorbar"]["high"]
+
     def on_checkbox_change(self, attr, old, new):
         if len(new) == 1:
             self.fixed = True
@@ -100,22 +131,6 @@ class MapperLimits(Observable):
         else:
             self.fixed = False
             self.notify(set_fixed(False))
-
-    def on_source_change(self, attr, old, new):
-        if self.fixed:
-            return
-        images = []
-        for source in self.sources:
-            if len(source.data["image"]) == 0:
-                continue
-            images.append(source.data["image"][0])
-        if len(images) > 0:
-            low = np.min([np.min(x) for x in images])
-            high = np.max([np.max(x) for x in images])
-            self.color_mapper.low = low
-            self.color_mapper.high = high
-            self.color_mapper.low_color = bokeh.colors.RGB(0, 0, 0, a=0)
-            self.color_mapper.high_color = bokeh.colors.RGB(0, 0, 0, a=0)
 
     @staticmethod
     def change(widget, prop, dtype):
