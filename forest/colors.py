@@ -44,6 +44,18 @@ def set_source_limits(low, high):
             "meta": {"origin": "column_data_source"}}
 
 
+def set_user_high(high):
+    return {"kind": SET_LIMITS,
+            "payload": {"high": high},
+            "meta": {"origin": "user"}}
+
+
+def set_user_low(low):
+    return {"kind": SET_LIMITS,
+            "payload": {"low": low},
+            "meta": {"origin": "user"}}
+
+
 def reducer(state, action):
     kind = action["kind"]
     if kind == SET_PALETTE:
@@ -77,7 +89,7 @@ def palette_numbers(name):
     return list(sorted(bokeh.palettes.all_palettes[name].keys()))
 
 
-class HighLow(Observable):
+class SourceLimits(Observable):
     """Event stream listening to collection of ColumnDataSources"""
     def __init__(self, sources):
         self.sources = sources
@@ -99,48 +111,37 @@ class HighLow(Observable):
             self.notify(set_source_limits(0, 1))
 
 
-class MapperLimits(Observable):
+class UserLimits(Observable):
     """User controlled color mapper limits"""
-    def __init__(self, color_mapper, fixed=False):
-        self.fixed = fixed
-        self.color_mapper = color_mapper
-        self.low_input = bokeh.models.TextInput(title="Low:")
-        self.low_input.on_change("value",
-                self.change(color_mapper, "low", float))
-        self.color_mapper.on_change("low",
-                self.change(self.low_input, "value", str))
-        self.high_input = bokeh.models.TextInput(title="High:")
-        self.high_input.on_change("value",
-                self.change(color_mapper, "high", float))
-        self.color_mapper.on_change("high",
-                self.change(self.high_input, "value", str))
+    def __init__(self):
+        self.inputs = {
+            "low": bokeh.models.TextInput(title="Low:"),
+            "high": bokeh.models.TextInput(title="High:")
+        }
+        self.inputs["low"].on_change("value", self.on_input_low)
+        self.inputs["high"].on_change("value", self.on_input_high)
         self.checkbox = bokeh.models.CheckboxGroup(
                 labels=["Fixed"],
                 active=[])
         self.checkbox.on_change("active", self.on_checkbox_change)
+        self.layout = bokeh.layouts.column(
+                self.inputs["low"],
+                self.inputs["high"],
+                self.checkbox)
         super().__init__()
 
-    def render(self, state):
-        self.color_mapper.low = state["colorbar"]["low"]
-        self.color_mapper.high = state["colorbar"]["high"]
-
     def on_checkbox_change(self, attr, old, new):
-        if len(new) == 1:
-            self.fixed = True
-            self.notify(set_fixed(True))
-        else:
-            self.fixed = False
-            self.notify(set_fixed(False))
+        self.notify(set_fixed(len(new) == 1))
 
-    @staticmethod
-    def change(widget, prop, dtype):
-        def wrapper(attr, old, new):
-            if old == new:
-                return
-            if getattr(widget, prop) == dtype(new):
-                return
-            setattr(widget, prop, dtype(new))
-        return wrapper
+    def on_input_low(self, attr, old, new):
+        self.notify(set_user_low(float(new)))
+
+    def on_input_high(self, attr, old, new):
+        self.notify(set_user_high(float(new)))
+
+    def render(self, state):
+        self.inputs["high"].value = str(state["colorbar"]["high"])
+        self.inputs["low"].value = str(state["colorbar"]["low"])
 
 
 class Invisible:
@@ -234,6 +235,10 @@ class Controls(Observable):
         if "numbers" in settings:
             values = [str(n) for n in settings["numbers"]]
             self.dropdowns["numbers"].menu = list(zip(values, values))
+        if "low" in settings:
+            self.color_mapper.low = settings["low"]
+        if "high" in settings:
+            self.color_mapper.high = settings["high"]
 
     @staticmethod
     def palette(name, number):

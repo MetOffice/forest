@@ -225,10 +225,11 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
-    high_low = colors.HighLow(image_sources)
-    high_low.subscribe(print)
+    source_limits = colors.SourceLimits(image_sources)
+    source_limits.subscribe(print)
 
-    mapper_limits = colors.MapperLimits(color_mapper)
+    user_limits = colors.UserLimits()
+    user_limits.subscribe(print)
 
     menu = []
     for k, _ in config.patterns:
@@ -328,9 +329,7 @@ def main(argv=None):
                 border_row,
                 bokeh.layouts.row(slider),
                 colors_controls.layout,
-                bokeh.layouts.row(mapper_limits.low_input),
-                bokeh.layouts.row(mapper_limits.high_input),
-                bokeh.layouts.row(mapper_limits.checkbox),
+                user_limits.layout
                 ),
             title="Settings")
         ])

@@ -146,38 +146,35 @@ def test_controls_render_palette(state, palette):
 
 
 @pytest.mark.skip("implementing set_limit actions")
-def test_mapper_limits():
+def test_user_limits():
     attr, old, new = None, None, None  # not used by callback
-    color_mapper = bokeh.models.LinearColorMapper()
-    mapper_limits = colors.MapperLimits(color_mapper)
-    mapper_limits.on_source_change(attr, old, new)
+    user_limits = colors.UserLimits()
+    user_limits.on_source_change(attr, old, new)
     assert color_mapper.low == 0
     assert color_mapper.high == 8
 
 
-def test_mapper_limits_render():
-    color_mapper = bokeh.models.LinearColorMapper()
-    mapper_limits = colors.MapperLimits(color_mapper)
-    mapper_limits.render({
+def test_user_limits_render():
+    user_limits = colors.UserLimits()
+    user_limits.render({
         "colorbar": {
             "low": -1,
             "high": 1
         }
     })
-    assert color_mapper.low == -1
-    assert color_mapper.high == 1
+    assert user_limits.inputs["low"].value == "-1"
+    assert user_limits.inputs["high"].value == "1"
 
 
 @pytest.mark.parametrize("new,action", [
     ([0], colors.set_fixed(True)),
     ([], colors.set_fixed(False)),
 ])
-def test_mapper_limits_on_fixed(new, action):
-    color_mapper = bokeh.models.LinearColorMapper()
-    mapper_limits = colors.MapperLimits(color_mapper)
+def test_user_limits_on_fixed(new, action):
+    user_limits = colors.UserLimits()
     listener = unittest.mock.Mock()
-    mapper_limits.subscribe(listener)
-    mapper_limits.on_checkbox_change(None, None, new)
+    user_limits.subscribe(listener)
+    user_limits.on_checkbox_change(None, None, new)
     listener.assert_called_once_with(action)
 
 
@@ -193,8 +190,8 @@ def listener():
             {"image": [np.linspace(-1, 1, 4).reshape(2, 2)]}
         )], -1, 1)
 ])
-def test_high_low_on_source_change_emits_action(listener, sources, low, high):
-    high_low = colors.HighLow(sources)
-    high_low.subscribe(listener)
-    high_low.on_change(None, None, None)  # attr, old, new
+def test_source_limits_on_change(listener, sources, low, high):
+    source_limits = colors.SourceLimits(sources)
+    source_limits.subscribe(listener)
+    source_limits.on_change(None, None, None)  # attr, old, new
     listener.assert_called_once_with(colors.set_source_limits(low, high))
