@@ -51,6 +51,15 @@ def test_middleware_given_set_name_emits_set_numbers():
             colors.set_palette_numbers([3, 4, 5, 6, 7, 8, 9])]
 
 
+@pytest.mark.parametrize("name,expect", [
+    ("Accent", [3, 4, 5, 6, 7, 8]),
+    ("Blues", [3, 4, 5, 6, 7, 8, 9]),
+])
+def test_palette_numbers(name, expect):
+    result = colors.palette_numbers(name)
+    assert result == expect
+
+
 def test_controls_on_number():
     listener = unittest.mock.Mock()
     color_mapper = bokeh.models.LinearColorMapper()

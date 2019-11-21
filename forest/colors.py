@@ -51,7 +51,7 @@ def palettes(store, next_dispatch, action):
 
 
 def palette_numbers(name):
-    return [3, 4, 5, 6, 7, 8, 9]
+    return list(sorted(bokeh.palettes.all_palettes[name].keys()))
 
 
 class MapperLimits(Observable):
