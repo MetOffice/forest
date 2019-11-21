@@ -9,11 +9,21 @@ from forest.observe import Observable
 from forest.db.util import autolabel
 
 
-FIXED_ON = "FIXED_ON"
+SET_FIXED = "SET_FIXED"
 
 
 def fixed_on():
-    return {"kind": FIXED_ON, "payload": {"status": "on"}}
+    return {"kind": SET_FIXED, "payload": {"status": "on"}}
+
+
+def fixed_off():
+    return {"kind": SET_FIXED, "payload": {"status": "off"}}
+
+
+def reducer(state, action):
+    if action["kind"] == SET_FIXED:
+        state["colorbar"] = {"fixed": action["payload"]["status"] == "on"}
+    return state
 
 
 class MapperLimits(Observable):
@@ -45,6 +55,7 @@ class MapperLimits(Observable):
             self.notify(fixed_on())
         else:
             self.fixed = False
+            self.notify(fixed_off())
 
     def on_source_change(self, attr, old, new):
         if self.fixed:

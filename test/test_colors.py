@@ -1,7 +1,17 @@
 import unittest.mock
+import pytest
 from forest import colors, main
 import bokeh.models
 import numpy as np
+
+
+@pytest.mark.parametrize("state,action,expect", [
+    ({}, colors.fixed_on(), {"colorbar": {"fixed": True}}),
+    ({}, colors.fixed_off(), {"colorbar": {"fixed": False}}),
+])
+def test_reducer(state, action, expect):
+    result = colors.reducer(state, action)
+    assert expect == result
 
 
 def test_color_controls():
@@ -37,16 +47,17 @@ def test_mapper_limits():
     assert color_mapper.high == 8
 
 
-def test_mapper_limits_on_checkbox_change_emit_fixed():
-    attr, old, new = None, [], [0]
+@pytest.mark.parametrize("new,action", [
+    ([0], colors.fixed_on()),
+    ([], colors.fixed_off()),
+])
+def test_mapper_limits_on_fixed(new, action):
     color_mapper = bokeh.models.LinearColorMapper()
     sources = [bokeh.models.ColumnDataSource({
-        "image": [
-            np.arange(9).reshape(3, 3)
-        ]
+        "image": [np.arange(9).reshape(3, 3)]
     })]
     mapper_limits = colors.MapperLimits(sources, color_mapper)
     listener = unittest.mock.Mock()
     mapper_limits.subscribe(listener)
-    mapper_limits.on_checkbox_change(attr, old, new)
-    listener.assert_called_once_with(colors.fixed_on())
+    mapper_limits.on_checkbox_change(None, None, new)
+    listener.assert_called_once_with(action)
