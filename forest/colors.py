@@ -33,6 +33,10 @@ def set_palette_numbers(numbers):
     return {"kind": SET_PALETTE, "payload": {"key": "numbers", "value": numbers}}
 
 
+def set_palette_names(names):
+    return {"kind": SET_PALETTE, "payload": {"key": "names", "value": names}}
+
+
 def reducer(state, action):
     kind = action["kind"]
     if kind == SET_PALETTE:

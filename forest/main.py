@@ -225,8 +225,6 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
-    colors_controls = colors.Controls(color_mapper)
-
     mapper_limits = colors.MapperLimits(image_sources, color_mapper)
 
     menu = []
@@ -274,14 +272,25 @@ def main(argv=None):
         db.Converter({
             "valid_times": db.stamps,
             "inital_times": db.stamps
-        })
+        }),
+        colors.palettes
     ]
     store = redux.Store(
         redux.combine_reducers(
             db.reducer,
-            series.reducer),
+            series.reducer,
+            colors.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
+
+    # Connect color palette controls
+    colors_controls = colors.Controls(color_mapper)
+    colors_controls.subscribe(store.dispatch)
+    store.subscribe(colors_controls.render)
+    names = list(sorted(bokeh.palettes.all_palettes.keys()))
+    store.dispatch(colors.set_palette_names(names))
+
+    # Connect navigation controls
     controls = db.ControlView()
     controls.subscribe(store.dispatch)
     store.subscribe(controls.render)
