@@ -102,16 +102,17 @@ def test_controls_on_reverse():
     listener.assert_called_once_with(colors.set_reverse(True))
 
 
-@pytest.mark.parametrize("state,name,number", [
-    ({}, None, None),
-    ({"colorbar": {"name": "Blues", "number": 5}}, "Blues", "5")
+@pytest.mark.parametrize("key,state,label", [
+    ("numbers", {}, "N"),
+    ("names", {}, "Palettes"),
+    ("numbers", {"colorbar": {"name": "Blues", "number": 5}}, "5"),
+    ("names", {"colorbar": {"name": "Blues", "number": 5}}, "Blues")
 ])
-def test_controls_render(state, name, number):
+def test_controls_render_label(key, state, label):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
     controls.render(state)
-    assert controls.dropdowns["names"].value == name
-    assert controls.dropdowns["numbers"].value == number
+    assert controls.dropdowns[key].label == label
 
 
 def test_controls_render_sets_menu():

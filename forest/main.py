@@ -288,6 +288,8 @@ def main(argv=None):
     colors_controls.subscribe(store.dispatch)
     store.subscribe(colors_controls.render)
     names = list(sorted(bokeh.palettes.all_palettes.keys()))
+    store.dispatch(colors.set_palette_name("Viridis"))
+    store.dispatch(colors.set_palette_number(256))
     store.dispatch(colors.set_palette_names(names))
 
     # Connect navigation controls

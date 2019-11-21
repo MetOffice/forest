@@ -181,6 +181,7 @@ class Controls(Observable):
         self.checkbox.on_change("active", self.on_reverse)
 
         self.layout = bokeh.layouts.column(
+                bokeh.models.Div(text="Color palette:"),
                 self.dropdowns["names"],
                 self.dropdowns["numbers"],
                 self.checkbox)
@@ -201,9 +202,9 @@ class Controls(Observable):
 
         settings = state["colorbar"]
         if "name" in settings:
-            self.dropdowns["names"].value = settings["name"]
+            self.dropdowns["names"].label = settings["name"]
         if "number" in settings:
-            self.dropdowns["numbers"].value = str(settings["number"])
+            self.dropdowns["numbers"].label = str(settings["number"])
         if ("name" in settings) and ("number" in settings):
             name = settings["name"]
             number = settings["number"]
