@@ -78,13 +78,34 @@ def test_controls_on_reverse():
     assert color_mapper.palette == ['#fdc086', '#beaed4', '#7fc97f']
 
 
-def test_controls_render():
+@pytest.mark.parametrize("state,name,number", [
+    ({}, None, None),
+    ({"colorbar": {"name": "Blues", "number": 5}}, "Blues", "5")
+])
+def test_controls_render(state, name, number):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
-    controls.render({"colorbar": {"name": "Blues", "number": 5}})
-    assert color_mapper.palette == bokeh.palettes.all_palettes["Blues"][5]
-    assert controls.dropdowns["names"].value == "Blues"
-    assert controls.dropdowns["numbers"].value == "5"
+    controls.render(state)
+    assert controls.dropdowns["names"].value == name
+    assert controls.dropdowns["numbers"].value == number
+    if name is None:
+        return
+    assert color_mapper.palette == bokeh.palettes.all_palettes[name][int(number)]
+
+
+def test_controls_render_sets_menu():
+    color_mapper = bokeh.models.LinearColorMapper()
+    controls = colors.Controls(color_mapper)
+    names = ["A", "B"]
+    numbers = [1, 2]
+    state = {
+        "colorbar": {"names": names, "numbers": numbers}
+    }
+    controls.render(state)
+    assert controls.dropdowns["names"].menu == [
+            ("A", "A"), ("B", "B")]
+    assert controls.dropdowns["numbers"].menu == [
+            ("1", "1"), ("2", "2")]
 
 
 def test_mapper_limits():

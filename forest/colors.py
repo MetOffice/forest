@@ -173,10 +173,6 @@ class Controls(Observable):
     def on_name(self, attr, old, new):
         self.notify(set_palette_name(new))
 
-    def numbers_menu(self, numbers):
-        labels = [str(n) for n in numbers]
-        return list(zip(labels, labels))
-
     def on_number(self, attr, old, new):
         self.notify(set_palette_number(int(new)))
 
@@ -187,18 +183,22 @@ class Controls(Observable):
             self.reverse = False
 
     def render(self, state):
-        name = state["colorbar"]["name"]
-        number = state["colorbar"]["number"]
-        palette = bokeh.palettes.all_palettes[name][number]
-        self.color_mapper.palette = palette
-        self.dropdowns["names"].value = name
-        self.dropdowns["numbers"].value = str(number)
+        if "colorbar" not in state:
+            return
 
-        # if self.name is None:
-        #     return
-        # if self.number is None:
-        #     return
-        # palette = bokeh.palettes.all_palettes[self.name][self.number]
-        # if self.reverse:
-        #     palette = list(reversed(palette))
-        # self.color_mapper.palette = palette
+        settings = state["colorbar"]
+        if "name" in settings:
+            self.dropdowns["names"].value = settings["name"]
+        if "number" in settings:
+            self.dropdowns["numbers"].value = str(settings["number"])
+        if ("name" in settings) and ("number" in settings):
+            name = settings["name"]
+            number = settings["number"]
+            palette = bokeh.palettes.all_palettes[name][number]
+            self.color_mapper.palette = palette
+        if "names" in settings:
+            values = settings["names"]
+            self.dropdowns["names"].menu = list(zip(values, values))
+        if "numbers" in settings:
+            values = [str(n) for n in settings["numbers"]]
+            self.dropdowns["numbers"].menu = list(zip(values, values))
