@@ -61,18 +61,18 @@ def test_middleware_given_inconsistent_number():
         colors.palettes,
         log])
     actions = [
-        colors.set_palette_number(256),
-        colors.set_palette_name("Blues")
+        colors.set_palette_number(1000),
+        colors.set_palette_name("Viridis")
     ]
     for action in actions:
         store.dispatch(action)
     assert len(log.actions) == 4
     assert log.actions == [
-            colors.set_palette_number(256),
+            colors.set_palette_number(1000),
             colors.set_palette_numbers(
-                colors.palette_numbers("Blues")),
-            colors.set_palette_number(9),
-            colors.set_palette_name("Blues")]
+                colors.palette_numbers("Viridis")),
+            colors.set_palette_number(256),
+            colors.set_palette_name("Viridis")]
 
 
 @pytest.mark.parametrize("name,expect", [
