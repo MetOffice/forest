@@ -8,6 +8,9 @@ import numpy as np
 @pytest.mark.parametrize("state,action,expect", [
     ({}, colors.fixed_on(), {"colorbar": {"fixed": True}}),
     ({}, colors.fixed_off(), {"colorbar": {"fixed": False}}),
+    ({}, colors.set_palette_name("Accent"), {"colorbar": {"name": "Accent"}}),
+    ({}, colors.set_palette_number(3), {"colorbar": {"number": 3}}),
+    ({}, colors.set_palette_numbers([1, 2 ,3]), {"colorbar": {"numbers": [1, 2, 3]}}),
 ])
 def test_reducer(state, action, expect):
     result = colors.reducer(state, action)

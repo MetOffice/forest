@@ -12,9 +12,7 @@ from forest.db.util import autolabel
 
 SET_FIXED = "SET_FIXED"
 SET_REVERSE = "SET_REVERSE"
-SET_PALETTE_NAME = "SET_PALETTE_NAME"
-SET_PALETTE_NUMBER = "SET_PALETTE_NUMBER"
-SET_PALETTE_NUMBERS = "SET_PALETTE_NUMBERS"
+SET_PALETTE = "SET_PALETTE"
 
 
 def fixed_on():
@@ -30,32 +28,34 @@ def set_reverse(flag):
 
 
 def set_palette_name(name):
-    return {"kind": SET_PALETTE_NAME, "payload": {"name": name}}
+    return {"kind": SET_PALETTE, "payload": {"key": "name", "value": name}}
 
 
 def set_palette_number(number):
-    return {"kind": SET_PALETTE_NUMBER, "payload": {"number": number}}
+    return {"kind": SET_PALETTE, "payload": {"key": "number", "value": number}}
 
 
 def set_palette_numbers(numbers):
-    return {"kind": SET_PALETTE_NUMBERS, "payload": {"numbers": numbers}}
+    return {"kind": SET_PALETTE, "payload": {"key": "numbers", "value": numbers}}
 
 
 def reducer(state, action):
     kind = action["kind"]
     if kind == SET_FIXED:
         state["colorbar"] = {"fixed": action["payload"]["status"] == "on"}
-    elif kind == SET_PALETTE_NUMBER:
+    elif kind == SET_PALETTE:
+        key, value =action["payload"]["key"], action["payload"]["value"]
         settings = state.get("colorbar", {})
-        settings["number"] = action["payload"]["number"]
+        settings[key] = value
         state["colorbar"] = settings
     return state
 
 
 @middleware
 def palettes(store, next_dispatch, action):
-    if action["kind"] == SET_PALETTE_NAME:
-        numbers = palette_numbers(action["payload"]["name"])
+    if ((action["kind"] == SET_PALETTE) and
+            (action["payload"]["key"] == "name")):
+        numbers = palette_numbers(action["payload"]["value"])
         next_dispatch(set_palette_numbers(numbers))
         if "colorbar" in store.state:
             if "number" in store.state["colorbar"]:
