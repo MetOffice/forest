@@ -47,8 +47,27 @@ def test_middleware_given_set_name_emits_set_numbers():
         log])
     store.dispatch(colors.set_palette_name("Blues"))
     assert log.actions == [
-            colors.set_palette_name("Blues"),
-            colors.set_palette_numbers([3, 4, 5, 6, 7, 8, 9])]
+            colors.set_palette_numbers([3, 4, 5, 6, 7, 8, 9]),
+            colors.set_palette_name("Blues")]
+
+
+def test_middleware_given_inconsistent_number():
+    log = Log()
+    store = redux.Store(colors.reducer, middlewares=[
+        colors.palettes,
+        log])
+    actions = [
+        colors.set_palette_number(256),
+        colors.set_palette_name("Blues")
+    ]
+    for action in actions:
+        store.dispatch(action)
+    assert len(log.actions) == 4
+    assert log.actions == [
+            colors.set_palette_number(256),
+            colors.set_palette_numbers([3, 4, 5, 6, 7, 8, 9]),
+            colors.set_palette_number(9),
+            colors.set_palette_name("Blues")]
 
 
 @pytest.mark.parametrize("name,expect", [

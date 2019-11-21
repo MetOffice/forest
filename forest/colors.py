@@ -42,17 +42,29 @@ def set_palette_numbers(numbers):
 
 
 def reducer(state, action):
-    if action["kind"] == SET_FIXED:
+    kind = action["kind"]
+    if kind == SET_FIXED:
         state["colorbar"] = {"fixed": action["payload"]["status"] == "on"}
+    elif kind == SET_PALETTE_NUMBER:
+        settings = state.get("colorbar", {})
+        settings["number"] = action["payload"]["number"]
+        state["colorbar"] = settings
     return state
 
 
 @middleware
 def palettes(store, next_dispatch, action):
-    next_dispatch(action)
     if action["kind"] == SET_PALETTE_NAME:
         numbers = palette_numbers(action["payload"]["name"])
         next_dispatch(set_palette_numbers(numbers))
+        if "colorbar" in store.state:
+            if "number" in store.state["colorbar"]:
+                number = store.state["colorbar"]["number"]
+                if number not in numbers:
+                    next_dispatch(set_palette_number(max(numbers)))
+        next_dispatch(action)
+    else:
+        next_dispatch(action)
 
 
 def palette_numbers(name):
