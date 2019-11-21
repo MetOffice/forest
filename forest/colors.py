@@ -10,21 +10,15 @@ from forest.redux import middleware
 from forest.db.util import autolabel
 
 
-SET_FIXED = "SET_FIXED"
-SET_REVERSE = "SET_REVERSE"
 SET_PALETTE = "SET_PALETTE"
 
 
-def fixed_on():
-    return {"kind": SET_FIXED, "payload": {"status": "on"}}
-
-
-def fixed_off():
-    return {"kind": SET_FIXED, "payload": {"status": "off"}}
+def set_fixed(flag):
+    return {"kind": SET_PALETTE, "payload": {"key": "fixed", "value": flag}}
 
 
 def set_reverse(flag):
-    return {"kind": SET_REVERSE, "payload": {"flag": flag}}
+    return {"kind": SET_PALETTE, "payload": {"key": "reverse", "value": flag}}
 
 
 def set_palette_name(name):
@@ -41,9 +35,7 @@ def set_palette_numbers(numbers):
 
 def reducer(state, action):
     kind = action["kind"]
-    if kind == SET_FIXED:
-        state["colorbar"] = {"fixed": action["payload"]["status"] == "on"}
-    elif kind == SET_PALETTE:
+    if kind == SET_PALETTE:
         key, value =action["payload"]["key"], action["payload"]["value"]
         settings = state.get("colorbar", {})
         settings[key] = value
@@ -53,15 +45,18 @@ def reducer(state, action):
 
 @middleware
 def palettes(store, next_dispatch, action):
-    if ((action["kind"] == SET_PALETTE) and
-            (action["payload"]["key"] == "name")):
-        numbers = palette_numbers(action["payload"]["value"])
-        next_dispatch(set_palette_numbers(numbers))
-        if "colorbar" in store.state:
-            if "number" in store.state["colorbar"]:
-                number = store.state["colorbar"]["number"]
-                if number not in numbers:
-                    next_dispatch(set_palette_number(max(numbers)))
+    kind = action["kind"]
+    if kind == SET_PALETTE:
+        key = action["payload"]["key"]
+        value = action["payload"]["value"]
+        if key == "name":
+            numbers = palette_numbers(value)
+            next_dispatch(set_palette_numbers(numbers))
+            if "colorbar" in store.state:
+                if "number" in store.state["colorbar"]:
+                    number = store.state["colorbar"]["number"]
+                    if number not in numbers:
+                        next_dispatch(set_palette_number(max(numbers)))
         next_dispatch(action)
     else:
         next_dispatch(action)
@@ -97,10 +92,10 @@ class MapperLimits(Observable):
     def on_checkbox_change(self, attr, old, new):
         if len(new) == 1:
             self.fixed = True
-            self.notify(fixed_on())
+            self.notify(set_fixed(True))
         else:
             self.fixed = False
-            self.notify(fixed_off())
+            self.notify(set_fixed(False))
 
     def on_source_change(self, attr, old, new):
         if self.fixed:

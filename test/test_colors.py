@@ -6,8 +6,8 @@ import numpy as np
 
 
 @pytest.mark.parametrize("state,action,expect", [
-    ({}, colors.fixed_on(), {"colorbar": {"fixed": True}}),
-    ({}, colors.fixed_off(), {"colorbar": {"fixed": False}}),
+    ({}, colors.set_fixed(True), {"colorbar": {"fixed": True}}),
+    ({}, colors.set_fixed(False), {"colorbar": {"fixed": False}}),
     ({}, colors.set_palette_name("Accent"), {"colorbar": {"name": "Accent"}}),
     ({}, colors.set_palette_number(3), {"colorbar": {"number": 3}}),
     ({}, colors.set_palette_numbers([1, 2 ,3]), {"colorbar": {"numbers": [1, 2, 3]}}),
@@ -159,8 +159,8 @@ def test_mapper_limits():
 
 
 @pytest.mark.parametrize("new,action", [
-    ([0], colors.fixed_on()),
-    ([], colors.fixed_off()),
+    ([0], colors.set_fixed(True)),
+    ([], colors.set_fixed(False)),
 ])
 def test_mapper_limits_on_fixed(new, action):
     color_mapper = bokeh.models.LinearColorMapper()
