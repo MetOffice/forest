@@ -544,16 +544,6 @@ class TimeControls(Observable):
         return self.steps[self.index]
 
 
-def change(widget, prop, dtype):
-    def wrapper(attr, old, new):
-        if old == new:
-            return
-        if getattr(widget, prop) == dtype(new):
-            return
-        setattr(widget, prop, dtype(new))
-    return wrapper
-
-
 def add_feature(figure, data, color="black"):
     source = bokeh.models.ColumnDataSource(data)
     return figure.multi_line(

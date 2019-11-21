@@ -9,6 +9,16 @@ def test_color_controls():
     number = 3
     controls = colors.Controls(color_mapper, name, number)
     controls.render()
+    assert color_mapper.palette == ['#7fc97f', '#beaed4', '#fdc086']
+
+
+def test_colors_on_reverse():
+    attr, old, new = None, [], [0]
+    color_mapper = bokeh.models.LinearColorMapper()
+    name = "Accent"
+    number = 3
+    controls = colors.Controls(color_mapper, name, number)
+    controls.on_reverse(attr, old, new)
 
 
 def test_mapper_limits():
