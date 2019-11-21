@@ -225,8 +225,7 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
-    colors_controls = colors.Controls(
-            color_mapper, "Plasma", 256)
+    colors_controls = colors.Controls(color_mapper)
 
     mapper_limits = colors.MapperLimits(image_sources, color_mapper)
 

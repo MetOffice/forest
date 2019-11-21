@@ -1,6 +1,6 @@
 import unittest.mock
 import pytest
-from forest import colors, main
+from forest import colors, main, redux
 import bokeh.models
 import numpy as np
 
@@ -16,37 +16,66 @@ def test_reducer(state, action, expect):
 
 def test_color_controls():
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Controls(color_mapper, "Accent", 3)
-    controls.render()
+    controls = colors.Controls(color_mapper)
+    controls.render({"colorbar": {"name": "Accent", "number": 3}})
     assert color_mapper.palette == ['#7fc97f', '#beaed4', '#fdc086']
 
 
 def test_controls_on_name():
+    listener = unittest.mock.Mock()
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Controls(color_mapper, "Accent", 3)
-    controls.on_name(None, None, "Blues")
-    assert color_mapper.palette == bokeh.palettes.all_palettes["Blues"][3]
-    # assert controls.names.label == "Blues"
-    # assert controls.numbers.label == "3"
-    assert controls.dropdowns["numbers"].menu == [(str(i), str(i))
-            for i in [3, 4, 5, 6, 7, 8, 9]]
+    controls = colors.Controls(color_mapper)
+    controls.subscribe(listener)
+    controls.on_number(None, None, 5)
+    listener.assert_called_once_with(colors.set_palette_number(5))
+
+
+class Log:
+    def __init__(self):
+        self.actions = []
+
+    @redux.middleware
+    def __call__(self, store, next_dispatch, action):
+        self.actions.append(action)
+        next_dispatch(action)
+
+
+def test_middleware_given_set_name_emits_set_numbers():
+    log = Log()
+    store = redux.Store(colors.reducer, middlewares=[
+        colors.palettes,
+        log])
+    store.dispatch(colors.set_palette_name("Blues"))
+    assert log.actions == [
+            colors.set_palette_name("Blues"),
+            colors.set_palette_numbers([3, 4, 5, 6, 7, 8, 9])]
 
 
 def test_controls_on_number():
+    listener = unittest.mock.Mock()
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Controls(color_mapper, "Accent", 3)
+    controls = colors.Controls(color_mapper)
+    controls.subscribe(listener)
     controls.on_number(None, None, 5)
-    assert color_mapper.palette == bokeh.palettes.all_palettes["Accent"][5]
+    listener.assert_called_once_with(colors.set_palette_number(5))
 
 
+@pytest.mark.skip()
 def test_controls_on_reverse():
     attr, old, new = None, [], [0]
     color_mapper = bokeh.models.LinearColorMapper()
-    name = "Accent"
-    number = 3
-    controls = colors.Controls(color_mapper, name, number)
+    controls = colors.Controls(color_mapper)
     controls.on_reverse(attr, old, new)
     assert color_mapper.palette == ['#fdc086', '#beaed4', '#7fc97f']
+
+
+def test_controls_render():
+    color_mapper = bokeh.models.LinearColorMapper()
+    controls = colors.Controls(color_mapper)
+    controls.render({"colorbar": {"name": "Blues", "number": 5}})
+    assert color_mapper.palette == bokeh.palettes.all_palettes["Blues"][5]
+    assert controls.dropdowns["names"].value == "Blues"
+    assert controls.dropdowns["numbers"].value == "5"
 
 
 def test_mapper_limits():
