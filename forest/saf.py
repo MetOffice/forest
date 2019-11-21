@@ -1,3 +1,20 @@
+"""
+SAF Loader
+----------
+
+Loads data from NWCSAF satellite NetCDF files.
+
+.. autoclass:: saf
+    :members:
+
+.. autoclass:: Locator
+    :members:
+
+.. autoclass:: Coordinates
+    :members:
+
+"""
+
 import datetime
 import collections
 import glob
@@ -5,31 +22,79 @@ import re
 import os
 
 import numpy as np
+import numpy.ma as ma
+from scipy.interpolate import griddata
+#from metpy.interpolate import interpolate_to_grid
 import netCDF4
 
-from forest.gridded_forecast import _to_datetime, empty_image
+from forest.gridded_forecast import _to_datetime, empty_image, coordinates
 from forest.util import timeout_cache
 
 from forest import geo
 
+from functools import lru_cache
+
 class saf(object):
-    def __init__(self, pattern):
+    def __init__(self, pattern, label=None, locator=None):
         '''Object to process SAF NetCDF files
 
         :pattern: shell-style glob pattern of input file(s)'''
-        self.locator = Locator(pattern)        
+        if(locator):
+            self.locator = locator
+        else:
+            self.locator = Locator(pattern)        
 
+        if(label):
+            self.label = label
+
+    @lru_cache(maxsize=16)
     def image(self, state):
         '''gets actual data. 
 
         `values` passed to `geo.stretch_image` must be a NumPy Masked Array, 
         rather than a NetCDF4 Variable, so need to add `[:]`.
 
-        :state: Bokeh State object of info from UI'''
+        X and Y passed to :meth:`geo.stretch_image` must be 1D arrays. NWCSAF data 
+        are not on a regular grid so must be regridded.
+
+        `values` passed to :meth:`geo.stretch_image` must be a NumPy Masked Array. 
+
+        :param state: Bokeh State object of info from UI
+        :returns: Output data from :meth:`geo.stretch_image`'''
         data = empty_image()
-        for nc in self.locator._sets: #just do one for now
-            if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and state.variable in nc.variables:
-                data = geo.stretch_image(nc['lon'][:][0], nc['lat'][:][:,0], nc[state.variable][:])
+        for nc in self.locator._sets: 
+            if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and self.locator.varlist[state.variable] in nc.variables:
+                #regrid to regular grid
+                x = nc['lon'][:].flatten() # lat & lon both 2D arrays
+                y = nc['lat'][:].flatten() #
+                z = nc[self.locator.varlist[state.variable]][:].flatten()
+
+                #define grid
+                xi, yi = np.meshgrid(
+                        np.linspace(x.min(),x.max(),nc.dimensions['nx'].size),
+                        np.linspace(y.min(),y.max(),nc.dimensions['ny'].size), 
+                            )
+
+                zi = griddata(
+                        np.array([x,y]).transpose(),
+                        z, 
+                        (xi, yi), 
+                        method='linear',
+                        fill_value=np.nan)
+
+                zi = np.ma.masked_invalid(zi, copy=False)
+                zi = np.ma.masked_outside(zi, nc[self.locator.varlist[state.variable]].valid_range[0], nc[self.locator.varlist[state.variable]].valid_range[1], copy=False)
+                data = geo.stretch_image(xi[0,:], yi[:,0], zi)
+                #data = geo.stretch_image(x[0,:], y[:,0], nc[state.variable][:])
+                data.update(coordinates(state.valid_time, state.initial_time, state.pressures, state.pressure))
+                data.update({
+                    'name': [str(nc[self.locator.varlist[state.variable]].long_name)],
+                })
+                if 'units' in nc[self.locator.varlist[state.variable]].ncattrs():
+                    data.update({
+                        'units': [str(nc[self.locator.varlist[state.variable]].units)]
+                    })
+
           
         return data
           
@@ -40,6 +105,15 @@ class Locator(object):
         for path in self.paths:
             #possibly use MFDataset which takes a glob pattern
             self._sets.append(netCDF4.Dataset(path)) 
+
+        #Get variable names and keys
+        self.varlist = {}
+        for nc in self._sets: 
+            for variable in nc.variables:
+                #only display vars with lon/lat coords
+                if('coordinates' in nc.variables[variable].ncattrs() and nc.variables[variable].coordinates == "lon lat"):
+                    self.varlist[nc.variables[variable].long_name] = variable
+
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
@@ -66,7 +140,7 @@ class Locator(object):
     def parse_date(path):
         '''Parses a date from a pathname
 
-        :path: string representation of a path
+        :param path: string representation of a path
         :returns: python Datetime object
         '''
         # filename of form S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc 
@@ -79,8 +153,8 @@ class Coordinates(object):
     def initial_time(self, pattern):
         '''Return initial time.
 
-        :pattern: Glob pattern of filepaths
-        :return: datetime object
+        :param pattern: Glob pattern of filepaths
+        :returns: Python Datetime object
         '''
         times = self.valid_times(pattern, None)
         if len(times) > 0:
@@ -88,33 +162,33 @@ class Coordinates(object):
         return None
 
     def variables(self, pattern):
-        '''
-        Get list of variables.
+        '''Get list of variables.
 
-         :pattern: glob pattern of filepaths
-         :return: list of strings of variable names'''
+         :param pattern: glob pattern of filepaths
+         :returns: list of strings of variable names
+         '''
         self.locator = Locator(pattern)        
-        varlist  = []
-        for nc in self.locator._sets: 
-            varlist = varlist + list(nc.variables.keys())
-    
-        #return list of vars. coercing to set ensures uniqueness
-        return list(set(varlist))
+
+        #return list of vars from Locator
+        return self.locator.varlist.keys()
 
     def valid_times(self, pattern, variable):
         '''Gets valid times from input files
 
-        :pattern: Glob of file paths
-        :variable: String of variable name
+        :param pattern: Glob of file paths
+        :param variable: String of variable name
         :return: List of Date strings
         '''
         self.locator = Locator(pattern)
         times = []
         for nc in self.locator._sets:
-            if variable is None or variable in nc.variables:
+            if variable is None or self.locator.varlist[variable] in nc.variables:
                 times.append(str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')))
         return times
 
     def pressures(self, path, variable):
-        '''There's no pressure levels in SAF data'''
+        '''There's no pressure levels in SAF data.
+        
+        :returns: Nothing
+        '''
         return 

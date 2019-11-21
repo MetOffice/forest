@@ -149,7 +149,7 @@ class Loader(object):
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
         elif file_type == 'saf':
-            return saf.saf(pattern)
+            return saf.saf(pattern, label, locator)
         else:
             raise Exception("unrecognised file_type: {}".format(file_type))
 
