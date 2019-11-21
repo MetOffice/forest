@@ -16,14 +16,30 @@ def test_reducer(state, action, expect):
 
 def test_color_controls():
     color_mapper = bokeh.models.LinearColorMapper()
-    name = "Accent"
-    number = 3
-    controls = colors.Controls(color_mapper, name, number)
+    controls = colors.Controls(color_mapper, "Accent", 3)
     controls.render()
     assert color_mapper.palette == ['#7fc97f', '#beaed4', '#fdc086']
 
 
-def test_colors_on_reverse():
+def test_controls_on_name():
+    color_mapper = bokeh.models.LinearColorMapper()
+    controls = colors.Controls(color_mapper, "Accent", 3)
+    controls.on_name(None, None, "Blues")
+    assert color_mapper.palette == bokeh.palettes.all_palettes["Blues"][3]
+    # assert controls.names.label == "Blues"
+    # assert controls.numbers.label == "3"
+    assert controls.dropdowns["numbers"].menu == [(str(i), str(i))
+            for i in [3, 4, 5, 6, 7, 8, 9]]
+
+
+def test_controls_on_number():
+    color_mapper = bokeh.models.LinearColorMapper()
+    controls = colors.Controls(color_mapper, "Accent", 3)
+    controls.on_number(None, None, 5)
+    assert color_mapper.palette == bokeh.palettes.all_palettes["Accent"][5]
+
+
+def test_controls_on_reverse():
     attr, old, new = None, [], [0]
     color_mapper = bokeh.models.LinearColorMapper()
     name = "Accent"

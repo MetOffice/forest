@@ -93,20 +93,22 @@ class Controls(object):
 
         names = sorted(self.palettes.keys())
         menu = list(zip(names, names))
-        self.names = bokeh.models.Dropdown(
+
+        self.dropdowns = {}
+        self.dropdowns["names"] = bokeh.models.Dropdown(
                 label="Palettes",
                 value=self.name,
                 menu=menu)
-        autolabel(self.names)
-        self.names.on_change("value", self.on_name)
+        autolabel(self.dropdowns["names"])
+        self.dropdowns["names"].on_change("value", self.on_name)
 
         numbers = sorted(self.palettes[self.name].keys())
-        self.numbers = bokeh.models.Dropdown(
+        self.dropdowns["numbers"] = bokeh.models.Dropdown(
                 label="N",
                 value=str(self.number),
                 menu=self.numbers_menu(numbers))
-        autolabel(self.numbers)
-        self.numbers.on_change("value", self.on_number)
+        autolabel(self.dropdowns["numbers"])
+        self.dropdowns["numbers"].on_change("value", self.on_number)
 
         self.reverse = False
         self.checkbox = bokeh.models.CheckboxButtonGroup(
@@ -129,8 +131,8 @@ class Controls(object):
                 self.on_invisible_input)
 
         self.layout = bokeh.layouts.column(
-                self.names,
-                self.numbers,
+                self.dropdowns["names"],
+                self.dropdowns["numbers"],
                 self.checkbox,
                 self.invisible_checkbox,
                 self.invisible_input)
@@ -142,8 +144,8 @@ class Controls(object):
             self.number = numbers[-1]
         elif self.number not in numbers:
             self.number = numbers[-1]
-        self.numbers.menu = self.numbers_menu(numbers)
-        self.numbers.value = str(self.number)
+        self.dropdowns["numbers"].menu = self.numbers_menu(numbers)
+        self.dropdowns["numbers"].value = str(self.number)
         self.render()
 
     def numbers_menu(self, numbers):
