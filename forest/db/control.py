@@ -75,19 +75,6 @@ State.__hash__ = statehash
 
 
 @export
-class Stream(Observable):
-    def listen_to(self, observable):
-        observable.subscribe(self.notify)
-        return self
-
-    def map(self, f):
-        stream = Stream()
-        def callback(x):
-            stream.notify(f(x))
-        self.subscribe(callback)
-        return stream
-
-@export
 def initial_state(navigator, pattern=None):
     """Find initial state given navigator"""
     state = {}

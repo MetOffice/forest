@@ -7,6 +7,7 @@ import os
 import glob
 from forest import (
         satellite,
+        series,
         data,
         load,
         view,
@@ -18,6 +19,7 @@ from forest import (
         db,
         keys,
         redux,
+        rx,
         unified_model,
         intake_loader,
         navigate,
@@ -276,15 +278,22 @@ def main(argv=None):
         })
     ]
     store = redux.Store(
-        db.reducer,
+        redux.combine_reducers(
+            db.reducer,
+            series.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
     controls = db.ControlView()
     controls.subscribe(store.dispatch)
     store.subscribe(controls.render)
-    old_states = (db.Stream()
+
+    def old_world(state):
+        kwargs = {k: state.get(k, None) for k in db.State._fields}
+        return db.State(**kwargs)
+
+    old_states = (rx.Stream()
                     .listen_to(store)
-                    .map(lambda x: db.State(**x)))
+                    .map(old_world))
     old_states.subscribe(artist.on_state)
 
     # Ensure all listeners are pointing to the current state
@@ -340,13 +349,20 @@ def main(argv=None):
     marker_source = bokeh.models.ColumnDataSource({
             "x": [],
             "y": []})
-    series = Series.from_groups(
+    series_view = series.SeriesView.from_groups(
             series_figure,
             config.file_groups,
             directory=args.directory)
-    old_states.subscribe(series.on_state)
+    series_view.subscribe(store.dispatch)
+    series_args = (rx.Stream()
+                .listen_to(store)
+                .map(series.select_args)
+                .filter(lambda x: x is not None)
+                .distinct())
+    series_args.map(lambda a: series_view.render(*a))
+    series_args.map(print)  # Note: map(print) creates None stream
     for f in figures:
-        f.on_event(bokeh.events.Tap, series.on_tap)
+        f.on_event(bokeh.events.Tap, series_view.on_tap)
         f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
 
 
@@ -397,126 +413,6 @@ def main(argv=None):
     document.add_root(series_row)
     document.add_root(figure_row)
     document.add_root(key_press.hidden_button)
-
-
-from itertools import cycle
-
-
-class Series(object):
-    def __init__(self, figure, loaders):
-        self.figure = figure
-        self.loaders = loaders
-        self.sources = {}
-        circles = []
-        items = []
-        colors = cycle(bokeh.palettes.Colorblind[6][::-1])
-        for name in self.loaders.keys():
-            source = bokeh.models.ColumnDataSource({
-                "x": [],
-                "y": [],
-            })
-            color = next(colors)
-            r = self.figure.line(
-                    x="x",
-                    y="y",
-                    color=color,
-                    line_width=1.5,
-                    source=source)
-            r.nonselection_glyph = bokeh.models.Line(
-                    line_width=1.5,
-                    line_color=color)
-            c = self.figure.circle(
-                    x="x",
-                    y="y",
-                    color=color,
-                    source=source)
-            c.selection_glyph = bokeh.models.Circle(
-                    fill_color="red")
-            c.nonselection_glyph = bokeh.models.Circle(
-                    fill_color=color,
-                    fill_alpha=0.5,
-                    line_alpha=0)
-            circles.append(c)
-            items.append((name, [r]))
-            self.sources[name] = source
-
-        legend = bokeh.models.Legend(items=items,
-                orientation="horizontal",
-                click_policy="hide")
-        self.figure.add_layout(legend, "below")
-
-        tool = bokeh.models.HoverTool(
-                tooltips=[
-                    ('Time', '@x{%F %H:%M}'),
-                    ('Value', '@y')
-                ],
-                formatters={
-                    'x': 'datetime'
-                })
-        self.figure.add_tools(tool)
-
-        tool = bokeh.models.TapTool(
-                renderers=circles)
-        self.figure.add_tools(tool)
-
-        # Underlying state
-        self.state = {}
-
-    @classmethod
-    def from_groups(cls, figure, groups, directory=None):
-        loaders = {}
-        for group in groups:
-            if group.file_type == "unified_model":
-                if directory is None:
-                    pattern = group.full_pattern
-                else:
-                    pattern = os.path.join(directory, group.full_pattern)
-                loaders[group.label] = data.SeriesLoader.from_pattern(pattern)
-        return cls(figure, loaders)
-
-    def on_state(self, app_state):
-        next_state = dict(self.state)
-        attrs = [
-                "initial_time",
-                "variable",
-                "pressure"]
-        for attr in attrs:
-            if getattr(app_state, attr) is not None:
-                next_state[attr] = getattr(app_state, attr)
-        state_change = any(
-                next_state.get(k, None) != self.state.get(k, None)
-                for k in attrs)
-        if state_change:
-            self.render()
-        self.state = next_state
-
-    def on_tap(self, event):
-        self.state["x"] = event.x
-        self.state["y"] = event.y
-        self.render()
-
-    def render(self):
-        for attr in ["x", "y", "variable", "initial_time"]:
-            if attr not in self.state:
-                return
-        x = self.state["x"]
-        y = self.state["y"]
-        variable = self.state["variable"]
-        initial_time = dt.datetime.strptime(
-                self.state["initial_time"],
-                "%Y-%m-%d %H:%M:%S")
-        pressure = self.state.get("pressure", None)
-        self.figure.title.text = variable
-        for name, source in self.sources.items():
-            loader = self.loaders[name]
-            lon, lat = geo.plate_carree(x, y)
-            lon, lat = lon[0], lat[0]  # Map to scalar
-            source.data = loader.series(
-                    initial_time,
-                    variable,
-                    lon,
-                    lat,
-                    pressure)
 
 
 def any_none(obj, attrs):

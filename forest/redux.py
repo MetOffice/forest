@@ -25,6 +25,8 @@ existing behaviour.
 
 .. autofunction:: middleware
 
+.. autofunction:: combine_reducers
+
 """
 import copy
 from functools import wraps
@@ -33,6 +35,19 @@ from forest.export import export
 
 
 __all__ = []
+
+
+@export
+def combine_reducers(*reducers):
+    """Simple combine passes action and state to all reducers
+
+    :returns: reducer function
+    """
+    def wrapped(state, action):
+        for reducer in reducers:
+            state = reducer(state, action)
+        return state
+    return wrapped
 
 
 @export
