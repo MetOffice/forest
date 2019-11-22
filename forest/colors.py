@@ -136,6 +136,10 @@ class UserLimits(Observable):
                 self.checkbox)
         super().__init__()
 
+    def connect(self, store):
+        """Connect component to Store"""
+        connect(self, store)
+
     def on_checkbox_change(self, attr, old, new):
         self.notify(set_fixed(len(new) == 1))
 
@@ -145,9 +149,11 @@ class UserLimits(Observable):
     def on_input_high(self, attr, old, new):
         self.notify(set_user_high(float(new)))
 
-    def render(self, state):
-        self.inputs["high"].value = str(state["colorbar"]["high"])
-        self.inputs["low"].value = str(state["colorbar"]["low"])
+    def render(self, props):
+        if "high" in props:
+            self.inputs["high"].value = str(props["high"])
+        if "low" in props:
+            self.inputs["low"].value = str(props["low"])
 
 
 class Invisible:
@@ -192,6 +198,17 @@ def state_to_props(state):
     return state.get("colorbar", None)
 
 
+def connect(view, store):
+    """Connect component to Store"""
+    view.subscribe(store.dispatch)
+    stream = (Stream()
+                .listen_to(store)
+                .map(state_to_props)
+                .filter(lambda x: x is not None)
+                .distinct())
+    stream.map(lambda props: view.render(props))
+
+
 class Controls(Observable):
     def __init__(self, color_mapper):
         self.color_mapper = color_mapper
@@ -216,13 +233,7 @@ class Controls(Observable):
 
     def connect(self, store):
         """Connect component to Store"""
-        self.subscribe(store.dispatch)
-        stream = (Stream()
-                    .listen_to(store)
-                    .map(state_to_props)
-                    .filter(lambda x: x is not None)
-                    .distinct())
-        stream.map(lambda props: self.render(props))
+        connect(self, store)
 
     def on_name(self, attr, old, new):
         self.notify(set_palette_name(new))

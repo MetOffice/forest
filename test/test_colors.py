@@ -159,12 +159,7 @@ def test_user_limits():
 
 def test_user_limits_render():
     user_limits = colors.UserLimits()
-    user_limits.render({
-        "colorbar": {
-            "low": -1,
-            "high": 1
-        }
-    })
+    user_limits.render({"low": -1, "high": 1})
     assert user_limits.inputs["low"].value == "-1"
     assert user_limits.inputs["high"].value == "1"
 

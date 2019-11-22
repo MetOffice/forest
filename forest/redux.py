@@ -97,6 +97,7 @@ class Store(Observable):
     :param middlewares: list of middleware functions that intercept actions
     """
     def __init__(self, reducer, initial_state=None, middlewares=None):
+        self._is_dispatching = False
         self.reducer = reducer
         self.state = initial_state if initial_state is not None else {}
         if middlewares is not None:
@@ -112,5 +113,10 @@ class Store(Observable):
 
         :param action: plain dict consumed by the reducer
         """
+        if self._is_dispatching:
+            message = "WARNING: currently processing: {}".format(action)
+            raise Exception(message)
+        self._is_dispatching = True
         self.state = self.reducer(self.state, action)
         self.notify(self.state)
+        self._is_dispatching = False

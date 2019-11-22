@@ -261,6 +261,7 @@ def main(argv=None):
     for _, pattern in config.patterns:
         initial_state = db.initial_state(navigator, pattern=pattern)
         break
+
     middlewares = [
         db.Log(verbose=True),
         keys.navigate,
@@ -281,6 +282,9 @@ def main(argv=None):
         initial_state=initial_state,
         middlewares=middlewares)
 
+    # Set top-level navigation
+    store.dispatch(db.set_value("patterns", config.patterns))
+
     # Connect color palette controls
     colors_controls = colors.Controls(color_mapper)
     colors_controls.connect(store)
@@ -292,11 +296,9 @@ def main(argv=None):
     # Connect limit controllers to store
     source_limits = colors.SourceLimits(image_sources)
     source_limits.subscribe(store.dispatch)
-    source_limits.subscribe(print)
 
     user_limits = colors.UserLimits()
-    user_limits.subscribe(store.dispatch)
-    user_limits.subscribe(print)
+    user_limits.connect(store)
 
     # Connect navigation controls
     controls = db.ControlView()
@@ -309,12 +311,9 @@ def main(argv=None):
 
     old_states = (rx.Stream()
                     .listen_to(store)
-                    .map(old_world))
+                    .map(old_world)
+                    .distinct())
     old_states.subscribe(artist.on_state)
-
-    # Ensure all listeners are pointing to the current state
-    store.notify(store.state)
-    store.dispatch(db.set_value("patterns", config.patterns))
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
