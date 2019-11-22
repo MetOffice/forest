@@ -8,6 +8,7 @@ from . import util
 from collections import namedtuple
 from forest.redux import middleware
 from forest.observe import Observable
+from forest.gridded_forecast import _to_datetime
 from forest.export import export
 
 
@@ -71,7 +72,43 @@ State.__new__.__defaults__ = (None,) * len(State._fields)
 def statehash(self):
     return hash((self.pattern, str(self.patterns), self.variable, self.initial_time, str(self.initial_times), self.valid_time, str(self.valid_times), self.pressure, str(self.pressures), self.valid_format))
 
+def time_equal(a, b):
+    if (a is None) and (b is None):
+        return True
+    elif (a is None) or (b is None):
+        return False
+    else:
+        return _to_datetime(a) == _to_datetime(b)
+
+_vtime_equal = np.vectorize(time_equal)
+
+def time_array_equal(x, y):
+    return np.all(_vtime_equal(x, y))
+
+def equal_value(a, b):
+    if (a is None) and (b is None):
+        return True
+    elif (a is None) or (b is None):
+        return False
+    else:
+        return np.allclose(a, b)
+
+def stateeq(self, other):
+    return (
+            (self.pattern == other.pattern) and
+            np.all(self.patterns == other.patterns) and
+            (self.variable == other.variable) and
+            np.all(self.variables == other.variables) and
+            time_equal(self.initial_time, other.initial_time) and
+            time_array_equal(self.initial_times, other.initial_times) and
+            time_equal(self.valid_time, other.valid_time) and
+            time_array_equal(self.valid_times, other.valid_times) and
+            equal_value(self.pressure, other.pressure) and
+            equal_value(self.pressures, other.pressures)
+    )
+
 State.__hash__ = statehash
+State.__eq__ = stateeq
 
 
 @export
