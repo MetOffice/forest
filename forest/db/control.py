@@ -80,10 +80,16 @@ def time_equal(a, b):
     else:
         return _to_datetime(a) == _to_datetime(b)
 
-_vtime_equal = np.vectorize(time_equal)
+_vto_datetime = np.vectorize(_to_datetime)
 
 def time_array_equal(x, y):
-    return np.all(_vtime_equal(x, y))
+    if (x is None) and (y is None):
+        return True
+    elif (x is None) or (y is None):
+        return False
+    elif (len(x) == 0) or (len(y) == 0):
+        return x == y
+    return np.all(_vto_datetime(x) == _vto_datetime(y))
 
 def equal_value(a, b):
     if (a is None) and (b is None):
@@ -93,7 +99,10 @@ def equal_value(a, b):
     else:
         return np.allclose(a, b)
 
-def stateeq(self, other):
+def state_ne(self, other):
+    return not (self == other)
+
+def state_eq(self, other):
     return (
             (self.pattern == other.pattern) and
             np.all(self.patterns == other.patterns) and
@@ -108,7 +117,8 @@ def stateeq(self, other):
     )
 
 State.__hash__ = statehash
-State.__eq__ = stateeq
+State.__eq__ = state_eq
+State.__ne__ = state_ne
 
 
 @export

@@ -50,12 +50,16 @@ class Stream(Observable):
         def closure():
             y = None
             called = False
+            count = 0
             def callback(x):
-                nonlocal y, called
-                if (not called) or (x != y):
-                    stream.notify(x)
+                nonlocal y, called, count
+                if not called:
                     y = x
+                    stream.notify(x)
                     called = True
+                if x != y:
+                    y = x
+                    stream.notify(x)
             return callback
 
         self.subscribe(closure())
