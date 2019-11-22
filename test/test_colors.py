@@ -5,12 +5,20 @@ import bokeh.models
 import numpy as np
 
 
+@pytest.fixture
+def listener():
+    return unittest.mock.Mock()
+
+
 @pytest.mark.parametrize("state,action,expect", [
     ({}, colors.set_fixed(True), {"colorbar": {"fixed": True}}),
     ({}, colors.set_fixed(False), {"colorbar": {"fixed": False}}),
     ({}, colors.set_palette_name("Accent"), {"colorbar": {"name": "Accent"}}),
     ({}, colors.set_palette_number(3), {"colorbar": {"number": 3}}),
     ({}, colors.set_palette_numbers([1, 2 ,3]), {"colorbar": {"numbers": [1, 2, 3]}}),
+    ({}, colors.set_user_high(100), {"colorbar": {"high": 100}}),
+    ({}, colors.set_user_low(0), {"colorbar": {"low": 0}}),
+    ({}, colors.set_source_limits(0, 100), {"colorbar": {"low": 0, "high": 100}}),
 ])
 def test_reducer(state, action, expect):
     result = colors.reducer(state, action)
@@ -24,8 +32,7 @@ def test_color_controls():
     assert color_mapper.palette == ['#7fc97f', '#beaed4', '#fdc086']
 
 
-def test_controls_on_name():
-    listener = unittest.mock.Mock()
+def test_controls_on_name(listener):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
     controls.subscribe(listener)
@@ -84,8 +91,7 @@ def test_palette_numbers(name, expect):
     assert result == expect
 
 
-def test_controls_on_number():
-    listener = unittest.mock.Mock()
+def test_controls_on_number(listener):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
     controls.subscribe(listener)
@@ -93,8 +99,7 @@ def test_controls_on_number():
     listener.assert_called_once_with(colors.set_palette_number(5))
 
 
-def test_controls_on_reverse():
-    listener = unittest.mock.Mock()
+def test_controls_on_reverse(listener):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
     controls.subscribe(listener)
@@ -170,17 +175,11 @@ def test_user_limits_render():
     ([0], colors.set_fixed(True)),
     ([], colors.set_fixed(False)),
 ])
-def test_user_limits_on_fixed(new, action):
+def test_user_limits_on_fixed(listener, new, action):
     user_limits = colors.UserLimits()
-    listener = unittest.mock.Mock()
     user_limits.subscribe(listener)
     user_limits.on_checkbox_change(None, None, new)
     listener.assert_called_once_with(action)
-
-
-@pytest.fixture
-def listener():
-    return unittest.mock.Mock()
 
 
 @pytest.mark.parametrize("sources,low,high", [

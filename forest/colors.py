@@ -63,6 +63,11 @@ def reducer(state, action):
         settings = state.get("colorbar", {})
         settings[key] = value
         state["colorbar"] = settings
+    elif kind == SET_LIMITS:
+        settings = state.get("colorbar", {})
+        settings.update(action["payload"])
+        state["colorbar"] = settings
+
     return state
 
 

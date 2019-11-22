@@ -225,12 +225,6 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
-    source_limits = colors.SourceLimits(image_sources)
-    source_limits.subscribe(print)
-
-    user_limits = colors.UserLimits()
-    user_limits.subscribe(print)
-
     menu = []
     for k, _ in config.patterns:
         menu.append((k, k))
@@ -295,6 +289,15 @@ def main(argv=None):
     store.dispatch(colors.set_palette_name("Viridis"))
     store.dispatch(colors.set_palette_number(256))
     store.dispatch(colors.set_palette_names(names))
+
+    # Connect limit controllers to store
+    source_limits = colors.SourceLimits(image_sources)
+    source_limits.subscribe(store.dispatch)
+    source_limits.subscribe(print)
+
+    user_limits = colors.UserLimits()
+    user_limits.subscribe(store.dispatch)
+    user_limits.subscribe(print)
 
     # Connect navigation controls
     controls = db.ControlView()
