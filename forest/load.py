@@ -30,7 +30,8 @@ from forest import (
         unified_model,
         rdt,
         satellite,
-        intake_loader,
+        cmip6_loader,
+        intake,
         saf,
 )
 
@@ -150,8 +151,10 @@ class Loader(object):
             return ghrsstl4.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
+            elif file_type == 'cmip6':
+            return cmip6_loader.CMIP6Loader(pattern)
         elif file_type == 'intake':
-            return intake_loader.IntakeLoader(pattern)
+            return intake.IntakeLoader(pattern)
         elif file_type == 'saf':
             return saf.saf(pattern, label, locator)
         else:

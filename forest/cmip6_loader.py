@@ -83,7 +83,7 @@ def _load_from_intake(
         cube.coord('air_pressure').convert_units('hPa')
     return iris.util.squeeze(cube)  # drop member dimension
 
-INTAKE_TOOLTIPS = [
+CMIP6_TOOLTIPS = [
     ("Name", "@name"),
     ("Value", "@image @units"),
     ('Valid', '@valid{%F %H:%M}'),
@@ -92,7 +92,7 @@ INTAKE_TOOLTIPS = [
     ("Institution", "@institution"),
     ("Member", "@memberid"),
     ('Variable', "@variableid"), ]
-INTAKE_FORMATTERS = {
+CMIP6_FORMATTERS = {
     'valid': 'datetime',
 }
 
@@ -160,7 +160,7 @@ def _get_bokeh_image(cube,
                                                    data['image'][0]))]
         return data
 
-class IntakeLoader:
+class CMIP6Loader:
     """
     Loader class for the CMIP6 intake dataset.
     """

@@ -21,7 +21,8 @@ from forest import (
         redux,
         rx,
         unified_model,
-        intake_loader,
+        cmip6_loader,
+        intake,
         navigate,
         parse_args)
 import forest.config as cfg
@@ -141,10 +142,14 @@ def main(argv=None):
             viewer = view.GPMView(loader, color_mapper)
         elif isinstance(loader, satellite.EIDA50):
             viewer = view.EIDA50(loader, color_mapper)
-        elif isinstance(loader, intake_loader.IntakeLoader):
+        elif isinstance(loader, cmip6_loader.CMIP6Loader):
             viewer = view.UMView(loader, color_mapper)
-            viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
-                                        intake_loader.INTAKE_FORMATTERS)
+            viewer.set_hover_properties(cmip6_loader.CMIP6_TOOLTIPS,
+                                        cmip6_loader.CMIP6_FORMATTERS)
+        elif isinstance(loader, intake.IntakeLoader):
+            viewer = view.UMView(loader, color_mapper)
+            #TODO: what do we need to customise?
+            #TODO: do we need a view to support tabular data?
         else:
             viewer = view.UMView(loader, color_mapper)
         viewers[name] = viewer
