@@ -50,15 +50,14 @@ class Stream(Observable):
         def closure():
             y = None
             called = False
-            count = 0
             def callback(x):
-                nonlocal y, called, count
+                nonlocal y, called
                 if not called:
-                    y = x
+                    y = x  # Important: must be before notify() to prevent recursion
                     stream.notify(x)
                     called = True
                 if x != y:
-                    y = x
+                    y = x  # Important: must be before notify() to prevent recursion
                     stream.notify(x)
             return callback
 

@@ -306,24 +306,10 @@ def main(argv=None):
         kwargs = {k: state.get(k, None) for k in db.State._fields}
         return db.State(**kwargs)
 
-    def debugger():
-        previous = None
-        called = False
-        def callback(current):
-            nonlocal previous, called
-            if not called:
-                previous = current
-                called = True
-                return
-            print(dt.datetime.now(), current == previous)
-            previous = current
-        return callback
-
     old_states = (rx.Stream()
                     .listen_to(store)
                     .map(old_world)
                     .distinct())
-    old_states.map(debugger())
     old_states.subscribe(artist.on_state)
 
     # Set top-level navigation
