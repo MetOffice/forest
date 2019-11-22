@@ -1,6 +1,6 @@
 import unittest.mock
 import pytest
-from forest import colors, main, redux
+from forest import colors, main, redux, db
 import bokeh.models
 import numpy as np
 
@@ -28,7 +28,7 @@ def test_reducer(state, action, expect):
 def test_color_controls():
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
-    controls.render({"colorbar": {"name": "Accent", "number": 3}})
+    controls.render({"name": "Accent", "number": 3})
     assert color_mapper.palette == ['#7fc97f', '#beaed4', '#fdc086']
 
 
@@ -107,16 +107,16 @@ def test_controls_on_reverse(listener):
     listener.assert_called_once_with(colors.set_reverse(True))
 
 
-@pytest.mark.parametrize("key,state,label", [
+@pytest.mark.parametrize("key,props,label", [
     ("numbers", {}, "N"),
     ("names", {}, "Palettes"),
-    ("numbers", {"colorbar": {"name": "Blues", "number": 5}}, "5"),
-    ("names", {"colorbar": {"name": "Blues", "number": 5}}, "Blues")
+    ("numbers", {"name": "Blues", "number": 5}, "5"),
+    ("names", {"name": "Blues", "number": 5}, "Blues")
 ])
-def test_controls_render_label(key, state, label):
+def test_controls_render_label(key, props, label):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
-    controls.render(state)
+    controls.render(props)
     assert controls.dropdowns[key].label == label
 
 
@@ -125,10 +125,8 @@ def test_controls_render_sets_menu():
     controls = colors.Controls(color_mapper)
     names = ["A", "B"]
     numbers = [1, 2]
-    state = {
-        "colorbar": {"names": names, "numbers": numbers}
-    }
-    controls.render(state)
+    props = {"names": names, "numbers": numbers}
+    controls.render(props)
     assert controls.dropdowns["names"].menu == [
             ("A", "A"), ("B", "B")]
     assert controls.dropdowns["numbers"].menu == [
@@ -136,17 +134,17 @@ def test_controls_render_sets_menu():
 
 
 
-@pytest.mark.parametrize("state,palette", [
+@pytest.mark.parametrize("props,palette", [
         ({}, None),
-        ({"colorbar": {"name": "Accent", "number": 3}},
+        ({"name": "Accent", "number": 3},
             ["#7fc97f", "#beaed4", "#fdc086"]),
-        ({"colorbar": {"name": "Accent", "number": 3, "reverse": True}},
+        ({"name": "Accent", "number": 3, "reverse": True},
             ["#fdc086", "#beaed4", "#7fc97f"])
     ])
-def test_controls_render_palette(state, palette):
+def test_controls_render_palette(props, palette):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
-    controls.render(state)
+    controls.render(props)
     assert color_mapper.palette == palette
 
 
@@ -194,3 +192,34 @@ def test_source_limits_on_change(listener, sources, low, high):
     source_limits.subscribe(listener)
     source_limits.on_change(None, None, None)  # attr, old, new
     listener.assert_called_once_with(colors.set_source_limits(low, high))
+
+
+def test_render_called_once_with_two_identical_settings():
+    color_mapper = bokeh.models.LinearColorMapper()
+    store = redux.Store(colors.reducer)
+    controls = colors.Controls(color_mapper)
+    controls.render = unittest.mock.Mock()
+    controls.connect(store)
+    for action in [
+            colors.set_palette_name("Accent"),
+            colors.set_palette_name("Accent")]:
+        store.dispatch(action)
+    controls.render.assert_called_once()
+
+
+def test_render_called_once_with_non_relevant_settings():
+    """Render should only happen when relevant state changes"""
+    color_mapper = bokeh.models.LinearColorMapper()
+    store = redux.Store(
+            redux.combine_reducers(
+                db.reducer,
+                colors.reducer))
+    controls = colors.Controls(color_mapper)
+    controls.render = unittest.mock.Mock()
+    controls.connect(store)
+    for action in [
+            colors.set_palette_name("Accent"),
+            db.set_value("variable", "air_temperature")]:
+        store.dispatch(action)
+    controls.render.assert_called_once()
+

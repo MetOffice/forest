@@ -7,6 +7,7 @@ import bokeh.layouts
 import numpy as np
 from forest.observe import Observable
 from forest.redux import middleware
+from forest.rx import Stream
 from forest.db.util import autolabel
 
 
@@ -186,6 +187,11 @@ class Invisible:
             self.color_mapper.low = low
 
 
+def state_to_props(state):
+    """Map state to props relevant to component"""
+    return state.get("colorbar", None)
+
+
 class Controls(Observable):
     def __init__(self, color_mapper):
         self.color_mapper = color_mapper
@@ -208,6 +214,16 @@ class Controls(Observable):
                 self.checkbox)
         super().__init__()
 
+    def connect(self, store):
+        """Connect component to Store"""
+        self.subscribe(store.dispatch)
+        stream = (Stream()
+                    .listen_to(store)
+                    .map(state_to_props)
+                    .filter(lambda x: x is not None)
+                    .distinct())
+        stream.map(lambda props: self.render(props))
+
     def on_name(self, attr, old, new):
         self.notify(set_palette_name(new))
 
@@ -217,33 +233,31 @@ class Controls(Observable):
     def on_reverse(self, attr, old, new):
         self.notify(set_reverse(len(new) == 1))
 
-    def render(self, state):
-        if "colorbar" not in state:
-            return
-
-        settings = state["colorbar"]
-        if "name" in settings:
-            self.dropdowns["names"].label = settings["name"]
-        if "number" in settings:
-            self.dropdowns["numbers"].label = str(settings["number"])
-        if ("name" in settings) and ("number" in settings):
-            name = settings["name"]
-            number = settings["number"]
-            reverse = settings.get("reverse", False)
+    def render(self, props):
+        """Render component from properties derived from state"""
+        assert isinstance(props, dict), "only support dict"
+        if "name" in props:
+            self.dropdowns["names"].label = props["name"]
+        if "number" in props:
+            self.dropdowns["numbers"].label = str(props["number"])
+        if ("name" in props) and ("number" in props):
+            name = props["name"]
+            number = props["number"]
+            reverse = props.get("reverse", False)
             palette = self.palette(name, number)
             if reverse:
                 palette = palette[::-1]
             self.color_mapper.palette = palette
-        if "names" in settings:
-            values = settings["names"]
+        if "names" in props:
+            values = props["names"]
             self.dropdowns["names"].menu = list(zip(values, values))
-        if "numbers" in settings:
-            values = [str(n) for n in settings["numbers"]]
+        if "numbers" in props:
+            values = [str(n) for n in props["numbers"]]
             self.dropdowns["numbers"].menu = list(zip(values, values))
-        if "low" in settings:
-            self.color_mapper.low = settings["low"]
-        if "high" in settings:
-            self.color_mapper.high = settings["high"]
+        if "low" in props:
+            self.color_mapper.low = props["low"]
+        if "high" in props:
+            self.color_mapper.high = props["high"]
 
     @staticmethod
     def palette(name, number):

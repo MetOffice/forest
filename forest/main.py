@@ -283,8 +283,7 @@ def main(argv=None):
 
     # Connect color palette controls
     colors_controls = colors.Controls(color_mapper)
-    colors_controls.subscribe(store.dispatch)
-    store.subscribe(colors_controls.render)
+    colors_controls.connect(store)
     names = list(sorted(bokeh.palettes.all_palettes.keys()))
     store.dispatch(colors.set_palette_name("Viridis"))
     store.dispatch(colors.set_palette_number(256))
