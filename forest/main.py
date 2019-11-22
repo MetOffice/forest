@@ -282,9 +282,6 @@ def main(argv=None):
         initial_state=initial_state,
         middlewares=middlewares)
 
-    # Set top-level navigation
-    store.dispatch(db.set_value("patterns", config.patterns))
-
     # Connect color palette controls
     colors_controls = colors.Controls(color_mapper)
     colors_controls.connect(store)
@@ -314,6 +311,9 @@ def main(argv=None):
                     .map(old_world)
                     .distinct())
     old_states.subscribe(artist.on_state)
+
+    # Set top-level navigation
+    store.dispatch(db.set_value("patterns", config.patterns))
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
