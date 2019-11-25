@@ -1,6 +1,7 @@
 """
 Helpers to choose color palette(s), limits etc.
 """
+import copy
 import bokeh.palettes
 import bokeh.colors
 import bokeh.layouts
@@ -58,6 +59,7 @@ def set_user_low(low):
 
 
 def reducer(state, action):
+    state = copy.deepcopy(state)
     kind = action["kind"]
     if kind == SET_PALETTE:
         key, value =action["payload"]["key"], action["payload"]["value"]

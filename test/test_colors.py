@@ -25,6 +25,12 @@ def test_reducer(state, action, expect):
     assert expect == result
 
 
+def test_reducer_immutable_state():
+    state = {"colorbar": {"number": 1}}
+    colors.reducer(state, colors.set_palette_number(3))
+    assert state["colorbar"]["number"] == 1
+
+
 def test_color_controls():
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.Controls(color_mapper)
