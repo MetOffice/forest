@@ -283,7 +283,7 @@ def main(argv=None):
         middlewares=middlewares)
 
     # Connect color palette controls
-    colors_controls = colors.Controls(color_mapper)
+    colors_controls = colors.Palette(color_mapper)
     colors_controls.connect(store)
     names = list(sorted(bokeh.palettes.all_palettes.keys()))
     store.dispatch(colors.set_palette_name("Viridis"))

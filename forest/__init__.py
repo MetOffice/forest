@@ -12,6 +12,8 @@ forecasts alongside observations.
 
 .. automodule:: forest.series
 
+.. automodule:: forest.colors
+
 .. automodule:: forest.keys
 
 .. automodule:: forest.config
