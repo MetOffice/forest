@@ -138,14 +138,9 @@ def reducer(state, action):
     """
     state = copy.deepcopy(state)
     kind = action["kind"]
-    if kind == SET_PALETTE:
+    if kind in [SET_PALETTE, SET_LIMITS]:
         state["colorbar"] = state.get("colorbar", {})
         state["colorbar"].update(action["payload"])
-    elif kind == SET_LIMITS:
-        settings = state.get("colorbar", {})
-        settings.update(action["payload"])
-        state["colorbar"] = settings
-
     return state
 
 
