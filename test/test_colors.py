@@ -87,6 +87,33 @@ def test_middleware_given_inconsistent_number():
             colors.set_palette_number(256),
             colors.set_palette_name("Viridis")]
 
+def test_middleware_given_fixed_swallows_source_limit_actions():
+    log = Log()
+    store = redux.Store(colors.reducer, middlewares=[
+        colors.palettes,
+        log])
+    actions = [
+        colors.set_fixed(True),
+        colors.set_source_limits(0, 100)
+    ]
+    for action in actions:
+        store.dispatch(action)
+    assert log.actions == [colors.set_fixed(True)]
+    assert store.state == {"colorbar": {"fixed": True}}
+
+def test_middleware_given_fixed_allows_source_limit_actions():
+    log = Log()
+    store = redux.Store(colors.reducer, middlewares=[
+        colors.palettes,
+        log])
+    actions = [
+        colors.set_source_limits(0, 100)
+    ]
+    for action in actions:
+        store.dispatch(action)
+    assert log.actions == actions
+    assert store.state == {"colorbar": {"low": 0, "high": 100}}
+
 
 @pytest.mark.parametrize("name,expect", [
     ("Accent", [3, 4, 5, 6, 7, 8]),

@@ -46,6 +46,11 @@ def set_source_limits(low, high):
             "meta": {"origin": "column_data_source"}}
 
 
+def is_source_origin(action):
+    origin = action.get("meta", {}).get("origin", "")
+    return origin == "column_data_source"
+
+
 def set_user_high(high):
     return {"kind": SET_LIMITS,
             "payload": {"high": high},
@@ -89,8 +94,17 @@ def palettes(store, next_dispatch, action):
                     if number not in numbers:
                         next_dispatch(set_palette_number(max(numbers)))
         next_dispatch(action)
+    elif kind == SET_LIMITS:
+        if is_fixed(store.state) and is_source_origin(action):
+            # Filter SET_LIMIT actions from ColumnDataSource
+            return
+        next_dispatch(action)
     else:
         next_dispatch(action)
+
+
+def is_fixed(state):
+    return state.get("colorbar", {}).get("fixed", False)
 
 
 def palette_numbers(name):
