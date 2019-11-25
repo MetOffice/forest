@@ -33,14 +33,14 @@ def test_reducer_immutable_state():
 
 def test_color_controls():
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Palette(color_mapper)
+    controls = colors.ColorPalette(color_mapper)
     controls.render({"name": "Accent", "number": 3})
     assert color_mapper.palette == ['#7fc97f', '#beaed4', '#fdc086']
 
 
 def test_controls_on_name(listener):
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Palette(color_mapper)
+    controls = colors.ColorPalette(color_mapper)
     controls.subscribe(listener)
     controls.on_number(None, None, 5)
     listener.assert_called_once_with(colors.set_palette_number(5))
@@ -126,7 +126,7 @@ def test_palette_numbers(name, expect):
 
 def test_controls_on_number(listener):
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Palette(color_mapper)
+    controls = colors.ColorPalette(color_mapper)
     controls.subscribe(listener)
     controls.on_number(None, None, 5)
     listener.assert_called_once_with(colors.set_palette_number(5))
@@ -134,7 +134,7 @@ def test_controls_on_number(listener):
 
 def test_controls_on_reverse(listener):
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Palette(color_mapper)
+    controls = colors.ColorPalette(color_mapper)
     controls.subscribe(listener)
     controls.on_reverse(None, None, [0])
     listener.assert_called_once_with(colors.set_reverse(True))
@@ -148,14 +148,14 @@ def test_controls_on_reverse(listener):
 ])
 def test_controls_render_label(key, props, label):
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Palette(color_mapper)
+    controls = colors.ColorPalette(color_mapper)
     controls.render(props)
     assert controls.dropdowns[key].label == label
 
 
 def test_controls_render_sets_menu():
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Palette(color_mapper)
+    controls = colors.ColorPalette(color_mapper)
     names = ["A", "B"]
     numbers = [1, 2]
     props = {"names": names, "numbers": numbers}
@@ -176,7 +176,7 @@ def test_controls_render_sets_menu():
     ])
 def test_controls_render_palette(props, palette):
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.Palette(color_mapper)
+    controls = colors.ColorPalette(color_mapper)
     controls.render(props)
     assert color_mapper.palette == palette
 
@@ -225,7 +225,7 @@ def test_source_limits_on_change(listener, sources, low, high):
 def test_render_called_once_with_two_identical_settings():
     color_mapper = bokeh.models.LinearColorMapper()
     store = redux.Store(colors.reducer)
-    controls = colors.Palette(color_mapper)
+    controls = colors.ColorPalette(color_mapper)
     controls.render = unittest.mock.Mock()
     controls.connect(store)
     for action in [
@@ -242,7 +242,7 @@ def test_render_called_once_with_non_relevant_settings():
             redux.combine_reducers(
                 db.reducer,
                 colors.reducer))
-    controls = colors.Palette(color_mapper)
+    controls = colors.ColorPalette(color_mapper)
     controls.render = unittest.mock.Mock()
     controls.connect(store)
     for action in [

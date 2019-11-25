@@ -4,7 +4,7 @@ Color palette
 
 Helpers to choose color palette(s), limits etc.
 
-.. autoclass:: Palette
+.. autoclass:: ColorPalette
     :members:
 
 .. autoclass:: UserLimits
@@ -312,7 +312,7 @@ def connect(view, store):
     stream.map(lambda props: view.render(props))
 
 
-class Palette(Observable):
+class ColorPalette(Observable):
     """Color palette user interface"""
     def __init__(self, color_mapper):
         self.color_mapper = color_mapper

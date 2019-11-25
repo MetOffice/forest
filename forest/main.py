@@ -283,8 +283,8 @@ def main(argv=None):
         middlewares=middlewares)
 
     # Connect color palette controls
-    colors_controls = colors.Palette(color_mapper)
-    colors_controls.connect(store)
+    color_palette = colors.ColorPalette(color_mapper)
+    color_palette.connect(store)
     names = list(sorted(bokeh.palettes.all_palettes.keys()))
     store.dispatch(colors.set_palette_name("Viridis"))
     store.dispatch(colors.set_palette_number(256))
@@ -329,7 +329,7 @@ def main(argv=None):
             child=bokeh.layouts.column(
                 border_row,
                 bokeh.layouts.row(slider),
-                colors_controls.layout,
+                color_palette.layout,
                 user_limits.layout
                 ),
             title="Settings")
