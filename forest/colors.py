@@ -17,27 +17,27 @@ SET_LIMITS = "SET_LIMITS"
 
 
 def set_fixed(flag):
-    return {"kind": SET_PALETTE, "payload": {"key": "fixed", "value": flag}}
+    return {"kind": SET_PALETTE, "payload": {"fixed": flag}}
 
 
 def set_reverse(flag):
-    return {"kind": SET_PALETTE, "payload": {"key": "reverse", "value": flag}}
+    return {"kind": SET_PALETTE, "payload": {"reverse": flag}}
 
 
 def set_palette_name(name):
-    return {"kind": SET_PALETTE, "payload": {"key": "name", "value": name}}
+    return {"kind": SET_PALETTE, "payload": {"name": name}}
 
 
 def set_palette_number(number):
-    return {"kind": SET_PALETTE, "payload": {"key": "number", "value": number}}
+    return {"kind": SET_PALETTE, "payload": {"number": number}}
 
 
 def set_palette_numbers(numbers):
-    return {"kind": SET_PALETTE, "payload": {"key": "numbers", "value": numbers}}
+    return {"kind": SET_PALETTE, "payload": {"numbers": numbers}}
 
 
 def set_palette_names(names):
-    return {"kind": SET_PALETTE, "payload": {"key": "names", "value": names}}
+    return {"kind": SET_PALETTE, "payload": {"names": names}}
 
 
 def set_source_limits(low, high):
@@ -67,10 +67,8 @@ def reducer(state, action):
     state = copy.deepcopy(state)
     kind = action["kind"]
     if kind == SET_PALETTE:
-        key, value =action["payload"]["key"], action["payload"]["value"]
-        settings = state.get("colorbar", {})
-        settings[key] = value
-        state["colorbar"] = settings
+        state["colorbar"] = state.get("colorbar", {})
+        state["colorbar"].update(action["payload"])
     elif kind == SET_LIMITS:
         settings = state.get("colorbar", {})
         settings.update(action["payload"])
@@ -83,10 +81,10 @@ def reducer(state, action):
 def palettes(store, next_dispatch, action):
     kind = action["kind"]
     if kind == SET_PALETTE:
-        key = action["payload"]["key"]
-        value = action["payload"]["value"]
-        if key == "name":
-            numbers = palette_numbers(value)
+        payload = action["payload"]
+        if "name" in payload:
+            name = payload["name"]
+            numbers = palette_numbers(name)
             next_dispatch(set_palette_numbers(numbers))
             if "colorbar" in store.state:
                 if "number" in store.state["colorbar"]:
