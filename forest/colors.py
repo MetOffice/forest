@@ -106,7 +106,6 @@ def set_source_limits(low, high):
             "payload": {"low": low, "high": high},
             "meta": {"origin": "column_data_source"}}
 
-
 def is_source_origin(action):
     """Detect origin of set_limits action"""
     origin = action.get("meta", {}).get("origin", "")
@@ -211,8 +210,8 @@ class UserLimits(Observable):
     """User controlled color mapper limits"""
     def __init__(self):
         self.inputs = {
-            "low": bokeh.models.TextInput(title="Low:"),
-            "high": bokeh.models.TextInput(title="High:")
+            "low": bokeh.models.TextInput(title="Min:"),
+            "high": bokeh.models.TextInput(title="Max:")
         }
         self.inputs["low"].on_change("value", self.on_input_low)
         self.inputs["high"].on_change("value", self.on_input_high)
@@ -318,7 +317,7 @@ class ColorPalette(Observable):
         self.dropdowns["names"].on_change("value", self.on_name)
         self.dropdowns["numbers"].on_change("value", self.on_number)
 
-        self.checkbox = bokeh.models.CheckboxButtonGroup(
+        self.checkbox = bokeh.models.CheckboxGroup(
             labels=["Reverse"],
             active=[])
         self.checkbox.on_change("active", self.on_reverse)

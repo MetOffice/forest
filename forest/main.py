@@ -176,7 +176,7 @@ def main(argv=None):
     for figure in figures:
         add_feature(figure, data.DISPUTED, color="red")
 
-    toggle = bokeh.models.CheckboxButtonGroup(
+    toggle = bokeh.models.CheckboxGroup(
             labels=["Coastlines"],
             active=[0],
             width=135)
