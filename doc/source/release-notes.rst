@@ -7,6 +7,7 @@ here to aid future users and maintainers.
 0.5.0
 -----
 
+- Refactor colors.py to use redux pattern
 - Refactor time series to use redux pattern
 - Add Python 3.8 support by modifying sqlite3 usage
 - Add template substitution using environment
