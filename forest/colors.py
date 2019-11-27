@@ -54,6 +54,10 @@ and either update state or generate new actions
 
 .. autofunction:: set_user_low
 
+.. autofunction:: set_invisible_min
+
+.. autofunction:: set_invisible_max
+
 """
 import copy
 import bokeh.palettes
