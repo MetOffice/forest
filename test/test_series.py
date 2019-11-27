@@ -75,6 +75,13 @@ def test_series_reducer():
     assert state == {"position": {"x": 0, "y": 0}}
 
 
+def test_series_reducer_immutable_state():
+    state = {"position": {"x": 1, "y": 1}}
+    next_state = series.reducer(state, series.set_position(0, 0))
+    assert state == {"position": {"x": 1, "y": 1}}
+    assert next_state == {"position": {"x": 0, "y": 0}}
+
+
 @pytest.mark.parametrize("actions,expect", [
     ([], {}),
     ([series.set_position(0, 0)], {"position": {"x": 0, "y": 0}}),

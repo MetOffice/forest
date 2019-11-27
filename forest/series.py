@@ -50,6 +50,7 @@ into values, selectors can do that job on behalf of the view.
 .. autofunction:: select_args
 
 """
+import copy
 import datetime as dt
 import glob
 import os
@@ -102,6 +103,7 @@ def reducer(state, action):
     :param action: data structure representing action
     :type action: dict
     """
+    state = copy.deepcopy(state)
     if action["kind"] == SET_POSITION:
         state["position"] = action["payload"]
     return state

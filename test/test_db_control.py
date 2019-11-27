@@ -5,6 +5,13 @@ import numpy as np
 from forest import db, redux, rx
 
 
+def test_reducer_immutable_state():
+    state = {"pressure": 1000}
+    next_state = db.reducer(state, db.set_value("pressure", 950))
+    assert state["pressure"] == 1000
+    assert next_state["pressure"] == 950
+
+
 def test_convert_datetime64_array_to_strings():
     times = np.array(
             [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)],

@@ -225,11 +225,6 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
-    colors_controls = colors.Controls(
-            color_mapper, "Plasma", 256)
-
-    mapper_limits = MapperLimits(image_sources, color_mapper)
-
     menu = []
     for k, _ in config.patterns:
         menu.append((k, k))
@@ -266,6 +261,7 @@ def main(argv=None):
     for _, pattern in config.patterns:
         initial_state = db.initial_state(navigator, pattern=pattern)
         break
+
     middlewares = [
         db.Log(verbose=True),
         keys.navigate,
@@ -275,14 +271,33 @@ def main(argv=None):
         db.Converter({
             "valid_times": db.stamps,
             "inital_times": db.stamps
-        })
+        }),
+        colors.palettes
     ]
     store = redux.Store(
         redux.combine_reducers(
             db.reducer,
-            series.reducer),
+            series.reducer,
+            colors.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
+
+    # Connect color palette controls
+    color_palette = colors.ColorPalette(color_mapper)
+    color_palette.connect(store)
+    names = list(sorted(bokeh.palettes.all_palettes.keys()))
+    store.dispatch(colors.set_palette_name("Viridis"))
+    store.dispatch(colors.set_palette_number(256))
+    store.dispatch(colors.set_palette_names(names))
+
+    # Connect limit controllers to store
+    source_limits = colors.SourceLimits(image_sources)
+    source_limits.subscribe(store.dispatch)
+
+    user_limits = colors.UserLimits()
+    user_limits.connect(store)
+
+    # Connect navigation controls
     controls = db.ControlView()
     controls.subscribe(store.dispatch)
     store.subscribe(controls.render)
@@ -293,11 +308,11 @@ def main(argv=None):
 
     old_states = (rx.Stream()
                     .listen_to(store)
-                    .map(old_world))
+                    .map(old_world)
+                    .distinct())
     old_states.subscribe(artist.on_state)
 
-    # Ensure all listeners are pointing to the current state
-    store.notify(store.state)
+    # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
 
     tabs = bokeh.models.Tabs(tabs=[
@@ -314,10 +329,8 @@ def main(argv=None):
             child=bokeh.layouts.column(
                 border_row,
                 bokeh.layouts.row(slider),
-                colors_controls.layout,
-                bokeh.layouts.row(mapper_limits.low_input),
-                bokeh.layouts.row(mapper_limits.high_input),
-                bokeh.layouts.row(mapper_limits.checkbox),
+                color_palette.layout,
+                user_limits.layout
                 ),
             title="Settings")
         ])
@@ -542,71 +555,6 @@ class TimeControls(Observable):
         if self.index is None:
             return
         return self.steps[self.index]
-
-
-class MapperLimits(object):
-    def __init__(self, sources, color_mapper, fixed=False):
-        self.fixed = fixed
-        self.sources = sources
-        for source in self.sources:
-            source.on_change("data", self.on_source_change)
-        self.color_mapper = color_mapper
-        self.low_input = bokeh.models.TextInput(title="Low:")
-        self.low_input.on_change("value",
-                self.change(color_mapper, "low", float))
-        self.color_mapper.on_change("low",
-                self.change(self.low_input, "value", str))
-        self.high_input = bokeh.models.TextInput(title="High:")
-        self.high_input.on_change("value",
-                self.change(color_mapper, "high", float))
-        self.color_mapper.on_change("high",
-                self.change(self.high_input, "value", str))
-        self.checkbox = bokeh.models.CheckboxGroup(
-                labels=["Fixed"],
-                active=[])
-        self.checkbox.on_change("active", self.on_checkbox_change)
-
-    def on_checkbox_change(self, attr, old, new):
-        if len(new) == 1:
-            self.fixed = True
-        else:
-            self.fixed = False
-
-    def on_source_change(self, attr, old, new):
-        if self.fixed:
-            return
-        images = []
-        for source in self.sources:
-            if len(source.data["image"]) == 0:
-                continue
-            images.append(source.data["image"][0])
-        if len(images) > 0:
-            low = np.min([np.min(x) for x in images])
-            high = np.max([np.max(x) for x in images])
-            self.color_mapper.low = low
-            self.color_mapper.high = high
-            self.color_mapper.low_color = bokeh.colors.RGB(0, 0, 0, a=0)
-            self.color_mapper.high_color = bokeh.colors.RGB(0, 0, 0, a=0)
-
-    @staticmethod
-    def change(widget, prop, dtype):
-        def wrapper(attr, old, new):
-            if old == new:
-                return
-            if getattr(widget, prop) == dtype(new):
-                return
-            setattr(widget, prop, dtype(new))
-        return wrapper
-
-
-def change(widget, prop, dtype):
-    def wrapper(attr, old, new):
-        if old == new:
-            return
-        if getattr(widget, prop) == dtype(new):
-            return
-        setattr(widget, prop, dtype(new))
-    return wrapper
 
 
 def add_feature(figure, data, color="black"):

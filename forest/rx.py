@@ -52,10 +52,13 @@ class Stream(Observable):
             called = False
             def callback(x):
                 nonlocal y, called
-                if (not called) or (x != y):
+                if not called:
+                    y = x  # Important: must be before notify() to prevent recursion
                     stream.notify(x)
-                    y = x
                     called = True
+                if x != y:
+                    y = x  # Important: must be before notify() to prevent recursion
+                    stream.notify(x)
             return callback
 
         self.subscribe(closure())
