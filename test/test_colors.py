@@ -181,15 +181,6 @@ def test_controls_render_palette(props, palette):
     assert color_mapper.palette == palette
 
 
-@pytest.mark.skip("implementing set_limit actions")
-def test_user_limits():
-    attr, old, new = None, None, None  # not used by callback
-    user_limits = colors.UserLimits()
-    user_limits.on_source_change(attr, old, new)
-    assert color_mapper.low == 0
-    assert color_mapper.high == 8
-
-
 def test_user_limits_render():
     user_limits = colors.UserLimits()
     user_limits.render({"low": -1, "high": 1})
