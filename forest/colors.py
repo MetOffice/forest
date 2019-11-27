@@ -126,6 +126,15 @@ def set_user_low(low):
             "meta": {"origin": "user"}}
 
 
+def set_invisible_min(flag):
+    """Action to mask out data below colour bar limits"""
+    return {"kind": SET_LIMITS, "payload": {"invisible_min": flag}}
+
+def set_invisible_max(flag):
+    """Action to mask out data below colour bar limits"""
+    return {"kind": SET_LIMITS, "payload": {"invisible_max": flag}}
+
+
 def reducer(state, action):
     """Reducer for colorbar actions
 
@@ -216,13 +225,24 @@ class UserLimits(Observable):
         self.inputs["low"].on_change("value", self.on_input_low)
         self.inputs["high"].on_change("value", self.on_input_high)
         self.checkbox = bokeh.models.CheckboxGroup(
-                labels=["Fixed"],
+                labels=["Fix min/max settings for all frames"],
                 active=[])
         self.checkbox.on_change("active", self.on_checkbox_change)
+        self.checkbox_invisible_min = bokeh.models.CheckboxGroup(
+            labels=["Set data below Min to transparent"],
+            active=[])
+        self.checkbox_invisible_min.on_change("active", self.on_invisible_min)
+        self.checkbox_invisible_max = bokeh.models.CheckboxGroup(
+            labels=["Set data above Max to transparent"],
+            active=[])
+        self.checkbox_invisible_max.on_change("active", self.on_invisible_max)
         self.layout = bokeh.layouts.column(
-                self.inputs["low"],
-                self.inputs["high"],
-                self.checkbox)
+            self.inputs["low"],
+            self.inputs["high"],
+            self.checkbox,
+            self.checkbox_invisible_min,
+            self.checkbox_invisible_max,
+        )
         super().__init__()
 
     def connect(self, store):
@@ -244,6 +264,14 @@ class UserLimits(Observable):
 
     def on_input_high(self, attr, old, new):
         self.notify(set_user_high(float(new)))
+
+    def on_invisible_min(self, attr, old, new):
+        """Event-handler when invisible_min toggle is changed"""
+        self.notify(set_invisible_min(len(new) == 1))
+
+    def on_invisible_max(self, attr, old, new):
+        """Event-handler when invisible_max toggle is changed"""
+        self.notify(set_invisible_max(len(new) == 1))
 
     def render(self, props):
         """Update user-defined limits inputs"""
@@ -370,6 +398,18 @@ class ColorPalette(Observable):
             self.color_mapper.low = props["low"]
         if "high" in props:
             self.color_mapper.high = props["high"]
+        invisible_min = props.get("invisible_min", False)
+        if invisible_min:
+            color = bokeh.colors.RGB(0, 0, 0, a=0)
+            self.color_mapper.low_color = color
+        else:
+            self.color_mapper.low_color = None
+        invisible_max = props.get("invisible_max", False)
+        if invisible_max:
+            color = bokeh.colors.RGB(0, 0, 0, a=0)
+            self.color_mapper.high_color = color
+        else:
+            self.color_mapper.high_color = None
 
     @staticmethod
     def palette(name, number):
