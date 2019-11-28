@@ -1,0 +1,60 @@
+@import 'mixins.less';
+
+.header {
+	.createGradient(@blue, @green);
+	.shadow(0px 1px 5px 0px rgba(0,0,0,0.41));
+	position: fixed;
+	top: 0;
+	width: 100%;
+	z-index: 10;
+	&__logo {
+		width: 50px;
+		float:left;
+		display:block;
+		margin: 15px;
+	}
+	&__navigation {
+		padding: 0;
+		margin: 0;
+		float:right;
+		li {
+			list-style-type:none;
+			float:left;
+			display:block;
+			a {
+				@media @desktop {
+					padding: 21px 30px;
+					font-size:16px;
+				}
+				text-decoration: none;
+				padding: 20px;
+				display: block;
+				color: #FFFFFF;
+				font-size:25px;
+				font-weight: lighter;
+				overflow:hidden;
+				i {
+					@media @desktop {
+						margin-right: 10px;
+						float:left;
+						margin-top: 4px;
+					}
+					.transition(all 500ms ease);
+				}
+			}
+			&:last-child {
+				a {
+					border-left: 1px solid rgba(0,0,0,0.1);
+				}
+			}
+		}
+	}
+	&__navigationtext {
+		display:none;
+		@media @desktop {
+			float:left;
+			display: inline-block;
+			display:block;
+		}
+	}
+}

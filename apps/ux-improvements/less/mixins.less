@@ -1,0 +1,62 @@
+@green : #2FBE92;
+@blue : #007AA9;
+@lightgrey : #f2f2f2;
+@darkgrey : #797979;
+
+@actionGreen : #67B26F;
+
+@desktop:   ~"only screen and (min-width: 960px)";
+@tablet:    ~"only screen and (min-width: 720px)";
+@largephone:    ~"only screen and (min-width: 450px)";
+
+.customFont(){
+	font-family: 'Open Sans', sans-serif;
+}
+
+.createGradient(@colour1, @colour2) {
+	background: @colour1; /* Old browsers */
+	background: -moz-linear-gradient(left,  @colour1 0%, @colour2 100%); /* FF3.6-15 */
+	background: -webkit-linear-gradient(left,  @colour1 0%,@colour2 100%); /* Chrome10-25,Safari5.1-6 */
+	background: linear-gradient(to right,  @colour1 0%,@colour2 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='@colour1', endColorstr='@colour2',GradientType=0 ); /* IE6-9 */
+}
+
+.shadow(@shadow) {
+	-webkit-box-shadow: @shadow;
+	-moz-box-shadow: @shadow;
+	box-shadow: @shadow;
+}
+
+.transition(@transition) {
+	-webkit-transition: @transition;
+	-moz-transition: @transition;
+	-o-transition: @transition;
+	transition: @transition;
+}
+
+.doubletransition(@transition, @transition2) {
+	-webkit-transition: @transition, @transition2;
+	-moz-transition: @transition, @transition2;
+	-o-transition: @transition, @transition2;
+	transition: @transition, @transition2;
+}
+
+.animate(@animate) {
+	-webkit-animation:@animate;
+    -moz-animation:@animate;
+    animation:spin @animate;
+}
+
+.border-radius(@radius) {
+	-webkit-border-radius: @radius;
+	-moz-border-radius: @radius;
+	border-radius: @radius;
+}
+
+.transform(@transform) {
+	-moz-transform: @transform;
+	-webkit-transform: @transform;
+	-o-transform: @transform;
+	-ms-transform: @transform;
+	transform: @transform;
+}
