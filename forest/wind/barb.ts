@@ -1,69 +1,117 @@
-import {RenderOne} from "models/markers/defs"
-import {Marker, MarkerView} from "models/markers/marker"
-import {Class} from "core/class"
+import {XYGlyph, XYGlyphView, XYGlyphData} from "models/glyphs/xy_glyph"
+//import {PointGeometry, SpanGeometry, RectGeometry, PolyGeometry} from "core/geometry"
+import {LineVector, FillVector} from "core/property_mixins"
 import {Line, Fill} from "core/visuals"
-import {Context2d} from "core/util/canvas"
+import {Arrayable, Rect} from "core/types"
+//import * as hittest from "core/hittest"
 import * as p from "core/properties"
+//import {range} from "core/util/array"
+//import {map} from "core/util/arrayable"
+import {Context2d} from "core/util/canvas"
+//import {Selection} from "models/selections/selection"
+
 //declare var barbs: any;
 import * as barbs from './lib/barbs'
 
-export namespace BarbNames {
-  export type Props = Marker.Props & {
-      u: p.DistanceSpec
-      v: p.DistanceSpec
-    }
+export interface BarbData extends XYGlyphData {
+  _u: Arrayable<number>
+  _v: Arrayable<number>
 }
 
-let _one_barb_maker = function (that: any) {
- return function _one_barb(
-              ctx: Context2d,
-              i: number,
-              r: number,
-              line: Line,
-              fill: Fill) : void {
-            console.log(i, r)
-            barbs.draw(
-                ctx,
-                that._u,
-                that._v,
-                r
-            )
-          if  (fill.doit) {
-              fill.set_vectorize(ctx, i)
-              ctx.fill()
-          }
-          if (line.doit) {
-              line.set_vectorize(ctx, i)
-              ctx.stroke()
-        }
+export interface BarbView extends BarbData {}
+
+export class BarbView extends XYGlyphView {
+  model: Barb
+  visuals: Barb.Visuals
+
+  //protected _map_data(): void {
+  //}
+
+  //protected _mask_data(): number[] {
+  //  return this.index.indices({x0, x1, y0, y1})
+  //}
+
+  protected _render(ctx: Context2d, indices: number[], {_u, _v}: BarbData): void {
+    for (const i of indices) {
+      if (isNaN(_u[i] + _v[i]))
+        continue
+
+      barbs.draw(ctx, _u[i], _v[i], i)
+
+      if (this.visuals.fill.doit) {
+        this.visuals.fill.set_vectorize(ctx, i)
+        ctx.fill()
       }
+
+      if (this.visuals.line.doit) {
+        this.visuals.line.set_vectorize(ctx, i)
+        ctx.stroke()
+      }
+    }
+  }
+
+  //protected _hit_point(geometry: PointGeometry): Selection {
+  //}
+
+  //protected _hit_span(geometry: SpanGeometry): Selection {
+  //}
+
+  //protected _hit_rect(geometry: RectGeometry): Selection {
+  //}
+
+  //protected _hit_poly(geometry: PolyGeometry): Selection {
+  //}
+
+  // barb does not inherit from marker (since it also accepts radius) so we
+  // must supply a draw_legend for it  here
+  draw_legend_for_index(ctx: Context2d, {x0, y0, x1, y1}: Rect, index: number): void {
+    // using objects like this seems a little wonky, since the keys are coerced to
+    // stings, but it works
+    const len = index + 1
+
+    const sx: number[] = new Array(len)
+    sx[index] = (x0 + x1)/2
+    const sy: number[] = new Array(len)
+    sy[index] = (y0 + y1)/2
+
+    const sradius: number[] = new Array(len)
+    sradius[index] = Math.min(Math.abs(x1 - x0), Math.abs(y1 - y0))*0.2
+
+    this._render(ctx, [index], {sx, sy, sradius} as any) // XXX
+  }
 }
 
-function _mk_model(f: any): Class<Marker> {
-    // Replicate approach in markers/defs.ts
+export namespace Barb {
+  export type Attrs = p.AttrsOf<Props>
 
-    const view = class extends MarkerView {
-        static initClass(): void {
-            this.prototype._render_one = this.prototype.bind(f)
-        }
-    }
-    view.initClass()
+  export type Props = XYGlyph.Props & LineVector & FillVector & {
+    u: p.DistanceSpec
+    v: p.DistanceSpec
+  }
 
-    const model = class extends Marker {
-        static __name__ = "Barb"
-        static initClass(): void {
-            this.prototype.default_view = view
-            this.define<BarbNames.Props>({
-                "u": [p.DistanceSpec,
-                    {units: "screen", value: 0}],
-                "v": [p.DistanceSpec,
-                    {units: "screen", value: 0}],
-            })
-        }
-    }
-    model.initClass()
-    return model
+  export type Visuals = XYGlyph.Visuals & {line: Line, fill: Fill}
 }
 
-export const Barb = _mk_model(_one_barb_maker)
+export interface Barb extends Barb.Attrs {}
 
+export class Barb extends XYGlyph {
+  properties: Barb.Props
+
+  constructor(attrs?: Partial<Barb.Attrs>) {
+    super(attrs)
+  }
+
+  static init_Barb(): void {
+    this.prototype.default_view = BarbView
+
+    this.mixins(['line', 'fill'])
+    this.define<Barb.Props>({
+      u: [ p.DistanceSpec,    { units: "screen", value: 0 } ],
+      v: [ p.DistanceSpec,    { units: "screen", value: 0 } ],
+    })
+  }
+
+  initialize(): void {
+    super.initialize()
+  }
+}
