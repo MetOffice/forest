@@ -1,6 +1,6 @@
 <h1 align="center">
   <a href="https://forest-informaticslab.readthedocs.io/en/latest/" style="display: block; margin: 0 auto;">
-   <img src="https://raw.githubusercontent.com/informatics-lab/forest/master/forest_logo_640x320.png"
+   <img src="https://raw.githubusercontent.com/informatics-lab/forest/master/forest-logo-small.png"
         style="max-width: 40%;" alt="FOREST"></a>
 </h1>
 
