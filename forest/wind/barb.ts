@@ -36,7 +36,8 @@ export class BarbView extends XYGlyphView {
       if (isNaN(_u[i] + _v[i]))
         continue
 
-      barbs.draw(ctx, _u[i], _v[i], i)
+      barbs.draw(ctx, _u[i], _v[i], 10)
+      console.log("we tried to render but nothing shows up")
 
       if (this.visuals.fill.doit) {
         this.visuals.fill.set_vectorize(ctx, i)
@@ -69,15 +70,12 @@ export class BarbView extends XYGlyphView {
     // stings, but it works
     const len = index + 1
 
-    const sx: number[] = new Array(len)
-    sx[index] = (x0 + x1)/2
-    const sy: number[] = new Array(len)
-    sy[index] = (y0 + y1)/2
+    const u: number[] = new Array(len)
+    u[index] = (x0 + x1)/2
+    const v: number[] = new Array(len)
+    v[index] = (y0 + y1)/2
 
-    const sradius: number[] = new Array(len)
-    sradius[index] = Math.min(Math.abs(x1 - x0), Math.abs(y1 - y0))*0.2
-
-    this._render(ctx, [index], {sx, sy, sradius} as any) // XXX
+    this._render(ctx, [index], {u, v} as any) // XXX
   }
 }
 
