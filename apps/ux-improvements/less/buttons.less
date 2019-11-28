@@ -1,0 +1,40 @@
+@import 'mixins.less';
+
+.button {
+	.border-radius(250px);
+	padding: 15px 30px;
+	background: #D4D4D4;
+	.shadow(0px 0px 0px 5px rgba(0,0,0,0.1));
+	font-size: 14px;
+	text-align: center;
+	color: #444444;
+	cursor: pointer;
+	.transition(all 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55));
+	width: 45%;
+	max-width: 200px;
+	&:hover {
+		@media @desktop {
+			.shadow( 0px 0px 0px 10px rgba(0,0,0,0.05))
+		}
+	}
+	&--action {
+		background: @actionGreen;
+		.shadow(0px 0px 0px 5px rgba(103,178,111,0.15));
+		color: white;
+		&:hover {
+			@media @desktop {
+				.shadow( 0px 0px 0px 10px rgba(103,178,111,0.15))
+			}
+		}
+	}
+	&--circle {
+		width: 50px;
+		height: 50px;
+		display:block;
+		margin: 0 10px 0;
+		padding: 13px;
+    	font-size: 20px;
+    	background: @blue;
+    	color: white;
+	}
+}

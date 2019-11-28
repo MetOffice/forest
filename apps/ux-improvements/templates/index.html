@@ -1,0 +1,258 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+		<link href="bokehtest/static/css/forest.css" type = "text/css" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400&display=swap" rel="stylesheet">
+
+		<script src="https://kit.fontawesome.com/90999630dc.js" crossorigin="anonymous"></script>
+
+	</head>
+	<body>
+
+		<div class="header">
+			<ul class="header__navigation">
+				<li>
+					<a href="#">
+						<i class="fas fa-cog"></i>
+						<span class="header__navigationtext">
+							Settings
+						</span>
+					</a>
+				</li>
+				<li>
+					<a href="#">
+						<i class="fas fa-user-circle"></i>
+						<span class="header__navigationtext">
+							Account
+						</span>
+					</a>
+				</li>
+			</ul>
+			<img class="header__logo" src="bokehtest/static/images/forest-logo.png">
+		</div>
+
+		<div id="titlebar" class="titlebar">
+			<div class="titlebar__section">
+				<span class="titlebar__title">
+					Africa GA6 Model
+				</span>
+				<div id="titlebar__actions" class="titlebar__actions">
+					<div id="actiontoggle" class="titlebar__menuicon">
+						<span class="line"></span>
+						<span class="line"></span>
+						<span class="line"></span>
+					</div>
+					<a class="button button--action">
+						Add view
+					</a>
+					<a id="editbutton" class="button button--circle">
+						<i class="fas fa-pencil-alt"></i>
+					</a>
+					<a class="button button--circle">
+						<i class="fas fa-cloud-download-alt"></i>
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<div id="loading" class="loading loading--hidden">
+			<img class="loading__icon" src="bokehtest/static/images/loadingicon.png">
+			<img class="loading__circle" src="bokehtest/static/images/loading-circle.png">
+		</div>
+
+		<div id="settingsmodal" class="modal__container">
+			<div class="modal">
+
+				<div class="modal__title">
+					Modify your view
+				</div>
+				
+				<ul class="tabs">
+					<li>
+						<a class="tabs__link tabs__link--active" href="">
+							Configuration
+						</a>
+					</li>
+					<li>
+						<a class="tabs__link" href="">
+							Visualisation
+						</a>
+					</li>
+				</ul>
+
+				<div id="stepper" class="stepper stepper--1">
+
+					<div class="stepper__stepscontainer">
+
+						<div class="stepper__step stepper__step--active">
+							<i class="stepp__icon fa fa-info-circle"></i>
+							<span class="stepper__steptitle">
+								Configuration
+							</span>
+						</div>
+
+						<div class="stepper__step">
+							<i class="stepp__icon fa fa-paint-brush"></i>
+							<span class="stepper__steptitle">
+								Visualisation
+							</span>
+						</div>
+
+						<div class="stepper__step">
+							<i class="stepp__icon fa fa-check"></i>
+							<span class="stepper__steptitle">
+								Generate
+							</span>
+						</div>
+
+					</div>
+
+				</div>
+
+				<div id="form--1" class="form form--active">
+
+					<div class="form__section form__section--infocus">
+
+						<div class="form__field">
+
+							<label class="form__label">Which model would you like to run?</label>
+
+							<select class="form__select">
+								<option val="">Option one</option>
+								<option val="">Option two</option>
+								<option val="">Option three</option>
+							</select>
+
+							<span class="help">
+								<i class="help__icon far fa-question-circle"></i>
+								<span class="help__info">
+									Testing help tooltip! 
+								</span>
+							</span>
+
+						</div>
+
+						<div class="form__field">
+
+							<label class="form__label">Which model would you like to run?</label>
+
+							<select class="form__select">
+								<option val="">Option one</option>
+								<option val="">Option two</option>
+								<option val="">Option three</option>
+							</select>
+
+							<span class="help">
+								<i class="help__icon far fa-question-circle"></i>
+								<span class="help__info">
+									Testing help tooltip! 
+								</span>
+							</span>
+
+						</div>
+
+						<div class="form__field">
+
+							<label class="form__label">Which model would you like to run?</label>
+
+							<select class="form__select">
+								<option val="">Option one</option>
+								<option val="">Option two</option>
+								<option val="">Option three</option>
+							</select>
+
+							<span class="help">
+								<i class="help__icon far fa-question-circle"></i>
+								<span class="help__info">
+									Testing help tooltip! 
+								</span>
+							</span>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div id='form--2' class="form form--waiting">
+
+					<div class="form__section form__section--infocus">
+
+						<div class="form__field">
+
+							<label class="form__label">Which model would you like to run?</label>
+
+							<select class="form__select">
+								<option val="">Option one</option>
+								<option val="">Option two</option>
+								<option val="">Option three</option>
+							</select>
+
+							<span class="help">
+								<i class="help__icon far fa-question-circle"></i>
+								<span class="help__info">
+									Testing help tooltip! 
+								</span>
+							</span>
+
+						</div>
+
+						<div class="form__field">
+
+							<label class="form__label">Which model would you like to run?</label>
+
+							<select class="form__select">
+								<option val="">Option one</option>
+								<option val="">Option two</option>
+								<option val="">Option three</option>
+							</select>
+
+							<span class="help">
+								<i class="help__icon far fa-question-circle"></i>
+								<span class="help__info">
+									Testing help tooltip! 
+								</span>
+							</span>
+
+						</div>
+
+						<div class="form__field">
+
+							<label class="form__label">Which model would you like to run?</label>
+
+							<select class="form__select">
+								<option val="">Option one</option>
+								<option val="">Option two</option>
+								<option val="">Option three</option>
+							</select>
+
+							<span class="help">
+								<i class="help__icon far fa-question-circle"></i>
+								<span class="help__info">
+									Testing help tooltip! 
+								</span>
+							</span>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div class="modal__actions">
+					<a id="backbutton" class="button">
+						Cancel
+					</a>
+					<a id='testbuttonclick' class="button button--action">
+						Next
+					</a>
+				</div>
+
+			</div>
+		</div>
+
+		<script type="text/javascript" src="bokehtest/static/js/forest-min.js"></script>
+
+	</body>
+</html>

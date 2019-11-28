@@ -1,0 +1,108 @@
+@import 'mixins.less';
+
+.titlebar {
+	position: fixed;
+	top: -100px;
+	background: #FFFFFF;
+	.shadow(0px 1px 5px 0px rgba(0,0,0,0.41));
+	display:block;
+	width:100%;
+	color: @blue;
+	.transition(all 500ms ease);
+	&--visible {
+		padding: 85px 20px 20px;
+		top: 0;
+	}
+	&--actionsvisible {
+		padding-bottom: 45px;
+	}
+	&__actions {
+		position: absolute;
+		top: 68px;
+		left: 0;
+		width: 100%;
+		display:block;
+		.button {
+			position: relative;
+    		top: 55px;
+    		float:left;
+    		opacity: 0;
+    		display:none;
+    		&--action {
+    			float:right;
+    		}
+    		@media @tablet {
+	    		top: 30px;
+			    float: left;
+			    opacity: 1;
+			    display: block;
+			    float:right;
+			    margin: 0 15px 0 0;
+    		}
+		}
+		&--buttonsdisplay {
+			.button {
+				display:block;
+			}
+		}
+		&--showbuttons {
+			.button {
+				opacity: 1;
+				top: 65px;
+
+				&:nth-child(0) {
+					transition-delay: 000ms;
+				}
+				&:nth-child(1) {
+					transition-delay: 200ms;
+				}
+				&:nth-child(2) {
+					transition-delay: 600ms;
+				}
+				&:nth-child(3) {
+					transition-delay: 400ms;
+				}
+				&:nth-child(4) {
+					transition-delay: 500ms;
+				}
+			}
+			.titlebar__menuicon {
+				.line {
+					&:first-child {
+						top: 9px;
+						.transform(rotate(45deg));
+					}
+					&:nth-child(2) {
+						opacity: 0;
+					}
+					&:last-child {
+						top: -7px;
+						.transform(rotate(-45deg));
+					}
+				}
+			}
+		}
+	}
+	&__menuicon {
+		float:right;
+		display:block;
+		padding:17px 15px 14px;
+		margin-left: -50px;
+		cursor: pointer;
+		@media @tablet {
+			display:none;
+		}
+		.line {
+			width: 30px;
+			display:block;
+			height: 3px;
+			position: relative; 
+			margin-bottom: 5px;
+			.border-radius(250px);
+			background: @blue;
+			top: 0;
+			.transition(all 500ms ease);
+		}
+	}
+}
+
