@@ -7,8 +7,8 @@ from bokeh.core.properties import DistanceSpec
 class Barb(bokeh.models.Marker):
     __implementation__ = "barb.ts"
     _args = ('x', 'y') #, 'u', 'v')
-    # u = DistanceSpec(units_default="screen")
-    # v = DistanceSpec(units_default="screen")
+    #u = DistanceSpec(units_default="screen")
+    #v = DistanceSpec(units_default="screen")
 
 
 # Extend bokeh.plotting.Figure to support .barb()
