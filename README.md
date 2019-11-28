@@ -4,7 +4,9 @@
         style="max-width: 40%;" alt="FOREST"></a>
 </h1>
 
-## Forecast and Observation Research and Evaluation Survey Tool
+<span><strong>FOREST - </strong> 
+  Forecast and Observation Research and Evaluation Survey Tool
+  </span>
 
 [![Build Status](https://travis-ci.com/informatics-lab/forest.svg?branch=master)](https://travis-ci.com/informatics-lab/forest)
 [![Coverage Status](https://coveralls.io/repos/github/informatics-lab/forest/badge.svg?branch=master)](https://coveralls.io/github/informatics-lab/forest?branch=master)
