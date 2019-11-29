@@ -34,6 +34,7 @@ export class BarbView extends XYGlyphView {
   visuals: Barb.Visuals
 
   protected _map_data(): void {
+    console.log("_map_data")
     // XXX: Order is important here: size is always present (at least
     // a default), but radius is only present if a user specifies it.
     const bd = this.model.properties.barb_dimension.spec.value
@@ -63,9 +64,11 @@ export class BarbView extends XYGlyphView {
         break
       }
     }
+    console.log("leave _map_data")
   }
 
   protected _mask_data(): number[] {
+    console.log("_mask_data")
     const [hr, vr] = this.renderer.plot_view.frame.bbox.ranges
 
     let x0: number, y0: number
@@ -78,16 +81,20 @@ export class BarbView extends XYGlyphView {
     const sy1 = vr.end
     ;[y0, y1] = this.renderer.yscale.r_invert(sy0, sy1)
 
+    console.log("leave _mask_data")
     return this.index.indices({x0, x1, y0, y1})
   }
 
-  protected _render(ctx: Context2d, indices: number[], {_u, _v}: BarbData): void {
+  protected _render(ctx: Context2d, indices: number[], {su, sv}: BarbData): void {
     for (const i of indices) {
-      if (isNaN(_u[i] + _v[i]))
+      if (isNaN(su[i] + sv[i]))
         continue
 
-      barbs.draw(ctx, _u[i], _v[i], 10)
+      barbs.draw(ctx, 1, 1, 10)
       console.log("we tried to render but nothing shows up")
+      console.log("u, v values incoming: ")
+      console.log(su[i])
+      console.log(sv[i])
 
       if (this.visuals.fill.doit) {
         this.visuals.fill.set_vectorize(ctx, i)
@@ -103,6 +110,7 @@ export class BarbView extends XYGlyphView {
   }
 
   protected _hit_point(geometry: PointGeometry): Selection {
+    console.log("_hit_point")
     let dist, r2, sx0, sx1, sy0, sy1, x0, x1, y0, y1
     const {sx, sy} = geometry
     const x = this.renderer.xscale.invert(sx)
@@ -128,10 +136,12 @@ export class BarbView extends XYGlyphView {
       }
     }
 
+    console.log("leave _hit_point")
     return hittest.create_hit_test_result_from_hits(hits)
   }
 
   protected _hit_span(geometry: SpanGeometry): Selection {
+    console.log("_hit_span")
     const {sx, sy} = geometry
     const bounds = this.bounds()
     const result = hittest.create_empty_hit_test_result()
@@ -158,19 +168,23 @@ export class BarbView extends XYGlyphView {
     const hits = this.index.indices({x0, x1, y0, y1})
 
     result.indices = hits
+    console.log("leave _hit_span")
     return result
   }
 
   protected _hit_rect(geometry: RectGeometry): Selection {
+    console.log("_hit_rect")
     const {sx0, sx1, sy0, sy1} = geometry
     const [x0, x1] = this.renderer.xscale.r_invert(sx0, sx1)
     const [y0, y1] = this.renderer.yscale.r_invert(sy0, sy1)
     const result = hittest.create_empty_hit_test_result()
     result.indices = this.index.indices({x0, x1, y0, y1})
+    console.log("leave _hit_rect")
     return result
   }
 
   protected _hit_poly(geometry: PolyGeometry): Selection {
+    console.log("_hit_poly")
     const {sx, sy} = geometry
 
     // TODO (bev) use spatial index to pare candidate list
@@ -186,14 +200,16 @@ export class BarbView extends XYGlyphView {
 
     const result = hittest.create_empty_hit_test_result()
     result.indices = hits
+    console.log("leave _hit_poly")
     return result
   }
 
-  // barb does not inherit from marker (since it also accepts radius) so we
+  // barb does not inherit from marker (since it also accepts u and v) so we
   // must supply a draw_legend for it  here
   draw_legend_for_index(ctx: Context2d, {x0, y0, x1, y1}: Rect, index: number): void {
     // using objects like this seems a little wonky, since the keys are coerced to
     // stings, but it works
+    console.log("_draw_legend_for_index")
     const len = index + 1
 
     const u: number[] = new Array(len)
@@ -202,6 +218,7 @@ export class BarbView extends XYGlyphView {
     v[index] = (y0 + y1)/2
 
     this._render(ctx, [index], {u, v} as any) // XXX
+    console.log("leave _draw_legend_for_index")
   }
 }
 
