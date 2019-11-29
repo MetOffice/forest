@@ -28,8 +28,8 @@ def test_build_loader_given_database(tmpdir):
         "files": [
             {
                 "label": "UM",
-                "sql_pattern": "*.nc",
-                "replace_dir": "/replace",
+                "pattern": "*.nc",
+                "directory": "/replace",
                 "locator": "database"
             }
         ]

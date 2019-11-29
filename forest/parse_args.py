@@ -21,9 +21,6 @@ def add_arguments(parser):
         "--database",
         help="SQL database to optimise menu system")
     parser.add_argument(
-        "--replace-dir",
-        help="Replace directory of SQL query file names")
-    parser.add_argument(
         "--config-file",
         metavar="YAML_FILE",
         help="YAML file to configure application")

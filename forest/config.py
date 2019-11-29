@@ -91,9 +91,9 @@ class Config(object):
                 - label: Trial
                   pattern: "${TRIAL_DIR}/*.nc"
                 - label: Control
-                  pattern: "${CONTROL_DIR}*.nc"
+                  pattern: "${CONTROL_DIR}/*.nc"
                 - label: RDT
-                  pattern: "${RDT_DIR}*.json"
+                  pattern: "${RDT_DIR}/*.json"
                   file_type: rdt
 
         :param path: JSON/YAML file to load
@@ -147,25 +147,30 @@ class FileGroup(object):
     :param pattern: wildcard pattern used by either SQL or glob
     :param locator: keyword describing search method (default: 'file_system')
     :param file_type: keyword describing file contents (default: 'unified_model')
+    :param directory: leaf/absolute directory where file(s) are stored (default: None)
     """
     def __init__(self,
             label,
-            pattern=None,
+            pattern,
             locator="file_system",
             file_type="unified_model",
-            sql_pattern=None,
-            replace_dir=None):
+            directory=None):
         self.label = label
         self.pattern = pattern
-        self.sql_pattern = sql_pattern
-        self.replace_dir = replace_dir
         self.locator = locator
         self.file_type = file_type
+        self.directory = directory
+
+    @property
+    def full_pattern(self):
+        if self.directory is None:
+            return self.pattern
+        return os.path.join(self.directory, self.pattern)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             raise Exception("Can not compare")
-        attrs = ("label", "pattern", "locator", "file_type")
+        attrs = ("label", "pattern", "locator", "file_type", "directory")
         return all(
                 getattr(self, attr) == getattr(other, attr)
                 for attr in attrs)
@@ -178,7 +183,8 @@ class FileGroup(object):
                 for attr in arg_attrs]
         kwarg_attrs = [
             "locator",
-            "file_type"]
+            "file_type",
+            "directory"]
         kwargs = [
             "{}={}".format(attr, self._str(getattr(self, attr)))
                 for attr in kwarg_attrs]

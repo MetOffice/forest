@@ -46,7 +46,7 @@ def test_Navigator_from_group__use_paths(expand_paths, from_file_type):
 
 @patch('glob.glob')
 @patch('os.path.expanduser')
-def test_Navigator_expand_paths__no_dir(expanduser, glob):
+def test_Navigator_expand_paths(expanduser, glob):
     expanduser.return_value = sentinel.expanded
     glob.return_value = sentinel.paths
 

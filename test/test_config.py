@@ -39,20 +39,6 @@ def test_config_template_substitution(tmpdir):
     assert config.data == {"parameter": "/expand/file.nc"}
 
 
-def test_file_group_replace_dir():
-    groups = forest.config.Config({
-        "files": [
-                {
-                    "label": "UM",
-                    "locator": "database",
-                    "sql_pattern": "*file.nc*",
-                    "replace_dir": "/replace"
-                }
-            ]
-        }).file_groups
-    assert groups[0].replace_dir == "/replace"
-
-
 class TestIntegration(unittest.TestCase):
     def setUp(self):
         path = os.path.join(os.path.dirname(__file__), '../forest/config.yaml')
@@ -62,18 +48,18 @@ class TestIntegration(unittest.TestCase):
         result = self.config.file_groups[0]
         expect = forest.config.FileGroup(
                 "Operational GA6 Africa",
+                "*global_africa*.nc",
                 locator="database",
-                replace_dir="${BUCKET_DIR}/unified_model",
-                sql_pattern="*global_africa*.nc")
+                directory="${BUCKET_DIR}/unified_model")
         self.assert_group_equal(expect, result)
 
     def test_load_server_config_second_group(self):
         result = self.config.file_groups[2]
         expect = forest.config.FileGroup(
                 "Operational Tropical Africa",
+                "*os42_ea*.nc",
                 locator="database",
-                replace_dir="${BUCKET_DIR}/unified_model",
-                sql_pattern="*os42_ea*.nc")
+                directory="${BUCKET_DIR}/unified_model")
         self.assert_group_equal(expect, result)
 
     def test_load_server_config_has_eida50(self):
