@@ -37,6 +37,19 @@ def stretch_image(lons, lats, values):
         "image": [image]
     }
 
+def bokeh_image(lat, lon, data):
+    x= []
+    y = []
+    dh = []
+    dw = []
+    image = []
+    return {
+        "x": x,
+        "y": y,
+        "dw": dw,
+        "dh": dh,
+        "image": image
+    }
 
 def stretch_y(uneven_y):
     """Mercator projection stretches longitude spacing
