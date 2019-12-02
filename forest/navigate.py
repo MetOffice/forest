@@ -36,15 +36,13 @@ class Navigator:
         if group.locator == 'database':
             navigator = database
         else:
-            paths = cls._expand_paths(group.directory, group.pattern)
+            paths = cls._expand_paths(group.pattern)
             navigator = FileSystemNavigator.from_file_type(paths,
                                                            group.file_type)
         return navigator
 
     @classmethod
-    def _expand_paths(cls, directory, pattern):
-        if directory is not None:
-            pattern = os.path.join(directory, pattern)
+    def _expand_paths(cls, pattern):
         return glob.glob(os.path.expanduser(pattern))
 
     def variables(self, pattern):

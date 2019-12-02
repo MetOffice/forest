@@ -198,15 +198,12 @@ class SeriesView(Observable):
         super().__init__()
 
     @classmethod
-    def from_groups(cls, figure, groups, directory=None):
+    def from_groups(cls, figure, groups):
         """Factory method to load from :class:`~forest.config.FileGroup` objects"""
         loaders = {}
         for group in groups:
             if group.file_type == "unified_model":
-                if directory is None:
-                    pattern = group.full_pattern
-                else:
-                    pattern = os.path.join(directory, group.full_pattern)
+                pattern = group.full_pattern
                 loaders[group.label] = SeriesLoader.from_pattern(pattern)
         return cls(figure, loaders)
 

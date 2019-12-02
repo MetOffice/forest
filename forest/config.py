@@ -89,14 +89,11 @@ class Config(object):
 
             files:
                 - label: Trial
-                  pattern: "*.nc"
-                  directory: trial/output
+                  pattern: "${TRIAL_DIR}/*.nc"
                 - label: Control
-                  pattern: "*.nc"
-                  directory: control/output
+                  pattern: "${CONTROL_DIR}/*.nc"
                 - label: RDT
-                  pattern: "*.json"
-                  directory: /satellite/rdt/json
+                  pattern: "${RDT_DIR}/*.json"
                   file_type: rdt
 
         :param path: JSON/YAML file to load
@@ -142,6 +139,9 @@ class FileGroup(object):
     meta-data is needed. For example, the type of data
     contained within the files or how data is catalogued
     and searched.
+
+    .. note:: This class violates the integration separation principle (ISP)
+              all driver settings are included in the same constructor
 
     :param label: decription used by buttons and tooltips
     :param pattern: wildcard pattern used by either SQL or glob
