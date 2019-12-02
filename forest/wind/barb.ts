@@ -76,10 +76,14 @@ export class BarbView extends XYGlyphView {
     const sx0 = hr.start
     const sx1 = hr.end
     ;[x0, x1] = this.renderer.xscale.r_invert(sx0, sx1)
+    x0 -= 10
+    x1 += 10
 
     const sy0 = vr.start
     const sy1 = vr.end
     ;[y0, y1] = this.renderer.yscale.r_invert(sy0, sy1)
+    y0 -= 10
+    y1 += 10
 
     console.log("leave _mask_data")
     return this.index.indices({x0, x1, y0, y1})
@@ -116,11 +120,11 @@ export class BarbView extends XYGlyphView {
     const x = this.renderer.xscale.invert(sx)
     const y = this.renderer.yscale.invert(sy)
 
-    x0 = x
-    x1 = x
+    x0 = x - 10
+    x1 = x + 10
 
-    y0 = y
-    y1 = y
+    y0 = y - 10
+    y1 = y + 10
 
 
     const candidates = this.index.indices({x0, x1, y0, y1})
@@ -152,16 +156,16 @@ export class BarbView extends XYGlyphView {
       let sx0, sx1
       y0 = bounds.y0
       y1 = bounds.y1
-      sx0 = sx
-      sx1 = sx
+      sx0 = sx - 10
+      sx1 = sx + 10
       ;[x0, x1] = this.renderer.xscale.r_invert(sx0, sx1)
     } else {
       // use circle bounds instead of current pointer x coordinates
       let sy0, sy1
       x0 = bounds.x0
       x1 = bounds.x1
-      sy0 = sy
-      sy1 = sy
+      sy0 = sy - 10
+      sy1 = sy + 10
       ;[y0, y1] = this.renderer.yscale.r_invert(sy0, sy1)
     }
 
