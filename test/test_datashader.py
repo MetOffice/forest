@@ -14,4 +14,5 @@ def test_datashder_stretch():
     reference_image = xarray.DataArray(values,
                                        coords=[('x', [0.25, 0.75]),
                                                ('y', [0.25, 0.75])])
-    xarray.testing.assert_equal(output_image, reference_image)
+    assert isinstance(output_image, numpy.ndarray)
+    numpy.testing.assert_array_equal(output_image, reference_image)

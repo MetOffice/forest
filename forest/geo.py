@@ -45,9 +45,10 @@ def stretch_image(lons, lats, values):
     _, gy = web_mercator(
         np.zeros(len(lats), dtype="d"),
         lats)
-
+    x_range = (gx.min(), gx.max())
+    y_range = (gy.min(), gy.max())
     if datashader:
-        image = datashader_stretch(values, gx, gy)
+        image = datashader_stretch(values, gx, gy, x_range, y_range)
     else:
         image = custom_stretch()
     x = gx.min()
@@ -81,8 +82,10 @@ def datashader_stretch(values, gx, gy, x_range, y_range):
                                y_range=y_range)
     xarr = xarray.DataArray(values, coords=[('x', gx), ('y', gy)], name='Z')
     image = canvas.quadmesh(xarr)
-    return image
 
+    return np.ma.masked_array(image.values,
+                          mask=np.isnan(
+                              image.values))
 
 def custom_stretch(values, gx, gy):
     if np.ma.is_masked(values):
