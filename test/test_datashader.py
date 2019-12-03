@@ -7,14 +7,13 @@ from forest import geo
 try:
     import datashader
     import xarray
-    datashader_available = True
+    libs_available = True
 except ModuleNotFoundError:
-    datashader_available = False
+    libs_available = False
 
 
-@pytest.mark.skipif(not datashader_available,
-                    reason='Test skipped if optional library datashader and '
-                           'xarray not present.')
+@pytest.mark.skipif(not libs_available,
+                    reason='datashader and xarray are optional')
 def test_datashder_stretch():
     gx = numpy.array([0.25, 0.75])
     gy = numpy.array([0.25, 0.75])
@@ -36,6 +35,8 @@ def test_custom_stretch():
     numpy.testing.assert_array_equal(geo.custom_stretch(z, x, y), z)
 
 
+@pytest.mark.skipif(not libs_available,
+                    reason='datashader and xarray are optional')
 def test_datashader_stretch_image():
     x = numpy.array([0, 1])
     y = numpy.array([0, 1, 2])
