@@ -27,3 +27,21 @@ def test_datashder_stretch():
                                                ('y', [0.25, 0.75])])
     assert isinstance(output_image, numpy.ndarray)
     numpy.testing.assert_array_equal(output_image, reference_image)
+
+
+def test_custom_stretch():
+    x = numpy.array([0, 1])
+    y = numpy.array([0, 1, 2])
+    z = numpy.array([[0, 1], [2, 3], [4, 5]])
+    numpy.testing.assert_array_equal(geo.custom_stretch(z, x, y), z)
+
+
+def test_datashader_stretch_image():
+    x = numpy.array([0, 1])
+    y = numpy.array([0, 1, 2])
+    z = numpy.array([[0, 1], [2, 3], [4, 5]])
+    x_range = (-0.5, 1.5)
+    y_range = (-0.5, 2.5)
+    result = geo.datashader_stretch(z, x, y, x_range, y_range)
+    expect = z
+    numpy.testing.assert_array_equal(result, expect)
