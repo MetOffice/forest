@@ -4,6 +4,17 @@ import xarray
 
 from forest import geo
 
+try:
+    import datashader
+    import xarray
+    datashader_available = True
+except ModuleNotFoundError:
+    datashader_available = False
+
+
+@pytest.mark.skipif(not datashader_available,
+                    reason='Test skipped if optional library datashader and '
+                           'xarray not present.')
 def test_datashder_stretch():
     gx = numpy.array([0.25, 0.75])
     gy = numpy.array([0.25, 0.75])
