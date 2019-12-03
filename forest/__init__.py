@@ -20,6 +20,8 @@ forecasts alongside observations.
 
 .. automodule:: forest.load
 
+.. automodule:: forest.geo
+
 """
 __version__ = '0.4.4'
 

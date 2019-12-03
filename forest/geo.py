@@ -1,4 +1,7 @@
 """
+Geographic utilities module
+---------------------------
+
 Module to handle projection and sampling iof points for imaging.
 
 .. autofunction:: stretch_image
