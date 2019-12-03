@@ -3,28 +3,30 @@ try:
 except ImportError:
     # ReadTheDocs unable to pip install cartopy
     pass
+
 import numpy as np
+
 import scipy.interpolate
 import scipy.ndimage
 
+try:
+    import datashader
+    import xarray
+except ModuleNotFoundError:
+    datashader = None
 
 def stretch_image(lons, lats, values):
-    if np.ma.is_masked(values):
-        mask = values.mask
-    else:
-        mask = None
-
     gx, _ = web_mercator(
         lons,
         np.zeros(len(lons), dtype="d"))
     _, gy = web_mercator(
         np.zeros(len(lats), dtype="d"),
         lats)
-    image = stretch_y(gy)(values)
-    if mask is not None:
-        image_mask = stretch_y(gy)(mask)
-        image = np.ma.masked_invalid(np.ma.masked_array(image, mask=image_mask))
 
+    if datashader:
+        image = datashder_stretch()
+    else:
+        image = custom_stretch()
     x = gx.min()
     y = gy.min()
     dw = gx[-1] - gx[0]
@@ -37,12 +39,38 @@ def stretch_image(lons, lats, values):
         "image": [image]
     }
 
+def datashader_stretch(values, gx, gy, x_range, y_range):
+    canvas = datashader.Canvas(plot_height=values.shape[0],
+                               plot_width=values.shape[1],
+                               x_range=x_range,
+                               y_range=y_range)
+    xarr = xarray.DataArray(values,coords=[('x',gx),('y',gy)],name='Z')
+    image = canvas.quadmesh(xarr)
+    return image
+
+
+def custom_stretch(values, gx, gy):
+    if np.ma.is_masked(values):
+        mask = values.mask
+    else:
+        mask = None
+    image = stretch_y(gy)(values)
+    if mask is not None:
+        image_mask = stretch_y(gy)(mask)
+        image = np.ma.masked_invalid(np.ma.masked_array(image, mask=image_mask))
+    return image
+
+
 def bokeh_image(lat, lon, data):
     x= []
     y = []
     dh = []
     dw = []
+    x_range = 0
+    y_range = 0
     image = []
+    # canvas = ds.Canvas( )
+    # rasterised_array = canvas.raster()
     return {
         "x": x,
         "y": y,
@@ -50,6 +78,9 @@ def bokeh_image(lat, lon, data):
         "dh": dh,
         "image": image
     }
+
+def raster_data(x, y, data):
+    pass
 
 def stretch_y(uneven_y):
     """Mercator projection stretches longitude spacing
