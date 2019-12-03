@@ -1,3 +1,9 @@
+"""
+Module to handle projection and sampling iof points for imaging.
+
+.. autofunction:: stretch_image
+
+"""
 try:
     import cartopy
 except ImportError:
@@ -16,6 +22,16 @@ except ModuleNotFoundError:
     datashader = None
 
 def stretch_image(lons, lats, values):
+    """
+    Do the mapping from image data to the format required by bokeh
+    for plotting.
+
+    :param lons: Numpy array with latitude values for the image data.
+    :param lats: Numpy array with longitude values for the image data.
+    :param values: Numpy array of image data, with dimensions matching the
+                   size of latitude and longitude arrays.
+    :return: A dictionary that can be used with the bokeh image glyph.
+    """
     gx, _ = web_mercator(
         lons,
         np.zeros(len(lons), dtype="d"))
