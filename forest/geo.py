@@ -24,7 +24,7 @@ def stretch_image(lons, lats, values):
         lats)
 
     if datashader:
-        image = datashder_stretch()
+        image = datashader_stretch(values, gx, gy)
     else:
         image = custom_stretch()
     x = gx.min()
@@ -39,12 +39,24 @@ def stretch_image(lons, lats, values):
         "image": [image]
     }
 
+
 def datashader_stretch(values, gx, gy, x_range, y_range):
+    """
+    Use datashader to sample the data mesh in on a regular grid for use in
+    image display.
+
+    :param values: A numpy array of image data
+    :param gx: The array of coordinates in projection space.
+    :param gy: The array of coordinates in projection space.
+    :param x_range: The range of the mesh in projection space.
+    :param y_range: The range of the mesh in projection space.
+    :return: An xarray of image data representing pixels.
+    """
     canvas = datashader.Canvas(plot_height=values.shape[0],
                                plot_width=values.shape[1],
                                x_range=x_range,
                                y_range=y_range)
-    xarr = xarray.DataArray(values,coords=[('x',gx),('y',gy)],name='Z')
+    xarr = xarray.DataArray(values, coords=[('x', gx), ('y', gy)], name='Z')
     image = canvas.quadmesh(xarr)
     return image
 
@@ -57,30 +69,10 @@ def custom_stretch(values, gx, gy):
     image = stretch_y(gy)(values)
     if mask is not None:
         image_mask = stretch_y(gy)(mask)
-        image = np.ma.masked_invalid(np.ma.masked_array(image, mask=image_mask))
+        image = np.ma.masked_invalid(
+            np.ma.masked_array(image, mask=image_mask))
     return image
 
-
-def bokeh_image(lat, lon, data):
-    x= []
-    y = []
-    dh = []
-    dw = []
-    x_range = 0
-    y_range = 0
-    image = []
-    # canvas = ds.Canvas( )
-    # rasterised_array = canvas.raster()
-    return {
-        "x": x,
-        "y": y,
-        "dw": dw,
-        "dh": dh,
-        "image": image
-    }
-
-def raster_data(x, y, data):
-    pass
 
 def stretch_y(uneven_y):
     """Mercator projection stretches longitude spacing
