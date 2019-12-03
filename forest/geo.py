@@ -6,6 +6,10 @@ Module to handle projection and sampling iof points for imaging.
 
 .. autofunction:: stretch_image
 
+.. autofunction:: web_mercator
+
+.. autofunction:: plate_carree
+
 """
 try:
     import cartopy
