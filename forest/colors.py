@@ -391,6 +391,10 @@ class UserLimits(Observable):
 
     def render(self, props):
         """Update user-defined limits inputs"""
+        if props.get("fixed", False):
+            self.checkbox.active = [0]
+        else:
+            self.checkbox.active = []
         if "high" in props:
             self.inputs["high"].value = str(props["high"])
         if "low" in props:
