@@ -9,7 +9,7 @@ from forest import wind # Magic to extend bokeh.Figure
 def main():
     """Example using forest.wind.Barb"""
     figure = bokeh.plotting.figure()
-    figure.barb(x=[0], y=[0], u=[10], v=[10])
+    figure.barb(x=[0], y=[0], u=[1], v=[1])
     figure.circle(x=[1, 2, 3], y=[1, 2, 3])
     document = bokeh.plotting.curdoc()
     document.add_root(figure)

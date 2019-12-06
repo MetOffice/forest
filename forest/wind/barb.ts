@@ -12,7 +12,7 @@ import {Context2d} from "core/util/canvas"
 import {Selection} from "models/selections/selection"
 
 //declare var barbs: any;
-import * as barbs from './lib/barbs'
+//import * as barbs from './lib/barbs'
 
 // This is silly, but I am going to use the RadiusDimension Type for our
 // dimension, because it already exists in core/properties.
@@ -76,29 +76,34 @@ export class BarbView extends XYGlyphView {
     const sx0 = hr.start
     const sx1 = hr.end
     ;[x0, x1] = this.renderer.xscale.r_invert(sx0, sx1)
-    x0 -= 10
-    x1 += 10
+    x0 -= 1
+    x1 += 1
 
     const sy0 = vr.start
     const sy1 = vr.end
     ;[y0, y1] = this.renderer.yscale.r_invert(sy0, sy1)
-    y0 -= 10
-    y1 += 10
+    y0 -= 1
+    y1 += 1
 
     console.log("leave _mask_data")
     return this.index.indices({x0, x1, y0, y1})
   }
 
-  protected _render(ctx: Context2d, indices: number[], {su, sv}: BarbData): void {
+  protected _render(ctx: Context2d, indices: number[], {sx, sy, su, sv}: BarbData): void {
     for (const i of indices) {
       if (isNaN(su[i] + sv[i]))
         continue
 
-      barbs.draw(ctx, 1, 1, 10)
-      console.log("we tried to render but nothing shows up")
-      console.log("u, v values incoming: ")
-      console.log(su[i])
-      console.log(sv[i])
+      ctx.moveTo(sx[i], sy[i])
+      ctx.lineTo(sx[i]+su[i], sy[i])
+      ctx.lineTo(sx[i]+su[i]/2, sy[i]-sv[i])
+      ctx.lineTo(sx[i], sy[i])
+      //ctx.moveTo(sx[i], sy[i])
+      //barbs.draw(ctx, su[i], sv[i], 1)
+      //console.log("we tried to render but nothing shows up")
+      //console.log("u, v values incoming: ")
+      //console.log(su[i])
+      //console.log(sv[i])
 
       if (this.visuals.fill.doit) {
         this.visuals.fill.set_vectorize(ctx, i)
@@ -120,11 +125,11 @@ export class BarbView extends XYGlyphView {
     const x = this.renderer.xscale.invert(sx)
     const y = this.renderer.yscale.invert(sy)
 
-    x0 = x - 10
-    x1 = x + 10
+    x0 = x - 1000
+    x1 = x + 1000
 
-    y0 = y - 10
-    y1 = y + 10
+    y0 = y - 1000
+    y1 = y + 1000
 
 
     const candidates = this.index.indices({x0, x1, y0, y1})
@@ -156,16 +161,16 @@ export class BarbView extends XYGlyphView {
       let sx0, sx1
       y0 = bounds.y0
       y1 = bounds.y1
-      sx0 = sx - 10
-      sx1 = sx + 10
+      sx0 = sx - 1000
+      sx1 = sx + 1000
       ;[x0, x1] = this.renderer.xscale.r_invert(sx0, sx1)
     } else {
       // use circle bounds instead of current pointer x coordinates
       let sy0, sy1
       x0 = bounds.x0
       x1 = bounds.x1
-      sy0 = sy - 10
-      sy1 = sy + 10
+      sy0 = sy - 1000
+      sy1 = sy + 1000
       ;[y0, y1] = this.renderer.yscale.r_invert(sy0, sy1)
     }
 
