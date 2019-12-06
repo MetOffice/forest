@@ -154,12 +154,14 @@ class FileGroup(object):
             pattern,
             locator="file_system",
             file_type="unified_model",
-            directory=None):
+            directory=None,
+            database_path=None):
         self.label = label
         self.pattern = pattern
         self.locator = locator
         self.file_type = file_type
         self.directory = directory
+        self.database_path = database_path
 
     @property
     def full_pattern(self):
@@ -184,7 +186,8 @@ class FileGroup(object):
         kwarg_attrs = [
             "locator",
             "file_type",
-            "directory"]
+            "directory",
+            "database_path"]
         kwargs = [
             "{}={}".format(attr, self._str(getattr(self, attr)))
                 for attr in kwarg_attrs]

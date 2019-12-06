@@ -19,10 +19,10 @@ import forest.cli.main
      ["bokeh", "serve", "/app/path",
                 "--show",
                 "--args", "file.nc"]),
-    (["--show", "--database", "file.db", "file.nc"],
+    (["--show", "file.nc"],
      ["bokeh", "serve", "/app/path",
                 "--show",
-                "--args", "--database", "file.db", "file.nc"]),
+                "--args", "file.nc"]),
     ])
 def test_bokeh_command(argv, expect):
     result = forest.cli.main.bokeh_command("/app/path", argv)
