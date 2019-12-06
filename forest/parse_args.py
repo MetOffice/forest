@@ -18,9 +18,6 @@ def add_arguments(parser):
         "files", nargs="*", metavar="FILE",
         help="FILE(s) to display")
     parser.add_argument(
-        "--database",
-        help="SQL database to optimise menu system")
-    parser.add_argument(
         "--config-file",
         metavar="YAML_FILE",
         help="YAML file to configure application")

@@ -41,12 +41,6 @@ def main(argv=None):
                     os.environ,
                     args.variables))
 
-    database = None
-    if args.database is not None:
-        if args.database != ':memory:':
-            assert os.path.exists(args.database), "{} must exist".format(args.database)
-        database = db.Database.connect(args.database)
-
     # Full screen map
     lon_range = (90, 140)
     lat_range = (-23.5, 23.5)
@@ -122,12 +116,11 @@ def main(argv=None):
     # Database/File system loader(s)
     for group in config.file_groups:
         if group.label not in data.LOADERS:
+            database = None
             if group.locator == "database":
-                loader = load.Loader.group_args(
-                        group, args, database=database)
-            else:
-                loader = load.Loader.group_args(
-                        group, args)
+                database = db.get_database(group.database_path)
+            loader = load.Loader.group_args(
+                    group, args, database=database)
             data.add_loader(group.label, loader)
 
     renderers = {}
@@ -254,7 +247,7 @@ def main(argv=None):
         image_controls.select(name)
         break
 
-    navigator = navigate.Navigator(config, database)
+    navigator = navigate.Navigator(config)
 
     # Pre-select menu choices (if any)
     initial_state = {}

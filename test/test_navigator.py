@@ -15,17 +15,21 @@ def test_Navigator_init(from_group):
     group2 = Mock(pattern='pattern2')
     config = Mock(file_groups=[group1, group2])
 
-    navigator = navigate.Navigator(config, sentinel.database)
+    navigator = navigate.Navigator(config)
 
-    assert from_group.mock_calls == [call(group1, sentinel.database),
-                                     call(group2, sentinel.database)]
+    assert from_group.mock_calls == [call(group1), call(group2)]
     assert navigator._navigators == {'pattern1': sentinel.nav1,
                                      'pattern2': sentinel.nav2}
 
 
-def test_Navigator_from_group__use_database():
-    navigator = navigate.Navigator._from_group(Mock(locator='database'),
-                                               sentinel.database)
+@patch('forest.db.get_database')
+def test_Navigator_from_group__use_database(get_database):
+    get_database.return_value = sentinel.database
+    group = Mock(locator='database', database_path=sentinel.database_path)
+
+    navigator = navigate.Navigator._from_group(group)
+
+    get_database.assert_called_once_with(sentinel.database_path)
     assert navigator == sentinel.database
 
 
@@ -37,7 +41,7 @@ def test_Navigator_from_group__use_paths(expand_paths, from_file_type):
     group = Mock(locator='not-a-database',
                  pattern=sentinel.pattern, file_type=sentinel.file_type)
 
-    navigator = navigate.Navigator._from_group(group, sentinel.database)
+    navigator = navigate.Navigator._from_group(group)
 
     expand_paths.assert_called_once_with(sentinel.pattern)
     from_file_type.assert_called_once_with(sentinel.paths, sentinel.file_type)
