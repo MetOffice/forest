@@ -1,3 +1,4 @@
+import pytest
 import unittest
 import unittest.mock
 import datetime as dt
@@ -33,6 +34,31 @@ def test_type_system_middleware():
         "valid_times": ["2019-01-01 00:00:00", "2019-01-02 00:00:00"]
     }
     assert expect == result
+
+
+@pytest.fixture()
+def database():
+    obj = db.Database.connect(":memory:")
+    yield obj
+    obj.close()
+
+
+def test_variables(database):
+    database.insert_file_name("file.nc", "2019-01-01 00:00:00")
+    database.insert_time("file.nc", "variable", "2019-01-01 12:00:00", 0)
+    assert database.variables() == ["variable"]
+
+
+def test_pressures(database):
+    assert database.pressures() == []
+
+
+def test_valid_times(database):
+    assert database.valid_times() == []
+
+
+def test_initial_times(database):
+    assert database.initial_times() == []
 
 
 class TestDatabaseMiddleware(unittest.TestCase):
