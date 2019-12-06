@@ -1,5 +1,5 @@
 import unittest.mock
-from forest.ui import DatasetUI
+from forest.dataset import DatasetUI
 from forest.db.control import set_value
 
 
