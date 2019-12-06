@@ -266,7 +266,8 @@ def main(argv=None):
             "valid_times": db.stamps,
             "inital_times": db.stamps
         }),
-        colors.palettes
+        colors.palettes,
+        dataset.middleware
     ]
     store = redux.Store(
         redux.combine_reducers(
