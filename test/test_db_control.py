@@ -61,6 +61,14 @@ def test_initial_times(database):
     assert database.initial_times() == []
 
 
+def test_navigator(database):
+    mapping = {"Label": "*.nc"}
+    database.insert_file_name("file.nc", "2019-01-01 00:00:00")
+    database.insert_time("file.nc", "variable", "2019-01-01 12:00:00", 0)
+    navigator = db.Navigator(database, mapping)
+    assert navigator.variables("Label") == ["variable"]
+
+
 class TestDatabaseMiddleware(unittest.TestCase):
     def setUp(self):
         self.database = db.Database.connect(":memory:")
