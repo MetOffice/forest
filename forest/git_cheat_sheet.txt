@@ -1,4 +1,15 @@
 git status
+
+git branch # gives a list of avilable branches
+
+git branch nameofnewbranch # creates a new branch
+
+git checkout nameofnewbranch # checks out the branch
+
+git push --set-upstream origin rdt2 # syncs the branch with the server version
+
+# Write some code
+
 # Saves changes to the local repo
 git commit -a -m 'Made tool tip readable'
 # Transmits local changes to the remote
