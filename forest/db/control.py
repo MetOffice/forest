@@ -292,7 +292,8 @@ class Converter(object):
 
 
 @export
-class Controls(object):
+class Middleware(object):
+    """Navigation middleware"""
     def __init__(self, navigator):
         self.navigator = navigator
 
@@ -308,6 +309,7 @@ class Controls(object):
                     print("{} is not a float".format(value))
                 return next_dispatch(set_value(key, value))
             elif key == "pattern":
+                # TODO: Use label only here
                 variables = self.navigator.variables(pattern=value)
                 initial_times = self.navigator.initial_times(pattern=value)
                 initial_times = list(reversed(initial_times))

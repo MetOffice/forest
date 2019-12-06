@@ -262,7 +262,7 @@ def main(argv=None):
         dataset.middleware,
         db.InverseCoordinate("pressure"),
         db.next_previous,
-        db.Controls(navigator),
+        db.Middleware(navigator),
         db.Converter({
             "valid_times": db.stamps,
             "inital_times": db.stamps

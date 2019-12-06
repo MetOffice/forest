@@ -38,8 +38,8 @@ def test_type_system_middleware():
 class TestDatabaseMiddleware(unittest.TestCase):
     def setUp(self):
         self.database = db.Database.connect(":memory:")
-        self.controls = db.Controls(self.database)
-        self.store = redux.Store(db.reducer, middlewares=[self.controls])
+        self.middleware = db.Middleware(self.database)
+        self.store = redux.Store(db.reducer, middlewares=[self.middleware])
 
     def tearDown(self):
         self.database.close()
@@ -63,7 +63,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
         store = redux.Store(
             db.reducer,
             initial_state=initial_state,
-            middlewares=[self.controls])
+            middlewares=[self.middleware])
         store.dispatch(action)
         result = store.state
         expect = {
@@ -90,7 +90,7 @@ class TestDatabaseMiddleware(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
-class TestControls(unittest.TestCase):
+class TestMiddleware(unittest.TestCase):
     def setUp(self):
         self.database = db.Database.connect(":memory:")
 
@@ -112,7 +112,7 @@ class TestControls(unittest.TestCase):
             initial_state={"pressures": [pressure]},
             middlewares=[
                 db.next_previous,
-                db.Controls(self.database)])
+                db.Middleware(self.database)])
         view = db.ControlView()
         view.subscribe(store.dispatch)
         view.on_next('pressure', 'pressures')()
@@ -129,7 +129,7 @@ class TestControls(unittest.TestCase):
             middlewares=[
                 db.InverseCoordinate("pressure"),
                 db.next_previous,
-                db.Controls(self.database)
+                db.Middleware(self.database)
             ])
         view = db.ControlView()
         view.subscribe(store.dispatch)
@@ -150,7 +150,7 @@ class TestControls(unittest.TestCase):
             middlewares=[
                 db.InverseCoordinate("pressure"),
                 db.next_previous,
-                db.Controls(self.database)
+                db.Middleware(self.database)
             ])
         view = db.ControlView()
         view.subscribe(store.dispatch)
