@@ -12,7 +12,7 @@ import {Context2d} from "core/util/canvas"
 import {Selection} from "models/selections/selection"
 
 //declare var barbs: any;
-//import * as barbs from './lib/barbs'
+import * as barbs from './lib/barbs'
 
 // This is silly, but I am going to use the RadiusDimension Type for our
 // dimension, because it already exists in core/properties.
@@ -94,16 +94,10 @@ export class BarbView extends XYGlyphView {
       if (isNaN(su[i] + sv[i]))
         continue
 
-      ctx.moveTo(sx[i], sy[i])
-      ctx.lineTo(sx[i]+su[i], sy[i])
-      ctx.lineTo(sx[i]+su[i]/2, sy[i]-sv[i])
-      ctx.lineTo(sx[i], sy[i])
-      //ctx.moveTo(sx[i], sy[i])
-      //barbs.draw(ctx, su[i], sv[i], 1)
-      //console.log("we tried to render but nothing shows up")
-      //console.log("u, v values incoming: ")
-      //console.log(su[i])
-      //console.log(sv[i])
+      ctx.translate(sx[i], sy[i])
+      barbs.draw(ctx, su[i], sv[i], 1)
+      ctx.translate(-sx[i], -sy[i])
+      console.log("su, sv values: ", su[i], sv[i])
 
       if (this.visuals.fill.doit) {
         this.visuals.fill.set_vectorize(ctx, i)
