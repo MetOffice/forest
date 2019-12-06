@@ -9,6 +9,7 @@ from forest import (
         satellite,
         series,
         data,
+        dataset,
         load,
         view,
         images,
@@ -290,6 +291,11 @@ def main(argv=None):
     user_limits = colors.UserLimits()
     user_limits.connect(store)
 
+    # Connect dataset user interface
+    dataset_ui = dataset.DatasetUI()
+    dataset_ui.subscribe(store.dispatch)
+    store.subscribe(dataset_ui.render)
+
     # Connect navigation controls
     controls = db.ControlView()
     controls.subscribe(store.dispatch)
@@ -312,6 +318,7 @@ def main(argv=None):
         bokeh.models.Panel(
             child=bokeh.layouts.column(
                 bokeh.models.Div(text="Navigate:"),
+                dataset_ui.layout,
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
                 bokeh.layouts.row(figure_drop),
