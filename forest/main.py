@@ -259,6 +259,7 @@ def main(argv=None):
     middlewares = [
         db.Log(verbose=True),
         keys.navigate,
+        dataset.middleware,
         db.InverseCoordinate("pressure"),
         db.next_previous,
         db.Controls(navigator),
@@ -266,8 +267,7 @@ def main(argv=None):
             "valid_times": db.stamps,
             "inital_times": db.stamps
         }),
-        colors.palettes,
-        dataset.middleware
+        colors.palettes
     ]
     store = redux.Store(
         redux.combine_reducers(
