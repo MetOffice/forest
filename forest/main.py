@@ -315,7 +315,13 @@ def main(argv=None):
 
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
-    store.dispatch(dataset.set_labels([label for label, _ in config.patterns]))
+
+    # Set initial label/labels
+    labels = [label for label, _ in config.patterns]
+    store.dispatch(dataset.set_labels(labels))
+    if len(labels) > 0:
+        label = labels[0]
+        store.dispatch(dataset.set_label(label))
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
