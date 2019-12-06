@@ -271,6 +271,7 @@ def main(argv=None):
     store = redux.Store(
         redux.combine_reducers(
             db.reducer,
+            dataset.reducer,
             series.reducer,
             colors.reducer),
         initial_state=initial_state,
@@ -313,6 +314,7 @@ def main(argv=None):
 
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
+    store.dispatch(dataset.set_labels([label for label, _ in config.patterns]))
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
