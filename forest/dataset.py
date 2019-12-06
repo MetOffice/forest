@@ -3,7 +3,20 @@ import bokeh.models
 import bokeh.layouts
 from forest.observe import Observable
 from forest.db.util import autolabel
-from forest.db.control import set_value
+
+
+SET_LABEL = "SET_LABEL"
+
+
+def set_label(label):
+    return {"kind": SET_LABEL, "payload": label}
+
+
+def reducer(state, action):
+    kind = action["kind"]
+    if kind == SET_LABEL:
+        state["label"] = action["payload"]
+    return state
 
 
 class DatasetUI(Observable):
@@ -18,7 +31,7 @@ class DatasetUI(Observable):
         super().__init__()
 
     def callback(self, attr, old, new):
-        self.notify(set_value("label", new))
+        self.notify(set_label(new))
 
     def render(self, state):
         """Configure dropdown menus"""
