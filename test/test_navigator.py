@@ -30,7 +30,7 @@ def test_Navigator_from_group__use_database(get_database):
     navigator = navigate.Navigator._from_group(group)
 
     get_database.assert_called_once_with(sentinel.database_path)
-    assert navigator == sentinel.database
+    assert navigator.database == sentinel.database
 
 
 @patch('forest.navigate.FileSystemNavigator.from_file_type')

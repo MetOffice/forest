@@ -261,32 +261,40 @@ def previous_item(items, item):
 
 @export
 class Navigator:
-    """Proxy for database-driven menu system"""
+    """Database navigation protocol
+
+    .. note:: :class:`forest.db.Database` does not support search by label
+
+    :param database: instance of forest.db.Database
+    :param glob_patterns: dict that maps label to SQL query pattern
+    """
     # Note: Explicit keyword args passed to Database methods since
     #       they support arbitrary keyword combinations
-    def __init__(self, database, mapping):
+    def __init__(self, database, glob_patterns):
         self.database = database
-        self.mapping = mapping
+        self.glob_patterns = glob_patterns
 
     def variables(self, label):
-        pattern = self.mapping[label]
+        pattern = self.glob_patterns[label]
         return self.database.variables(pattern=pattern)
 
     def initial_times(self, label):
-        pattern = self.mapping[label]
+        pattern = self.glob_patterns[label]
         return self.database.initial_times(pattern=pattern)
 
-    def valid_times(self, label, variable):
-        pattern = self.mapping[label]
+    def valid_times(self, label, variable, initial_time):
+        pattern = self.glob_patterns[label]
         return self.database.valid_times(
                 pattern=pattern,
-                variable=variable)
+                variable=variable,
+                initial_time=initial_time)
 
-    def pressures(self, label, variable):
-        pattern = self.mapping[label]
+    def pressures(self, label, variable, initial_time):
+        pattern = self.glob_patterns[label]
         return self.database.pressures(
                 pattern=pattern,
-                variable=variable)
+                variable=variable,
+                initial_time=initial_time)
 
 
 @export

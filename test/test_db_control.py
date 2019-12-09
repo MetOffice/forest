@@ -98,9 +98,15 @@ def test_navigator(database):
     # Navigation middleware API
     assert navigator.variables("Label") == ["air_temperature", "relative_humidity"]
     assert navigator.initial_times("Label") == ["2019-01-01 00:00:00"]
-    assert navigator.valid_times("Label", "air_temperature") == [
+    assert navigator.valid_times(
+            "Label", "air_temperature", "2019-01-01 00:00:00") == [
             "2019-01-01 03:00:00", "2019-01-01 06:00:00"]
-    assert set(navigator.pressures("Label", "air_temperature")) == set([1000., 950.])
+    assert navigator.valid_times(
+            "Label", "air_temperature", "2019-01-01 06:00:00") == []
+    assert set(navigator.pressures(
+        "Label", "air_temperature", "2019-01-01 00:00:00")) == set([1000., 950.])
+    assert set(navigator.pressures(
+        "Label", "air_temperature", "2019-01-01 06:00:00")) == set([])
 
 
 class TestDatabaseMiddleware(unittest.TestCase):

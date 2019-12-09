@@ -35,7 +35,9 @@ class Navigator:
     @classmethod
     def _from_group(cls, group):
         if group.locator == 'database':
-            navigator = db.get_database(group.database_path)
+            database = db.get_database(group.database_path)
+            mapping = {group.label: group.pattern}
+            navigator = db.Navigator(database, mapping)
         else:
             paths = cls._expand_paths(group.pattern)
             navigator = FileSystemNavigator.from_file_type(paths,
