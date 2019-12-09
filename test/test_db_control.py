@@ -109,59 +109,55 @@ def test_navigator(database):
         "Label", "air_temperature", "2019-01-01 06:00:00")) == set([])
 
 
-class TestDatabaseMiddleware(unittest.TestCase):
-    def setUp(self):
-        self.database = db.Database.connect(":memory:")
-        self.middleware = db.Middleware(self.database)
-        self.store = redux.Store(db.reducer, middlewares=[self.middleware])
+def test_state_change_given_dropdown_message(database):
+    navigator = db.Navigator(database, {})
+    store = redux.Store(db.reducer, middlewares=[db.Middleware(navigator)])
+    store.dispatch(db.set_value("pressure", "1000"))
+    assert store.state["pressure"] == 1000.
 
-    def tearDown(self):
-        self.database.close()
 
-    def test_state_change_given_dropdown_message(self):
-        action = db.set_value("pressure", "1000")
-        self.store.dispatch(action)
-        result = self.store.state
-        expect = {"pressure": 1000.}
-        self.assertEqual(expect, result)
+def test_set_initial_time(database):
+    # Create in-memory database
+    variable = "variable"
+    initial_time = dt.datetime(2019, 1, 1)
+    valid_time = dt.datetime(2019, 1, 1, 3)
+    database.insert_file_name("file.nc", initial_time)
+    database.insert_time("file.nc", variable, valid_time, 0)
 
-    def test_set_initial_time(self):
-        initial = dt.datetime(2019, 1, 1)
-        valid = dt.datetime(2019, 1, 1, 3)
-        self.database.insert_file_name("file.nc", initial)
-        self.database.insert_time("file.nc", "variable", valid, 0)
-        action = db.set_value("initial_time", "2019-01-01 00:00:00")
-        initial_state={
-            "pattern": "file.nc",
-            "variable": "variable"}
-        store = redux.Store(
-            db.reducer,
-            initial_state=initial_state,
-            middlewares=[self.middleware])
-        store.dispatch(action)
-        result = store.state
-        expect = {
-            "pattern": "file.nc",
-            "variable": "variable",
-            "initial_time": str(initial),
-            "valid_times": [str(valid)]
-        }
-        self.assertEqual(expect, result)
+    # Create Store using middleware and navigator
+    navigator = db.Navigator(database, {"Label": "file.nc"})
+    middleware = db.Middleware(navigator)
+    initial_state={
+        "label": "Label",
+        "variable": variable}
+    store = redux.Store(
+        db.reducer,
+        initial_state=initial_state,
+        middlewares=[middleware])
+    action = db.set_value("initial_time", "2019-01-01 00:00:00")
+    store.dispatch(action)
 
-    def test_set_pattern(self):
-        initial = dt.datetime(2019, 1, 1)
-        valid = dt.datetime(2019, 1, 1, 3)
-        self.database.insert_file_name("file.nc", initial)
-        self.database.insert_time("file.nc", "variable", valid, 0)
-        action = db.set_value("pattern", "file.nc")
-        self.store.dispatch(action)
-        result = self.store.state
-        expect = {
-            "pattern": "file.nc",
-            "variables": ["variable"],
-            "initial_times": [str(initial)]
-        }
-        self.assertEqual(expect, result)
+    assert store.state["label"] == "Label"
+    assert store.state["variable"] == variable
+    assert store.state["initial_time"] == str(initial_time)
+    assert store.state["valid_times"] == [str(valid_time)]
+
+
+def test_set_label(database):
+    file_name = "file.nc"
+    variable = "variable"
+    initial_time = dt.datetime(2019, 1, 1)
+    valid_time = dt.datetime(2019, 1, 1, 3)
+    database.insert_file_name(file_name, initial_time)
+    database.insert_time(file_name, variable, valid_time, 0)
+
+    navigator = db.Navigator(database, {"Label": file_name})
+    store = redux.Store(db.reducer, middlewares=[db.Middleware(navigator)])
+    store.dispatch(db.set_value("label", "Label"))
+
+    assert store.state["label"] == "Label"
+    assert store.state["variables"] == [variable]
+    assert store.state["initial_times"] == [str(initial_time)]
 
 
 class TestMiddleware(unittest.TestCase):

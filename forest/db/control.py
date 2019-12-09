@@ -122,33 +122,34 @@ State.__ne__ = state_ne
 
 
 @export
-def initial_state(navigator, pattern=None):
+def initial_state(navigator, label):
     """Find initial state given navigator"""
     state = {}
-    state["pattern"] = pattern
-    variables = navigator.variables(pattern)
+    state["label"] = label
+    variables = navigator.variables(label)
     state["variables"] = variables
     if len(variables) == 0:
         return state
     variable = variables[0]
     state["variable"] = variable
-    initial_times = navigator.initial_times(pattern, variable)
+    # initial_times = navigator.initial_times(label, variable)
+    initial_times = navigator.initial_times(label)
     state["initial_times"] = initial_times
     if len(initial_times) == 0:
         return state
     initial_time = max(initial_times)
     state["initial_time"] = initial_time
     valid_times = navigator.valid_times(
-        variable=variable,
-        pattern=pattern,
-        initial_time=initial_time)
+            label,
+            variable,
+            initial_time)
     state["valid_times"] = valid_times
     if len(valid_times) > 0:
         state["valid_time"] = min(valid_times)
     pressures = navigator.pressures(
-            variable=variable,
-            pattern=pattern,
-            initial_time=initial_time)
+            label,
+            variable,
+            initial_time)
     pressures = list(reversed(sorted(pressures)))
     state["pressures"] = pressures
     if len(pressures) > 0:
@@ -330,44 +331,48 @@ class Middleware(object):
                 except ValueError:
                     print("{} is not a float".format(value))
                 return next_dispatch(set_value(key, value))
-            elif key == "pattern":
+            elif key == "label":
                 # TODO: Use label only here
-                variables = self.navigator.variables(pattern=value)
-                initial_times = self.navigator.initial_times(pattern=value)
+                label = action["payload"]["value"]
+                variables = self.navigator.variables(label)
+                initial_times = self.navigator.initial_times(label)
                 initial_times = list(reversed(initial_times))
                 next_dispatch(action)
                 next_dispatch(set_value("variables", variables))
                 next_dispatch(set_value("initial_times", initial_times))
                 return
             elif key == "variable":
-                for attr in ["pattern", "initial_time"]:
+                for attr in ["label", "initial_time"]:
                     if attr not in store.state:
                         return next_dispatch(action)
-                pattern = store.state["pattern"]
+                label = store.state["label"]
                 variable = value
                 initial_time = store.state["initial_time"]
                 valid_times = self.navigator.valid_times(
-                    pattern=pattern,
-                    variable=variable,
-                    initial_time=initial_time)
+                    label,
+                    variable,
+                    initial_time)
                 valid_times = sorted(set(valid_times))
                 pressures = self.navigator.pressures(
-                    pattern=pattern,
-                    variable=variable,
-                    initial_time=initial_time)
+                    label,
+                    variable,
+                    initial_time)
                 pressures = list(reversed(pressures))
                 next_dispatch(action)
                 next_dispatch(set_value("valid_times", valid_times))
                 next_dispatch(set_value("pressures", pressures))
                 return
             elif key == "initial_time":
-                for attr in ["pattern", "variable"]:
+                for attr in ["label", "variable"]:
                     if attr not in store.state:
                         return next_dispatch(action)
+                label = store.state["label"]
+                variable = store.state["variable"]
+                initial_time = value
                 valid_times = self.navigator.valid_times(
-                    pattern=store.state["pattern"],
-                    variable=store.state["variable"],
-                    initial_time=value)
+                    label,
+                    variable,
+                    initial_time)
                 valid_times = sorted(set(valid_times))
                 next_dispatch(action)
                 next_dispatch(set_value("valid_times", valid_times))

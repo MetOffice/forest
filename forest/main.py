@@ -252,8 +252,8 @@ def main(argv=None):
 
     # Pre-select menu choices (if any)
     initial_state = {}
-    for _, pattern in config.patterns:
-        initial_state = db.initial_state(navigator, pattern=pattern)
+    for label, _ in config.patterns:
+        initial_state = db.initial_state(navigator, label)
         break
 
     middlewares = [
