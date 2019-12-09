@@ -50,15 +50,23 @@ def test_variables(database):
 
 
 def test_pressures(database):
-    assert database.pressures() == []
+    database.insert_file_name("file.nc", "2019-01-01 00:00:00")
+    database.insert_pressure("file.nc", "air_temperature", 1000, 0)
+    database.insert_pressure("file.nc", "relative_humidity", 750, 0)
+    assert database.pressures(variable="relative_humidity") == [750]
 
 
 def test_valid_times(database):
-    assert database.valid_times() == []
+    database.insert_file_name("file.nc", "2019-01-01 00:00:00")
+    database.insert_time("file.nc", "air_temperature", "2019-01-01 12:00:00", 0)
+    database.insert_time("file.nc", "relative_humidity", "2019-01-01 13:00:00", 0)
+    assert database.valid_times(variable="relative_humidity") == ["2019-01-01 13:00:00"]
 
 
 def test_initial_times(database):
-    assert database.initial_times() == []
+    database.insert_file_name("a.nc", "2019-01-01 00:00:00")
+    database.insert_file_name("b.nc", "2019-01-02 00:00:00")
+    assert database.initial_times(pattern="b.nc") == ["2019-01-02 00:00:00"]
 
 
 def test_navigator(database):
