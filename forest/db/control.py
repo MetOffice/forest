@@ -262,13 +262,31 @@ def previous_item(items, item):
 @export
 class Navigator:
     """Proxy for database-driven menu system"""
+    # Note: Explicit keyword args passed to Database methods since
+    #       they support arbitrary keyword combinations
     def __init__(self, database, mapping):
         self.database = database
         self.mapping = mapping
 
     def variables(self, label):
         pattern = self.mapping[label]
-        return self.database.variables(pattern)
+        return self.database.variables(pattern=pattern)
+
+    def initial_times(self, label):
+        pattern = self.mapping[label]
+        return self.database.initial_times(pattern=pattern)
+
+    def valid_times(self, label, variable):
+        pattern = self.mapping[label]
+        return self.database.valid_times(
+                pattern=pattern,
+                variable=variable)
+
+    def pressures(self, label, variable):
+        pattern = self.mapping[label]
+        return self.database.pressures(
+                pattern=pattern,
+                variable=variable)
 
 
 @export

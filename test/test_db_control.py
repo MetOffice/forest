@@ -70,11 +70,37 @@ def test_initial_times(database):
 
 
 def test_navigator(database):
-    mapping = {"Label": "*.nc"}
-    database.insert_file_name("file.nc", "2019-01-01 00:00:00")
-    database.insert_time("file.nc", "variable", "2019-01-01 12:00:00", 0)
+    mapping = {"Label": "*a.nc"}
+
+    # Database (in-memory) to simulate navigation
+    file_name = "a.nc"
+    database.insert_file_name(file_name, "2019-01-01 00:00:00")
+    variables = {
+            "air_temperature": {
+                "time": ["2019-01-01 03:00:00", "2019-01-01 06:00:00"],
+                "pressure": [1000, 950]},
+            "relative_humidity": {
+                "time": ["2019-01-01 03:15:00"],
+                "pressure": [500]},
+    }
+    for variable, dims in variables.items():
+        for time in dims["time"]:
+            database.insert_time(file_name, variable, time, 0)
+        for pressure in dims["pressure"]:
+            database.insert_pressure(file_name, variable, pressure, 0)
+
+    file_name = "b.nc"
+    database.insert_file_name(file_name, "2019-01-01 00:00:00")
+    database.insert_time(file_name, "mslp", "2019-01-02 12:00:00", 0)
+
     navigator = db.Navigator(database, mapping)
-    assert navigator.variables("Label") == ["variable"]
+
+    # Navigation middleware API
+    assert navigator.variables("Label") == ["air_temperature", "relative_humidity"]
+    assert navigator.initial_times("Label") == ["2019-01-01 00:00:00"]
+    assert navigator.valid_times("Label", "air_temperature") == [
+            "2019-01-01 03:00:00", "2019-01-01 06:00:00"]
+    assert set(navigator.pressures("Label", "air_temperature")) == set([1000., 950.])
 
 
 class TestDatabaseMiddleware(unittest.TestCase):
