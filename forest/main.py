@@ -25,6 +25,7 @@ from forest import (
         navigate,
         parse_args)
 import forest.config as cfg
+import forest.middlewares as mws
 from forest.observe import Observable
 from forest.db.util import autolabel
 import datetime as dt
@@ -256,7 +257,8 @@ def main(argv=None):
         break
 
     middlewares = [
-        db.Log(verbose=True),
+        mws.Log(),
+        mws.echo,
         keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,

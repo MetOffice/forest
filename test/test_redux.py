@@ -1,4 +1,6 @@
 import copy
+from forest.redux import Store
+from forest.middlewares import Log
 from forest.observe import Observable
 
 
@@ -8,42 +10,6 @@ def reducer(state, action):
     if kind == "ACTION":
         state.update(action["payload"])
     return state
-
-
-class Store(Observable):
-    def __init__(self, reducer, middlewares=None):
-        self.state = {}
-        self.reducer = reducer
-        if middlewares is None:
-            middlewares = []
-        self.middlewares = middlewares
-        super().__init__()
-
-    def dispatch(self, action):
-        actions = self.pure(action)
-        for middleware in self.middlewares:
-            actions = self.bind(middleware, actions)
-        for action in actions:
-            self.state = self.reducer(self.state, action)
-
-    @staticmethod
-    def pure(action):
-        yield action
-
-    def bind(self, middleware, actions):
-        store = self
-        for action in actions:
-            for _action in middleware(store, action):
-                yield _action
-
-
-class Log:
-    def __init__(self):
-        self.actions = []
-
-    def __call__(self, store, action):
-        self.actions.append(action)
-        yield action
 
 
 def duplicate(store, action):

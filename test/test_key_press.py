@@ -29,7 +29,7 @@ def test_navigate_maps_arrow_down_to_previous_initial_time():
 
 
 def check_key(code, action):
-    log = forest.db.Log()
+    log = forest.middlewares.Log()
     middlewares = [
             forest.keys.navigate,
             log]

@@ -1,6 +1,7 @@
 import unittest.mock
 import pytest
 from forest import colors, main, redux, db
+from forest.middlewares import Log
 import bokeh.models
 import numpy as np
 
@@ -44,16 +45,6 @@ def test_controls_on_name(listener):
     controls.subscribe(listener)
     controls.on_number(None, None, 5)
     listener.assert_called_once_with(colors.set_palette_number(5))
-
-
-class Log:
-    def __init__(self):
-        self.actions = []
-
-    @redux.middleware
-    def __call__(self, store, next_dispatch, action):
-        self.actions.append(action)
-        next_dispatch(action)
 
 
 def test_middleware_given_set_name_emits_set_numbers():

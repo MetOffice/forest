@@ -20,7 +20,6 @@ that maps key actions to navigation actions, e.g.
 """
 import bokeh.models
 from forest import db
-from forest.redux import middleware
 from forest.observe import Observable
 from forest.export import export
 
@@ -107,8 +106,7 @@ class KeyPress(Observable):
         self.notify(press(code))
 
 
-@middleware
-def navigate(store, next_dispatch, action):
+def navigate(store, action):
     """Middleware to interpret key press events
 
     It implements the following mapping of
@@ -124,21 +122,21 @@ def navigate(store, next_dispatch, action):
     ArrowDown  Previous initial time
     ========== =====================
 
-    .. note:: Non key press actions are passed on to `next_dispatch` unaltered
+    .. note:: Non key press actions are passed on unaltered
 
     :param store: :class:`forest.redux.Store` instance
-    :param next_dispatch: next dispatcher in the chain of middlware
     :param action: incoming action
     """
     kind = action["kind"]
     if kind != KEY_PRESS:
-        return next_dispatch(action)
+        yield action
+        return
     code = action["payload"]["code"].lower()
     if code == "arrowright":
-        return next_dispatch(db.next_valid_time())
+        yield db.next_valid_time()
     elif code == "arrowleft":
-        return next_dispatch(db.previous_valid_time())
+        yield db.previous_valid_time()
     elif code == "arrowup":
-        return next_dispatch(db.next_initial_time())
+        yield db.next_initial_time()
     elif code == "arrowdown":
-        return next_dispatch(db.previous_initial_time())
+        yield db.previous_initial_time()

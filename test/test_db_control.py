@@ -3,6 +3,7 @@ import unittest.mock
 import datetime as dt
 import numpy as np
 from forest import db, redux, rx
+from forest.middlewares import Log
 
 
 def test_reducer_immutable_state():
@@ -285,7 +286,7 @@ class TestNextPrevious(unittest.TestCase):
         ]
 
     def test_middleware_converts_next_value_to_set_value(self):
-        log = db.Log()
+        log = Log()
         state = {
             "k": 2,
             "ks": [1, 2, 3]
