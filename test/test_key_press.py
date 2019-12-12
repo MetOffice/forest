@@ -29,14 +29,7 @@ def test_navigate_maps_arrow_down_to_previous_initial_time():
 
 
 def check_key(code, action):
-    log = forest.middlewares.Log()
-    middlewares = [
-            forest.keys.navigate,
-            log]
-    store = forest.redux.Store(
-            forest.db.reducer,
-            middlewares=middlewares)
-    store.dispatch(forest.keys.press(code))
-    actual = log.actions[0]
-    expected = action
+    store = forest.redux.Store(forest.db.reducer)
+    actual = list(forest.keys.navigate(store, forest.keys.press(code)))
+    expected = [action]
     assert actual == expected

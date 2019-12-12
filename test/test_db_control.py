@@ -3,7 +3,6 @@ import unittest.mock
 import datetime as dt
 import numpy as np
 from forest import db, redux, rx
-from forest.middlewares import Log
 
 
 def test_reducer_immutable_state():
@@ -286,25 +285,12 @@ class TestNextPrevious(unittest.TestCase):
         ]
 
     def test_middleware_converts_next_value_to_set_value(self):
-        log = Log()
-        state = {
-            "k": 2,
-            "ks": [1, 2, 3]
-        }
         store = redux.Store(
             db.reducer,
-            initial_state=state,
-            middlewares=[
-                db.next_previous,
-                log])
-        store.dispatch(db.next_value("k", "ks"))
-        result = store.state
-        expect = {
-            "k": 3,
-            "ks": [1, 2, 3]
-        }
-        self.assertEqual(expect, result)
-        self.assertEqual(log.actions, [db.set_value("k", 3)])
+            initial_state={"k": 2, "ks": [1, 2, 3]})
+        action = db.next_value("k", "ks")
+        result = list(db.next_previous(store, action))
+        self.assertEqual(result, [db.set_value("k", 3)])
 
     def test_next_value_action_creator(self):
         result = db.next_value("initial_time", "initial_times")

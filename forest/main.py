@@ -257,7 +257,6 @@ def main(argv=None):
         break
 
     middlewares = [
-        mws.Log(),
         mws.echo,
         keys.navigate,
         db.InverseCoordinate("pressure"),
