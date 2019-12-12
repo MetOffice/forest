@@ -166,6 +166,9 @@ def palettes(store, action):
     .. note:: middleware is an action generator
     """
     kind = action["kind"]
+    if (kind == SET_LIMITS) and is_fixed(store.state) and is_source_origin(action):
+        # Filter SET_LIMIT actions from ColumnDataSource
+        return
     if kind == SET_PALETTE:
         payload = action["payload"]
         if "name" in payload:
@@ -177,11 +180,6 @@ def palettes(store, action):
                     number = store.state["colorbar"]["number"]
                     if number not in numbers:
                         yield set_palette_number(max(numbers))
-        yield action
-    elif kind == SET_LIMITS:
-        if is_fixed(store.state) and is_source_origin(action):
-            # Filter SET_LIMIT actions from ColumnDataSource
-            return
         yield action
     else:
         yield action
