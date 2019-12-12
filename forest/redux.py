@@ -71,10 +71,10 @@ class Store(Observable):
     :param initial_state: optional initial state, default {}
     :param middlewares: list of middleware functions that intercept actions
     """
-    def __init__(self, reducer, initial_state=None, middlewares=None):
+    def __init__(self, reducer, initial_state=None, middlewares=()):
         self.reducer = reducer
         self.state = initial_state if initial_state is not None else {}
-        self.middlewares = middlewares if middlewares is not None else []
+        self.middlewares = middlewares
         super().__init__()
 
     def dispatch(self, action):
