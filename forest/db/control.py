@@ -183,12 +183,17 @@ class InverseCoordinate(object):
         self.name = name
 
     def __call__(self, store, action):
-        kind = action["kind"]
-        if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
-            if self.name == action["payload"]["item_key"]:
-                yield self.invert(action)
-                return
-        yield action
+        if self.is_next_previous(action) and self.has_name(action):
+            yield self.invert(action)
+        else:
+            yield action
+
+    @staticmethod
+    def is_next_previous(action):
+        return action["kind"] in [NEXT_VALUE, PREVIOUS_VALUE]
+
+    def has_name(self, action):
+        return self.name == action["payload"]["item_key"]
 
     @staticmethod
     def invert(action):
