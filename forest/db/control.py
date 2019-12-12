@@ -275,8 +275,8 @@ class Converter(object):
             if key in self.maps:
                 value = self.maps[key](value)
             yield set_value(key, value)
-            return
-        yield action
+        else:
+            yield action
 
 
 @export
