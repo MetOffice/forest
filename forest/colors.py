@@ -181,7 +181,7 @@ def palettes(store, action):
     elif kind == SET_LIMITS:
         if is_fixed(store.state) and is_source_origin(action):
             # Filter SET_LIMIT actions from ColumnDataSource
-            return []  # Syntax to return null generator
+            return
         yield action
     else:
         yield action
