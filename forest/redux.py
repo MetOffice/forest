@@ -98,5 +98,4 @@ class Store(Observable):
     def bind(middleware, store, actions):
         """Flat map action generators from middleware into action generator"""
         for action in actions:
-            for _action in middleware(store, action):
-                yield _action
+            yield from middleware(store, action)
