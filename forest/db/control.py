@@ -287,58 +287,72 @@ class Controls(object):
     def __call__(self, store, action):
         if action["kind"] == SET_VALUE:
             key = action["payload"]["key"]
-            value = action["payload"]["value"]
-            if (key == "pressure"):
-                try:
-                    value = float(value)
-                except ValueError:
-                    print("{} is not a float".format(value))
-                yield set_value(key, value)
-                return
-            elif key == "pattern":
-                variables = self.navigator.variables(pattern=value)
-                initial_times = self.navigator.initial_times(pattern=value)
-                initial_times = list(reversed(initial_times))
+            handlers = {
+                "pressure": self._pressure,
+                "pattern": self._pattern,
+                "variable": self._variable,
+                "initial_time": self._initial_time,
+            }
+            if key in handlers:
+                yield from handlers[key](store, action)
+            else:
                 yield action
-                yield set_value("variables", variables)
-                yield set_value("initial_times", initial_times)
-                return
-            elif key == "variable":
-                for attr in ["pattern", "initial_time"]:
-                    if attr not in store.state:
-                        yield action
-                        return
-                pattern = store.state["pattern"]
-                variable = value
-                initial_time = store.state["initial_time"]
-                valid_times = self.navigator.valid_times(
-                    pattern=pattern,
-                    variable=variable,
-                    initial_time=initial_time)
-                valid_times = sorted(set(valid_times))
-                pressures = self.navigator.pressures(
-                    pattern=pattern,
-                    variable=variable,
-                    initial_time=initial_time)
-                pressures = list(reversed(pressures))
-                yield action
-                yield set_value("valid_times", valid_times)
-                yield set_value("pressures", pressures)
-                return
-            elif key == "initial_time":
-                for attr in ["pattern", "variable"]:
-                    if attr not in store.state:
-                        yield action
-                        return
-                valid_times = self.navigator.valid_times(
-                    pattern=store.state["pattern"],
-                    variable=store.state["variable"],
-                    initial_time=value)
-                valid_times = sorted(set(valid_times))
-                yield action
-                yield set_value("valid_times", valid_times)
-                return
+        else:
+            yield action
+
+    def _pressure(self, store, action):
+        key = action["payload"]["key"]
+        value = action["payload"]["value"]
+        try:
+            value = float(value)
+        except ValueError:
+            print("{} is not a float".format(value))
+        yield set_value(key, value)
+
+    def _pattern(self, store, action):
+        value = action["payload"]["value"]
+        variables = self.navigator.variables(pattern=value)
+        initial_times = self.navigator.initial_times(pattern=value)
+        initial_times = list(reversed(initial_times))
         yield action
+        yield set_value("variables", variables)
+        yield set_value("initial_times", initial_times)
+
+    def _variable(self, store, action):
+        for attr in ["pattern", "initial_time"]:
+            if attr not in store.state:
+                yield action
+                return
+        pattern = store.state["pattern"]
+        variable = action["payload"]["value"]
+        initial_time = store.state["initial_time"]
+        valid_times = self.navigator.valid_times(
+            pattern=pattern,
+            variable=variable,
+            initial_time=initial_time)
+        valid_times = sorted(set(valid_times))
+        pressures = self.navigator.pressures(
+            pattern=pattern,
+            variable=variable,
+            initial_time=initial_time)
+        pressures = list(reversed(pressures))
+        yield action
+        yield set_value("valid_times", valid_times)
+        yield set_value("pressures", pressures)
+
+    def _initial_time(self, store, action):
+        for attr in ["pattern", "variable"]:
+            if attr not in store.state:
+                yield action
+                return
+        initial_time = action["payload"]["value"]
+        valid_times = self.navigator.valid_times(
+            pattern=store.state["pattern"],
+            variable=store.state["variable"],
+            initial_time=initial_time)
+        valid_times = sorted(set(valid_times))
+        yield action
+        yield set_value("valid_times", valid_times)
 
 
 @export
