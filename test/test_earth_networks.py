@@ -1,8 +1,6 @@
 import datetime as dt
 import glob
 from forest import earth_networks
-import pandas as pd
-import pandas.testing as pdt
 
 
 LINES = [
@@ -19,15 +17,8 @@ def test_earth_networks(tmpdir):
     loader = earth_networks.Loader([path])
     frame = loader.load_date(dt.datetime(2019, 4, 17))
     result = frame.iloc[0]
-    expect = pd.Series([
-        dt.datetime(2019, 4, 17, 0, 0, 1, 440000),
-        "IC",
-        2.75144,
-        31.92064], index=[
-            "date",
-            "flash_type",
-            "latitude",
-            "longitude"
-        ],
-        name=0)
-    pdt.assert_series_equal(expect, result)
+    atol = 0.000001
+    assert result["date"] == dt.datetime(2019, 4, 17, 0, 0, 1, 440000)
+    assert result["flash_type"] == "IC" 
+    assert abs(result["latitude"] - 2.75144) < atol
+    assert abs(result["longitude"] - 31.92064) < atol
