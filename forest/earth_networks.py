@@ -45,7 +45,7 @@ class View(object):
         }
 
     def add_figure(self, figure):
-        renderer = figure.circle(
+        renderer = figure.cross(
                 x="x",
                 y="y",
                 size=10,
@@ -111,7 +111,7 @@ class Loader(object):
     def load_date(self, date):
         frame = self.frame.set_index('date')
         start = date
-        end = start + dt.timedelta(minutes=15)
+        end = start + dt.timedelta(minutes=60)  # 1 hour window
         s = "{:%Y-%m-%dT%H:%M}".format(start)
         e = "{:%Y-%m-%dT%H:%M}".format(end)
         small_frame = frame[s:e].copy()
