@@ -8,18 +8,23 @@ import bokeh.palettes
 import numpy as np
 
 
-class Coordinates:
-   def variables(self, path):
-      return ["lightning"]
+class Navigator:
+    def __init__(self, paths):
+        print(paths)
+        self.paths = paths
 
-   def initial_time(self, path):
-      return dt.datetime(2019, 12, 13)
+    def variables(self, pattern):
+        return ["Lightning"]
 
-   def valid_times(self, path, variable):
-      return [self.initial_time(path)]
+    def initial_times(self, pattern, variable):
+        return [dt.datetime(1970, 1, 1)]
 
-   def pressures(self, path, variable):
-      return []
+    def valid_times(self, pattern, variable, initial_time):
+        print(pattern, variable, initial_time)
+        return [dt.datetime(1970, 1, 1)]
+
+    def pressures(self, pattern, variable, initial_time):
+        return []
 
 
 
@@ -60,8 +65,8 @@ class View(object):
                 x="x",
                 y="y",
                 size=10,
-		fill_color={'field': 'time_since_flash', 'transform': self.color_mapper},
-		line_color={'field': 'time_since_flash', 'transform': self.color_mapper},
+                fill_color={'field': 'time_since_flash', 'transform': self.color_mapper},
+                line_color={'field': 'time_since_flash', 'transform': self.color_mapper},
                 source=self.source)
         tool = bokeh.models.HoverTool(
                 tooltips=[
