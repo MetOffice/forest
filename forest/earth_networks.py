@@ -34,7 +34,8 @@ class View(object):
             "date": [],
             "longitude": [],
             "latitude": [],
-            "flash_type": []
+            "flash_type": [],
+            "time_since_flash": []
         })
 
     def render(self, state):
