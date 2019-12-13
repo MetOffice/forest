@@ -7,6 +7,7 @@ from .exceptions import (
         ValidTimesNotFound,
         PressuresNotFound)
 from forest import (
+        earth_networks,
         db,
         gridded_forecast,
         ghrsstl4,
@@ -92,6 +93,8 @@ class FileSystemNavigator:
             coordinates = unified_model.Coordinates()
         elif file_type.lower() == "saf":
             coordinates = saf.Coordinates()
+        elif file_type.lower() == "earth_networks":
+            coordinates = earth_networks.Coordinates()
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)
