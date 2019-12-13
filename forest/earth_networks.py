@@ -1,30 +1,13 @@
+import re
 import os
 import glob
 import datetime as dt
 import pandas as pd
 from forest import geo
+from forest.gridded_forecast import _to_datetime
 import bokeh.models
 import bokeh.palettes
 import numpy as np
-
-
-class Navigator:
-    def __init__(self, paths):
-        print(paths)
-        self.paths = paths
-
-    def variables(self, pattern):
-        return ["Lightning"]
-
-    def initial_times(self, pattern, variable):
-        return [dt.datetime(1970, 1, 1)]
-
-    def valid_times(self, pattern, variable, initial_time):
-        print(pattern, variable, initial_time)
-        return [dt.datetime(1970, 1, 1)]
-
-    def pressures(self, pattern, variable, initial_time):
-        return []
 
 
 
@@ -44,7 +27,8 @@ class View(object):
         })
 
     def render(self, state):
-        frame = self.loader.load_date(dt.datetime(2019, 12, 12, 13, 30))
+        valid_time = _to_datetime(state.valid_time)
+        frame = self.loader.load_date(valid_time)
         x, y = geo.web_mercator(
                 frame.longitude,
                 frame.latitude)
@@ -83,8 +67,39 @@ class View(object):
         return renderer
 
 
+class Navigator:
+    def __init__(self, paths):
+        print("Navigator", paths)
+        self.paths = paths
+        times = [
+            self._parse_date(path) for path in paths
+        ]
+        times = [t for t in times if t is not None]
+        self._valid_times = list(sorted(set(times)))
+        print(self._valid_times)
+
+    @staticmethod
+    def _parse_date(path):
+        groups = re.search(r"[0-9]{8}T[0-9]{4}", os.path.basename(path))
+        if groups is not None:
+            return dt.datetime.strptime(groups[0], "%Y%m%dT%H%M")
+
+    def variables(self, pattern):
+        return ["Lightning"]
+
+    def initial_times(self, pattern, variable):
+        return [dt.datetime(1970, 1, 1)]
+
+    def valid_times(self, pattern, variable, initial_time):
+        return self._valid_times
+
+    def pressures(self, pattern, variable, initial_time):
+        return []
+
+
 class Loader(object):
     def __init__(self, paths):
+        print("Loader", paths)
         self.paths = paths
         if len(self.paths) > 0:
             self.frame = self.read(paths)
