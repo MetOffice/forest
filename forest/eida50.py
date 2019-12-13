@@ -22,4 +22,4 @@ class Coordinates(object):
         return ["EIDA50"]
 
     def pressures(self, path, variable):
-        pass
+        return []

@@ -42,8 +42,10 @@ class EIDA50(object):
         fraction = 0.25
         lons, lats, values = coarsify(
                 lons, lats, values, fraction)
-        return geo.stretch_image(
+        data = geo.stretch_image(
                 lons, lats, values)
+        print(data["image"][0])
+        return data
 
 
 class Locator(object):
@@ -58,6 +60,7 @@ class Locator(object):
         ipath = self.find_file_index(paths, date)
         path = paths[ipath]
         time_axis = self.load_time_axis(path)
+        print(path, time_axis, date)
         index = self.find_index(
                 time_axis,
                 date,
@@ -76,13 +79,15 @@ class Locator(object):
                     var[:], units=var.units)
         return np.array(values, dtype='datetime64[s]')
 
-    def find_file_index(self, paths, date):
+    def find_file_index(self, paths, user_date):
         dates = np.array([
             self.parse_date(path) for path in paths],
             dtype='datetime64[s]')
-        mask = ~(dates <= date)
+        for path, _date in zip(paths, dates):
+            print(path, _date)
+        mask = ~(dates <= user_date)
         if mask.all():
-            msg = "No file for {}".format(date)
+            msg = "No file for {}".format(user_date)
             raise FileNotFound(msg)
         before_dates = np.ma.array(
                 dates, mask=mask, dtype='datetime64[s]')
@@ -98,10 +103,16 @@ class Locator(object):
         valid_times = np.ma.array(times, mask=~inside)
         if valid_times.mask.all():
             msg = "{}: not found".format(time)
+            print(msg)
             raise IndexNotFound(msg)
         return np.ma.argmax(valid_times)
 
     @staticmethod
     def parse_date(path):
         groups = re.search(r"([0-9]{8})\.nc", path)
-        return dt.datetime.strptime(groups[1], "%Y%m%d")
+        if groups is None:
+            # *20191211T0000Z.nc
+            groups = re.search(r"([0-9]{8}T[0-9]{4}Z)\.nc", path)
+            return dt.datetime.strptime(groups[1], "%Y%m%dT%H%MZ")
+        else:
+            return dt.datetime.strptime(groups[1], "%Y%m%d")
