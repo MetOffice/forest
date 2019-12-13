@@ -4,6 +4,8 @@ import datetime as dt
 import pandas as pd
 from forest import geo
 import bokeh.models
+import bokeh.palettes
+import numpy as np
 
 
 class Coordinates:
@@ -24,6 +26,8 @@ class Coordinates:
 class View(object):
     def __init__(self, loader):
         self.loader = loader
+        palette = bokeh.palettes.all_palettes['Spectral'][11][::-1]
+        self.color_mapper = bokeh.models.LinearColorMapper(low=-1000, high=0, palette=palette)
         self.source = bokeh.models.ColumnDataSource({
             "x": [],
             "y": [],
@@ -38,6 +42,8 @@ class View(object):
         x, y = geo.web_mercator(
                 frame.longitude,
                 frame.latitude)
+        self.color_mapper.low = np.min(frame.time_since_flash)
+        self.color_mapper.high = np.max(frame.time_since_flash)
         self.source.data = {
             "x": x,
             "y": y,
@@ -53,6 +59,8 @@ class View(object):
                 x="x",
                 y="y",
                 size=10,
+		fill_color={'field': 'time_since_flash', 'transform': self.color_mapper},
+		line_color={'field': 'time_since_flash', 'transform': self.color_mapper},
                 source=self.source)
         tool = bokeh.models.HoverTool(
                 tooltips=[
