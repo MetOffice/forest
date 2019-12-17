@@ -46,73 +46,41 @@ def test_controls_on_name(listener):
     listener.assert_called_once_with(colors.set_palette_number(5))
 
 
-class Log:
-    def __init__(self):
-        self.actions = []
-
-    @redux.middleware
-    def __call__(self, store, next_dispatch, action):
-        self.actions.append(action)
-        next_dispatch(action)
-
-
 def test_middleware_given_set_name_emits_set_numbers():
-    log = Log()
-    store = redux.Store(colors.reducer, middlewares=[
-        colors.palettes,
-        log])
-    store.dispatch(colors.set_palette_name("Blues"))
-    assert log.actions == [
+    store = redux.Store(colors.reducer)
+    action = colors.set_palette_name("Blues")
+    result = list(colors.palettes(store, action))
+    assert result == [
             colors.set_palette_numbers(
                 colors.palette_numbers("Blues")),
             colors.set_palette_name("Blues")]
 
 
 def test_middleware_given_inconsistent_number():
-    log = Log()
-    store = redux.Store(colors.reducer, middlewares=[
-        colors.palettes,
-        log])
-    actions = [
-        colors.set_palette_number(1000),
-        colors.set_palette_name("Viridis")
-    ]
-    for action in actions:
-        store.dispatch(action)
-    assert len(log.actions) == 4
-    assert log.actions == [
-            colors.set_palette_number(1000),
+    store = redux.Store(colors.reducer)
+    store.dispatch(colors.set_palette_number(1000))
+    action = colors.set_palette_name("Viridis")
+    result = list(colors.palettes(store, action))
+    assert result == [
             colors.set_palette_numbers(
                 colors.palette_numbers("Viridis")),
             colors.set_palette_number(256),
             colors.set_palette_name("Viridis")]
 
+
 def test_middleware_given_fixed_swallows_source_limit_actions():
-    log = Log()
     store = redux.Store(colors.reducer, middlewares=[
-        colors.palettes,
-        log])
-    actions = [
-        colors.set_fixed(True),
-        colors.set_source_limits(0, 100)
-    ]
-    for action in actions:
-        store.dispatch(action)
-    assert log.actions == [colors.set_fixed(True)]
+        colors.palettes])
+    store.dispatch(colors.set_fixed(True))
+    action = colors.set_source_limits(0, 100)
+    assert list(colors.palettes(store, action)) == []
     assert store.state == {"colorbar": {"fixed": True}}
 
+
 def test_middleware_given_fixed_allows_source_limit_actions():
-    log = Log()
-    store = redux.Store(colors.reducer, middlewares=[
-        colors.palettes,
-        log])
-    actions = [
-        colors.set_source_limits(0, 100)
-    ]
-    for action in actions:
-        store.dispatch(action)
-    assert log.actions == actions
-    assert store.state == {"colorbar": {"low": 0, "high": 100}}
+    store = redux.Store(colors.reducer)
+    action = colors.set_source_limits(0, 100)
+    assert list(colors.palettes(store, action)) == [action]
 
 
 @pytest.mark.parametrize("name,expect", [

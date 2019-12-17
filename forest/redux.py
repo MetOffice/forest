@@ -23,8 +23,6 @@ existing behaviour.
 .. autoclass:: Store
    :members:
 
-.. autofunction:: middleware
-
 .. autofunction:: combine_reducers
 
 """
@@ -51,29 +49,6 @@ def combine_reducers(*reducers):
 
 
 @export
-def middleware(f):
-    """Curries functions to satisfy middleware signature
-
-    This decorator supports both instance methods and functions
-    signatures. It nests functions into a format used by
-    :class:`Store` to patch its dispatch method.
-
-    * Method signature `method(self, store, next_dispatch, action)`
-    * Function signature `func(store, next_dispatch, action)`
-
-    :param: function to decorate should have middleware signature
-    """
-    @wraps(f)
-    def outer(*args):
-        def inner(next_dispatch):
-            def inner_most(action):
-                f(*args, next_dispatch, action)
-            return inner_most
-        return inner
-    return outer
-
-
-@export
 class Store(Observable):
     """Observable state container
 
@@ -96,15 +71,10 @@ class Store(Observable):
     :param initial_state: optional initial state, default {}
     :param middlewares: list of middleware functions that intercept actions
     """
-    def __init__(self, reducer, initial_state=None, middlewares=None):
+    def __init__(self, reducer, initial_state=None, middlewares=()):
         self.reducer = reducer
         self.state = initial_state if initial_state is not None else {}
-        if middlewares is not None:
-            mws = [m(self) for m in middlewares]
-            f = self.dispatch
-            for mw in reversed(mws):
-                f = mw(f)
-            self.dispatch = f
+        self.middlewares = middlewares
         super().__init__()
 
     def dispatch(self, action):
@@ -112,5 +82,20 @@ class Store(Observable):
 
         :param action: plain dict consumed by the reducer
         """
-        self.state = self.reducer(self.state, action)
-        self.notify(self.state)
+        actions = self.pure(action)
+        for middleware in self.middlewares:
+            actions = self.bind(middleware, self, actions)
+        for _action in actions:
+            self.state = self.reducer(self.state, _action)
+            self.notify(self.state)
+
+    @staticmethod
+    def pure(action):
+        """Embed action into action generator"""
+        yield action
+
+    @staticmethod
+    def bind(middleware, store, actions):
+        """Flat map action generators from middleware into action generator"""
+        for action in actions:
+            yield from middleware(store, action)
