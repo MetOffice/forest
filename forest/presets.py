@@ -24,7 +24,6 @@ from forest import redux, rx
 # Action kinds
 SAVE_PRESET = "SAVE_PRESET"
 LOAD_PRESET = "LOAD_PRESET"
-RENAME_PRESET = "RENAME_PRESET"
 REMOVE_PRESET = "REMOVE_PRESET"
 PRESET_SET_META = "PRESET_SET_META"
 PRESET_ON_SAVE = "PRESET_ON_SAVE"
@@ -45,11 +44,6 @@ def save_preset(label):
 def load_preset(label):
     """Action to load a preset by label"""
     return {"kind": LOAD_PRESET, "payload": label}
-
-
-def rename_preset(label):
-    """Action to rename a preset"""
-    return {"kind": RENAME_PRESET, "payload": label}
 
 
 def remove_preset():
@@ -131,9 +125,6 @@ def reducer(state, action):
         print(label, uid, settings)
         state["colorbar"] = settings
         state["presets"]["active"] = uid
-    elif kind == RENAME_PRESET:
-        uid = state["presets"]["active"]
-        state["presets"]["labels"][uid] = action["payload"]
     elif kind == REMOVE_PRESET:
         uid = state["presets"]["active"]
         del state["presets"]["labels"][uid]

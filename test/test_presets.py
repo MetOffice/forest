@@ -91,19 +91,6 @@ def test__reducer_load_preset():
     assert state["presets"]["active"] == 5
 
 
-def test__reducer_rename_preset():
-    state = {
-        "presets": {
-            "active": 7,
-            "labels": {
-                7: "Custom-1"}
-        }
-    }
-    action = presets.rename_preset("Custom-2")
-    state = presets.reducer(state, action)
-    assert state["presets"]["labels"] == {7: "Custom-2"}
-
-
 def test__reducer_remove_preset():
     state = {
         "presets": {
