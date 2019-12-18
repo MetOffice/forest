@@ -108,9 +108,9 @@ def reducer(state, action):
     if kind == SAVE_PRESET:
         label = action["payload"]
         try:
-            uid = find_id(state, label)
+            uid = Query(state).find_id(label)
         except IDNotFound:
-            uid = new_id(all_ids(state))
+            uid = new_id(Query(state).all_ids)
         if "presets" not in state:
             state["presets"] = {}
         if "labels" not in state["presets"]:
@@ -126,7 +126,7 @@ def reducer(state, action):
 
     elif kind == LOAD_PRESET:
         label = action["payload"]
-        uid = find_id(state, label)
+        uid = Query(state).find_id(label)
         settings = copy.deepcopy(state["presets"]["settings"][uid])
         print(label, uid, settings)
         state["colorbar"] = settings
@@ -151,16 +151,30 @@ class IDNotFound(Exception):
     pass
 
 
-def find_id(state, label):
-    labels = state.get("presets", {}).get("labels", {})
-    for id, _label in labels.items():
-        if _label == label:
-            return id
-    raise IDNotFound("'{}' not found".format(label))
+class Query:
+    """Helper to retrieve values stored in state"""
+    def __init__(self, state):
+        self.state = state
 
+    @property
+    def all_ids(self):
+        return set(self.state.get("presets", {}).get("labels", {}).keys())
 
-def all_ids(state):
-    return set(state.get("presets", {}).get("labels", {}).keys())
+    def find_id(self, label):
+        labels = self.state.get("presets", {}).get("labels", {})
+        for id, _label in labels.items():
+            if _label == label:
+                return id
+        raise IDNotFound("'{}' not found".format(label))
+
+    @property
+    def label(self):
+        if "presets" not in self.state:
+            return ""
+        if "active" not in self.state["presets"]:
+            return ""
+        uid = self.state["presets"]["active"]
+        return self.state["presets"]["labels"][uid]
 
 
 def new_id(ids):

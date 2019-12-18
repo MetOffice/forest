@@ -19,6 +19,16 @@ def test_middleware(store, action, expect):
     assert expect == result
 
 
+@pytest.mark.parametrize("state,expect", [
+    ({}, ""),
+    ({"presets": {"labels": {3: "L"}}}, ""),
+    ({"presets": {"active": 3, "labels": {3: "L"}}}, "L")
+])
+def test_query_label(state, expect):
+    result = presets.Query(state).label
+    assert expect == result
+
+
 def test_preset_set_default_mode():
     state = presets.reducer({}, presets.set_default_mode())
     assert state["presets"]["meta"]["mode"] == presets.DEFAULT
@@ -139,7 +149,7 @@ def test_reducer_save_preset_creates_presets_section():
     state = {"colorbar": settings}
     action = presets.save_preset(label)
     result = presets.reducer(state, action)
-    uid = presets.find_id(result, label)
+    uid = presets.Query(result).find_id(label)
     assert result["colorbar"] == settings
     assert result["presets"]["labels"][uid] == label
     assert result["presets"]["settings"][uid] == settings
@@ -157,9 +167,9 @@ def test_reducer_save_preset_adds_new_entry():
     action = presets.save_preset("B")
     result = presets.reducer(state, action)
     assert set(result["presets"]["labels"].values()) == {"A", "B"}
-    uid = presets.find_id(result, "A")
+    uid = presets.Query(result).find_id("A")
     assert result["presets"]["settings"][uid] == {"palette": "inferno"}
-    uid = presets.find_id(result, "B")
+    uid = presets.Query(result).find_id("B")
     assert result["presets"]["settings"][uid] == {"palette": "blues"}
 
 
@@ -183,7 +193,7 @@ def test_reducer_save_duplicate_label():
             presets.save_preset("A"),
             presets.save_preset("A")]:
         state = presets.reducer(state, action)
-    uid = presets.find_id(state, "A")
+    uid = presets.Query(state).find_id("A")
     assert set(state["presets"]["labels"].values()) == {"A"}
     assert state["presets"]["settings"][uid] == settings
 
@@ -199,7 +209,7 @@ def test_reducer_update():
             colors.set_palette_name("Accent"),
             presets.save_preset("A")]:
         state = reducer(state, action)
-    uid = presets.find_id(state, "A")
+    uid = presets.Query(state).find_id("A")
     assert state["colorbar"] == {"name": "Accent"}
     assert set(state["presets"]["labels"].values()) == {"A"}
     assert state["presets"]["settings"][uid] == {"name": "Accent"}
