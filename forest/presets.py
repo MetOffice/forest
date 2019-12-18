@@ -77,16 +77,15 @@ def state_to_props(state):
     return options, mode
 
 
-@redux.middleware
-def middleware(store, next_dispatch, action):
+def middleware(store, action):
     kind = action["kind"]
     if kind == PRESET_ON_SAVE:
-        next_dispatch(save_preset(action["payload"]))
-        next_dispatch(set_default_mode())
+        yield save_preset(action["payload"])
+        yield set_default_mode()
     elif kind == PRESET_ON_CANCEL:
-        next_dispatch(set_default_mode())
+        yield set_default_mode()
     else:
-        next_dispatch(action)
+        yield action
 
 
 def reducer(state, action):
