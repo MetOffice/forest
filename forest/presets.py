@@ -187,6 +187,7 @@ class PresetUI(Observable):
     """User interface to load/save/edit presets"""
     def __init__(self):
         self.select = bokeh.models.Select()
+        self.select.on_change("value", self.on_load)
         self.text_input = bokeh.models.TextInput(placeholder="Save name")
         self.buttons = {
             "edit": bokeh.models.Button(label="Edit"),
@@ -236,10 +237,9 @@ class PresetUI(Observable):
         if label != "":
             self.notify(on_save(label))
 
-    def on_load(self):
+    def on_load(self, attr, old, new):
         """Notify listeners that a load action has taken place"""
-        label = self.select.value
-        self.notify(load_preset(label))
+        self.notify(load_preset(new))
 
     def on_new(self):
         self.notify(on_new())

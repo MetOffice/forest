@@ -120,7 +120,7 @@ def test__reducer_remove_preset():
 
 @pytest.mark.parametrize("call_method,action", [
     (lambda ui: ui.on_save(), presets.on_save("label")),
-    (lambda ui: ui.on_load(), presets.load_preset("label"))
+    (lambda ui: ui.on_load(None, None, "label"), presets.load_preset("label"))
 ])
 def test_ui_actions(call_method, action):
     listener = unittest.mock.Mock()
