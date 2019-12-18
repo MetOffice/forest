@@ -11,8 +11,14 @@ def store():
 
 
 @pytest.mark.parametrize("action,expect", [
-    (presets.on_edit(), [presets.set_edit_mode()]),
-    (presets.on_new(), [presets.set_edit_mode()]),
+    (presets.on_edit(), [
+        presets.set_edit_label(""),
+        presets.set_edit_mode()
+    ]),
+    (presets.on_new(), [
+        presets.set_edit_label(""),
+        presets.set_edit_mode()
+    ]),
 ])
 def test_middleware(store, action, expect):
     result = list(presets.middleware(store, action))
@@ -39,9 +45,14 @@ def test_preset_set_edit_mode():
     assert state["presets"]["meta"]["mode"] == presets.EDIT
 
 
+def test_preset_set_edit_label():
+    state = presets.reducer({}, presets.set_edit_label("Label"))
+    assert state["presets"]["meta"]["label"] == "Label"
+
+
 def test_state_to_props():
     result = presets.state_to_props({})
-    expect = ([], presets.DEFAULT)
+    expect = ([], presets.DEFAULT, "")
     assert expect == result
 
 
@@ -208,7 +219,7 @@ def test_reducer_update():
 ])
 def test_render(labels, options):
     ui = presets.PresetUI()
-    ui.render(labels, presets.DEFAULT)
+    ui.render(labels, presets.DEFAULT, "")
     assert ui.select.options == options
     assert isinstance(ui.select, bokeh.models.Select)
     assert isinstance(ui.buttons["save"], bokeh.models.Button)
@@ -217,8 +228,9 @@ def test_render(labels, options):
 
 def test_render_edit_mode():
     ui = presets.PresetUI()
-    ui.render([], presets.EDIT)
+    ui.render([], presets.EDIT, "Name")
     row = ui.rows["content"]
     assert isinstance(row.children[0], bokeh.models.TextInput)
     assert isinstance(row.children[1], bokeh.models.Button)
     assert isinstance(row.children[2], bokeh.models.Button)
+    assert ui.text_input.value == "Name"

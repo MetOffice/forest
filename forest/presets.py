@@ -59,6 +59,10 @@ def set_edit_mode():
     return {"kind": PRESET_SET_META, "meta": {"mode": EDIT}}
 
 
+def set_edit_label(label):
+    return {"kind": PRESET_SET_META, "meta": {"label": label}}
+
+
 def on_save(label):
     return {"kind": PRESET_ON_SAVE, "payload": label}
 
@@ -76,9 +80,8 @@ def on_cancel():
 
 
 def state_to_props(state):
-    options = list(state.get("presets", {}).get("labels", {}).values())
-    mode = state.get("presets", {}).get("meta", {}).get("mode", DEFAULT)
-    return options, mode
+    query = Query(state)
+    return query.labels, query.display_mode, query.edit_label
 
 
 def middleware(store, action):
@@ -89,8 +92,10 @@ def middleware(store, action):
     elif kind == PRESET_ON_CANCEL:
         yield set_default_mode()
     elif kind == PRESET_ON_EDIT:
+        yield set_edit_label(Query(store.state).label)
         yield set_edit_mode()
     elif kind == PRESET_ON_NEW:
+        yield set_edit_label("")
         yield set_edit_mode()
     else:
         yield action
@@ -146,6 +151,19 @@ class Query:
     """Helper to retrieve values stored in state"""
     def __init__(self, state):
         self.state = state
+
+    @property
+    def labels(self):
+        return list(self.state.get("presets", {}).get("labels", {}).values())
+
+    @property
+    def display_mode(self):
+        return self.state.get("presets", {}).get("meta", {}).get("mode", DEFAULT)
+
+    @property
+    def edit_label(self):
+        """Label used by UI to allow user to save/edit"""
+        return self.state.get("presets", {}).get("meta", {}).get("label", "")
 
     @property
     def all_ids(self):
@@ -241,7 +259,8 @@ class PresetUI(Observable):
     def on_cancel(self):
         self.notify(on_cancel())
 
-    def render(self, labels, mode):
+    def render(self, labels, mode, edit_label):
         # TODO: Add support for DEFAULT/EDIT mode layouts
         self.rows["content"].children = self.children[mode]
         self.select.options = list(sorted(labels))
+        self.text_input.value = edit_label
