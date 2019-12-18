@@ -5,6 +5,20 @@ import bokeh.models
 from forest import presets, colors, redux
 
 
+@pytest.fixture
+def store():
+    return redux.Store(presets.reducer)
+
+
+@pytest.mark.parametrize("action,expect", [
+    (presets.on_edit(), [presets.set_edit_mode()]),
+    (presets.on_new(), [presets.set_edit_mode()]),
+])
+def test_middleware(store, action, expect):
+    result = list(presets.middleware(store, action))
+    assert expect == result
+
+
 def test_preset_set_default_mode():
     state = presets.reducer({}, presets.set_default_mode())
     assert state["presets"]["meta"]["mode"] == presets.DEFAULT

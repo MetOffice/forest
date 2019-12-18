@@ -28,6 +28,8 @@ RENAME_PRESET = "RENAME_PRESET"
 REMOVE_PRESET = "REMOVE_PRESET"
 PRESET_SET_META = "PRESET_SET_META"
 PRESET_ON_SAVE = "PRESET_ON_SAVE"
+PRESET_ON_NEW = "PRESET_ON_NEW"
+PRESET_ON_EDIT = "PRESET_ON_EDIT"
 PRESET_ON_CANCEL = "PRESET_ON_CANCEL"
 
 # Display modes
@@ -67,6 +69,14 @@ def on_save(label):
     return {"kind": PRESET_ON_SAVE, "payload": label}
 
 
+def on_edit():
+    return {"kind": PRESET_ON_EDIT}
+
+
+def on_new():
+    return {"kind": PRESET_ON_NEW}
+
+
 def on_cancel():
     return {"kind": PRESET_ON_CANCEL}
 
@@ -84,6 +94,10 @@ def middleware(store, action):
         yield set_default_mode()
     elif kind == PRESET_ON_CANCEL:
         yield set_default_mode()
+    elif kind == PRESET_ON_EDIT:
+        yield set_edit_mode()
+    elif kind == PRESET_ON_NEW:
+        yield set_edit_mode()
     else:
         yield action
 
@@ -214,10 +228,10 @@ class PresetUI(Observable):
         self.notify(load_preset(label))
 
     def on_new(self):
-        self.notify(set_edit_mode())
+        self.notify(on_new())
 
     def on_edit(self):
-        self.notify(set_edit_mode())
+        self.notify(on_edit())
 
     def on_cancel(self):
         self.notify(on_cancel())
