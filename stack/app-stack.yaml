@@ -72,15 +72,15 @@ Resources:
         Id: MyPolicy
         Version: 2012-10-17
         Statement:
-          Sid: PublicReadForGetBucketObjects
-          Effect: Allow
-          Principle: '*'
-          Action: 's3:GetObject'
-          Resource: !Join
-            - ''
-            - - 'arn:aws:s3:::'
-              - !Ref WebsiteBucket
-              - /*
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principle: '*'
+            Action: 's3:GetObject'
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref WebsiteBucket
+                - /*
       Bucket: !Ref WebsiteBucket
 
   HelloBucket:
