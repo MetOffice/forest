@@ -122,17 +122,13 @@ simultaneously compared.
 Example - Going faster with SQL
 -------------------------------
 
-For very large data sets file access and meta-data checking
+For very large data sets, file access and meta-data checking
 becomes a bottle neck. Accessing thousands or even hundreds of files
 to answer a single query can be time consuming, especially if your
-files are stored in the cloud, e.g. in an S3 bucket. A simple way to address
-this issue is to harvest the meta-data once and then use the power
-of a query language and relational database to quickly lookup
-files and indices.
-
-.. code-block:: sh
-
-  :> forest --show --config-file um-config.yaml --database database.db
+files are stored in the cloud, e.g. in an S3 bucket. FOREST addresses
+this issue by providing a facility to harvest the meta-data once, store
+it in a database, and then use the database to quickly locate relevant
+files.
 
 To generate a database from scratch use the `forestdb` command.
 
@@ -140,12 +136,8 @@ To generate a database from scratch use the `forestdb` command.
 
   :> forestdb --database my-database.db my-file-*.nc
 
-.. note:: To switch on database-powered menu systems change `locator` to
-          `database` in the config file
-
-.. note:: Database support is only available for unified_model file types
-
-.. note:: Prefix pattern with wildcard `*` to enable SQL queries to find files
+To make use of a database for a particular database, set the `locator`
+to "database" and set `database_path` to the location of the database file.
 
 .. code-block:: yaml
 
@@ -153,6 +145,7 @@ To generate a database from scratch use the `forestdb` command.
      - label: UM
        pattern: "*unified_model.nc"
        locator: database
+       database_path: database.db
      - label: RDT
        pattern: rdt*.json
        locator: file_system
@@ -160,7 +153,6 @@ To generate a database from scratch use the `forestdb` command.
        pattern: eida50*.nc
        locator: file_system
 
-With the updated config file and correctly populated database, the server running
-forest should have less work to do to harvest meta-data at startup. This
-performance boost makes forest more responsive when viewing large datasets
-consisting of thousands of files.
+.. note:: Database support is only available for unified_model file types
+
+.. note:: Prefix pattern with wildcard `*` to enable SQL queries to find files

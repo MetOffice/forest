@@ -9,3 +9,7 @@ node_modules
 *.egg-info
 .coverage
 doc/build
+apps/ux-improvements/static/css
+apps/ux-improvements/static/js
+apps/ux-improvements/node_modules
+.DS_Store

@@ -15,17 +15,21 @@ def test_Navigator_init(from_group):
     group2 = Mock(pattern='pattern2')
     config = Mock(file_groups=[group1, group2])
 
-    navigator = navigate.Navigator(config, sentinel.database)
+    navigator = navigate.Navigator(config)
 
-    assert from_group.mock_calls == [call(group1, sentinel.database),
-                                     call(group2, sentinel.database)]
+    assert from_group.mock_calls == [call(group1), call(group2)]
     assert navigator._navigators == {'pattern1': sentinel.nav1,
                                      'pattern2': sentinel.nav2}
 
 
-def test_Navigator_from_group__use_database():
-    navigator = navigate.Navigator._from_group(Mock(locator='database'),
-                                               sentinel.database)
+@patch('forest.db.get_database')
+def test_Navigator_from_group__use_database(get_database):
+    get_database.return_value = sentinel.database
+    group = Mock(locator='database', database_path=sentinel.database_path)
+
+    navigator = navigate.Navigator._from_group(group)
+
+    get_database.assert_called_once_with(sentinel.database_path)
     assert navigator == sentinel.database
 
 
@@ -34,41 +38,25 @@ def test_Navigator_from_group__use_database():
 def test_Navigator_from_group__use_paths(expand_paths, from_file_type):
     expand_paths.return_value = sentinel.paths
     from_file_type.return_value = sentinel.navigator
-    group = Mock(locator='not-a-database', directory=sentinel.directory,
+    group = Mock(locator='not-a-database',
                  pattern=sentinel.pattern, file_type=sentinel.file_type)
 
-    navigator = navigate.Navigator._from_group(group, sentinel.database)
+    navigator = navigate.Navigator._from_group(group)
 
-    expand_paths.assert_called_once_with(sentinel.directory, sentinel.pattern)
+    expand_paths.assert_called_once_with(sentinel.pattern)
     from_file_type.assert_called_once_with(sentinel.paths, sentinel.file_type)
     assert navigator == sentinel.navigator
 
 
 @patch('glob.glob')
 @patch('os.path.expanduser')
-def test_Navigator_expand_paths__no_dir(expanduser, glob):
+def test_Navigator_expand_paths(expanduser, glob):
     expanduser.return_value = sentinel.expanded
     glob.return_value = sentinel.paths
 
-    paths = navigate.Navigator._expand_paths(None, 'my-pattern')
+    paths = navigate.Navigator._expand_paths('my-pattern')
 
     expanduser.assert_called_once_with('my-pattern')
-    glob.assert_called_once_with(sentinel.expanded)
-    assert paths == sentinel.paths
-
-
-@patch('glob.glob')
-@patch('os.path.expanduser')
-@patch('os.path.join')
-def test_Navigator_expand_paths__with_dir(join, expanduser, glob):
-    join.return_value = sentinel.joined
-    expanduser.return_value = sentinel.expanded
-    glob.return_value = sentinel.paths
-
-    paths = navigate.Navigator._expand_paths('my-dir', 'my-pattern')
-
-    join.assert_called_once_with('my-dir', 'my-pattern')
-    expanduser.assert_called_once_with(sentinel.joined)
     glob.assert_called_once_with(sentinel.expanded)
     assert paths == sentinel.paths
 

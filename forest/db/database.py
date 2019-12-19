@@ -324,6 +324,8 @@ class Database(Connection):
         return [r for r, in rows]
 
     def insert_file_name(self, path, reference_time=None):
+        if reference_time is not None:
+            reference_time = str(reference_time)
         self.cursor.execute("""
             INSERT OR IGNORE INTO file (name, reference)
             VALUES (:path, :reference)

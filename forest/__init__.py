@@ -6,11 +6,21 @@ forecasts alongside observations.
 
 .. automodule:: forest.redux
 
+.. automodule:: forest.rx
+
+.. automodule:: forest.observe
+
+.. automodule:: forest.series
+
+.. automodule:: forest.colors
+
 .. automodule:: forest.keys
 
 .. automodule:: forest.config
 
 .. automodule:: forest.load
+
+.. automodule:: forest.geo
 
 """
 __version__ = '0.4.4'

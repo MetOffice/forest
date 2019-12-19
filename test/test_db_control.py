@@ -2,7 +2,14 @@ import unittest
 import unittest.mock
 import datetime as dt
 import numpy as np
-from forest import db, redux
+from forest import db, redux, rx
+
+
+def test_reducer_immutable_state():
+    state = {"pressure": 1000}
+    next_state = db.reducer(state, db.set_value("pressure", 950))
+    assert state["pressure"] == 1000
+    assert next_state["pressure"] == 950
 
 
 def test_convert_datetime64_array_to_strings():
@@ -79,108 +86,6 @@ class TestDatabaseMiddleware(unittest.TestCase):
             "pattern": "file.nc",
             "variables": ["variable"],
             "initial_times": [str(initial)]
-        }
-        self.assertEqual(expect, result)
-
-    @unittest.skip("porting to test directory")
-    def test_set_valid_time_sets_pressures(self):
-        path = "file.nc"
-        variable = "air_temperature"
-        initial_time = "2019-01-01 00:00:00"
-        valid_time = "2019-01-01 12:00:00"
-        pressure = 750.
-        index = 0
-        self.database.insert_file_name(path, initial_time)
-        self.database.insert_time(path, variable, valid_time, index)
-        self.database.insert_pressure(path, variable, pressure, index)
-        store = redux.Store(
-            db.reducer,
-            middlewares=[self.controls])
-        actions = [
-            db.set_value("pattern", path),
-            db.set_value("variable", variable),
-            db.set_value("initial_time", initial_time),
-            db.set_value("valid_time", valid_time)]
-        for action in actions:
-            store.dispatch(action)
-        result = store.state
-        expect = {
-            "pattern": path,
-            "variable": variable,
-            "variables": [variable],
-            "initial_time": initial_time,
-            "initial_times": [initial_time],
-            "valid_time": valid_time,
-            "valid_times": [valid_time],
-            "pressures": [pressure],
-        }
-        self.assertEqual(expect, result)
-
-    @unittest.skip("porting to test directory")
-    def test_set_variable_given_initial_time_changes_times_and_pressure(self):
-        path = "some.nc"
-        initial_time = "2019-01-01 00:00:00"
-        self.database.insert_file_name(path, initial_time)
-        index = 0
-        for variable, valid_time, pressure in [
-                ("air_temperature", "2019-01-01 01:00:00", 1000.),
-                ("olr", "2019-01-01 01:03:00", 10.)]:
-            self.database.insert_time(path, variable, valid_time, index)
-            self.database.insert_pressure(path, variable, pressure, index)
-
-        store = redux.Store(
-            db.reducer,
-            middlewares=[self.controls])
-        actions = [
-            db.set_value("pattern", path),
-            db.set_value("variable", "air_temperature"),
-            db.set_value("initial_time", initial_time),
-            db.set_value("variable", "olr")
-        ]
-        for action in actions:
-            store.dispatch(action)
-
-        result = store.state
-        expect = {
-            "pattern": path,
-            "variable": "olr",
-            "variables": ["air_temperature", "olr"],
-            "initial_time": initial_time,
-            "initial_times": [initial_time],
-            "valid_times": ["2019-01-01 01:03:00"],
-            "pressures": [0.0]
-        }
-        self.assertEqual(expect, result)
-
-    @unittest.skip("porting to test directory")
-    def test_navigator_api(self):
-        path = "file.nc"
-        variable = "air_temperature"
-        initial_time = "2019-01-01 00:00:00"
-        valid_time = "2019-01-01 12:00:00"
-        pressure = 750.
-        navigator = db.Navigator()
-        controls = db.Controls(navigator)
-        store = redux.Store(
-            db.reducer,
-            middlewares=[controls])
-        actions = [
-            db.set_value("pattern", path),
-            db.set_value("variable", variable),
-            db.set_value("initial_time", initial_time),
-            db.set_value("valid_time", valid_time)]
-        for action in actions:
-            store.dispatch(action)
-        result = store.state
-        expect = {
-            "pattern": path,
-            "variable": variable,
-            "variables": [variable],
-            "initial_time": initial_time,
-            "initial_times": [initial_time],
-            "valid_time": valid_time,
-            "valid_times": [valid_time],
-            "pressures": [pressure],
         }
         self.assertEqual(expect, result)
 
@@ -380,25 +285,12 @@ class TestNextPrevious(unittest.TestCase):
         ]
 
     def test_middleware_converts_next_value_to_set_value(self):
-        log = db.Log()
-        state = {
-            "k": 2,
-            "ks": [1, 2, 3]
-        }
         store = redux.Store(
             db.reducer,
-            initial_state=state,
-            middlewares=[
-                db.next_previous,
-                log])
-        store.dispatch(db.next_value("k", "ks"))
-        result = store.state
-        expect = {
-            "k": 3,
-            "ks": [1, 2, 3]
-        }
-        self.assertEqual(expect, result)
-        self.assertEqual(log.actions, [db.set_value("k", 3)])
+            initial_state={"k": 2, "ks": [1, 2, 3]})
+        action = db.next_value("k", "ks")
+        result = list(db.next_previous(store, action))
+        self.assertEqual(result, [db.set_value("k", 3)])
 
     def test_next_value_action_creator(self):
         result = db.next_value("initial_time", "initial_times")
@@ -531,7 +423,7 @@ class TestStateStream(unittest.TestCase):
         """Not all components are ready to accept dict() states"""
         listener = unittest.mock.Mock()
         store = redux.Store(db.reducer)
-        old_states = (db.Stream()
+        old_states = (rx.Stream()
                   .listen_to(store)
                   .map(lambda x: db.State(**x)))
         old_states.subscribe(listener)

@@ -4,11 +4,30 @@ import datetime as dt
 import pandas as pd
 from forest import geo
 import bokeh.models
+import bokeh.palettes
+import numpy as np
+
+
+class Coordinates:
+   def variables(self, path):
+      return ["lightning"]
+
+   def initial_time(self, path):
+      return dt.datetime(2019, 12, 13)
+
+   def valid_times(self, path, variable):
+      return [self.initial_time(path)]
+
+   def pressures(self, path, variable):
+      return []
+
 
 
 class View(object):
     def __init__(self, loader):
         self.loader = loader
+        palette = bokeh.palettes.all_palettes['Spectral'][11][::-1]
+        self.color_mapper = bokeh.models.LinearColorMapper(low=-1000, high=0, palette=palette)
         self.source = bokeh.models.ColumnDataSource({
             "x": [],
             "y": [],
@@ -18,11 +37,13 @@ class View(object):
             "flash_type": []
         })
 
-    def render(self, valid_date):
-        frame = self.loader.load_date(valid_date)
+    def render(self, state):
+        frame = self.loader.load_date(dt.datetime(2019, 12, 12, 13, 30))
         x, y = geo.web_mercator(
                 frame.longitude,
                 frame.latitude)
+        self.color_mapper.low = np.min(frame.time_since_flash)
+        self.color_mapper.high = np.max(frame.time_since_flash)
         self.source.data = {
             "x": x,
             "y": y,
@@ -30,6 +51,7 @@ class View(object):
             "longitude": frame.longitude,
             "latitude": frame.latitude,
             "flash_type": frame.flash_type,
+            "time_since_flash": frame.time_since_flash
         }
 
     def add_figure(self, figure):
@@ -37,10 +59,13 @@ class View(object):
                 x="x",
                 y="y",
                 size=10,
+		fill_color={'field': 'time_since_flash', 'transform': self.color_mapper},
+		line_color={'field': 'time_since_flash', 'transform': self.color_mapper},
                 source=self.source)
         tool = bokeh.models.HoverTool(
                 tooltips=[
                     ('Time', '@date{%F}'),
+                    ('Since flash', '@time_since_flash'),
                     ('Lon', '@longitude'),
                     ('Lat', '@latitude'),
                     ('Flash type', '@flash_type')],
@@ -69,6 +94,7 @@ class Loader(object):
         s = "{:%Y-%m-%dT%H:%M}".format(start)
         e = "{:%Y-%m-%dT%H:%M}".format(end)
         small_frame = frame[s:e].copy()
+        small_frame['time_since_flash'] = [t.total_seconds() for t in date - small_frame.index]
         return small_frame.reset_index()
 
     @staticmethod

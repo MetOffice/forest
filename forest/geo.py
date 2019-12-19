@@ -1,30 +1,56 @@
+"""
+Geographic utilities module
+---------------------------
+
+Module to handle projection and sampling iof points for imaging.
+
+.. autofunction:: stretch_image
+
+.. autofunction:: web_mercator
+
+.. autofunction:: plate_carree
+
+"""
 try:
     import cartopy
 except ImportError:
     # ReadTheDocs unable to pip install cartopy
     pass
+
 import numpy as np
+
 import scipy.interpolate
 import scipy.ndimage
 
+try:
+    import datashader
+    import xarray
+except ModuleNotFoundError:
+    datashader = None
 
 def stretch_image(lons, lats, values):
-    if np.ma.is_masked(values):
-        mask = values.mask
-    else:
-        mask = None
+    """
+    Do the mapping from image data to the format required by bokeh
+    for plotting.
 
+    :param lons: Numpy array with latitude values for the image data.
+    :param lats: Numpy array with longitude values for the image data.
+    :param values: Numpy array of image data, with dimensions matching the
+                   size of latitude and longitude arrays.
+    :return: A dictionary that can be used with the bokeh image glyph.
+    """
     gx, _ = web_mercator(
         lons,
         np.zeros(len(lons), dtype="d"))
     _, gy = web_mercator(
         np.zeros(len(lats), dtype="d"),
         lats)
-    image = stretch_y(gy)(values)
-    if mask is not None:
-        image_mask = stretch_y(gy)(mask)
-        image = np.ma.masked_invalid(np.ma.masked_array(image, mask=image_mask))
-
+    if datashader:
+        x_range = (gx.min(), gx.max())
+        y_range = (gy.min(), gy.max())
+        image = datashader_stretch(values, gx, gy, x_range, y_range)
+    else:
+        image = custom_stretch(values, gx, gy)
     x = gx.min()
     y = gy.min()
     dw = gx[-1] - gx[0]
@@ -36,6 +62,41 @@ def stretch_image(lons, lats, values):
         "dh": [dh],
         "image": [image]
     }
+
+
+def datashader_stretch(values, gx, gy, x_range, y_range):
+    """
+    Use datashader to sample the data mesh in on a regular grid for use in
+    image display.
+
+    :param values: A numpy array of image data
+    :param gx: The array of coordinates in projection space.
+    :param gy: The array of coordinates in projection space.
+    :param x_range: The range of the mesh in projection space.
+    :param y_range: The range of the mesh in projection space.
+    :return: An xarray of image data representing pixels.
+    """
+    canvas = datashader.Canvas(plot_height=values.shape[0],
+                               plot_width=values.shape[1],
+                               x_range=x_range,
+                               y_range=y_range)
+    xarr = xarray.DataArray(values, coords=[('y', gy), ('x', gx)], name='Z')
+    image = canvas.quadmesh(xarr)
+    return np.ma.masked_array(image.values,
+                          mask=np.isnan(
+                              image.values))
+
+def custom_stretch(values, gx, gy):
+    if np.ma.is_masked(values):
+        mask = values.mask
+    else:
+        mask = None
+    image = stretch_y(gy)(values)
+    if mask is not None:
+        image_mask = stretch_y(gy)(mask)
+        image = np.ma.masked_invalid(
+            np.ma.masked_array(image, mask=image_mask))
+    return image
 
 
 def stretch_y(uneven_y):

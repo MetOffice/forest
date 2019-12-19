@@ -6,8 +6,8 @@ import bokeh.models
 import bokeh.layouts
 from . import util
 from collections import namedtuple
-from forest.redux import middleware
 from forest.observe import Observable
+from forest.gridded_forecast import _to_datetime
 from forest.export import export
 
 
@@ -20,11 +20,9 @@ SET_VALUE = "SET_VALUE"
 NEXT_VALUE = "NEXT_VALUE"
 PREVIOUS_VALUE = "PREVIOUS_VALUE"
 
-
 @export
 def set_value(key, value):
     return dict(kind=SET_VALUE, payload=locals())
-
 
 @export
 def next_valid_time():
@@ -70,19 +68,57 @@ State = namedtuple("State", (
     "valid_format"))
 State.__new__.__defaults__ = (None,) * len(State._fields)
 
+def statehash(self):
+    return hash((self.pattern, str(self.patterns), self.variable, self.initial_time, str(self.initial_times), self.valid_time, str(self.valid_times), self.pressure, str(self.pressures), self.valid_format))
 
-@export
-class Stream(Observable):
-    def listen_to(self, observable):
-        observable.subscribe(self.notify)
-        return self
+def time_equal(a, b):
+    if (a is None) and (b is None):
+        return True
+    elif (a is None) or (b is None):
+        return False
+    else:
+        return _to_datetime(a) == _to_datetime(b)
 
-    def map(self, f):
-        stream = Stream()
-        def callback(x):
-            stream.notify(f(x))
-        self.subscribe(callback)
-        return stream
+_vto_datetime = np.vectorize(_to_datetime)
+
+def time_array_equal(x, y):
+    if (x is None) and (y is None):
+        return True
+    elif (x is None) or (y is None):
+        return False
+    elif (len(x) == 0) or (len(y) == 0):
+        return x == y
+    return np.all(_vto_datetime(x) == _vto_datetime(y))
+
+def equal_value(a, b):
+    if (a is None) and (b is None):
+        return True
+    elif (a is None) or (b is None):
+        return False
+    else:
+        return np.allclose(a, b)
+
+def state_ne(self, other):
+    return not (self == other)
+
+def state_eq(self, other):
+    return (
+            (self.pattern == other.pattern) and
+            np.all(self.patterns == other.patterns) and
+            (self.variable == other.variable) and
+            np.all(self.variables == other.variables) and
+            time_equal(self.initial_time, other.initial_time) and
+            time_array_equal(self.initial_times, other.initial_times) and
+            time_equal(self.valid_time, other.valid_time) and
+            time_array_equal(self.valid_times, other.valid_times) and
+            equal_value(self.pressure, other.pressure) and
+            equal_value(self.pressures, other.pressures)
+    )
+
+State.__hash__ = statehash
+State.__eq__ = state_eq
+State.__ne__ = state_ne
+
 
 @export
 def initial_state(navigator, pattern=None):
@@ -141,34 +177,23 @@ def reducer(state, action):
 
 
 @export
-class Log(object):
-    """Logs actions"""
-    def __init__(self, verbose=False):
-        self.verbose = verbose
-        self.actions = []
-
-    @middleware
-    def __call__(self, store, next_dispatch, action):
-        value = next_dispatch(action)
-        if self.verbose:
-            print(action)
-        self.actions.append(action)
-        return value
-
-
-@export
 class InverseCoordinate(object):
     """Translate actions on inverted coordinates"""
     def __init__(self, name):
         self.name = name
 
-    @middleware
-    def __call__(self, store, next_dispatch, action):
-        kind = action["kind"]
-        if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
-            if self.name == action["payload"]["item_key"]:
-                return next_dispatch(self.invert(action))
-        return next_dispatch(action)
+    def __call__(self, store, action):
+        if self.is_next_previous(action) and self.has_name(action):
+            yield self.invert(action)
+        else:
+            yield action
+
+    @staticmethod
+    def is_next_previous(action):
+        return action["kind"] in [NEXT_VALUE, PREVIOUS_VALUE]
+
+    def has_name(self, action):
+        return self.name == action["payload"]["item_key"]
 
     @staticmethod
     def invert(action):
@@ -183,8 +208,7 @@ class InverseCoordinate(object):
 
 
 @export
-@middleware
-def next_previous(store, next_dispatch, action):
+def next_previous(store, action):
     """Translate NEXT/PREVIOUS action(s) into SET action"""
     kind = action["kind"]
     if kind in [NEXT_VALUE, PREVIOUS_VALUE]:
@@ -206,8 +230,9 @@ def next_previous(store, next_dispatch, action):
                 value = max(items)
             else:
                 value = min(items)
-        return next_dispatch(set_value(item_key, value))
-    return next_dispatch(action)
+        yield set_value(item_key, value)
+    else:
+        yield action
 
 
 def next_item(items, item):
@@ -243,15 +268,15 @@ class Converter(object):
     def __init__(self, maps):
         self.maps = maps
 
-    @middleware
-    def __call__(self, store, next_dispatch, action):
+    def __call__(self, store, action):
         if action["kind"] == SET_VALUE:
             key = action["payload"]["key"]
             value = action["payload"]["value"]
             if key in self.maps:
                 value = self.maps[key](value)
-            return next_dispatch(set_value(key, value))
-        return next_dispatch(action)
+            yield set_value(key, value)
+        else:
+            yield action
 
 
 @export
@@ -259,59 +284,75 @@ class Controls(object):
     def __init__(self, navigator):
         self.navigator = navigator
 
-    @middleware
-    def __call__(self, store, next_dispatch, action):
+    def __call__(self, store, action):
         if action["kind"] == SET_VALUE:
             key = action["payload"]["key"]
-            value = action["payload"]["value"]
-            if (key == "pressure"):
-                try:
-                    value = float(value)
-                except ValueError:
-                    print("{} is not a float".format(value))
-                return next_dispatch(set_value(key, value))
-            elif key == "pattern":
-                variables = self.navigator.variables(pattern=value)
-                initial_times = self.navigator.initial_times(pattern=value)
-                initial_times = list(reversed(initial_times))
-                next_dispatch(action)
-                next_dispatch(set_value("variables", variables))
-                next_dispatch(set_value("initial_times", initial_times))
+            handlers = {
+                "pressure": self._pressure,
+                "pattern": self._pattern,
+                "variable": self._variable,
+                "initial_time": self._initial_time,
+            }
+            if key in handlers:
+                yield from handlers[key](store, action)
+            else:
+                yield action
+        else:
+            yield action
+
+    def _pressure(self, store, action):
+        key = action["payload"]["key"]
+        value = action["payload"]["value"]
+        try:
+            value = float(value)
+        except ValueError:
+            print("{} is not a float".format(value))
+        yield set_value(key, value)
+
+    def _pattern(self, store, action):
+        value = action["payload"]["value"]
+        variables = self.navigator.variables(pattern=value)
+        initial_times = self.navigator.initial_times(pattern=value)
+        initial_times = list(reversed(initial_times))
+        yield action
+        yield set_value("variables", variables)
+        yield set_value("initial_times", initial_times)
+
+    def _variable(self, store, action):
+        for attr in ["pattern", "initial_time"]:
+            if attr not in store.state:
+                yield action
                 return
-            elif key == "variable":
-                for attr in ["pattern", "initial_time"]:
-                    if attr not in store.state:
-                        return next_dispatch(action)
-                pattern = store.state["pattern"]
-                variable = value
-                initial_time = store.state["initial_time"]
-                valid_times = self.navigator.valid_times(
-                    pattern=pattern,
-                    variable=variable,
-                    initial_time=initial_time)
-                valid_times = sorted(set(valid_times))
-                pressures = self.navigator.pressures(
-                    pattern=pattern,
-                    variable=variable,
-                    initial_time=initial_time)
-                pressures = list(reversed(pressures))
-                next_dispatch(action)
-                next_dispatch(set_value("valid_times", valid_times))
-                next_dispatch(set_value("pressures", pressures))
+        pattern = store.state["pattern"]
+        variable = action["payload"]["value"]
+        initial_time = store.state["initial_time"]
+        valid_times = self.navigator.valid_times(
+            pattern=pattern,
+            variable=variable,
+            initial_time=initial_time)
+        valid_times = sorted(set(valid_times))
+        pressures = self.navigator.pressures(
+            pattern=pattern,
+            variable=variable,
+            initial_time=initial_time)
+        pressures = list(reversed(pressures))
+        yield action
+        yield set_value("valid_times", valid_times)
+        yield set_value("pressures", pressures)
+
+    def _initial_time(self, store, action):
+        for attr in ["pattern", "variable"]:
+            if attr not in store.state:
+                yield action
                 return
-            elif key == "initial_time":
-                for attr in ["pattern", "variable"]:
-                    if attr not in store.state:
-                        return next_dispatch(action)
-                valid_times = self.navigator.valid_times(
-                    pattern=store.state["pattern"],
-                    variable=store.state["variable"],
-                    initial_time=value)
-                valid_times = sorted(set(valid_times))
-                next_dispatch(action)
-                next_dispatch(set_value("valid_times", valid_times))
-                return
-        return next_dispatch(action)
+        initial_time = action["payload"]["value"]
+        valid_times = self.navigator.valid_times(
+            pattern=store.state["pattern"],
+            variable=store.state["variable"],
+            initial_time=initial_time)
+        valid_times = sorted(set(valid_times))
+        yield action
+        yield set_value("valid_times", valid_times)
 
 
 @export

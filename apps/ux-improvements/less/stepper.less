@@ -1,0 +1,160 @@
+@import 'mixins.less';
+
+.stepper {
+	background: @lightgrey;
+	text-align: center;
+	margin-bottom: 100px;
+	&__stepscontainer {
+		display:inline-block;
+		float:none;
+		text-align: center;
+		position: relative;
+		width: 100%;
+		padding: 20px 20px 0;	
+		@media @largephone {
+			padding: 20px 60px 0;
+		}
+		max-width: 600px;
+		@media @desktop {
+			padding-top: 15px;
+		}
+		&:before {
+			position: absolute; 
+			bottom: 7px;
+			left: 18%;
+			width: 66%;
+			height: 7px;
+			display:block;
+
+			// custom gradient for movement
+			background: #2ebd92; /* Old browsers */
+			background: -moz-linear-gradient(left,  #2ebd92 43%, #017aa9 58%, #017aa9 86%); /* FF3.6-15 */
+			background: -webkit-linear-gradient(left,  #2ebd92 43%,#017aa9 58%,#017aa9 86%); /* Chrome10-25,Safari5.1-6 */
+			background: linear-gradient(to right,  #2ebd92 43%,#017aa9 58%,#017aa9 86%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2ebd92', endColorstr='#017aa9',GradientType=1 ); /* IE6-9 */
+
+			content: '';
+			z-index: 2;
+			background-position: 90% 0;
+		    background-size: 150% auto;
+		    background-repeat: no-repeat;
+		    background-color: @blue;
+		    .transition(all 500ms ease);
+		}
+	}
+	&__step {
+		display:inline-block;
+		max-width: 100px;
+		margin: 10px 0 -51px;
+		text-align: center;
+		position: relative;
+		z-index: 3;
+		min-width: 77px;
+		&:before {
+			content: '';
+			position: absolute;
+			width: 70px;
+		    height: 31px;
+		    left: 50%;
+		    top: 71px;
+		    margin: -35px;
+			.border-radius(0 0 250px 250px);
+			background: @lightgrey;
+			z-index: 1;
+			@media @tablet {
+				width: 80px;
+			    height: 33px;
+			    left: 50%;
+			    top: 84px;
+			    margin: -40px;
+			}
+		}
+		&:first-child {
+			float:left;
+		}
+		&:last-child {
+			float:right;
+		}
+		@media @desktop {
+			margin-right: 25px;
+			margin-left: 25px;
+		}
+		i {
+			.border-radius(250px);
+			.doubletransition(background-position 2s ease, transform 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55));
+			width: 60px;
+			height: 60px;
+			display: inline-block;
+			font-size: 20px;
+			.createGradient(@green, @blue);
+			background-size: 300% auto;
+			background-position: 100% 0px;
+			color: #FFFFFF;
+			margin: 0;
+			padding-top: 20px;
+			position: relative;
+			z-index: 3;
+			@media @tablet {
+				width: 70px;
+				height: 70px;
+				font-size: 25px;
+				padding-top: 22px;
+			}
+		}
+	}
+	&__steptitle {
+		font-size: 12px; 
+		color : @blue;
+		margin: 15px 0 0 0;
+		display:block;
+	}
+
+	// Step states 
+
+	&--1, &--2, &--3 {
+		.stepper__step {
+			&:first-child {
+				i {
+					background-position: 0% 0;
+				}
+				.stepper__steptitle {
+					color: @green;
+				}
+			}
+		}
+	}
+	&--2, &--3 {
+		.stepper__step {
+			&:nth-child(2) {
+				i {
+					background-position: 0% 0;
+				}
+				.stepper__steptitle {
+					color: @green;
+				}
+			}
+		}
+		.stepper__stepscontainer {
+			&:before {
+				background-position: 0% 0;
+			}
+		}
+	}
+	&--3 {
+		.stepper__step {
+			&:nth-child(3) {
+				i {
+					background-position: 0% 0;
+				}
+				.stepper__steptitle {
+					color: @green;
+				}
+			}
+		}
+		.stepper__stepscontainer {
+			&:before {
+				background-position: -25% 0;
+			}
+		}
+	}
+}

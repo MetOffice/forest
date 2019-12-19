@@ -7,16 +7,20 @@ from .exceptions import (
         ValidTimesNotFound,
         PressuresNotFound)
 from forest import (
+        earth_networks,
+        db,
         gridded_forecast,
         ghrsstl4,
         unified_model,
         eida50,
         rdt,
-        saf)
+        intake_loader,
+        saf,
+)
 
 
 class Navigator:
-    def __init__(self, config, database):
+    def __init__(self, config):
         # TODO: Once the idea of a "Group" exists we can avoid using the
         # config and defer the sub-navigator creation to each of the
         # groups. This will remove the need for the `_from_group` helper
@@ -26,23 +30,21 @@ class Navigator:
         # group would have a `pattern`.
         # e.g.
         # self._navigators = {group.label: group.navigator for group in ...}
-        self._navigators = {group.pattern: self._from_group(group, database)
+        self._navigators = {group.pattern: self._from_group(group)
                            for group in config.file_groups}
 
     @classmethod
-    def _from_group(cls, group, database):
+    def _from_group(cls, group):
         if group.locator == 'database':
-            navigator = database
+            navigator = db.get_database(group.database_path)
         else:
-            paths = cls._expand_paths(group.directory, group.pattern)
+            paths = cls._expand_paths(group.pattern)
             navigator = FileSystemNavigator.from_file_type(paths,
                                                            group.file_type)
         return navigator
 
     @classmethod
-    def _expand_paths(cls, directory, pattern):
-        if directory is not None:
-            pattern = os.path.join(directory, pattern)
+    def _expand_paths(cls, pattern):
         return glob.glob(os.path.expanduser(pattern))
 
     def variables(self, pattern):
@@ -83,12 +85,16 @@ class FileSystemNavigator:
         elif file_type.lower() == 'griddedforecast':
             # XXX This needs a "Group" object ... not "paths"
             return gridded_forecast.Navigator(paths)
+        elif file_type.lower() == 'intake':
+            return intake_loader.Navigator()
         elif file_type.lower() == 'ghrsstl4':
             return ghrsstl4.Navigator(paths)
         elif file_type.lower() == "unified_model":
             coordinates = unified_model.Coordinates()
         elif file_type.lower() == "saf":
             coordinates = saf.Coordinates()
+        elif file_type.lower() == "earth_networks":
+            coordinates = earth_networks.Coordinates()
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)

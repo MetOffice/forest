@@ -2,7 +2,13 @@ from datetime import datetime
 import collections
 
 import numpy as np
-import iris
+try:
+    import iris
+except ModuleNotFoundError:
+    # ReadTheDocs can't import iris
+    iris = None
+
+import cftime
 
 from forest import geo
 
@@ -24,8 +30,11 @@ def empty_image():
 
 
 def _to_datetime(d):
+
     if isinstance(d, datetime):
         return d
+    if isinstance(d, cftime.DatetimeNoLeap):
+        return datetime(d.year, d.month, d.day, d.hour, d.minute, d.second)
     elif isinstance(d, str):
         try:
             return datetime.strptime(d, "%Y-%m-%d %H:%M:%S")

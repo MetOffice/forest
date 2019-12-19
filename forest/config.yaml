@@ -3,27 +3,30 @@ files:
           pattern: '*global_africa*.nc'
           locator: database
           file_type: unified_model
-          directory: unified_model
+          directory: '${BUCKET_DIR}/unified_model'
         - label: Operational GA6 SE Asia
           pattern: '*oper_global_south_east_asia*.nc'
           locator: database
           file_type: unified_model
-          directory: unified_model
+          directory: '${BUCKET_DIR}/unified_model'
         - label: Operational Tropical Africa
           pattern: '*os42_ea*.nc'
           locator: database
           file_type: unified_model
-          directory: unified_model
+          directory: '${BUCKET_DIR}/unified_model'
         - label: Tanzania WRF
           pattern: '*wrf_sampledata.nc'
           locator: database
           file_type: unified_model
-          directory: tma_wrf
+          directory: '${BUCKET_DIR}/tma_wrf'
         - label: EIDA50
-          pattern: 'eida50/EIDA50_takm4p4*.nc'
+          pattern: '${BUCKET_DIR}/eida50/EIDA50_takm4p4*.nc'
           locator: file_system
           file_type: eida50
         - label: RDT
-          pattern: 'rdt_json/*.json'
+          pattern: '${BUCKET_DIR}/rdt_json/*.json'
           locator: file_system
           file_type: rdt
+        - label: NCAR ESM
+          pattern: temporary
+          file_type: intake
