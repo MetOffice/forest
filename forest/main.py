@@ -14,6 +14,7 @@ from forest import (
         images,
         earth_networks,
         rdt,
+        nearcast,
         geo,
         colors,
         db,
@@ -135,6 +136,9 @@ def main(argv=None):
             viewer = view.GPMView(loader, color_mapper)
         elif isinstance(loader, satellite.EIDA50):
             viewer = view.EIDA50(loader, color_mapper)
+        elif isinstance(loader, nearcast.NearCast):
+            viewer = view.NearCast(loader, color_mapper)
+            viewer.set_hover_properties(nearcast.NEARCAST_TOOLTIPS)
         elif isinstance(loader, intake_loader.IntakeLoader):
             viewer = view.UMView(loader, color_mapper)
             viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
