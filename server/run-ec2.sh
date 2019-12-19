@@ -8,5 +8,5 @@ PYTHONPATH=${REPO_DIR}:$PYTHONPATH bokeh serve \
      ${REPO_DIR}/forest \
          --args \
          --config ${REPO_DIR}/server/config-philippines.yaml \
-         --directory ${BUCKET_DIR}/met-office-rmed-forest \
-         --database /database/philippines.db
+         --var DIRECTORY ${BUCKET_DIR}/met-office-rmed-forest \
+         --var DATABASE /database/philippines.db
