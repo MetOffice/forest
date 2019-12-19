@@ -43,6 +43,33 @@ Parameters:
 
 
 Resources:
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+    DeletionPolicy: Retain
+
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          Sid: PublicReadForGetBucketObjects
+          Effect: Allow
+          Principle: '*'
+          Action: 's3:GetObject'
+          Resource: !Join
+            - ''
+            - - 'arn:aws:s3:::'
+              - !Ref WebsiteBucket
+              - /*
+      Bucket: !Ref WebsiteBucket
+
   HelloBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -239,3 +266,19 @@ Resources:
           - Key: ServiceOwner
             Value: !Ref ServiceOwner
       StageName: v1
+
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt
+      - WebsiteBucket
+      - WebsiteURL
+    Description: URL for website hosted on S3
+
+  WebsiteBucketSecureURL:
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !GetAtt
+          - WebsiteBucket
+          - DomainName
+    Description: Name of S3 bucket to hold website content
