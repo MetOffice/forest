@@ -64,25 +64,24 @@ Resources:
         IndexDocument: index.html
         ErrorDocument: error.html
     DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
 
   WebsiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
+      Bucket: !Ref WebsiteBucket
       PolicyDocument:
         Id: MyPolicy
         Version: 2012-10-17
         Statement:
           - Sid: PublicReadForGetBucketObjects
             Effect: Allow
-            Principle: '*'
+            Principle: "*"
             Action: 's3:GetObject'
             Resource: !Join
               - ''
               - - 'arn:aws:s3:::'
                 - !Ref WebsiteBucket
                 - /*
-      Bucket: !Ref WebsiteBucket
 
   HelloBucket:
     Type: AWS::S3::Bucket
