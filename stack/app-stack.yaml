@@ -75,6 +75,7 @@ Resources:
         Statement:
           - Sid: PublicReadForGetBucketObjects
             Effect: Allow
+            Principal: "*"
             Action: 's3:GetObject'
             Resource: !Join
               - ''
