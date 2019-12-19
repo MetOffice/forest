@@ -41,11 +41,23 @@ Parameters:
     Default: met-office-rmed-collab-stack
     Description: Collaboration bucket name
 
+  WebsiteBucketName:
+    Type: String
+    Description: Bucket used to serve static HTML content
+
 
 Resources:
   WebsiteBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName: !Ref WebsiteBucketName
+      Tags:
+        - Key: ServiceOwner
+          Value: !Ref ServiceOwner
+        - Key: ServiceCode
+          Value: !Ref ServiceCode
+        - Key: ServiceName
+          Value: !Ref ServiceName
       AccessControl: PublicRead
       WebsiteConfiguration:
         IndexDocument: index.html
