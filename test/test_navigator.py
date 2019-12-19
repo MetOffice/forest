@@ -8,6 +8,13 @@ import forest.exceptions
 import forest.navigate as navigate
 
 
+def test_get_database_with_real_dependencies(tmpdir):
+    # Note: needed to check os library imported
+    database_path = str(tmpdir / "example.db")
+    with pytest.raises(ValueError):
+        forest.db.get_database(database_path)
+
+
 @patch('forest.navigate.Navigator._from_group')
 def test_Navigator_init(from_group):
     from_group.side_effect = [sentinel.nav1, sentinel.nav2]
