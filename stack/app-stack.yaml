@@ -43,6 +43,7 @@ Parameters:
 
   WebsiteBucketName:
     Type: String
+    Default: dev.forest.metoffice.cloud
     Description: Bucket used to serve static HTML content
 
 
