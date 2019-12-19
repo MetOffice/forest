@@ -64,6 +64,7 @@ Resources:
         IndexDocument: index.html
         ErrorDocument: error.html
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
 
   WebsiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
