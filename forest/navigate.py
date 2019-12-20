@@ -94,7 +94,7 @@ class FileSystemNavigator:
         elif file_type.lower() == "saf":
             coordinates = saf.Coordinates()
         elif file_type.lower() == "earth_networks":
-            coordinates = earth_networks.Coordinates()
+            return earth_networks.Navigator(paths)
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)

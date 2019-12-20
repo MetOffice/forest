@@ -76,13 +76,13 @@ class Locator(object):
                     var[:], units=var.units)
         return np.array(values, dtype='datetime64[s]')
 
-    def find_file_index(self, paths, date):
+    def find_file_index(self, paths, user_date):
         dates = np.array([
             self.parse_date(path) for path in paths],
             dtype='datetime64[s]')
-        mask = ~(dates <= date)
+        mask = ~(dates <= user_date)
         if mask.all():
-            msg = "No file for {}".format(date)
+            msg = "No file for {}".format(user_date)
             raise FileNotFound(msg)
         before_dates = np.ma.array(
                 dates, mask=mask, dtype='datetime64[s]')
@@ -103,5 +103,11 @@ class Locator(object):
 
     @staticmethod
     def parse_date(path):
+        # reg-ex to support file names like *20191211.nc
         groups = re.search(r"([0-9]{8})\.nc", path)
-        return dt.datetime.strptime(groups[1], "%Y%m%d")
+        if groups is None:
+            # reg-ex to support file names like *20191211T0000Z.nc
+            groups = re.search(r"([0-9]{8}T[0-9]{4}Z)\.nc", path)
+            return dt.datetime.strptime(groups[1], "%Y%m%dT%H%MZ")
+        else:
+            return dt.datetime.strptime(groups[1], "%Y%m%d")

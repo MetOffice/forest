@@ -1,25 +1,13 @@
+import re
 import os
 import glob
 import datetime as dt
 import pandas as pd
 from forest import geo
+from forest.gridded_forecast import _to_datetime
 import bokeh.models
 import bokeh.palettes
 import numpy as np
-
-
-class Coordinates:
-   def variables(self, path):
-      return ["lightning"]
-
-   def initial_time(self, path):
-      return dt.datetime(2019, 12, 13)
-
-   def valid_times(self, path, variable):
-      return [self.initial_time(path)]
-
-   def pressures(self, path, variable):
-      return []
 
 
 
@@ -34,11 +22,13 @@ class View(object):
             "date": [],
             "longitude": [],
             "latitude": [],
-            "flash_type": []
+            "flash_type": [],
+            "time_since_flash": []
         })
 
     def render(self, state):
-        frame = self.loader.load_date(dt.datetime(2019, 12, 12, 13, 30))
+        valid_time = _to_datetime(state.valid_time)
+        frame = self.loader.load_date(valid_time)
         x, y = geo.web_mercator(
                 frame.longitude,
                 frame.latitude)
@@ -55,12 +45,12 @@ class View(object):
         }
 
     def add_figure(self, figure):
-        renderer = figure.circle(
+        renderer = figure.cross(
                 x="x",
                 y="y",
                 size=10,
-		fill_color={'field': 'time_since_flash', 'transform': self.color_mapper},
-		line_color={'field': 'time_since_flash', 'transform': self.color_mapper},
+                fill_color={'field': 'time_since_flash', 'transform': self.color_mapper},
+                line_color={'field': 'time_since_flash', 'transform': self.color_mapper},
                 source=self.source)
         tool = bokeh.models.HoverTool(
                 tooltips=[
@@ -77,6 +67,34 @@ class View(object):
         return renderer
 
 
+class Navigator:
+    def __init__(self, paths):
+        self.paths = paths
+        times = [
+            self._parse_date(path) for path in paths
+        ]
+        times = [t for t in times if t is not None]
+        self._valid_times = list(sorted(set(times)))
+
+    @staticmethod
+    def _parse_date(path):
+        groups = re.search(r"[0-9]{8}T[0-9]{4}", os.path.basename(path))
+        if groups is not None:
+            return dt.datetime.strptime(groups[0], "%Y%m%dT%H%M")
+
+    def variables(self, pattern):
+        return ["Lightning"]
+
+    def initial_times(self, pattern, variable):
+        return [dt.datetime(1970, 1, 1)]
+
+    def valid_times(self, pattern, variable, initial_time):
+        return self._valid_times
+
+    def pressures(self, pattern, variable, initial_time):
+        return []
+
+
 class Loader(object):
     def __init__(self, paths):
         self.paths = paths
@@ -90,7 +108,7 @@ class Loader(object):
     def load_date(self, date):
         frame = self.frame.set_index('date')
         start = date
-        end = start + dt.timedelta(minutes=15)
+        end = start + dt.timedelta(minutes=60)  # 1 hour window
         s = "{:%Y-%m-%dT%H:%M}".format(start)
         e = "{:%Y-%m-%dT%H:%M}".format(end)
         small_frame = frame[s:e].copy()
