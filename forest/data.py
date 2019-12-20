@@ -425,6 +425,13 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
     lons, lats, values = coarsify(
         lons, lats, values, fraction)
 
+    # Roll input data into [-180, 180] range
+    if np.any(lons > 180.0):
+        shift_by = np.sum(lons > 180.0)
+        lons[lons > 180.0] -= 360.
+        lons = np.roll(lons, shift_by)
+        values = np.roll(values, shift_by, axis=1)
+
     image = geo.stretch_image(lons, lats, values)
     IMAGES[key] = image
     return image
