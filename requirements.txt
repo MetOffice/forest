@@ -2,3 +2,4 @@ bokeh
 iris
 intake
 intake-esm
+pygrib
