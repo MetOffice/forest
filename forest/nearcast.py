@@ -6,13 +6,15 @@ import os
 import glob
 import re
 import datetime as dt
-import pygrib as pg
 import numpy as np
 from forest import geo
 from forest.util import timeout_cache
 from forest.exceptions import FileNotFound
 
-import inspect
+try:
+    import pygrib as pg
+except ModuleNotFoundError:
+    pg = None
 
 NEARCAST_TOOLTIPS = [("Name", "@name"),
                      ("Value", "@image @units"),
