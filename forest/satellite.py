@@ -42,10 +42,8 @@ class EIDA50(object):
         fraction = 0.25
         lons, lats, values = coarsify(
                 lons, lats, values, fraction)
-        data = geo.stretch_image(
+        return geo.stretch_image(
                 lons, lats, values)
-        print(data["image"][0])
-        return data
 
 
 class Locator(object):
@@ -60,7 +58,6 @@ class Locator(object):
         ipath = self.find_file_index(paths, date)
         path = paths[ipath]
         time_axis = self.load_time_axis(path)
-        print(path, time_axis, date)
         index = self.find_index(
                 time_axis,
                 date,
@@ -83,8 +80,6 @@ class Locator(object):
         dates = np.array([
             self.parse_date(path) for path in paths],
             dtype='datetime64[s]')
-        for path, _date in zip(paths, dates):
-            print(path, _date)
         mask = ~(dates <= user_date)
         if mask.all():
             msg = "No file for {}".format(user_date)
@@ -103,7 +98,6 @@ class Locator(object):
         valid_times = np.ma.array(times, mask=~inside)
         if valid_times.mask.all():
             msg = "{}: not found".format(time)
-            print(msg)
             raise IndexNotFound(msg)
         return np.ma.argmax(valid_times)
 

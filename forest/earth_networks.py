@@ -69,14 +69,12 @@ class View(object):
 
 class Navigator:
     def __init__(self, paths):
-        print("Navigator", paths)
         self.paths = paths
         times = [
             self._parse_date(path) for path in paths
         ]
         times = [t for t in times if t is not None]
         self._valid_times = list(sorted(set(times)))
-        print(self._valid_times)
 
     @staticmethod
     def _parse_date(path):
@@ -99,7 +97,6 @@ class Navigator:
 
 class Loader(object):
     def __init__(self, paths):
-        print("Loader", paths)
         self.paths = paths
         if len(self.paths) > 0:
             self.frame = self.read(paths)
