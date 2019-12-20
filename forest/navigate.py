@@ -16,7 +16,7 @@ from forest import (
         rdt,
         intake_loader,
         saf,
-)
+        nearcast)
 
 
 class Navigator:
@@ -95,6 +95,8 @@ class FileSystemNavigator:
             coordinates = saf.Coordinates()
         elif file_type.lower() == "earth_networks":
             return earth_networks.Navigator(paths)
+        elif file_type.lower() == "nearcast":
+            coordinates = nearcast.Coordinates()
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)
