@@ -1,4 +1,4 @@
-bokeh=1.4.0
+bokeh
 iris
 intake
 intake-esm
