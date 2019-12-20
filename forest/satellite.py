@@ -103,9 +103,10 @@ class Locator(object):
 
     @staticmethod
     def parse_date(path):
+        # reg-ex to support file names like *20191211.nc
         groups = re.search(r"([0-9]{8})\.nc", path)
         if groups is None:
-            # *20191211T0000Z.nc
+            # reg-ex to support file names like *20191211T0000Z.nc
             groups = re.search(r"([0-9]{8}T[0-9]{4}Z)\.nc", path)
             return dt.datetime.strptime(groups[1], "%Y%m%dT%H%MZ")
         else:
