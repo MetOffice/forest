@@ -169,7 +169,6 @@ def test_controls_render_sets_menu():
             ("1", "1"), ("2", "2")]
 
 
-
 @pytest.mark.parametrize("props,palette", [
         ({}, None),
         ({"name": "Accent", "number": 3},
