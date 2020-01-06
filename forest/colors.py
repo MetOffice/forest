@@ -521,6 +521,12 @@ class ColorPalette(Observable):
         else:
             self.color_mapper.high_color = None
 
+        # Render reverse checkbox state
+        if props.get("reverse", False):
+            self.checkbox.active = [0]
+        else:
+            self.checkbox.active = []
+
     @staticmethod
     def palette(name, number):
         return bokeh.palettes.all_palettes[name][number]
