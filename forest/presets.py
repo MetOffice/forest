@@ -65,6 +65,7 @@ PRESET_LOAD = "PRESET_LOAD"
 PRESET_REMOVE = "PRESET_REMOVE"
 PRESET_SET_META = "PRESET_SET_META"
 PRESET_ON_SAVE = "PRESET_ON_SAVE"
+PRESET_ON_LOAD = "PRESET_ON_LOAD"
 PRESET_ON_NEW = "PRESET_ON_NEW"
 PRESET_ON_EDIT = "PRESET_ON_EDIT"
 PRESET_ON_CANCEL = "PRESET_ON_CANCEL"
@@ -107,6 +108,11 @@ def set_edit_label(label):
 def on_save(label):
     """Action to signal save clicked"""
     return {"kind": PRESET_ON_SAVE, "payload": label}
+
+
+def on_load(label):
+    """Action to signal load clicked"""
+    return {"kind": PRESET_ON_LOAD, "payload": label}
 
 
 def on_edit():
@@ -169,6 +175,9 @@ def middleware(store, action):
     if kind == PRESET_ON_SAVE:
         yield save_preset(action["payload"])
         yield set_default_mode()
+    elif kind == PRESET_ON_LOAD:
+        # Translate on_load() to load_preset() action
+        yield load_preset(action["payload"])
     elif kind == PRESET_ON_CANCEL:
         yield set_default_mode()
     elif kind == PRESET_ON_EDIT:
@@ -336,7 +345,7 @@ class PresetUI(Observable):
 
     def on_load(self, attr, old, new):
         """Notify listeners that a load action has taken place"""
-        self.notify(load_preset(new))
+        self.notify(on_load(new))
 
     def on_new(self):
         self.notify(on_new())
