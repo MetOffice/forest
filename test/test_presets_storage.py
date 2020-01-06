@@ -20,3 +20,21 @@ def test_storage_middleware(store):
     action = {"kind": "ANY"}
     middleware = presets.Middleware(storage)
     assert list(middleware(store, action)) == [action]
+
+
+def test_storage_middleware_given_on_save(store):
+    storage = presets.Storage()
+    action = presets.on_save("label")
+    middleware = presets.Middleware(storage)
+    list(middleware(store, action))
+    assert storage.load("label") == {}
+
+
+def test_storage_middleware_given_on_save_copies_colorbar():
+    store = redux.Store(presets.reducer, initial_state={"colorbar": {"K": "V"}})
+    storage = presets.Storage()
+    action = presets.on_save("label")
+    middleware = presets.Middleware(storage)
+    list(middleware(store, action))
+    store.state["colorbar"]["K"] = "T"
+    assert storage.load("label") == {"K": "V"}

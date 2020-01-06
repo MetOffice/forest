@@ -135,10 +135,16 @@ class Middleware:
         self.storage = storage
 
     def __call__(self, store, action):
+        kind = action["kind"]
+        if kind == PRESET_ON_SAVE:
+            label = action["payload"]
+            settings = copy.deepcopy(store.state.get("colorbar", {}))
+            self.storage.save(label, settings)
         yield action
 
 
 class Storage:
+    """Store preset settings in-memory"""
     def __init__(self):
         self._records = {}
 
