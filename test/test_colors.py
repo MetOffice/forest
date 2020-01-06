@@ -169,7 +169,6 @@ def test_controls_render_sets_menu():
             ("1", "1"), ("2", "2")]
 
 
-
 @pytest.mark.parametrize("props,palette", [
         ({}, None),
         ({"name": "Accent", "number": 3},
@@ -182,6 +181,35 @@ def test_controls_render_palette(props, palette):
     controls = colors.ColorPalette(color_mapper)
     controls.render(props)
     assert color_mapper.palette == palette
+
+
+@pytest.mark.parametrize("props,active", [
+    ({}, []),
+    ({"reverse": False}, []),
+    ({"reverse": True}, [0]),
+])
+def test_color_palette_render_checkbox(props, active):
+    color_mapper = bokeh.models.LinearColorMapper()
+    color_palette = colors.ColorPalette(color_mapper)
+    color_palette.render(props)
+    assert color_palette.checkbox.active == active
+
+
+@pytest.mark.parametrize("key,props,active", [
+    ("fixed", {}, []),
+    ("fixed", {"fixed": False}, []),
+    ("fixed", {"fixed": True}, [0]),
+    ("invisible_min", {}, []),
+    ("invisible_min", {"invisible_min": False}, []),
+    ("invisible_min", {"invisible_min": True}, [0]),
+    ("invisible_max", {}, []),
+    ("invisible_max", {"invisible_max": False}, []),
+    ("invisible_max", {"invisible_max": True}, [0]),
+])
+def test_user_limits_render_checkboxes(key, props, active):
+    user_limits = colors.UserLimits()
+    user_limits.render(props)
+    assert user_limits.checkboxes[key].active == active
 
 
 def test_user_limits_render():

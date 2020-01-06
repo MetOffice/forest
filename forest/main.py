@@ -19,6 +19,7 @@ from forest import (
         colors,
         db,
         keys,
+        presets,
         redux,
         rx,
         unified_model,
@@ -270,13 +271,15 @@ def main(argv=None):
             "valid_times": db.stamps,
             "inital_times": db.stamps
         }),
-        colors.palettes
+        colors.palettes,
+        presets.middleware
     ]
     store = redux.Store(
         redux.combine_reducers(
             db.reducer,
             series.reducer,
-            colors.reducer),
+            colors.reducer,
+            presets.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
 
@@ -288,6 +291,9 @@ def main(argv=None):
     source_limits.subscribe(store.dispatch)
 
     user_limits = colors.UserLimits().connect(store)
+
+    # Preset
+    preset_ui = presets.PresetUI().connect(store)
 
     # Connect navigation controls
     controls = db.ControlView()
@@ -321,6 +327,7 @@ def main(argv=None):
             child=bokeh.layouts.column(
                 border_row,
                 bokeh.layouts.row(slider),
+                preset_ui.layout,
                 color_palette.layout,
                 user_limits.layout
                 ),
