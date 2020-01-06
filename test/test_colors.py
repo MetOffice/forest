@@ -36,8 +36,9 @@ def test_reducer_immutable_state():
 def test_defaults():
     expected = {
         "name": "Viridis",
-        "names": colors.names(),
         "number": 256,
+        "names": colors.palette_names(),
+        "numbers": colors.palette_numbers("Viridis"),
         "low": 0,
         "high": 1,
         "fixed": False,

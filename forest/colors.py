@@ -168,8 +168,9 @@ def defaults():
     """
     return {
         "name": "Viridis",
-        "names": names(),
+        "names": palette_names(),
         "number": 256,
+        "numbers": palette_numbers("Viridis"),
         "low": 0,
         "high": 1,
         "fixed": False,
@@ -187,7 +188,7 @@ def complete(settings):
     return all([key in settings for key in defaults().keys()])
 
 
-def names():
+def palette_names():
     """All palette names
 
     :returns: list of valid bokeh palette names
