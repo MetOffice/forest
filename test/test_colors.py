@@ -19,6 +19,8 @@ def listener():
     ({}, colors.set_user_high(100), {"colorbar": {"high": 100}}),
     ({}, colors.set_user_low(0), {"colorbar": {"low": 0}}),
     ({}, colors.set_source_limits(0, 100), {"colorbar": {"low": 0, "high": 100}}),
+    ({}, colors.set_colorbar({"key": "value"}), {"colorbar": {"key": "value"}}),
+    ({}, colors.set_palette_names(["example"]), {"colorbar": {"names": ["example"]}}),
 ])
 def test_reducer(state, action, expect):
     result = colors.reducer(state, action)
@@ -29,6 +31,22 @@ def test_reducer_immutable_state():
     state = {"colorbar": {"number": 1}}
     colors.reducer(state, colors.set_palette_number(3))
     assert state["colorbar"]["number"] == 1
+
+
+def test_defaults():
+    expected = {
+        "name": "Viridis",
+        "number": 256,
+        "names": colors.palette_names(),
+        "numbers": colors.palette_numbers("Viridis"),
+        "low": 0,
+        "high": 1,
+        "fixed": False,
+        "reverse": False,
+        "invisible_min": False,
+        "invisible_max": False
+    }
+    assert colors.defaults() == expected
 
 
 def test_color_controls():
@@ -44,6 +62,23 @@ def test_controls_on_name(listener):
     controls.subscribe(listener)
     controls.on_number(None, None, 5)
     listener.assert_called_once_with(colors.set_palette_number(5))
+
+
+def test_middleware_given_empty_state_emits_set_colorbar():
+    store = redux.Store(colors.reducer)
+    action = {"kind": "ANY"}
+    result = list(colors.palettes(store, action))
+    expect = [action, colors.set_colorbar(colors.defaults())]
+    assert expect == result
+
+
+def test_middleware_given_incomplete_state_emits_set_colorbar():
+    store = redux.Store(colors.reducer, initial_state={"colorbar": {"low": -1}})
+    action = {"kind": "ANY"}
+    result = list(colors.palettes(store, action))
+    settings = {**colors.defaults(), **{"low": -1}}
+    expect = [action, colors.set_colorbar(settings)]
+    assert expect == result
 
 
 def test_middleware_given_set_name_emits_set_numbers():
