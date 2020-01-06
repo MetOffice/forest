@@ -4,15 +4,53 @@ Presets
 
 User configured settings can be saved, edited and deleted.
 
+UI components
+~~~~~~~~~~~~~
 
 .. autoclass:: PresetUI
    :members:
 
+Reducer
+~~~~~~~
+
 .. autofunction:: reducer
+
+Middleware
+~~~~~~~~~~
+
+Middleware pre-processes actions prior to the reducer
+
+.. autofunction:: middleware
+
+Helpers
+~~~~~~~
+
+.. autofunction:: state_to_props
+
+Actions
+~~~~~~~
+
+A simple grammar used to communicate between components.
 
 .. autofunction:: save_preset
 
 .. autofunction:: load_preset
+
+.. autofunction:: remove_preset
+
+.. autofunction:: set_default_mode
+
+.. autofunction:: set_edit_mode
+
+.. autofunction:: set_edit_label
+
+.. autofunction:: on_save
+
+.. autofunction:: on_edit
+
+.. autofunction:: on_new
+
+.. autofunction:: on_cancel
 
 """
 import copy
@@ -52,39 +90,53 @@ def remove_preset():
 
 
 def set_default_mode():
+    """Action to select default display mode"""
     return {"kind": PRESET_SET_META, "meta": {"mode": DEFAULT}}
 
 
 def set_edit_mode():
+    """Action to select edit display mode"""
     return {"kind": PRESET_SET_META, "meta": {"mode": EDIT}}
 
 
 def set_edit_label(label):
+    """Action to set edit mode label"""
     return {"kind": PRESET_SET_META, "meta": {"label": label}}
 
 
 def on_save(label):
+    """Action to signal save clicked"""
     return {"kind": PRESET_ON_SAVE, "payload": label}
 
 
 def on_edit():
+    """Action to signal edit clicked"""
     return {"kind": PRESET_ON_EDIT}
 
 
 def on_new():
+    """Action to signal new clicked"""
     return {"kind": PRESET_ON_NEW}
 
 
 def on_cancel():
+    """Action to signal cancel clicked"""
     return {"kind": PRESET_ON_CANCEL}
 
 
 def state_to_props(state):
+    """Converts application state to props used by user interface"""
     query = Query(state)
     return query.labels, query.display_mode, query.edit_label
 
 
 def middleware(store, action):
+    """Presets middleware
+
+    Generates actions given current state and an incoming action. Encapsulates
+    the business logic surrounding saving, editing and creating presets.
+
+    """
     kind = action["kind"]
     if kind == PRESET_ON_SAVE:
         yield save_preset(action["payload"])
@@ -102,6 +154,10 @@ def middleware(store, action):
 
 
 def reducer(state, action):
+    """Presets reducer
+
+    :returns: next state
+    """
     state = copy.deepcopy(state)
     kind = action["kind"]
     if kind == PRESET_SAVE:
@@ -193,7 +249,11 @@ def new_id(ids):
 
 
 class PresetUI(Observable):
-    """User interface to load/save/edit presets"""
+    """User interface to load/save/edit presets
+
+    >>> preset_ui = PresetUI().connect(store)
+
+    """
     def __init__(self):
         self.select = bokeh.models.Select()
         self.select.on_change("value", self.on_load)
