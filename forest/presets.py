@@ -22,9 +22,9 @@ from forest.observe import Observable
 from forest import redux, rx
 
 # Action kinds
-SAVE_PRESET = "SAVE_PRESET"
-LOAD_PRESET = "LOAD_PRESET"
-REMOVE_PRESET = "REMOVE_PRESET"
+PRESET_SAVE = "PRESET_SAVE"
+PRESET_LOAD = "PRESET_LOAD"
+PRESET_REMOVE = "PRESET_REMOVE"
 PRESET_SET_META = "PRESET_SET_META"
 PRESET_ON_SAVE = "PRESET_ON_SAVE"
 PRESET_ON_NEW = "PRESET_ON_NEW"
@@ -38,17 +38,17 @@ EDIT = "EDIT"
 
 def save_preset(label):
     """Action to save a preset"""
-    return {"kind": SAVE_PRESET, "payload": label}
+    return {"kind": PRESET_SAVE, "payload": label}
 
 
 def load_preset(label):
     """Action to load a preset by label"""
-    return {"kind": LOAD_PRESET, "payload": label}
+    return {"kind": PRESET_LOAD, "payload": label}
 
 
 def remove_preset():
     """Action to remove a preset"""
-    return {"kind": REMOVE_PRESET}
+    return {"kind": PRESET_REMOVE}
 
 
 def set_default_mode():
@@ -104,7 +104,7 @@ def middleware(store, action):
 def reducer(state, action):
     state = copy.deepcopy(state)
     kind = action["kind"]
-    if kind == SAVE_PRESET:
+    if kind == PRESET_SAVE:
         label = action["payload"]
         try:
             uid = Query(state).find_id(label)
@@ -123,14 +123,14 @@ def reducer(state, action):
             settings = {}
         state["presets"]["settings"][uid] = settings
 
-    elif kind == LOAD_PRESET:
+    elif kind == PRESET_LOAD:
         label = action["payload"]
         uid = Query(state).find_id(label)
         settings = copy.deepcopy(state["presets"]["settings"][uid])
         print(label, uid, settings)
         state["colorbar"] = settings
         state["presets"]["active"] = uid
-    elif kind == REMOVE_PRESET:
+    elif kind == PRESET_REMOVE:
         uid = state["presets"]["active"]
         del state["presets"]["labels"][uid]
         del state["presets"]["active"]
