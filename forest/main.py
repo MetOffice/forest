@@ -281,15 +281,13 @@ def main(argv=None):
         middlewares=middlewares)
 
     # Connect color palette controls
-    color_palette = colors.ColorPalette(color_mapper)
-    color_palette.connect(store)
+    color_palette = colors.ColorPalette(color_mapper).connect(store)
 
     # Connect limit controllers to store
     source_limits = colors.SourceLimits(image_sources)
     source_limits.subscribe(store.dispatch)
 
-    user_limits = colors.UserLimits()
-    user_limits.connect(store)
+    user_limits = colors.UserLimits().connect(store)
 
     # Connect navigation controls
     controls = db.ControlView()

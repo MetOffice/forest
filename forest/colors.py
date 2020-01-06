@@ -4,6 +4,17 @@ Color palette
 
 Helpers to choose color palette(s), limits etc.
 
+UI components
+~~~~~~~~~~~~~
+
+The following components wire up the various bokeh
+widgets and event handlers to actions and react to
+changes in state. They are typically used in the
+following manner.
+
+>>> component = Component().connect(store)
+>>> bokeh.layouts.column(component.layout)
+
 .. autoclass:: ColorPalette
     :members:
 
@@ -12,6 +23,16 @@ Helpers to choose color palette(s), limits etc.
 
 .. autoclass:: SourceLimits
     :members:
+
+Most components are not interested in the full application
+state. The :func:`connect` method and :func:`state_to_props`
+are provided to only notify UI components when relevant state
+updates.
+
+.. autofunction:: connect
+
+.. autofunction:: state_to_props
+
 
 Reducer
 ~~~~~~~
@@ -28,6 +49,17 @@ Middleware pre-processes actions prior to the reducer
 
 .. autofunction:: palettes
 
+Helpers
+~~~~~~~
+
+Convenient functions to simplify color bar settings
+
+.. autofunction:: defaults
+
+.. autofunction:: palette_names
+
+.. autofunction:: palette_numbers
+
 Actions
 ~~~~~~~
 
@@ -35,6 +67,8 @@ Actions are small pieces of data used to communicate
 with other parts of the system. Reducers and
 middleware functions can interpret their contents
 and either update state or generate new actions
+
+.. autofunction:: set_colorbar
 
 .. autofunction:: set_fixed
 
@@ -74,7 +108,7 @@ SET_LIMITS = "SET_LIMITS"
 
 
 def set_colorbar(options):
-    """Action to set all colorbar settings at once"""
+    """Action to set multiple settings at once"""
     return {"kind": SET_PALETTE, "payload": options}
 
 
@@ -163,8 +197,25 @@ def reducer(state, action):
 def defaults():
     """Default color palette settings
 
+    .. code-block:: python
+
+        {
+            "name": "Viridis",
+            "names": palette_names(),
+            "number": 256,
+            "numbers": palette_numbers("Viridis"),
+            "low": 0,
+            "high": 1,
+            "fixed": False,
+            "reverse": False,
+            "invisible_min": False,
+            "invisible_max": False,
+        }
+
     .. note:: incomplete settings create unintuitive behaviour when restoring
               from a previously saved palette
+
+    :returns: dict representing default colorbar
     """
     return {
         "name": "Viridis",
@@ -238,12 +289,27 @@ def is_fixed(state):
 
 
 def palette_numbers(name):
-    """Helper to choose available color palette numbers"""
+    """Helper to choose available color palette numbers
+
+    :returns: list of valid bokeh palette numbers
+    """
     return list(sorted(bokeh.palettes.all_palettes[name].keys()))
 
 
 class SourceLimits(Observable):
-    """Event stream listening to collection of ColumnDataSources"""
+    """Event stream listening to collection of ColumnDataSources
+
+    Translates column data source on_change events into domain
+    specific actions, e.g. :func:`set_source_limits`. Instead
+    of connecting to a :class:`forest.redux.Store`, simply
+    subscribe ``store.dispatch`` to action events.
+
+    >>> source_limits = SourceLimits(sources)
+    >>> source_limits.subscribe(store.dispatch)
+
+    .. note:: Unlike a typical component there is no ``layout`` property
+              to attach to a bokeh document
+    """
     def __init__(self, sources):
         self.sources = sources
         for source in self.sources:
@@ -304,6 +370,7 @@ class UserLimits(Observable):
         :type store: :class:`forest.redux.Store`
         """
         connect(self, store)
+        return self
 
     def on_checkbox_change(self, attr, old, new):
         self.notify(set_fixed(len(new) == 1))
@@ -331,12 +398,27 @@ class UserLimits(Observable):
 
 
 def state_to_props(state):
-    """Map state to props relevant to component"""
+    """Map state to props relevant to component
+
+    :param state: dict representing full application state
+    :returns: ``state["colorbar"]`` or ``None``
+    """
     return state.get("colorbar", None)
 
 
 def connect(view, store):
-    """Connect component to Store"""
+    """Connect component to Store
+
+    UI components connected to a Store
+    only need to be notified when a change occurs that
+    is relevant to them, all other state updates can be
+    safely ignored.
+
+    To implement component specific updates this helper method
+    listens to store dispatch events, converts them
+    to a stream of states, maps the states to
+    props and filters out duplicates.
+    """
     view.subscribe(store.dispatch)
     stream = (Stream()
                 .listen_to(store)
@@ -372,6 +454,7 @@ class ColorPalette(Observable):
     def connect(self, store):
         """Connect component to Store"""
         connect(self, store)
+        return self
 
     def on_name(self, attr, old, new):
         """Event-handler when a palette name is selected"""
