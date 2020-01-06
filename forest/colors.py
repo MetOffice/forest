@@ -73,6 +73,11 @@ SET_PALETTE = "SET_PALETTE"
 SET_LIMITS = "SET_LIMITS"
 
 
+def set_colorbar(options):
+    """Action to set all colorbar settings at once"""
+    return {"kind": SET_PALETTE, "payload": options}
+
+
 def set_fixed(flag):
     """Action to set fix user-defined limits"""
     return {"kind": SET_PALETTE, "payload": {"fixed": flag}}
@@ -155,6 +160,33 @@ def reducer(state, action):
     return state
 
 
+def defaults():
+    """Default color palette settings
+
+    .. note:: incomplete settings create unintuitive behaviour when restoring
+              from a previously saved palette
+    """
+    return {
+        "name": "Viridis",
+        "names": names(),
+        "number": 256,
+        "low": 0,
+        "high": 1,
+        "fixed": False,
+        "reverse": False,
+        "invisible_min": False,
+        "invisible_max": False,
+    }
+
+
+def names():
+    """All palette names
+
+    :returns: list of valid bokeh palette names
+    """
+    return list(sorted(bokeh.palettes.all_palettes.keys()))
+
+
 def palettes(store, action):
     """Color palette middleware
 
@@ -181,8 +213,13 @@ def palettes(store, action):
                     if number not in numbers:
                         yield set_palette_number(max(numbers))
         yield action
-    else:
+    elif kind == SET_LIMITS:
         yield action
+    else:
+        # While handling generic action set to default if not already set
+        yield action
+        if "colorbar" not in store.state:
+            yield set_colorbar(defaults())
 
 
 def is_fixed(state):

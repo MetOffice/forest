@@ -283,10 +283,6 @@ def main(argv=None):
     # Connect color palette controls
     color_palette = colors.ColorPalette(color_mapper)
     color_palette.connect(store)
-    names = list(sorted(bokeh.palettes.all_palettes.keys()))
-    store.dispatch(colors.set_palette_name("Viridis"))
-    store.dispatch(colors.set_palette_number(256))
-    store.dispatch(colors.set_palette_names(names))
 
     # Connect limit controllers to store
     source_limits = colors.SourceLimits(image_sources)
