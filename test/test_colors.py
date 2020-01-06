@@ -183,6 +183,23 @@ def test_controls_render_palette(props, palette):
     assert color_mapper.palette == palette
 
 
+@pytest.mark.parametrize("key,props,active", [
+    ("fixed", {}, []),
+    ("fixed", {"fixed": False}, []),
+    ("fixed", {"fixed": True}, [0]),
+    ("invisible_min", {}, []),
+    ("invisible_min", {"invisible_min": False}, []),
+    ("invisible_min", {"invisible_min": True}, [0]),
+    ("invisible_max", {}, []),
+    ("invisible_max", {"invisible_max": False}, []),
+    ("invisible_max", {"invisible_max": True}, [0]),
+])
+def test_controls_render_checkboxes(key, props, active):
+    user_limits = colors.UserLimits()
+    user_limits.render(props)
+    assert user_limits.checkboxes[key].active == active
+
+
 def test_user_limits_render():
     user_limits = colors.UserLimits()
     user_limits.render({"low": -1, "high": 1})

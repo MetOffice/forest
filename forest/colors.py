@@ -339,24 +339,33 @@ class UserLimits(Observable):
         }
         self.inputs["low"].on_change("value", self.on_input_low)
         self.inputs["high"].on_change("value", self.on_input_high)
-        self.checkbox = bokeh.models.CheckboxGroup(
+
+        self.checkboxes = {}
+
+        # Checkbox fix data limits to user supplied limits
+        self.checkboxes["fixed"] = bokeh.models.CheckboxGroup(
                 labels=["Fix min/max settings for all frames"],
                 active=[])
-        self.checkbox.on_change("active", self.on_checkbox_change)
-        self.checkbox_invisible_min = bokeh.models.CheckboxGroup(
+        self.checkboxes["fixed"].on_change("active", self.on_checkbox_change)
+
+        # Checkbox transparency lower threshold
+        self.checkboxes["invisible_min"] = bokeh.models.CheckboxGroup(
             labels=["Set data below Min to transparent"],
             active=[])
-        self.checkbox_invisible_min.on_change("active", self.on_invisible_min)
-        self.checkbox_invisible_max = bokeh.models.CheckboxGroup(
+        self.checkboxes["invisible_min"].on_change("active", self.on_invisible_min)
+
+        # Checkbox transparency upper threshold
+        self.checkboxes["invisible_max"] = bokeh.models.CheckboxGroup(
             labels=["Set data above Max to transparent"],
             active=[])
-        self.checkbox_invisible_max.on_change("active", self.on_invisible_max)
+        self.checkboxes["invisible_max"].on_change("active", self.on_invisible_max)
+
         self.layout = bokeh.layouts.column(
             self.inputs["low"],
             self.inputs["high"],
-            self.checkbox,
-            self.checkbox_invisible_min,
-            self.checkbox_invisible_max,
+            self.checkboxes["fixed"],
+            self.checkboxes["invisible_min"],
+            self.checkboxes["invisible_max"],
         )
         super().__init__()
 
@@ -391,10 +400,12 @@ class UserLimits(Observable):
 
     def render(self, props):
         """Update user-defined limits inputs"""
-        if props.get("fixed", False):
-            self.checkbox.active = [0]
-        else:
-            self.checkbox.active = []
+        for key in ["fixed", "invisible_min", "invisible_max"]:
+            if props.get(key, False):
+                self.checkboxes[key].active = [0]
+            else:
+                self.checkboxes[key].active = []
+
         if "high" in props:
             self.inputs["high"].value = str(props["high"])
         if "low" in props:
