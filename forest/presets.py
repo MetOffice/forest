@@ -130,6 +130,28 @@ def state_to_props(state):
     return query.labels, query.display_mode, query.edit_label
 
 
+class Middleware:
+    def __init__(self, storage):
+        self.storage = storage
+
+    def __call__(self, store, action):
+        yield action
+
+
+class Storage:
+    def __init__(self):
+        self._records = {}
+
+    def labels(self):
+        return [key for key in self._records.keys()]
+
+    def save(self, label, settings):
+        self._records[label] = settings
+
+    def load(self, label):
+        return self._records[label]
+
+
 def middleware(store, action):
     """Presets middleware
 
