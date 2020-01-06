@@ -179,6 +179,14 @@ def defaults():
     }
 
 
+def complete(settings):
+    """Check current colorbar state is complete
+
+    :returns: True if every colorbar setting is present
+    """
+    return all([key in settings for key in defaults().keys()])
+
+
 def names():
     """All palette names
 
@@ -216,10 +224,11 @@ def palettes(store, action):
     elif kind == SET_LIMITS:
         yield action
     else:
-        # While handling generic action set to default if not already set
+        # While handling generic action augment with defaults if not already set
         yield action
-        if "colorbar" not in store.state:
-            yield set_colorbar(defaults())
+        settings = store.state.get("colorbar", {})
+        if not complete(settings):
+            yield set_colorbar({**defaults(), **settings})
 
 
 def is_fixed(state):

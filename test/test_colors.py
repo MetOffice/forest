@@ -70,6 +70,16 @@ def test_middleware_given_empty_state_emits_set_colorbar():
     expect = [action, colors.set_colorbar(colors.defaults())]
     assert expect == result
 
+
+def test_middleware_given_incomplete_state_emits_set_colorbar():
+    store = redux.Store(colors.reducer, initial_state={"colorbar": {"low": -1}})
+    action = {"kind": "ANY"}
+    result = list(colors.palettes(store, action))
+    settings = {**colors.defaults(), **{"low": -1}}
+    expect = [action, colors.set_colorbar(settings)]
+    assert expect == result
+
+
 def test_middleware_given_set_name_emits_set_numbers():
     store = redux.Store(colors.reducer)
     action = colors.set_palette_name("Blues")
