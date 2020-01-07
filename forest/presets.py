@@ -53,6 +53,7 @@ A simple grammar used to communicate between components.
 .. autofunction:: on_cancel
 
 """
+import json
 import copy
 import bokeh.models
 import bokeh.layouts
@@ -79,11 +80,11 @@ EDIT = "EDIT"
 _STORAGE = None
 
 
-def proxy_storage():
+def proxy_storage(file_name):
     # Per-server colorbar presets storage (Consider refactor)
     global _STORAGE
     if _STORAGE is None:
-        _STORAGE = Storage()
+        _STORAGE = Storage(file_name)
     return _STORAGE
 
 
@@ -177,19 +178,33 @@ class Middleware:
 
 
 class Storage:
-    """Store colorbar settings in memory
+    """Store colorbar settings in memory or on disk
 
     .. note:: :py:func:`copy.deepcopy` is used to prevent mutable
               references to stored data
+
+    :param file_name: optional file to save settings
     """
-    def __init__(self):
-        self._records = {}
+    def __init__(self, file_name=None):
+        self.file_name = file_name
+        if self.file_name is not None:
+            try:
+                with open(self.file_name, "r") as stream:
+                    _records = json.load(stream)
+            except FileNotFoundError:
+                _records = {}
+        else:
+            _records = {}
+        self._records = _records
 
     def labels(self):
         return [key for key in self._records.keys()]
 
     def save(self, label, settings):
         self._records[label] = copy.deepcopy(settings)
+        if self.file_name is not None:
+            with open(self.file_name, "w") as stream:
+                json.dump(self._records, stream)
 
     def load(self, label):
         return copy.deepcopy(self._records[label])

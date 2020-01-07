@@ -68,6 +68,11 @@ class Config(object):
                 self.data)
 
     @property
+    def presets_file(self):
+        """Colorbar presets configuration file"""
+        return self.data.get("presets", {}).get("file", None)
+
+    @property
     def patterns(self):
         if "files" in self.data:
             return [(f["label"], f["pattern"])

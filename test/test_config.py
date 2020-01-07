@@ -189,3 +189,13 @@ def test_config_parser_given_json(tmpdir):
     assert group.label == "Hello"
     assert group.pattern == "*.nc"
     assert group.locator == "file_system"
+
+
+@pytest.mark.parametrize("data,expect", [
+    ({}, None),
+    ({"presets": {}}, None),
+    ({"presets": {"file": "/some.json"}}, "/some.json")
+])
+def test_config_parser_presets_file(data, expect):
+    config = forest.config.Config(data)
+    assert config.presets_file == expect
