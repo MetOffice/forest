@@ -167,8 +167,11 @@ class Middleware:
             label = action["payload"]
             yield colors.set_colorbar(self.storage.load(label))
         else:
-            labels = self.storage.labels()
-            if len(labels) > 0:
+            # Maintain label consistency between storage and state
+            state_labels = Query(store.state).labels
+            storage_labels = self.storage.labels()
+            if len(set(state_labels) ^ set(storage_labels)) > 0:
+                labels = list(set(state_labels) | set(storage_labels))
                 yield set_labels(labels)
         yield action
 
