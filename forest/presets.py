@@ -69,10 +69,22 @@ PRESET_ON_LOAD = "PRESET_ON_LOAD"
 PRESET_ON_NEW = "PRESET_ON_NEW"
 PRESET_ON_EDIT = "PRESET_ON_EDIT"
 PRESET_ON_CANCEL = "PRESET_ON_CANCEL"
+PRESET_SET_LABELS = "PRESET_SET_LABELS"
 
 # Display modes
 DEFAULT = "DEFAULT"
 EDIT = "EDIT"
+
+# Global to implement singleton
+_STORAGE = None
+
+
+def proxy_storage():
+    # Per-server colorbar presets storage (Consider refactor)
+    global _STORAGE
+    if _STORAGE is None:
+        _STORAGE = Storage()
+    return _STORAGE
 
 
 def save_preset(label):
@@ -83,6 +95,11 @@ def save_preset(label):
 def load_preset(label):
     """Action to load a preset by label"""
     return {"kind": PRESET_LOAD, "payload": label}
+
+
+def set_labels(labels):
+    """Action to set multiple labels"""
+    return {"kind": PRESET_SET_LABELS, "payload": labels}
 
 
 def remove_preset():
@@ -149,6 +166,10 @@ class Middleware:
         elif kind == PRESET_ON_LOAD:
             label = action["payload"]
             yield colors.set_colorbar(self.storage.load(label))
+        else:
+            labels = self.storage.labels()
+            if len(labels) > 0:
+                yield set_labels(labels)
         yield action
 
 
@@ -206,31 +227,42 @@ def reducer(state, action):
     kind = action["kind"]
     if kind == PRESET_SAVE:
         label = action["payload"]
-        try:
-            uid = Query(state).find_id(label)
-        except IDNotFound:
-            uid = new_id(Query(state).all_ids)
-        if "presets" not in state:
-            state["presets"] = {}
-        if "labels" not in state["presets"]:
-            state["presets"]["labels"] = {}
-        state["presets"]["labels"][uid] = label
+        _insert(state, label)
 
     elif kind == PRESET_LOAD:
         label = action["payload"]
         uid = Query(state).find_id(label)
         state["presets"]["active"] = uid
+
     elif kind == PRESET_REMOVE:
         uid = state["presets"]["active"]
         del state["presets"]["labels"][uid]
         del state["presets"]["active"]
+
     elif kind == PRESET_SET_META:
         if "presets" not in state:
             state["presets"] = {}
         if "meta" not in state["presets"]:
             state["presets"]["meta"] = {}
         state["presets"]["meta"].update(action["meta"])
+
+    elif kind == PRESET_SET_LABELS:
+        labels = action["payload"]
+        for label in labels:
+            _insert(state, label)
     return state
+
+
+def _insert(state, label):
+    try:
+        uid = Query(state).find_id(label)
+    except IDNotFound:
+        uid = new_id(Query(state).all_ids)
+    if "presets" not in state:
+        state["presets"] = {}
+    if "labels" not in state["presets"]:
+        state["presets"]["labels"] = {}
+    state["presets"]["labels"][uid] = label
 
 
 class IDNotFound(Exception):

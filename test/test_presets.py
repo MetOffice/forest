@@ -25,6 +25,12 @@ def test_middleware(store, action, expect):
     assert expect == result
 
 
+def test_reducer_set_labels():
+    labels = ["A"]
+    state = presets.reducer({}, presets.set_labels(labels))
+    assert set(labels) == set(state["presets"]["labels"].values())
+
+
 @pytest.mark.parametrize("state,expect", [
     ({}, ""),
     ({"presets": {"labels": {3: "L"}}}, ""),

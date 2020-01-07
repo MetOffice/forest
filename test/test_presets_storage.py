@@ -49,7 +49,6 @@ def test_storage():
 
 def test_storage_middleware(store):
     storage = presets.Storage()
-    storage.save("label", {"key": "value"})
     action = {"kind": "ANY"}
     middleware = presets.Middleware(storage)
     assert list(middleware(store, action)) == [action]
@@ -82,4 +81,15 @@ def test_storage_middleware_on_load(store):
     action = presets.on_load(label)
     result = list(middleware(store, action))
     expect = [colors.set_colorbar(settings), action]
+    assert expect == result
+
+
+def test_storage_middleware_sets_labels(store):
+    label = "label"
+    storage = presets.Storage()
+    storage.save(label, {})
+    middleware = presets.Middleware(storage)
+    action = {"kind": "ANY"}
+    result = list(middleware(store, action))
+    expect = [presets.set_labels([label]), action]
     assert expect == result
