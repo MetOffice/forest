@@ -25,6 +25,12 @@ def test_middleware(store, action, expect):
     assert expect == result
 
 
+def test_reducer_set_labels():
+    labels = ["A"]
+    state = presets.reducer({}, presets.set_labels(labels))
+    assert set(labels) == set(state["presets"]["labels"].values())
+
+
 @pytest.mark.parametrize("state,expect", [
     ({}, ""),
     ({"presets": {"labels": {3: "L"}}}, ""),
@@ -56,35 +62,27 @@ def test_state_to_props():
     assert expect == result
 
 
-def test__reducer():
+def test_reducer_save_preset():
     label = "Custom-1"
-    settings = {"key": "value"}
-    state = {"colorbar": settings}
+    state = {"colorbar": {"key": "value"}}
     action = presets.save_preset(label)
     state = presets.reducer(state, action)
-    expect = {
-        "labels": {0: label},
-        "settings": {0: settings},
-    }
+    expect = {"labels": {0: label}}
     assert state["presets"] == expect
 
 
-def test__reducer_save_new_preset():
+def test_reducer_save_new_preset():
     label = "Custom-2"
-    settings = {"key": "value"}
     state = {
-        "colorbar": settings,
+        "colorbar": {"key": "value"},
         "presets": {
-            "labels": {0: "Custom-1"},
-            "settings": {0: settings}
+            "labels": {0: "Custom-1"}
         }
     }
     action = presets.save_preset("Custom-2")
     state = presets.reducer(state, action)
     result = state["presets"]
-    expect = {
-            "labels": {0: "Custom-1", 1: "Custom-2"},
-            "settings": {0: settings, 1: settings}}
+    expect = {"labels": {0: "Custom-1", 1: "Custom-2"}}
     assert expect == result
 
 
@@ -93,12 +91,10 @@ def test__reducer_load_preset():
     state = {
         "presets": {
             "labels": {5: "Custom-1"},
-            "settings": {5: settings}
         }
     }
     action = presets.load_preset("Custom-1")
     state = presets.reducer(state, action)
-    assert state["colorbar"] == settings
     assert state["presets"]["active"] == 5
 
 
@@ -118,7 +114,7 @@ def test__reducer_remove_preset():
 
 @pytest.mark.parametrize("call_method,action", [
     (lambda ui: ui.on_save(), presets.on_save("label")),
-    (lambda ui: ui.on_load(None, None, "label"), presets.load_preset("label"))
+    (lambda ui: ui.on_load(None, None, "label"), presets.on_load("label"))
 ])
 def test_ui_actions(call_method, action):
     listener = unittest.mock.Mock()
@@ -135,65 +131,30 @@ def test_reducer_given_empty_state():
     action = presets.save_preset("label")
     assert presets.reducer(state, action) == {
             "presets": {
-                "labels": {0: "label"},
-                "settings": {0: {}}
+                "labels": {0: "label"}
             }
     }
 
 
 def test_reducer_save_preset_creates_presets_section():
     label = "A"
-    settings = {"palette": "accent"}
-    state = {"colorbar": settings}
+    state = {"colorbar": {}}
     action = presets.save_preset(label)
     result = presets.reducer(state, action)
     uid = presets.Query(result).find_id(label)
-    assert result["colorbar"] == settings
     assert result["presets"]["labels"][uid] == label
-    assert result["presets"]["settings"][uid] == settings
 
 
 def test_reducer_save_preset_adds_new_entry():
     uid = 42
     state = {
-        "colorbar": {"palette": "blues"},
         "presets": {
             "labels": {uid: "A"},
-            "settings": {uid: {"palette": "inferno"}}
         }
     }
     action = presets.save_preset("B")
     result = presets.reducer(state, action)
     assert set(result["presets"]["labels"].values()) == {"A", "B"}
-    uid = presets.Query(result).find_id("A")
-    assert result["presets"]["settings"][uid] == {"palette": "inferno"}
-    uid = presets.Query(result).find_id("B")
-    assert result["presets"]["settings"][uid] == {"palette": "blues"}
-
-
-def test_reducer_load_preset():
-    uid = 42
-    state = {
-        "presets": {
-            "labels": {uid: "A"},
-            "settings": {uid: {"palette": "spectral"}}
-        }
-    }
-    action = presets.load_preset("A")
-    result = presets.reducer(state, action)
-    assert result["colorbar"] == {"palette": "spectral"}
-
-
-def test_reducer_save_duplicate_label():
-    settings = {"palette": "Accent"}
-    state = {"colorbar": settings}
-    for action in [
-            presets.save_preset("A"),
-            presets.save_preset("A")]:
-        state = presets.reducer(state, action)
-    uid = presets.Query(state).find_id("A")
-    assert set(state["presets"]["labels"].values()) == {"A"}
-    assert state["presets"]["settings"][uid] == settings
 
 
 def test_reducer_update():
@@ -202,15 +163,10 @@ def test_reducer_update():
             colors.reducer)
     state = {}
     for action in [
-            colors.set_palette_name("Viridis"),
             presets.save_preset("A"),
-            colors.set_palette_name("Accent"),
             presets.save_preset("A")]:
         state = reducer(state, action)
-    uid = presets.Query(state).find_id("A")
-    assert state["colorbar"] == {"name": "Accent"}
     assert set(state["presets"]["labels"].values()) == {"A"}
-    assert state["presets"]["settings"][uid] == {"name": "Accent"}
 
 
 @pytest.mark.parametrize("labels,options", [

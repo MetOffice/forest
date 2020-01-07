@@ -57,7 +57,7 @@ import copy
 import bokeh.models
 import bokeh.layouts
 from forest.observe import Observable
-from forest import redux, rx
+from forest import colors, redux, rx
 
 # Action kinds
 PRESET_SAVE = "PRESET_SAVE"
@@ -65,13 +65,26 @@ PRESET_LOAD = "PRESET_LOAD"
 PRESET_REMOVE = "PRESET_REMOVE"
 PRESET_SET_META = "PRESET_SET_META"
 PRESET_ON_SAVE = "PRESET_ON_SAVE"
+PRESET_ON_LOAD = "PRESET_ON_LOAD"
 PRESET_ON_NEW = "PRESET_ON_NEW"
 PRESET_ON_EDIT = "PRESET_ON_EDIT"
 PRESET_ON_CANCEL = "PRESET_ON_CANCEL"
+PRESET_SET_LABELS = "PRESET_SET_LABELS"
 
 # Display modes
 DEFAULT = "DEFAULT"
 EDIT = "EDIT"
+
+# Global to implement singleton
+_STORAGE = None
+
+
+def proxy_storage():
+    # Per-server colorbar presets storage (Consider refactor)
+    global _STORAGE
+    if _STORAGE is None:
+        _STORAGE = Storage()
+    return _STORAGE
 
 
 def save_preset(label):
@@ -82,6 +95,11 @@ def save_preset(label):
 def load_preset(label):
     """Action to load a preset by label"""
     return {"kind": PRESET_LOAD, "payload": label}
+
+
+def set_labels(labels):
+    """Action to set multiple labels"""
+    return {"kind": PRESET_SET_LABELS, "payload": labels}
 
 
 def remove_preset():
@@ -109,6 +127,11 @@ def on_save(label):
     return {"kind": PRESET_ON_SAVE, "payload": label}
 
 
+def on_load(label):
+    """Action to signal load clicked"""
+    return {"kind": PRESET_ON_LOAD, "payload": label}
+
+
 def on_edit():
     """Action to signal edit clicked"""
     return {"kind": PRESET_ON_EDIT}
@@ -130,6 +153,48 @@ def state_to_props(state):
     return query.labels, query.display_mode, query.edit_label
 
 
+class Middleware:
+    def __init__(self, storage):
+        self.storage = storage
+
+    def __call__(self, store, action):
+        kind = action["kind"]
+        if kind == PRESET_ON_SAVE:
+            label = action["payload"]
+            settings = store.state.get("colorbar", {})
+            self.storage.save(label, settings)
+        elif kind == PRESET_ON_LOAD:
+            label = action["payload"]
+            yield colors.set_colorbar(self.storage.load(label))
+        else:
+            # Maintain label consistency between storage and state
+            state_labels = Query(store.state).labels
+            storage_labels = self.storage.labels()
+            if len(set(state_labels) ^ set(storage_labels)) > 0:
+                labels = list(set(state_labels) | set(storage_labels))
+                yield set_labels(labels)
+        yield action
+
+
+class Storage:
+    """Store colorbar settings in memory
+
+    .. note:: :py:func:`copy.deepcopy` is used to prevent mutable
+              references to stored data
+    """
+    def __init__(self):
+        self._records = {}
+
+    def labels(self):
+        return [key for key in self._records.keys()]
+
+    def save(self, label, settings):
+        self._records[label] = copy.deepcopy(settings)
+
+    def load(self, label):
+        return copy.deepcopy(self._records[label])
+
+
 def middleware(store, action):
     """Presets middleware
 
@@ -141,6 +206,9 @@ def middleware(store, action):
     if kind == PRESET_ON_SAVE:
         yield save_preset(action["payload"])
         yield set_default_mode()
+    elif kind == PRESET_ON_LOAD:
+        # Translate on_load() to load_preset() action
+        yield load_preset(action["payload"])
     elif kind == PRESET_ON_CANCEL:
         yield set_default_mode()
     elif kind == PRESET_ON_EDIT:
@@ -162,41 +230,42 @@ def reducer(state, action):
     kind = action["kind"]
     if kind == PRESET_SAVE:
         label = action["payload"]
-        try:
-            uid = Query(state).find_id(label)
-        except IDNotFound:
-            uid = new_id(Query(state).all_ids)
-        if "presets" not in state:
-            state["presets"] = {}
-        if "labels" not in state["presets"]:
-            state["presets"]["labels"] = {}
-        if "settings" not in state["presets"]:
-            state["presets"]["settings"] = {}
-        state["presets"]["labels"][uid] = label
-        if "colorbar" in state:
-            settings = copy.deepcopy(state["colorbar"])
-        else:
-            settings = {}
-        state["presets"]["settings"][uid] = settings
+        _insert(state, label)
 
     elif kind == PRESET_LOAD:
         label = action["payload"]
         uid = Query(state).find_id(label)
-        settings = copy.deepcopy(state["presets"]["settings"][uid])
-        print(label, uid, settings)
-        state["colorbar"] = settings
         state["presets"]["active"] = uid
+
     elif kind == PRESET_REMOVE:
         uid = state["presets"]["active"]
         del state["presets"]["labels"][uid]
         del state["presets"]["active"]
+
     elif kind == PRESET_SET_META:
         if "presets" not in state:
             state["presets"] = {}
         if "meta" not in state["presets"]:
             state["presets"]["meta"] = {}
         state["presets"]["meta"].update(action["meta"])
+
+    elif kind == PRESET_SET_LABELS:
+        labels = action["payload"]
+        for label in labels:
+            _insert(state, label)
     return state
+
+
+def _insert(state, label):
+    try:
+        uid = Query(state).find_id(label)
+    except IDNotFound:
+        uid = new_id(Query(state).all_ids)
+    if "presets" not in state:
+        state["presets"] = {}
+    if "labels" not in state["presets"]:
+        state["presets"]["labels"] = {}
+    state["presets"]["labels"][uid] = label
 
 
 class IDNotFound(Exception):
@@ -308,7 +377,7 @@ class PresetUI(Observable):
 
     def on_load(self, attr, old, new):
         """Notify listeners that a load action has taken place"""
-        self.notify(load_preset(new))
+        self.notify(on_load(new))
 
     def on_new(self):
         self.notify(on_new())

@@ -272,7 +272,8 @@ def main(argv=None):
             "inital_times": db.stamps
         }),
         colors.palettes,
-        presets.middleware
+        presets.Middleware(presets.proxy_storage()),
+        presets.middleware,
     ]
     store = redux.Store(
         redux.combine_reducers(
