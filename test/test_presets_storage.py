@@ -7,6 +7,39 @@ def store():
     return redux.Store(presets.reducer)
 
 
+def test_storage_save_new():
+    storage = presets.Storage()
+    storage.save("label", {"key": "value"})
+    assert storage.load("label") == {"key": "value"}
+
+
+def test_storage_save_update():
+    storage = presets.Storage()
+    storage.save("label", {"key": "old"})
+    storage.save("label", {"key": "new"})
+    assert storage.load("label") == {"key": "new"}
+
+
+def test_storage_save_copy():
+    """Stored data must not be reference to mutable dict"""
+    data = {"key": "old"}
+    storage = presets.Storage()
+    storage.save("label", data)
+    data["key"] = "new"
+    assert storage.load("label") == {"key": "old"}
+
+
+def test_storage_load_copy():
+    """Loaded data must not reference a mutable dict"""
+    data = {"key": "old"}
+    storage = presets.Storage()
+    storage.save("label", data)
+    loaded = storage.load("label")
+    loaded["key"] = "mutate"  # Should not edit data inside Storage
+    result = storage.load("label")
+    assert result == {"key": "old"}
+
+
 def test_storage():
     storage = presets.Storage()
     storage.save("label", {"key": "value"})

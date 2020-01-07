@@ -144,7 +144,7 @@ class Middleware:
         kind = action["kind"]
         if kind == PRESET_ON_SAVE:
             label = action["payload"]
-            settings = copy.deepcopy(store.state.get("colorbar", {}))
+            settings = store.state.get("colorbar", {})
             self.storage.save(label, settings)
         elif kind == PRESET_ON_LOAD:
             label = action["payload"]
@@ -153,7 +153,11 @@ class Middleware:
 
 
 class Storage:
-    """Store preset settings in-memory"""
+    """Store colorbar settings in memory
+
+    .. note:: :py:func:`copy.deepcopy` is used to prevent mutable
+              references to stored data
+    """
     def __init__(self):
         self._records = {}
 
@@ -161,10 +165,10 @@ class Storage:
         return [key for key in self._records.keys()]
 
     def save(self, label, settings):
-        self._records[label] = settings
+        self._records[label] = copy.deepcopy(settings)
 
     def load(self, label):
-        return self._records[label]
+        return copy.deepcopy(self._records[label])
 
 
 def middleware(store, action):
@@ -210,14 +214,7 @@ def reducer(state, action):
             state["presets"] = {}
         if "labels" not in state["presets"]:
             state["presets"]["labels"] = {}
-        if "settings" not in state["presets"]:
-            state["presets"]["settings"] = {}
         state["presets"]["labels"][uid] = label
-        if "colorbar" in state:
-            settings = copy.deepcopy(state["colorbar"])
-        else:
-            settings = {}
-        state["presets"]["settings"][uid] = settings
 
     elif kind == PRESET_LOAD:
         label = action["payload"]
