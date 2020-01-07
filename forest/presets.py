@@ -57,7 +57,7 @@ import copy
 import bokeh.models
 import bokeh.layouts
 from forest.observe import Observable
-from forest import redux, rx
+from forest import colors, redux, rx
 
 # Action kinds
 PRESET_SAVE = "PRESET_SAVE"
@@ -146,6 +146,9 @@ class Middleware:
             label = action["payload"]
             settings = copy.deepcopy(store.state.get("colorbar", {}))
             self.storage.save(label, settings)
+        elif kind == PRESET_ON_LOAD:
+            label = action["payload"]
+            yield colors.set_colorbar(self.storage.load(label))
         yield action
 
 
@@ -219,9 +222,6 @@ def reducer(state, action):
     elif kind == PRESET_LOAD:
         label = action["payload"]
         uid = Query(state).find_id(label)
-        settings = copy.deepcopy(state["presets"]["settings"][uid])
-        print(label, uid, settings)
-        state["colorbar"] = settings
         state["presets"]["active"] = uid
     elif kind == PRESET_REMOVE:
         uid = state["presets"]["active"]

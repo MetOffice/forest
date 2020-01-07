@@ -93,12 +93,10 @@ def test__reducer_load_preset():
     state = {
         "presets": {
             "labels": {5: "Custom-1"},
-            "settings": {5: settings}
         }
     }
     action = presets.load_preset("Custom-1")
     state = presets.reducer(state, action)
-    assert state["colorbar"] == settings
     assert state["presets"]["active"] == 5
 
 
@@ -169,19 +167,6 @@ def test_reducer_save_preset_adds_new_entry():
     assert result["presets"]["settings"][uid] == {"palette": "inferno"}
     uid = presets.Query(result).find_id("B")
     assert result["presets"]["settings"][uid] == {"palette": "blues"}
-
-
-def test_reducer_load_preset():
-    uid = 42
-    state = {
-        "presets": {
-            "labels": {uid: "A"},
-            "settings": {uid: {"palette": "spectral"}}
-        }
-    }
-    action = presets.load_preset("A")
-    result = presets.reducer(state, action)
-    assert result["colorbar"] == {"palette": "spectral"}
 
 
 def test_reducer_save_duplicate_label():

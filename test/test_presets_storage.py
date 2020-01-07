@@ -1,5 +1,5 @@
 import pytest
-from forest import presets, redux
+from forest import presets, colors, redux
 
 
 @pytest.fixture
@@ -38,3 +38,15 @@ def test_storage_middleware_given_on_save_copies_colorbar():
     list(middleware(store, action))
     store.state["colorbar"]["K"] = "T"
     assert storage.load("label") == {"K": "V"}
+
+
+def test_storage_middleware_on_load(store):
+    label = "label"
+    settings = {"key": "value"}
+    storage = presets.Storage()
+    storage.save(label, settings)
+    middleware = presets.Middleware(storage)
+    action = presets.on_load(label)
+    result = list(middleware(store, action))
+    expect = [colors.set_colorbar(settings), action]
+    assert expect == result
