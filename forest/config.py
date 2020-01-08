@@ -69,7 +69,20 @@ class Config(object):
 
     @property
     def presets_file(self):
-        """Colorbar presets configuration file"""
+        """Colorbar presets JSON file
+
+        A location on disk where colorbar settings can be saved/loaded. If
+        the file does not exist it will be created by the application.
+
+        Use the following syntax to declare the presets file location
+
+        .. code-block:: yaml
+
+            presets:
+              file: ${HOME}/example/preset-save.json
+
+        :returns: location on disk to save colorbar presets
+        """
         return self.data.get("presets", {}).get("file", None)
 
     @property
