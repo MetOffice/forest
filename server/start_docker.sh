@@ -35,5 +35,6 @@ exec sudo -u ec2-user /bin/bash - <<EOF
       -v /home/ec2-user/forest:/repo/forest \
       -v /home/ec2-user/database:/database \
       -v /s3/met-office-rmed-forest:/s3/met-office-rmed-forest \
+      -v /mnt/efs:/mnt/efs \
       informaticslab/forest bash -c '. /repo/forest/server/run-ec2.sh /repo/forest /s3'
 EOF
