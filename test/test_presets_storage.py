@@ -1,4 +1,5 @@
 import pytest
+import json
 from forest import presets, colors, redux
 
 
@@ -92,4 +93,25 @@ def test_storage_middleware_sets_labels(store):
     action = {"kind": "ANY"}
     result = list(middleware(store, action))
     expect = [presets.set_labels([label]), action]
+    assert expect == result
+
+
+def test_storage_json_save(tmpdir):
+    path = str(tmpdir / "storage.json")
+    storage = presets.Storage(path)
+    storage.save("label", {"key": "value"})
+    with open(path) as stream:
+        result = json.load(stream)
+    expect = {"label": {"key": "value"}}
+    assert expect == result
+
+
+def test_storage_json_load(tmpdir):
+    path = str(tmpdir / "storage.json")
+    data = {"label": {"key": "value"}}
+    with open(path, "w") as stream:
+        result = json.dump(data, stream)
+    storage = presets.Storage(path)
+    result = storage.load("label")
+    expect = {"key": "value"}
     assert expect == result
