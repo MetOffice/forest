@@ -1,3 +1,5 @@
+presets:
+  file: /mnt/efs/forest-presets.json
 files:
   - label: GA7
     pattern: '*ga7*.nc'
