@@ -58,7 +58,7 @@ import copy
 import bokeh.models
 import bokeh.layouts
 from forest.observe import Observable
-from forest import colors, redux, rx
+from forest import colors, redux, rx, encode
 
 # Action kinds
 PRESET_SAVE = "PRESET_SAVE"
@@ -204,7 +204,7 @@ class Storage:
         self._records[label] = copy.deepcopy(settings)
         if self.file_name is not None:
             with open(self.file_name, "w") as stream:
-                json.dump(self._records, stream)
+                json.dump(self._records, stream, cls=encode.NumpyEncoder)
 
     def load(self, label):
         return copy.deepcopy(self._records[label])
