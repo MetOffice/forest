@@ -1,5 +1,6 @@
 import pytest
 import json
+import numpy as np
 from forest import presets, colors, redux
 
 
@@ -96,13 +97,17 @@ def test_storage_middleware_sets_labels(store):
     assert expect == result
 
 
-def test_storage_json_save(tmpdir):
+@pytest.mark.parametrize("in_value,out_value", [
+    ("value", "value"),
+    (np.float32(0.), 0.),
+])
+def test_storage_json_save(tmpdir, in_value, out_value):
     path = str(tmpdir / "storage.json")
     storage = presets.Storage(path)
-    storage.save("label", {"key": "value"})
+    storage.save("label", {"key": in_value})
     with open(path) as stream:
         result = json.load(stream)
-    expect = {"label": {"key": "value"}}
+    expect = {"label": {"key": out_value}}
     assert expect == result
 
 
