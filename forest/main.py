@@ -78,27 +78,14 @@ def main(argv=None):
         f.min_border = 0
         f.add_tile(tile)
 
-    figure_row = bokeh.layouts.row(*figures,
-            sizing_mode="stretch_both")
-    figure_row.children = [figures[0]]  # Trick to keep correct sizing modes
+    figure_row = layers.FigureRow(figures)
 
     figure_drop = bokeh.models.Dropdown(
             label="Figure",
             menu=[(str(i), str(i)) for i in [1, 2, 3]])
 
     def on_change(attr, old, new):
-        if int(new) == 1:
-            figure_row.children = [
-                    figures[0]]
-        elif int(new) == 2:
-            figure_row.children = [
-                    figures[0],
-                    figures[1]]
-        elif int(new) == 3:
-            figure_row.children = [
-                    figures[0],
-                    figures[1],
-                    figures[2]]
+        figure_row.render(int(new))
 
     figure_drop.on_change("value", on_change)
 
@@ -229,14 +216,10 @@ def main(argv=None):
         menu.append((k, k))
 
     image_controls = layers.Controls(menu)
+    left_center_right = layers.LeftCenterRight(image_controls)
 
     def on_change(attr, old, new):
-        if int(new) == 1:
-            image_controls.labels = ["Show"]
-        elif int(new) == 2:
-            image_controls.labels = ["L", "R"]
-        elif int(new) == 3:
-            image_controls.labels = ["L", "C", "R"]
+        left_center_right.render(int(new))
 
     figure_drop.on_change("value", on_change)
 
@@ -423,7 +406,7 @@ def main(argv=None):
     document.title = "FOREST"
     document.add_root(control_root)
     document.add_root(series_row)
-    document.add_root(figure_row)
+    document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
 
 

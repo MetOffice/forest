@@ -5,6 +5,41 @@ from forest.observe import Observable
 from forest.db.util import autolabel
 
 
+class FigureRow:
+    def __init__(self, figures):
+        self.figures = figures
+        self.layout = bokeh.layouts.row(*figures,
+                sizing_mode="stretch_both")
+        self.layout.children = [self.figures[0]]  # Trick to keep correct sizing modes
+
+    def render(self, n):
+        if int(n) == 1:
+            self.layout.children = [
+                    self.figures[0]]
+        elif int(n) == 2:
+            self.layout.children = [
+                    self.figures[0],
+                    self.figures[1]]
+        elif int(n) == 3:
+            self.layout.children = [
+                    self.figures[0],
+                    self.figures[1],
+                    self.figures[2]]
+
+
+class LeftCenterRight:
+    def __init__(self, controls):
+        self.controls = controls
+
+    def render(self, n):
+        if int(n) == 1:
+            self.controls.labels = ["Show"]
+        elif int(n) == 2:
+            self.controls.labels = ["L", "R"]
+        elif int(n) == 3:
+            self.controls.labels = ["L", "C", "R"]
+
+
 class Controls(Observable):
     def __init__(self, menu):
         self.menu = menu
