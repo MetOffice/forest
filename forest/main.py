@@ -11,7 +11,6 @@ from forest import (
         data,
         load,
         view,
-        images,
         earth_networks,
         rdt,
         nearcast,
@@ -229,7 +228,7 @@ def main(argv=None):
     for k, _ in config.patterns:
         menu.append((k, k))
 
-    image_controls = images.Controls(menu)
+    image_controls = layers.Controls(menu)
 
     def on_change(attr, old, new):
         if int(new) == 1:

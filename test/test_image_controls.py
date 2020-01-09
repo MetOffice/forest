@@ -1,10 +1,10 @@
 import unittest
-from forest import images
+from forest import layers
 
 
 class TestControls(unittest.TestCase):
     def setUp(self):
-        self.controls = images.Controls([])
+        self.controls = layers.Controls([])
 
     def test_on_dropdown_updates_models(self):
         cb = self.controls.on_dropdown(0)
@@ -33,7 +33,7 @@ class TestControls(unittest.TestCase):
         self.assertEqual(self.controls.flags, {})
 
     def test_combine(self):
-        result = images.Controls.combine(
+        result = layers.Controls.combine(
                 {0: "A", 1: "A"},
                 {0: [True, False, False],
                  1: [False, False, True]})
