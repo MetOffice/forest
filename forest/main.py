@@ -261,11 +261,18 @@ def main(argv=None):
     store = redux.Store(
         redux.combine_reducers(
             db.reducer,
+            layers.reducer,
             series.reducer,
             colors.reducer,
             presets.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
+
+    # Connect figure controls/views
+    figure_ui = layers.FigureUI()
+    figure_ui.subscribe(store.dispatch)
+    figure_row.connect(store)
+    left_center_right.connect(store)
 
     # Connect color palette controls
     color_palette = colors.ColorPalette(color_mapper).connect(store)
@@ -304,6 +311,7 @@ def main(argv=None):
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
                 bokeh.layouts.row(figure_drop),
+                figure_ui.layout,
                 image_controls.column),
             title="Control"
         ),

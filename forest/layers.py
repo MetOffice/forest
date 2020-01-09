@@ -2,11 +2,12 @@ import copy
 import bokeh.models
 import bokeh.layouts
 import numpy as np
+from forest import rx
 from forest.observe import Observable
 from forest.db.util import autolabel
 
 
-SET_FIGURES = 3
+SET_FIGURES = "SET_FIGURES"
 
 
 def set_figures(n):
@@ -21,12 +22,36 @@ def reducer(state, action):
     return state
 
 
+class FigureUI(Observable):
+    def __init__(self):
+        self.dropdown = bokeh.models.Dropdown(
+            label="Figure",
+            menu=[(str(i), str(i)) for i in [1, 2, 3]])
+        self.dropdown.on_change("value", self.on_change)
+        self.layout = bokeh.layouts.row(self.dropdown)
+        super().__init__()
+
+    def on_change(self, attr, old, new):
+        self.notify(set_figures(new))
+
+
 class FigureRow:
     def __init__(self, figures):
         self.figures = figures
         self.layout = bokeh.layouts.row(*figures,
                 sizing_mode="stretch_both")
         self.layout.children = [self.figures[0]]  # Trick to keep correct sizing modes
+
+    def connect(self, store):
+        stream = (rx.Stream()
+                    .listen_to(store)
+                    .map(self.to_props)
+                    .filter(lambda x: x is not None)
+                    .distinct())
+        stream.map(lambda props: self.render(*props))
+
+    def to_props(self, state):
+        return state.get("figures", None)
 
     def render(self, n):
         if int(n) == 1:
@@ -46,6 +71,17 @@ class FigureRow:
 class LeftCenterRight:
     def __init__(self, controls):
         self.controls = controls
+
+    def connect(self, store):
+        stream = (rx.Stream()
+                    .listen_to(store)
+                    .map(self.to_props)
+                    .filter(lambda x: x is not None)
+                    .distinct())
+        stream.map(lambda props: self.render(*props))
+
+    def to_props(self, state):
+        return state.get("figures", None)
 
     def render(self, n):
         if int(n) == 1:
