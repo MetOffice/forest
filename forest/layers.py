@@ -8,10 +8,20 @@ from forest.db.util import autolabel
 
 
 SET_FIGURES = "SET_FIGURES"
+LAYERS_ON_ADD = "LAYERS_ON_ADD"
+LAYERS_ON_REMOVE = "LAYERS_ON_REMOVE"
 
 
 def set_figures(n):
     return {"kind": SET_FIGURES, "payload": n}
+
+
+def on_add():
+    return {"kind": LAYERS_ON_ADD}
+
+
+def on_remove():
+    return {"kind": LAYERS_ON_REMOVE}
 
 
 def reducer(state, action):
@@ -129,9 +139,17 @@ class Controls(Observable):
             bokeh.layouts.row(add, remove)
         )
         self.add_row()
-        add.on_click(self.add_row)
-        remove.on_click(self.remove_row)
+        add.on_click(self.on_click_add)
+        remove.on_click(self.on_click_remove)
         super().__init__()
+
+    def on_click_add(self):
+        self.add_row()
+        self.notify(on_add())
+
+    def on_click_remove(self):
+        self.remove_row()
+        self.notify(on_remove())
 
     def select(self, name):
         """Select particular layers and visibility states"""
@@ -233,6 +251,11 @@ class Artist(object):
         self.state = None
 
     def on_visible(self, visible_state):
+        # Ignore actions for now
+        # TODO: Refactor to use application state or state_to_props
+        if "kind" in visible_state:
+            return
+
         if self.visible_state is not None:
             # Hide deselected states
             lost_items = (

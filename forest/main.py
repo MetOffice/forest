@@ -254,6 +254,9 @@ def main(argv=None):
         initial_state=initial_state,
         middlewares=middlewares)
 
+    # Connect layers controls
+    image_controls.subscribe(store.dispatch)
+
     # Connect figure controls/views
     figure_ui = layers.FigureUI()
     figure_ui.subscribe(store.dispatch)
