@@ -80,15 +80,6 @@ def main(argv=None):
 
     figure_row = layers.FigureRow(figures)
 
-    figure_drop = bokeh.models.Dropdown(
-            label="Figure",
-            menu=[(str(i), str(i)) for i in [1, 2, 3]])
-
-    def on_change(attr, old, new):
-        figure_row.render(int(new))
-
-    figure_drop.on_change("value", on_change)
-
     color_mapper = bokeh.models.LinearColorMapper(
             low=0,
             high=1,
@@ -218,11 +209,6 @@ def main(argv=None):
     image_controls = layers.Controls(menu)
     left_center_right = layers.LeftCenterRight(image_controls)
 
-    def on_change(attr, old, new):
-        left_center_right.render(int(new))
-
-    figure_drop.on_change("value", on_change)
-
     image_controls.subscribe(artist.on_visible)
 
     div = bokeh.models.Div(text="", width=10)
@@ -310,7 +296,6 @@ def main(argv=None):
                 bokeh.models.Div(text="Navigate:"),
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
-                bokeh.layouts.row(figure_drop),
                 figure_ui.layout,
                 image_controls.column),
             title="Control"
