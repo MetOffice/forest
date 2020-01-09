@@ -23,16 +23,26 @@ def reducer(state, action):
 
 
 class FigureUI(Observable):
+    """Controls how many figures are currently displayed"""
     def __init__(self):
-        self.dropdown = bokeh.models.Dropdown(
-            label="Figure",
-            menu=[(str(i), str(i)) for i in [1, 2, 3]])
-        self.dropdown.on_change("value", self.on_change)
-        self.layout = bokeh.layouts.row(self.dropdown)
+        self.labels = [
+            "Single figure",
+            "Side by side",
+            "3 way comparison"]
+        self.select = bokeh.models.Select(
+            options=self.labels,
+            value="Single figure",
+            width=350,
+        )
+        self.select.on_change("value", self.on_change)
+        self.layout = bokeh.layouts.column(
+            self.select,
+        )
         super().__init__()
 
     def on_change(self, attr, old, new):
-        self.notify(set_figures(new))
+        n = self.labels.index(new) + 1 # Select 0-indexed
+        self.notify(set_figures(n))
 
 
 class FigureRow:
@@ -51,7 +61,10 @@ class FigureRow:
         stream.map(lambda props: self.render(*props))
 
     def to_props(self, state):
-        return state.get("figures", None)
+        try:
+            return (state["figures"],)
+        except KeyError:
+            pass
 
     def render(self, n):
         if int(n) == 1:
@@ -81,7 +94,10 @@ class LeftCenterRight:
         stream.map(lambda props: self.render(*props))
 
     def to_props(self, state):
-        return state.get("figures", None)
+        try:
+            return (state["figures"],)
+        except KeyError:
+            pass
 
     def render(self, n):
         if int(n) == 1:
