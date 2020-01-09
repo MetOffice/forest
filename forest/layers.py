@@ -1,8 +1,24 @@
+import copy
 import bokeh.models
 import bokeh.layouts
 import numpy as np
 from forest.observe import Observable
 from forest.db.util import autolabel
+
+
+SET_FIGURES = 3
+
+
+def set_figures(n):
+    return {"kind": SET_FIGURES, "payload": n}
+
+
+def reducer(state, action):
+    state = copy.deepcopy(state)
+    kind = action["kind"]
+    if kind == SET_FIGURES:
+        state["figures"] = action["payload"]
+    return state
 
 
 class FigureRow:
