@@ -11,12 +11,12 @@ from forest import (
         data,
         load,
         view,
-        images,
         earth_networks,
         rdt,
         nearcast,
         geo,
         colors,
+        layers,
         db,
         keys,
         presets,
@@ -78,29 +78,7 @@ def main(argv=None):
         f.min_border = 0
         f.add_tile(tile)
 
-    figure_row = bokeh.layouts.row(*figures,
-            sizing_mode="stretch_both")
-    figure_row.children = [figures[0]]  # Trick to keep correct sizing modes
-
-    figure_drop = bokeh.models.Dropdown(
-            label="Figure",
-            menu=[(str(i), str(i)) for i in [1, 2, 3]])
-
-    def on_change(attr, old, new):
-        if int(new) == 1:
-            figure_row.children = [
-                    figures[0]]
-        elif int(new) == 2:
-            figure_row.children = [
-                    figures[0],
-                    figures[1]]
-        elif int(new) == 3:
-            figure_row.children = [
-                    figures[0],
-                    figures[1],
-                    figures[2]]
-
-    figure_drop.on_change("value", on_change)
+    figure_row = layers.FigureRow(figures)
 
     color_mapper = bokeh.models.LinearColorMapper(
             low=0,
@@ -151,7 +129,7 @@ def main(argv=None):
                 viewer.add_figure(f)
                 for f in figures]
 
-    artist = Artist(viewers, renderers)
+    artist = layers.Artist(viewers, renderers)
     renderers = []
     for _, r in artist.renderers.items():
         renderers += r
@@ -228,17 +206,8 @@ def main(argv=None):
     for k, _ in config.patterns:
         menu.append((k, k))
 
-    image_controls = images.Controls(menu)
-
-    def on_change(attr, old, new):
-        if int(new) == 1:
-            image_controls.labels = ["Show"]
-        elif int(new) == 2:
-            image_controls.labels = ["L", "R"]
-        elif int(new) == 3:
-            image_controls.labels = ["L", "C", "R"]
-
-    figure_drop.on_change("value", on_change)
+    image_controls = layers.Controls(menu)
+    left_center_right = layers.LeftCenterRight(image_controls)
 
     image_controls.subscribe(artist.on_visible)
 
@@ -278,11 +247,18 @@ def main(argv=None):
     store = redux.Store(
         redux.combine_reducers(
             db.reducer,
+            layers.reducer,
             series.reducer,
             colors.reducer,
             presets.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
+
+    # Connect figure controls/views
+    figure_ui = layers.FigureUI()
+    figure_ui.subscribe(store.dispatch)
+    figure_row.connect(store)
+    left_center_right.connect(store)
 
     # Connect color palette controls
     color_palette = colors.ColorPalette(color_mapper).connect(store)
@@ -317,10 +293,11 @@ def main(argv=None):
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                bokeh.models.Div(text="Layout:"),
+                figure_ui.layout,
                 bokeh.models.Div(text="Navigate:"),
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
-                bokeh.layouts.row(figure_drop),
                 image_controls.column),
             title="Control"
         ),
@@ -423,62 +400,12 @@ def main(argv=None):
     document.title = "FOREST"
     document.add_root(control_root)
     document.add_root(series_row)
-    document.add_root(figure_row)
+    document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
 
 
 def any_none(obj, attrs):
     return any([getattr(obj, x) is None for x in attrs])
-
-
-class Artist(object):
-    def __init__(self, viewers, renderers):
-        self.viewers = viewers
-        self.renderers = renderers
-        self.visible_state = None
-        self.state = None
-
-    def on_visible(self, visible_state):
-        if self.visible_state is not None:
-            # Hide deselected states
-            lost_items = (
-                    set(self.flatten(self.visible_state)) -
-                    set(self.flatten(visible_state)))
-            for key, i, _ in lost_items:
-                self.renderers[key][i].visible = False
-
-        # Sync visible states with menu choices
-        states = set(self.flatten(visible_state))
-        hidden = [(i, j) for i, j, v in states if not v]
-        visible = [(i, j) for i, j, v in states if v]
-        for i, j in hidden:
-            self.renderers[i][j].visible = False
-        for i, j in visible:
-            self.renderers[i][j].visible = True
-
-        self.visible_state = dict(visible_state)
-        self.render()
-
-    @staticmethod
-    def flatten(state):
-        items = []
-        for key, flags in state.items():
-            items += [(key, i, f) for i, f in enumerate(flags)]
-        return items
-
-    def on_state(self, state):
-        # print("Artist: {}".format(state))
-        self.state = state
-        self.render()
-
-    def render(self):
-        if self.visible_state is None:
-            return
-        if self.state is None:
-            return
-        for name in self.visible_state:
-            viewer = self.viewers[name]
-            viewer.render(self.state)
 
 
 class TimeControls(Observable):

@@ -1,7 +1,7 @@
 import unittest
 from forest import (
         db,
-        images)
+        layers)
 
 
 class TestInitialState(unittest.TestCase):
@@ -74,7 +74,7 @@ class TestInitialState(unittest.TestCase):
 class TestImageControls(unittest.TestCase):
     def test_image_controls_show(self):
         menu = [("A", "a"), ("B", "b")]
-        controls = images.Controls(menu)
+        controls = layers.Controls(menu)
         controls.select("A")
         self.assertEqual(controls.groups[0].active, [0])
         self.assertEqual(controls.dropdowns[0].value, "a")
