@@ -51,13 +51,26 @@ def test_controls_render(listener):
 
 
 def test_artist_on_visible():
+    """Test case to understand Artist code
+
+    The Artist class has two responsibilities
+        - Toggle renderer.visible
+        - Call viewer.render(old_state) based on visible state
+
+    Viewers are expected to be a dict with dataset names as keys
+
+    Renderers are expected to be a dict[str]list indexed renderers[name][figure]
+
+    """
+    from forest import db
+    old_state = db.State()
     renderer = unittest.mock.Mock()
     viewer = unittest.mock.Mock()
     visible_state = {
         0: [True]
     }
     artist = layers.Artist([viewer], [[renderer]])
-    artist.on_state({})
+    artist.on_state(old_state)
     artist.on_visible(visible_state)
     assert renderer.visible == True
-    viewer.render.assert_called_once_with({})
+    viewer.render.assert_called_once_with(old_state)

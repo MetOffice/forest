@@ -291,9 +291,10 @@ class Artist(object):
             items += [(key, i, f) for i, f in enumerate(flags)]
         return items
 
-    def on_state(self, state):
-        # print("Artist: {}".format(state))
-        self.state = state
+    def on_state(self, app_state):
+        """On application state handler"""
+        # print("Artist: {}".format(app_state))
+        self.state = app_state
         self.render()
 
     def render(self):
