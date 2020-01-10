@@ -252,6 +252,12 @@ class Controls(Observable):
 
 
 class Artist(object):
+    """Applies visible and render logic to viewers and renderers
+
+
+    .. note:: This should be middleware that applies logic
+              given current state and an action
+    """
     def __init__(self, viewers, renderers):
         self.viewers = viewers
         self.renderers = renderers

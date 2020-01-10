@@ -44,10 +44,29 @@ def test_reducer(state, actions, expect):
 
 
 def test_controls_render(listener):
+    """Test case to understand Controls.render()
+
+    Controls has two dicts self.models and self.flags which
+    are populated from dropdown, radio button and add/remove events
+
+    """
     controls = layers.Controls([])
     controls.subscribe(listener)
     controls.render()
     listener.assert_called_once_with({})
+
+
+def test_controls_on_dropdown(listener):
+    controls = layers.Controls([])
+    controls.subscribe(listener)
+    controls.on_dropdown(0)(None, None, "new")  # attr, old, new
+    controls.on_radio(0)(None, [], [0])  # attr, old, new
+    assert controls.models == {0: "new"}
+    assert controls.flags == {0: [True, False, False]}
+    listener.assert_has_calls([
+        unittest.mock.call({}),
+        unittest.mock.call({"new": [True, False, False]}),
+    ])
 
 
 def test_artist_on_visible():
