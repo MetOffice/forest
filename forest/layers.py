@@ -29,6 +29,14 @@ def reducer(state, action):
     kind = action["kind"]
     if kind == SET_FIGURES:
         state["figures"] = action["payload"]
+    elif kind == LAYERS_ON_ADD:
+        state["layers"] = state.get("layers", 0) + 1
+    elif kind == LAYERS_ON_REMOVE:
+        counter = state.get("layers", 0)
+        if counter - 1 < 0:
+            state["layers"] = 0
+        else:
+            state["layers"] = counter - 1
     return state
 
 

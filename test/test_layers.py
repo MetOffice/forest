@@ -28,6 +28,16 @@ def test_remove(listener):
     listener.assert_called_once_with(layers.on_remove())
 
 
-def test_reducer():
-    state = layers.reducer({}, layers.set_figures(3))
-    assert state == {"figures": 3}
+@pytest.mark.parametrize("state,actions,expect", [
+    ({}, layers.set_figures(3), {"figures": 3}),
+    ({}, layers.on_add(), {"layers": 1}),
+    ({}, [layers.on_add(), layers.on_add()], {"layers": 2}),
+    ({}, layers.on_remove(), {"layers": 0}),
+    ({"layers": 2}, layers.on_remove(), {"layers": 1}),
+])
+def test_reducer(state, actions, expect):
+    if isinstance(actions, dict):
+        actions = [actions]
+    for action in actions:
+        state = layers.reducer(state, action)
+    assert state == expect
