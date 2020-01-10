@@ -64,12 +64,13 @@ def test_artist_on_visible():
     """
     from forest import db
     old_state = db.State()
+    label = "label"
     renderer = unittest.mock.Mock()
     viewer = unittest.mock.Mock()
     visible_state = {
-        0: [True]
+        label: [True]
     }
-    artist = layers.Artist([viewer], [[renderer]])
+    artist = layers.Artist({label: viewer}, {label: [renderer]})
     artist.on_state(old_state)
     artist.on_visible(visible_state)
     assert renderer.visible == True
