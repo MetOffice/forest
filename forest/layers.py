@@ -215,13 +215,22 @@ class Controls(Observable):
         if n > nrows:
             for _ in range(n - nrows):
                 self.add_row()
+        if n < nrows:
+            for _ in range(nrows - n):
+                self.remove_row()
 
     def on_click_add(self):
+        """Event-handler when Add button is clicked"""
         self.notify(on_add())
 
     def on_click_remove(self):
-        self.remove_row()
+        """Event-handler when Remove button is clicked"""
+        # We need to capture the number of rows to decide
+        # if we need to recalculate visible state
+        x = len(self.column.children)
         self.notify(on_remove())
+        if x > 2:
+            self._render()  # TODO: Add this to middleware
 
     def select(self, name):
         """Select particular layers and visibility states"""
@@ -242,6 +251,7 @@ class Controls(Observable):
             g.labels = labels
 
     def add_row(self):
+        """Add a bokeh.layouts.row with a dropdown and radiobuttongroup"""
         i = self.rows
         dropdown = bokeh.models.Dropdown(
                 menu=self.menu,
@@ -259,6 +269,7 @@ class Controls(Observable):
         self.column.children.insert(-1, row)
 
     def remove_row(self):
+        """Remove a row from self.column"""
         if len(self.column.children) > 2:
             i = self.rows - 1
             self.models.pop(i, None)
@@ -266,13 +277,16 @@ class Controls(Observable):
             self.dropdowns.pop(-1)
             self.groups.pop(-1)
             self.column.children.pop(-2)
-            self._render()  # TODO: Add this to middleware
 
     @property
     def rows(self):
         return len(self.column.children) - 1
 
     def on_dropdown(self, i):
+        """Factory to create dropdown callback with row number baked in
+
+        :returns: callback with (attr, old, new) signature
+        """
         def wrapper(attr, old, new):
             if old != new:
                 self.models[i] = new
@@ -280,6 +294,10 @@ class Controls(Observable):
         return wrapper
 
     def on_radio(self, i):
+        """Factory to create radiogroup callback with row number baked in
+
+        :returns: callback with (attr, old, new) signature
+        """
         def wrapper(attr, old, new):
             if i not in self.flags:
                 self.flags[i] = list(self.default_flags)
@@ -300,6 +318,10 @@ class Controls(Observable):
 
     @staticmethod
     def combine(models, flags):
+        """Combine model selection and visiblity settings into a single dict
+
+        :returns: dict
+        """
         agg = {}
         for k in set(models.keys()).intersection(
                 set(flags.keys())):
