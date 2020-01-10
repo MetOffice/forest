@@ -243,6 +243,7 @@ def main(argv=None):
         colors.palettes,
         presets.Middleware(presets.proxy_storage(config.presets_file)),
         presets.middleware,
+        layers.middleware,
     ]
     store = redux.Store(
         redux.combine_reducers(
@@ -256,6 +257,7 @@ def main(argv=None):
 
     # Connect layers controls
     image_controls.subscribe(store.dispatch)
+    image_controls.connect(store)
 
     # Connect figure controls/views
     figure_ui = layers.FigureUI()

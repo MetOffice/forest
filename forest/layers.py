@@ -29,6 +29,11 @@ def on_visible_state(visible_state):
     return {"kind": LAYERS_ON_VISIBLE_STATE, "payload": visible_state}
 
 
+def middleware(store, action):
+    """Action generator given current state and action"""
+    yield action
+
+
 def reducer(state, action):
     state = copy.deepcopy(state)
     kind = action["kind"]
@@ -162,6 +167,7 @@ class LeftCenterRight:
 
 
 class Controls(Observable):
+    """Collection of user interface components to manage layers"""
     def __init__(self, menu):
         self.menu = menu
         self.models = {}
@@ -186,8 +192,31 @@ class Controls(Observable):
         remove.on_click(self.on_click_remove)
         super().__init__()
 
+    def connect(self, store):
+        """Connect component to store"""
+        _connect(self, store)
+        return self
+
+    @staticmethod
+    def to_props(state):
+        """Select data from state that satisfies self.render(*props)"""
+        try:
+            return (state["layers"],)
+        except KeyError:
+            return
+
+    def render(self, n):
+        """Display latest application state in user interface
+
+        :param n: integer representing number of rows
+        """
+        print(f"CONTROLS: {n}")
+        nrows = len(self.column.children) - 1
+        if n > nrows:
+            for _ in range(n - nrows):
+                self.add_row()
+
     def on_click_add(self):
-        self.add_row()
         self.notify(on_add())
 
     def on_click_remove(self):
@@ -237,7 +266,7 @@ class Controls(Observable):
             self.dropdowns.pop(-1)
             self.groups.pop(-1)
             self.column.children.pop(-2)
-            self._render()
+            self._render()  # TODO: Add this to middleware
 
     @property
     def rows(self):
