@@ -41,3 +41,23 @@ def test_reducer(state, actions, expect):
     for action in actions:
         state = layers.reducer(state, action)
     assert state == expect
+
+
+def test_controls_render(listener):
+    controls = layers.Controls([])
+    controls.subscribe(listener)
+    controls.render()
+    listener.assert_called_once_with({})
+
+
+def test_artist_on_visible():
+    renderer = unittest.mock.Mock()
+    viewer = unittest.mock.Mock()
+    visible_state = {
+        0: [True]
+    }
+    artist = layers.Artist([viewer], [[renderer]])
+    artist.on_state({})
+    artist.on_visible(visible_state)
+    assert renderer.visible == True
+    viewer.render.assert_called_once_with({})
