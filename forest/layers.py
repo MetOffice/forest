@@ -237,7 +237,7 @@ class Controls(Observable):
             self.dropdowns.pop(-1)
             self.groups.pop(-1)
             self.column.children.pop(-2)
-            self.render()
+            self._render()
 
     @property
     def rows(self):
@@ -247,7 +247,7 @@ class Controls(Observable):
         def wrapper(attr, old, new):
             if old != new:
                 self.models[i] = new
-                self.render()
+                self._render()
         return wrapper
 
     def on_radio(self, i):
@@ -262,10 +262,11 @@ class Controls(Observable):
             for j in new:
                 if j not in old:
                     flags[j] = True
-            self.render()
+            self._render()
         return wrapper
 
-    def render(self):
+    def _render(self):
+        """This is not a render method"""
         self.notify(on_visible_state(self.combine(self.models, self.flags)))
 
     @staticmethod

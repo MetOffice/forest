@@ -52,7 +52,7 @@ def test_controls_render(listener):
     """
     controls = layers.Controls([])
     controls.subscribe(listener)
-    controls.render()
+    controls._render()
     listener.assert_called_once_with(layers.on_visible_state({}))
 
 
