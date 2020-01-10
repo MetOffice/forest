@@ -10,6 +10,7 @@ from forest.db.util import autolabel
 SET_FIGURES = "SET_FIGURES"
 LAYERS_ON_ADD = "LAYERS_ON_ADD"
 LAYERS_ON_REMOVE = "LAYERS_ON_REMOVE"
+LAYERS_ON_VISIBLE_STATE = "LAYERS_ON_VISIBLE_STATE"
 
 
 def set_figures(n):
@@ -22,6 +23,10 @@ def on_add():
 
 def on_remove():
     return {"kind": LAYERS_ON_REMOVE}
+
+
+def on_visible_state(visible_state):
+    return {"kind": LAYERS_ON_VISIBLE_STATE, "payload": visible_state}
 
 
 def reducer(state, action):
@@ -38,6 +43,36 @@ def reducer(state, action):
         else:
             state["layers"] = counter - 1
     return state
+
+
+def _connect(view, store):
+    stream = (rx.Stream()
+                .listen_to(store)
+                .map(view.to_props)
+                .filter(lambda x: x is not None)
+                .distinct())
+    stream.map(lambda props: view.render(*props))
+
+
+class Counter:
+    """Reactive layer counter component"""
+    def __init__(self):
+        self.div = bokeh.models.Div(text="Hello, world")
+        self.layout = bokeh.layouts.row(self.div)
+
+    def connect(self, store):
+        _connect(self, store)
+        return self
+
+    @staticmethod
+    def to_props(state):
+        try:
+            return (state["layers"],)
+        except KeyError:
+            return
+
+    def render(self, n):
+        self.div.text = f"Rows: {n}"
 
 
 class FigureUI(Observable):
@@ -231,7 +266,7 @@ class Controls(Observable):
         return wrapper
 
     def render(self):
-        self.notify(self.combine(self.models, self.flags))
+        self.notify(on_visible_state(self.combine(self.models, self.flags)))
 
     @staticmethod
     def combine(models, flags):
@@ -264,11 +299,14 @@ class Artist(object):
         self.visible_state = None
         self.state = None
 
-    def on_visible(self, visible_state):
+    def on_visible(self, action):
         # Ignore actions for now
         # TODO: Refactor to use application state or state_to_props
-        if "kind" in visible_state:
+        kind = action["kind"]
+        if kind != LAYERS_ON_VISIBLE_STATE:
             return
+
+        visible_state = action["payload"]
 
         if self.visible_state is not None:
             # Hide deselected states

@@ -53,10 +53,11 @@ def test_controls_render(listener):
     controls = layers.Controls([])
     controls.subscribe(listener)
     controls.render()
-    listener.assert_called_once_with({})
+    listener.assert_called_once_with(layers.on_visible_state({}))
 
 
-def test_controls_on_dropdown(listener):
+def test_controls_emit_visible_state(listener):
+    """Test to understand how visible_state is structured"""
     controls = layers.Controls([])
     controls.subscribe(listener)
     controls.on_dropdown(0)(None, None, "new")  # attr, old, new
@@ -64,8 +65,10 @@ def test_controls_on_dropdown(listener):
     assert controls.models == {0: "new"}
     assert controls.flags == {0: [True, False, False]}
     listener.assert_has_calls([
-        unittest.mock.call({}),
-        unittest.mock.call({"new": [True, False, False]}),
+        unittest.mock.call(
+            layers.on_visible_state({})),
+        unittest.mock.call(
+            layers.on_visible_state({"new": [True, False, False]})),
     ])
 
 
@@ -91,7 +94,7 @@ def test_artist_on_visible():
     }
     artist = layers.Artist({label: viewer}, {label: renderers})
     artist.on_state(old_state)
-    artist.on_visible(visible_state)
+    artist.on_visible(layers.on_visible_state(visible_state))
     assert renderers[0].visible == True
     assert renderers[1].visible == False
     viewer.render.assert_called_once_with(old_state)

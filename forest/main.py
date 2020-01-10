@@ -290,6 +290,8 @@ def main(argv=None):
                     .distinct())
     old_states.subscribe(artist.on_state)
 
+    counter = layers.Counter().connect(store)
+
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
 
@@ -301,6 +303,7 @@ def main(argv=None):
                 bokeh.models.Div(text="Navigate:"),
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
+                counter.layout,
                 image_controls.column),
             title="Control"
         ),
