@@ -185,27 +185,34 @@ class LeftCenterRight:
 class Controls(Observable):
     """Collection of user interface components to manage layers"""
     def __init__(self, menu):
+        self.buttons = {
+            "add": bokeh.models.Button(label="Add", width=50),
+            "remove": bokeh.models.Button(label="Remove", width=50)
+        }
+        self.buttons["add"].on_click(self.on_click_add)
+        self.buttons["remove"].on_click(self.on_click_remove)
+        self.columns = {
+            "rows": bokeh.layouts.column(),
+            "buttons": bokeh.layouts.column(
+                bokeh.layouts.row(self.buttons["add"], self.buttons["remove"])
+            )
+        }
+        self.layout = bokeh.layouts.column(
+            self.columns["rows"],
+            self.columns["buttons"]
+        )
+
         self.menu = menu
         self.models = {}
         self.flags = {}
         self.default_flags = [False, False, False]
 
-        self.state = {}
-        self.previous_state = None
-        self.renderers = []
         self._labels = ["Show"]
 
         self.groups = []
         self.dropdowns = []
 
-        add = bokeh.models.Button(label="Add", width=50)
-        remove = bokeh.models.Button(label="Remove", width=50)
-        self.column = bokeh.layouts.column(
-            bokeh.layouts.row(add, remove)
-        )
         self.add_row()
-        add.on_click(self.on_click_add)
-        remove.on_click(self.on_click_remove)
         super().__init__()
 
     def connect(self, store):
@@ -223,8 +230,7 @@ class Controls(Observable):
 
         :param n: integer representing number of rows
         """
-        print(f"CONTROLS: {n}")
-        nrows = len(self.column.children) - 1
+        nrows = len(self.columns["rows"].children) - 1
         if n > nrows:
             for _ in range(n - nrows):
                 self.add_row()
@@ -238,15 +244,13 @@ class Controls(Observable):
 
     def on_click_remove(self):
         """Event-handler when Remove button is clicked"""
-        # We need to capture the number of rows to decide
-        # if we need to recalculate visible state
-        x = len(self.column.children)
         self.notify(on_remove())
-        if x > 2:
-            self._render()  # TODO: Add this to middleware
 
     def select(self, name):
-        """Select particular layers and visibility states"""
+        """Select particular layers and visibility states
+
+        .. note:: Called in main.py to select first layer
+        """
         self.groups[0].active = [0]
         dropdown = self.dropdowns[0]
         for k, v in dropdown.menu:
@@ -270,7 +274,7 @@ class Controls(Observable):
                 menu=self.menu,
                 label="Model/observation",
                 width=230,)
-        autolabel(dropdown)
+        # autolabel(dropdown)
         dropdown.on_change('value', self.on_dropdown(i))
         self.dropdowns.append(dropdown)
         group = bokeh.models.CheckboxButtonGroup(
@@ -279,21 +283,21 @@ class Controls(Observable):
         group.on_change("active", self.on_radio(i))
         self.groups.append(group)
         row = bokeh.layouts.row(dropdown, group)
-        self.column.children.insert(-1, row)
+        self.columns["rows"].children.append(row)
 
     def remove_row(self):
         """Remove a row from self.column"""
-        if len(self.column.children) > 2:
-            i = self.rows - 1
+        if len(self.columns["rows"].children) > 1:
+            i = self.rows # - 1
             self.models.pop(i, None)
             self.flags.pop(i, None)
             self.dropdowns.pop(-1)
             self.groups.pop(-1)
-            self.column.children.pop(-2)
+            self.columns["rows"].children.pop(-1)
 
     @property
     def rows(self):
-        return len(self.column.children) - 1
+        return len(self.columns["rows"].children) - 1
 
     def on_dropdown(self, i):
         """Factory to create dropdown callback with row number baked in

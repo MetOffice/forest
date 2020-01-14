@@ -306,7 +306,7 @@ def main(argv=None):
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
                 counter.layout,
-                image_controls.column),
+                image_controls.layout),
             title="Control"
         ),
         bokeh.models.Panel(
