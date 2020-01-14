@@ -26,7 +26,6 @@ existing behaviour.
 .. autofunction:: combine_reducers
 
 """
-from __future__ import annotations
 import copy
 from functools import wraps
 from forest.observe import Observable
