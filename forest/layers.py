@@ -2,7 +2,9 @@ import copy
 import bokeh.models
 import bokeh.layouts
 import numpy as np
+from typing import Iterable
 from forest import rx
+from forest.redux import Action, State, Store
 from forest.observe import Observable
 from forest.db.util import autolabel
 
@@ -13,28 +15,28 @@ LAYERS_ON_REMOVE = "LAYERS_ON_REMOVE"
 LAYERS_ON_VISIBLE_STATE = "LAYERS_ON_VISIBLE_STATE"
 
 
-def set_figures(n):
+def set_figures(n: int) -> Action:
     return {"kind": SET_FIGURES, "payload": n}
 
 
-def on_add():
+def on_add() -> Action:
     return {"kind": LAYERS_ON_ADD}
 
 
-def on_remove():
+def on_remove() -> Action:
     return {"kind": LAYERS_ON_REMOVE}
 
 
-def on_visible_state(visible_state):
+def on_visible_state(visible_state) -> Action:
     return {"kind": LAYERS_ON_VISIBLE_STATE, "payload": visible_state}
 
 
-def middleware(store, action):
+def middleware(store: Store, action: Action) -> Iterable[Action]:
     """Action generator given current state and action"""
     yield action
 
 
-def reducer(state, action):
+def reducer(state: State, action: Action) -> State:
     state = copy.deepcopy(state)
     kind = action["kind"]
     if kind == SET_FIGURES:
