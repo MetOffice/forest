@@ -39,10 +39,14 @@ def test_remove(listener):
 
 @pytest.mark.parametrize("state,actions,expect", [
     ({}, layers.set_figures(3), {"figures": 3}),
-    ({}, layers.on_add(), {"layers": 1}),
-    ({}, [layers.on_add(), layers.on_add()], {"layers": 2}),
-    ({}, layers.on_remove(), {"layers": 0}),
-    ({"layers": 2}, layers.on_remove(), {"layers": 1}),
+    ({}, layers.on_add(), {"layers": [None]}),
+    ({}, [layers.on_add(), layers.on_add()], {"layers": [None, None]}),
+    ({}, layers.on_remove(), {"layers": []}),
+    ({"layers": [None, None]}, layers.on_remove(), {"layers": [None]}),
+    ({}, layers.set_label(0, "Label"), {"layers": ["Label"]}),
+    ({}, layers.set_label(0, "Other"), {"layers": ["Other"]}),
+    ({}, layers.set_label(1, "Label"), {"layers": [None, "Label"]}),
+    ({}, layers.set_label(2, "Label"), {"layers": [None, None, "Label"]}),
 ])
 def test_reducer(state, actions, expect):
     if isinstance(actions, dict):

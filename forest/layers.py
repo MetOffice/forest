@@ -13,6 +13,7 @@ SET_FIGURES = "SET_FIGURES"
 LAYERS_ON_ADD = "LAYERS_ON_ADD"
 LAYERS_ON_REMOVE = "LAYERS_ON_REMOVE"
 LAYERS_ON_VISIBLE_STATE = "LAYERS_ON_VISIBLE_STATE"
+LAYERS_SET_LABEL = "LAYERS_SET_LABEL"
 
 
 def set_figures(n: int) -> Action:
@@ -31,24 +32,40 @@ def on_visible_state(visible_state) -> Action:
     return {"kind": LAYERS_ON_VISIBLE_STATE, "payload": visible_state}
 
 
+def set_label(index: int, label: str):
+    """Set i-th layer label"""
+    return {"kind": LAYERS_SET_LABEL, "payload": {"index": index, "label": label}}
+
+
 def middleware(store: Store, action: Action) -> Iterable[Action]:
     """Action generator given current state and action"""
     yield action
 
 
 def reducer(state: State, action: Action) -> State:
+    """Combine state and action to produce new state"""
     state = copy.deepcopy(state)
     kind = action["kind"]
     if kind == SET_FIGURES:
         state["figures"] = action["payload"]
     elif kind == LAYERS_ON_ADD:
-        state["layers"] = state.get("layers", 0) + 1
+        labels = state.get("layers", [])
+        labels.append(None)
+        state["layers"] = labels
     elif kind == LAYERS_ON_REMOVE:
-        counter = state.get("layers", 0)
-        if counter - 1 < 0:
-            state["layers"] = 0
-        else:
-            state["layers"] = counter - 1
+        labels = state.get("layers", [])
+        state["layers"] = labels[:-1]
+    elif kind == LAYERS_SET_LABEL:
+        index = action["payload"]["index"]
+        label = action["payload"]["label"]
+        labels = state.get("layers", [])
+
+        # Pad labels with None for each missing element
+        missing_elements = (index + 1) - len(labels)
+        if missing_elements > 0:
+            labels += missing_elements * [None]
+        labels[index] = label
+        state["layers"] = labels
     return state
 
 
@@ -73,10 +90,7 @@ class Counter:
 
     @staticmethod
     def to_props(state):
-        try:
-            return (state["layers"],)
-        except KeyError:
-            return
+        return (len(state.get("layers", [])),)
 
     def render(self, n):
         self.div.text = f"Rows: {n}"
@@ -200,12 +214,9 @@ class Controls(Observable):
         return self
 
     @staticmethod
-    def to_props(state):
+    def to_props(state) -> tuple:
         """Select data from state that satisfies self.render(*props)"""
-        try:
-            return (state["layers"],)
-        except KeyError:
-            return
+        return (len(state.get("layers", [])),)
 
     def render(self, n):
         """Display latest application state in user interface
