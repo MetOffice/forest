@@ -47,6 +47,17 @@ def test_remove(listener):
     ({}, layers.set_label(0, "Other"), {"layers": ["Other"]}),
     ({}, layers.set_label(1, "Label"), {"layers": [None, "Label"]}),
     ({}, layers.set_label(2, "Label"), {"layers": [None, None, "Label"]}),
+    (
+        {},
+        layers.set_visible({"label": [False, False, False]}),
+        {"visible": {"label": [False, False, False]}},
+    ), (
+        {"visible": {"other": [False, False, False]}},
+        layers.set_visible({"label": [False, False, False]}),
+        {"visible": {
+            "other": [False, False, False],
+            "label": [False, False, False]}},
+    )
 ])
 def test_reducer(state, actions, expect):
     if isinstance(actions, dict):
@@ -56,7 +67,7 @@ def test_reducer(state, actions, expect):
     assert state == expect
 
 
-def test_controls_render(listener):
+def test_controls__render(listener):
     """Test case to understand Controls.render()
 
     Controls has two dicts self.models and self.flags which
@@ -69,6 +80,16 @@ def test_controls_render(listener):
     listener.assert_called_once_with(layers.on_visible_state({}))
 
 
+def test_controls_render():
+    state = {"layers": [None, "B", "C"]}
+    controls = layers.Controls([])
+    controls.render(*controls.to_props(state))
+    assert controls.dropdowns[0].label == "Model/observation"
+    assert controls.dropdowns[1].label == "B"
+    assert controls.dropdowns[2].label == "C"
+
+
+@pytest.mark.skip("refactor to redux pattern")
 def test_controls_emit_visible_state(listener):
     """Test to understand how visible_state is structured"""
     controls = layers.Controls([])

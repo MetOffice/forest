@@ -14,6 +14,7 @@ LAYERS_ON_ADD = "LAYERS_ON_ADD"
 LAYERS_ON_REMOVE = "LAYERS_ON_REMOVE"
 LAYERS_ON_VISIBLE_STATE = "LAYERS_ON_VISIBLE_STATE"
 LAYERS_SET_LABEL = "LAYERS_SET_LABEL"
+LAYERS_SET_VISIBLE = "LAYERS_SET_VISIBLE"
 
 
 def set_figures(n: int) -> Action:
@@ -32,9 +33,13 @@ def on_visible_state(visible_state) -> Action:
     return {"kind": LAYERS_ON_VISIBLE_STATE, "payload": visible_state}
 
 
-def set_label(index: int, label: str):
+def set_label(index: int, label: str) -> Action:
     """Set i-th layer label"""
     return {"kind": LAYERS_SET_LABEL, "payload": {"index": index, "label": label}}
+
+
+def set_visible(payload) -> Action:
+    return {"kind": LAYERS_SET_VISIBLE, "payload": payload}
 
 
 def middleware(store: Store, action: Action) -> Iterable[Action]:
@@ -66,6 +71,10 @@ def reducer(state: State, action: Action) -> State:
             labels += missing_elements * [None]
         labels[index] = label
         state["layers"] = labels
+    elif kind == LAYERS_SET_VISIBLE:
+        visible = state.get("visible", {})
+        visible.update(action["payload"])
+        state["visible"] = visible
     return state
 
 
@@ -156,6 +165,7 @@ class FigureRow:
 
 
 class LeftCenterRight:
+    # TODO: Inline this class into Controls
     def __init__(self, controls):
         self.controls = controls
 
@@ -185,6 +195,10 @@ class LeftCenterRight:
 class Controls(Observable):
     """Collection of user interface components to manage layers"""
     def __init__(self, menu):
+        self.defaults = {
+            "label": "Model/observation",
+            "flags": [False, False, False]
+        }
         self.buttons = {
             "add": bokeh.models.Button(label="Add", width=50),
             "remove": bokeh.models.Button(label="Remove", width=50)
@@ -202,17 +216,17 @@ class Controls(Observable):
             self.columns["buttons"]
         )
 
+        # TODO: remove the following variables
         self.menu = menu
         self.models = {}
         self.flags = {}
-        self.default_flags = [False, False, False]
 
         self._labels = ["Show"]
 
         self.groups = []
         self.dropdowns = []
 
-        self.add_row()
+        # self.add_row()
         super().__init__()
 
     def connect(self, store):
@@ -223,20 +237,31 @@ class Controls(Observable):
     @staticmethod
     def to_props(state) -> tuple:
         """Select data from state that satisfies self.render(*props)"""
-        return (len(state.get("layers", [])),)
+        return (state.get("layers", []),)
 
-    def render(self, n):
+    def render(self, labels):
         """Display latest application state in user interface
 
         :param n: integer representing number of rows
         """
-        nrows = len(self.columns["rows"].children) - 1
+        print(self.flags)
+        self.models = dict(enumerate(labels))  # TODO: remove this
+
+        n = len(labels)
+        nrows = len(self.columns["rows"].children) # - 1
         if n > nrows:
             for _ in range(n - nrows):
                 self.add_row()
         if n < nrows:
             for _ in range(nrows - n):
                 self.remove_row()
+
+        # Set dropdown labels
+        for label, dropdown in zip(labels, self.dropdowns):
+            if label is None:
+                dropdown.label = self.defaults["label"]
+            else:
+                dropdown.label = label
 
     def on_click_add(self):
         """Event-handler when Add button is clicked"""
@@ -251,6 +276,7 @@ class Controls(Observable):
 
         .. note:: Called in main.py to select first layer
         """
+        return
         self.groups[0].active = [0]
         dropdown = self.dropdowns[0]
         for k, v in dropdown.menu:
@@ -270,18 +296,21 @@ class Controls(Observable):
     def add_row(self):
         """Add a bokeh.layouts.row with a dropdown and radiobuttongroup"""
         i = self.rows
+
+        irow = len(self.columns["rows"].children)
         dropdown = bokeh.models.Dropdown(
                 menu=self.menu,
-                label="Model/observation",
+                label=self.defaults["label"],
                 width=230,)
-        # autolabel(dropdown)
-        dropdown.on_change('value', self.on_dropdown(i))
+        dropdown.on_change('value', self.on_label(irow))
         self.dropdowns.append(dropdown)
+
         group = bokeh.models.CheckboxButtonGroup(
                 labels=self.labels,
                 width=50)
         group.on_change("active", self.on_radio(i))
         self.groups.append(group)
+
         row = bokeh.layouts.row(dropdown, group)
         self.columns["rows"].children.append(row)
 
@@ -289,7 +318,6 @@ class Controls(Observable):
         """Remove a row from self.column"""
         if len(self.columns["rows"].children) > 1:
             i = self.rows # - 1
-            self.models.pop(i, None)
             self.flags.pop(i, None)
             self.dropdowns.pop(-1)
             self.groups.pop(-1)
@@ -299,25 +327,24 @@ class Controls(Observable):
     def rows(self):
         return len(self.columns["rows"].children) - 1
 
-    def on_dropdown(self, i):
-        """Factory to create dropdown callback with row number baked in
-
-        :returns: callback with (attr, old, new) signature
-        """
+    def on_label(self, irow):
+        """Notify listeners of set_label action"""
         def wrapper(attr, old, new):
             if old != new:
-                self.models[i] = new
-                self._render()
+                self.notify(set_label(irow, new))
         return wrapper
 
     def on_radio(self, i):
         """Factory to create radiogroup callback with row number baked in
 
+        This handler performs reducer logic that could be implemented
+        elsewhere
+
         :returns: callback with (attr, old, new) signature
         """
         def wrapper(attr, old, new):
             if i not in self.flags:
-                self.flags[i] = list(self.default_flags)
+                self.flags[i] = list(self.defaults["flags"])
 
             flags = self.flags[i]
             for j in old:
@@ -336,6 +363,9 @@ class Controls(Observable):
     @staticmethod
     def combine(models, flags):
         """Combine model selection and visiblity settings into a single dict
+
+        Handles case where multiple dropdowns refer to the same layer
+        but may have different radio button choices
 
         :returns: dict
         """
@@ -359,6 +389,11 @@ class Artist(object):
     """Applies visible and render logic to viewers and renderers
 
 
+    This could easily be broken into two classes, one responsible
+    for maintaining ``renderer.visible`` and one for calling
+    ``viewer.render(state)``
+
+
     .. note:: This should be middleware that applies logic
               given current state and an action
     """
@@ -369,6 +404,12 @@ class Artist(object):
         self.state = None
 
     def on_visible(self, action):
+        """
+
+        Uses current visible layers and incoming visible state to toggle
+        on/off GlyphRenderers
+
+        """
         # Ignore actions for now
         # TODO: Refactor to use application state or state_to_props
         kind = action["kind"]
@@ -411,6 +452,12 @@ class Artist(object):
         self.render()
 
     def render(self):
+        """
+
+        Notify visible viewers to render themselves given most
+        recently received application state
+
+        """
         if self.visible_state is None:
             return
         if self.state is None:

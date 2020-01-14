@@ -71,6 +71,7 @@ class TestInitialState(unittest.TestCase):
         self.assertEqual(state["pressure"], 1000)
 
 
+@unittest.skip("select method will be obsolete after refactor")
 class TestImageControls(unittest.TestCase):
     def test_image_controls_show(self):
         menu = [("A", "a"), ("B", "b")]
