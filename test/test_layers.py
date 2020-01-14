@@ -1,6 +1,15 @@
 import pytest
 import unittest.mock
-from forest import layers
+from forest import layers, redux
+
+
+def test_middleware():
+    store = redux.Store(layers.reducer)
+    action = {"kind": "ANY"}
+    result = list(layers.middleware(store, action))
+    expect = [action]
+    assert expect == result
+
 
 @pytest.fixture
 def listener():
