@@ -106,6 +106,51 @@ def test_controls_emit_visible_state(listener):
     ])
 
 
+def test_on_radio_button(listener):
+    row_index = 3
+    attr, old, new = None, [], [2]
+    controls = layers.Controls([])
+    controls.subscribe(listener)
+    controls.on_radio_button(row_index)(attr, old, new)
+    listener.assert_called_once_with(layers.on_radio_button(row_index, new))
+
+
+@pytest.mark.parametrize("ui_state,expect", [
+    ({}, {}),
+    ({"layers": ["label"], "visible": [[0]]},
+     {"label": [True, False, False]}),
+    ({"layers": ["A", "A"], "visible": [[0], [2]]},
+     {"A": [True, False, True]})
+])
+def test_ui_state_to_visible_state(ui_state, expect):
+    result = layers.to_visible_state(ui_state)
+    assert expect == result
+
+
+@pytest.mark.parametrize("left,right,expect", [
+    ({}, {}, []),
+    ({}, {"label": [True, False, False]}, [
+        ("label", 0, True),
+        ("label", 1, False),
+        ("label", 2, False),
+    ]),
+    ({"label": [True, False, False]}, {}, [
+        ("label", 0, False),
+    ]),
+    ({"label": [True, False, False]}, {"label": [False, False, False]}, [
+        ("label", 0, False),
+    ]),
+    ({"label": [False, False, False]}, {"label": [False, True, False]}, [
+        ("label", 1, True),
+    ]),
+])
+def test_diff_visible_states(left, right, expect):
+    """Needed to be efficient when toggling renderer.visible and calling
+       viewer.render(tuple_state)"""
+    result = layers.diff_visible_states(left, right)
+    assert expect == result
+
+
 def test_artist_on_visible():
     """Test case to understand Artist code
 

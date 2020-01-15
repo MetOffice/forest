@@ -2,7 +2,7 @@ import copy
 import bokeh.models
 import bokeh.layouts
 import numpy as np
-from typing import Iterable
+from typing import Iterable, List
 from forest import rx
 from forest.redux import Action, State, Store
 from forest.observe import Observable
@@ -13,6 +13,7 @@ SET_FIGURES = "SET_FIGURES"
 LAYERS_ON_ADD = "LAYERS_ON_ADD"
 LAYERS_ON_REMOVE = "LAYERS_ON_REMOVE"
 LAYERS_ON_VISIBLE_STATE = "LAYERS_ON_VISIBLE_STATE"
+LAYERS_ON_RADIO_BUTTON = "LAYERS_ON_RADIO_BUTTON"
 LAYERS_SET_LABEL = "LAYERS_SET_LABEL"
 LAYERS_SET_VISIBLE = "LAYERS_SET_VISIBLE"
 
@@ -31,6 +32,13 @@ def on_remove() -> Action:
 
 def on_visible_state(visible_state) -> Action:
     return {"kind": LAYERS_ON_VISIBLE_STATE, "payload": visible_state}
+
+
+def on_radio_button(row_index: int, active: List[int]) -> Action:
+    return {
+        "kind": LAYERS_ON_RADIO_BUTTON,
+        "payload": {"row_index": row_index, "active": active}
+    }
 
 
 def set_label(index: int, label: str) -> Action:
@@ -76,6 +84,78 @@ def reducer(state: State, action: Action) -> State:
         visible.update(action["payload"])
         state["visible"] = visible
     return state
+
+
+def to_visible_state(ui_state):
+    """Maps user interface settings to visible flags
+
+    >>> ui_state = {
+        'layers': ['label'],
+        'visible': [[1, 2]]
+    }
+    >>> to_visible_state(ui_state)
+    {
+        'label': [False, True, True]
+    }
+
+    """
+    labels = ui_state.get("layers", [])
+    active_list = ui_state.get("visible", [])
+    result = {}
+    for label, active in zip(labels, active_list):
+        if label not in result:
+            result[label] = [False, False, False]
+        for i in active:
+            result[label][i] = True
+    return result
+
+
+def diff_visible_states(left: dict, right: dict) -> List[tuple]:
+    """Calculate changes needed to map from left to right state
+
+    There are essentially three situations:
+       1. A label has been added, apply all flags
+       2. A label has been removed, mute True flags
+       3. The flags of an existing label have been altered
+
+    >>> left = {
+       'label': [True, False, False]
+    }
+    >>> right = {
+       'label': [True, True, False]
+    }
+    >>> diff_visible(left, right)
+    [('label', 1, True)]
+
+    A change is defined as a tuple ``(label, figure_index, flag)``, to
+    make it easy to update renderer visible attributes
+
+    .. note:: If nothing has changed an empty list is returned
+
+    :returns: list of changes
+    """
+    diff = []
+
+    # Detect additions to state
+    for key in right:
+        if key not in left:
+            for i, flag in enumerate(right[key]):
+                diff.append((key, i, flag))
+
+    # Detect removals from state
+    for key in left:
+        if key not in right:
+            for i, flag in enumerate(left[key]):
+                if flag:
+                    diff.append((key, i, False))  # Turn off True flags
+
+    # Detect alterations to existing labels
+    for key in left:
+        if key in right:
+            for i, flag in enumerate(left[key]):
+                if flag != right[key][i]:
+                    diff.append((key, i, right[key][i]))
+    return diff
 
 
 def _connect(view, store):
@@ -244,7 +324,6 @@ class Controls(Observable):
 
         :param n: integer representing number of rows
         """
-        print(self.flags)
         self.models = dict(enumerate(labels))  # TODO: remove this
 
         n = len(labels)
@@ -295,20 +374,21 @@ class Controls(Observable):
 
     def add_row(self):
         """Add a bokeh.layouts.row with a dropdown and radiobuttongroup"""
-        i = self.rows
+        # i = self.rows
 
-        irow = len(self.columns["rows"].children)
+        row_index = len(self.columns["rows"].children)
         dropdown = bokeh.models.Dropdown(
                 menu=self.menu,
                 label=self.defaults["label"],
                 width=230,)
-        dropdown.on_change('value', self.on_label(irow))
+        dropdown.on_change('value', self.on_label(row_index))
         self.dropdowns.append(dropdown)
 
         group = bokeh.models.CheckboxButtonGroup(
                 labels=self.labels,
                 width=50)
-        group.on_change("active", self.on_radio(i))
+        # group.on_change("active", self.on_radio(i))
+        group.on_change("active", self.on_radio_button(row_index))
         self.groups.append(group)
 
         row = bokeh.layouts.row(dropdown, group)
@@ -343,18 +423,41 @@ class Controls(Observable):
         :returns: callback with (attr, old, new) signature
         """
         def wrapper(attr, old, new):
-            if i not in self.flags:
-                self.flags[i] = list(self.defaults["flags"])
+            self.flags = self._flags(
+                self.flags, i, old, new, self.defaults["flags"])
 
-            flags = self.flags[i]
-            for j in old:
-                if j not in new:
-                    flags[j] = False
-            for j in new:
-                if j not in old:
-                    flags[j] = True
+            # if i not in self.flags:
+            #     self.flags[i] = list(self.defaults["flags"])
+
+            # flags = self.flags[i]
+            # for j in old:
+            #     if j not in new:
+            #         flags[j] = False
+            # for j in new:
+            #     if j not in old:
+            #         flags[j] = True
             self._render()
         return wrapper
+
+    def on_radio_button(self, row_index: int):
+        """Translate radio button event into Action"""
+        def _callback(attr, old, new):
+            self.notify(on_radio_button(row_index, new))
+        return _callback
+
+    @staticmethod
+    def _flags(self_flags, i, old, new, default_flags):
+        """Extracted flag update logic"""
+        new_flags = copy.deepcopy(self_flags)
+        if i not in new_flags:
+            new_flags[i] = list(default_flags)
+        for j in old:
+            if j not in new:
+                new_flags[i][j] = False
+        for j in new:
+            if j not in old:
+                new_flags[i][j] = True
+        return new_flags
 
     def _render(self):
         """This is not a render method"""
