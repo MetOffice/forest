@@ -47,6 +47,7 @@ def test_remove(listener):
     ({}, layers.set_label(0, "Other"), {"labels": ["Other"]}),
     ({}, layers.set_label(1, "Label"), {"labels": [None, "Label"]}),
     ({}, layers.set_label(2, "Label"), {"labels": [None, None, "Label"]}),
+    ({}, layers.set_active(0, []), {"active": [[]]}),
 ])
 def test_reducer(state, actions, expect):
     if isinstance(actions, dict):
@@ -94,15 +95,14 @@ def test_on_radio_button(listener):
     listener.assert_called_once_with(layers.on_radio_button(row_index, new))
 
 
-@pytest.mark.parametrize("ui_state,expect", [
-    ({}, {}),
-    ({"layers": ["label"], "visible": [[0]]},
-     {"label": [True, False, False]}),
-    ({"layers": ["A", "A"], "visible": [[0], [2]]},
-     {"A": [True, False, True]})
+@pytest.mark.parametrize("labels,active_list,expect", [
+    ([], [], {}),
+    (["label"], [[0]], {"label": [True, False, False]}),
+    (["A", "A"],[[0], [2]], {"A": [True, False, True]}),
+    (["A", None],[[0], [2]], {"A": [True, False, False]}),
 ])
-def test_ui_state_to_visible_state(ui_state, expect):
-    result = layers.to_visible_state(ui_state)
+def test_ui_state_to_visible_state(labels, active_list, expect):
+    result = layers.to_visible_state(labels, active_list)
     assert expect == result
 
 
@@ -130,6 +130,7 @@ def test_diff_visible_states(left, right, expect):
     assert expect == result
 
 
+@pytest.mark.skip("not needed after refactor")
 def test_artist_on_visible():
     """Test case to understand Artist code
 

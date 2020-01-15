@@ -9,13 +9,13 @@ from forest.observe import Observable
 from forest.db.util import autolabel
 
 
-SET_FIGURES = "SET_FIGURES"
-LAYERS_ON_ADD = "LAYERS_ON_ADD"
-LAYERS_ON_REMOVE = "LAYERS_ON_REMOVE"
-LAYERS_ON_VISIBLE_STATE = "LAYERS_ON_VISIBLE_STATE"
-LAYERS_ON_RADIO_BUTTON = "LAYERS_ON_RADIO_BUTTON"
-LAYERS_SET_LABEL = "LAYERS_SET_LABEL"
-LAYERS_SET_VISIBLE = "LAYERS_SET_VISIBLE"
+SET_FIGURES = "LAYERS_SET_FIGURES"
+ON_ADD = "LAYERS_ON_ADD"
+ON_REMOVE = "LAYERS_ON_REMOVE"
+ON_VISIBLE_STATE = "LAYERS_ON_VISIBLE_STATE"
+ON_RADIO_BUTTON = "LAYERS_ON_RADIO_BUTTON"
+SET_ACTIVE = "LAYERS_SET_ACTIVE"
+SET_LABEL = "LAYERS_SET_LABEL"
 
 
 def set_figures(n: int) -> Action:
@@ -23,36 +23,41 @@ def set_figures(n: int) -> Action:
 
 
 def on_add() -> Action:
-    return {"kind": LAYERS_ON_ADD}
+    return {"kind": ON_ADD}
 
 
 def on_remove() -> Action:
-    return {"kind": LAYERS_ON_REMOVE}
-
-
-def on_visible_state(visible_state) -> Action:
-    return {"kind": LAYERS_ON_VISIBLE_STATE, "payload": visible_state}
+    return {"kind": ON_REMOVE}
 
 
 def on_radio_button(row_index: int, active: List[int]) -> Action:
     return {
-        "kind": LAYERS_ON_RADIO_BUTTON,
+        "kind": ON_RADIO_BUTTON,
+        "payload": {"row_index": row_index, "active": active}
+    }
+
+
+def set_active(row_index: int, active: List[int]) -> Action:
+    return {
+        "kind": SET_ACTIVE,
         "payload": {"row_index": row_index, "active": active}
     }
 
 
 def set_label(index: int, label: str) -> Action:
     """Set i-th layer label"""
-    return {"kind": LAYERS_SET_LABEL, "payload": {"index": index, "label": label}}
-
-
-def set_visible(payload) -> Action:
-    return {"kind": LAYERS_SET_VISIBLE, "payload": payload}
+    return {"kind": SET_LABEL, "payload": {"index": index, "label": label}}
 
 
 def middleware(store: Store, action: Action) -> Iterable[Action]:
     """Action generator given current state and action"""
-    yield action
+    kind = action["kind"]
+    if kind == ON_RADIO_BUTTON:
+        payload = action["payload"]
+        print(type(payload["active"]))
+        yield set_active(payload["row_index"], payload["active"])
+    else:
+        yield action
 
 
 def reducer(state: State, action: Action) -> State:
@@ -60,10 +65,11 @@ def reducer(state: State, action: Action) -> State:
     state = copy.deepcopy(state)
     kind = action["kind"]
     if kind in [
+            SET_ACTIVE,
+            SET_LABEL,
             SET_FIGURES,
-            LAYERS_ON_ADD,
-            LAYERS_ON_REMOVE,
-            LAYERS_SET_LABEL]:
+            ON_ADD,
+            ON_REMOVE]:
         layers = state.get("layers", {})
         state["layers"] = _layers_reducer(layers, action)
     return state
@@ -74,46 +80,50 @@ def _layers_reducer(state, action):
     if kind == SET_FIGURES:
         state["figures"] = action["payload"]
 
-    elif kind == LAYERS_ON_ADD:
+    elif kind == ON_ADD:
         labels = state.get("labels", [])
         labels.append(None)
         state["labels"] = labels
 
-    elif kind == LAYERS_ON_REMOVE:
+    elif kind == ON_REMOVE:
         labels = state.get("labels", [])
         state["labels"] = labels[:-1]
 
-    elif kind == LAYERS_SET_LABEL:
-        index = action["payload"]["index"]
+    elif kind == SET_LABEL:
+        row_index = action["payload"]["index"]
         label = action["payload"]["label"]
         labels = state.get("labels", [])
 
-        # Pad labels with None for each missing element
-        missing_elements = (index + 1) - len(labels)
-        if missing_elements > 0:
-            labels += missing_elements * [None]
-        labels[index] = label
+        # Pad with None for each missing element
+        labels += (row_index + 1 - len(labels)) * [None]
+        labels[row_index] = label
         state["labels"] = labels
+
+    elif kind == SET_ACTIVE:
+        payload = action["payload"]
+        row_index = payload["row_index"]
+        active = payload["active"]
+        items = state.get("active", [])
+        items += (row_index + 1 - len(items)) * [None]
+        items[row_index] = active
+        state["active"] = items
+
     return state
 
 
-def to_visible_state(app_state):
+def to_visible_state(labels, active_list):
     """Maps user interface settings to visible flags
 
-    >>> app_state = {
-        'layers': ['label'],
-        'visible': [[1, 2]]
-    }
-    >>> to_visible_state(app_state)
+    >>> to_visible_state(['label'], [[1, 2]])
     {
         'label': [False, True, True]
     }
 
     """
-    labels = app_state.get("layers", [])
-    active_list = app_state.get("visible", [])
     result = {}
     for label, active in zip(labels, active_list):
+        if label is None:
+            continue
         if label not in result:
             result[label] = [False, False, False]
         for i in active:
@@ -406,7 +416,10 @@ class Controls(Observable):
     def on_radio_button(self, row_index: int):
         """Translate radio button event into Action"""
         def _callback(attr, old, new):
-            self.notify(on_radio_button(row_index, new))
+            # Note: bokeh.core.PropertyList can not be deep copied
+            #       it RuntimeErrors, cast as list instead
+            active = list(new)
+            self.notify(on_radio_button(row_index, active))
         return _callback
 
 
@@ -426,6 +439,7 @@ class Artist:
         self.viewers = viewers
         self.renderers = renderers
         self.visible_state = None
+        self.previous_visible_state = None
         self.state = None
 
     def connect(self, store):
@@ -434,8 +448,17 @@ class Artist:
         return self
 
     def on_dispatch(self, state):
-        layers = state.get("layers", {})
-        print(f"Artist: {layers}")
+        labels = state.get("layers", {}).get("labels", [])
+        active_list = state.get("layers", {}).get("active", [])
+        visible_state = to_visible_state(labels, active_list)
+        print(f"Artist: {visible_state}")
+        if self.previous_visible_state is None:
+            changes = diff_visible_states({}, visible_state)
+        else:
+            changes = diff_visible_states(
+                self.previous_visible_state, visible_state)
+        print(f"Artist: {changes}")
+        self.previous_visible_state = visible_state
 
     def on_visible(self, action):
         """
@@ -447,7 +470,7 @@ class Artist:
         # Ignore actions for now
         # TODO: Refactor to use application state or state_to_props
         kind = action["kind"]
-        if kind != LAYERS_ON_VISIBLE_STATE:
+        if kind != ON_VISIBLE_STATE:
             return
 
         visible_state = action["payload"]
