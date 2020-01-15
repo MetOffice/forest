@@ -207,7 +207,7 @@ def main(argv=None):
         menu.append((k, k))
 
     image_controls = layers.Controls(menu)
-    image_controls.subscribe(artist.on_visible)
+    # image_controls.subscribe(artist.on_visible)
 
     div = bokeh.models.Div(text="", width=10)
     border_row = bokeh.layouts.row(
@@ -286,13 +286,14 @@ def main(argv=None):
         kwargs = {k: state.get(k, None) for k in db.State._fields}
         return db.State(**kwargs)
 
-    old_states = (rx.Stream()
-                    .listen_to(store)
-                    .map(old_world)
-                    .distinct())
-    old_states.subscribe(artist.on_state)
+    # old_states = (rx.Stream()
+    #                 .listen_to(store)
+    #                 .map(old_world)
+    #                 .distinct())
+    # old_states.subscribe(artist.on_state)
 
     counter = layers.Counter().connect(store)
+    connector = layers.ViewerConnector(viewers, old_world).connect(store)
 
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
