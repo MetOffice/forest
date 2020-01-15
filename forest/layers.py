@@ -275,10 +275,13 @@ class LeftCenterRight:
 class Controls(Observable):
     """Collection of user interface components to manage layers"""
     def __init__(self, menu):
+        self.menu = menu  # TODO: Derive this from application state
         self.defaults = {
             "label": "Model/observation",
             "flags": [False, False, False]
         }
+        self.groups = []
+        self.dropdowns = []
         self.buttons = {
             "add": bokeh.models.Button(label="Add", width=50),
             "remove": bokeh.models.Button(label="Remove", width=50)
@@ -295,18 +298,7 @@ class Controls(Observable):
             self.columns["rows"],
             self.columns["buttons"]
         )
-
-        # TODO: remove the following variables
-        self.menu = menu
-        self.models = {}
-        self.flags = {}
-
         self._labels = ["Show"]
-
-        self.groups = []
-        self.dropdowns = []
-
-        # self.add_row()
         super().__init__()
 
     def connect(self, store):
@@ -374,9 +366,9 @@ class Controls(Observable):
 
     def add_row(self):
         """Add a bokeh.layouts.row with a dropdown and radiobuttongroup"""
-        # i = self.rows
-
         row_index = len(self.columns["rows"].children)
+
+        # Dropdown
         dropdown = bokeh.models.Dropdown(
                 menu=self.menu,
                 label=self.defaults["label"],
@@ -384,108 +376,36 @@ class Controls(Observable):
         dropdown.on_change('value', self.on_label(row_index))
         self.dropdowns.append(dropdown)
 
-        group = bokeh.models.CheckboxButtonGroup(
+        # Button group
+        button_group = bokeh.models.CheckboxButtonGroup(
                 labels=self.labels,
                 width=50)
-        # group.on_change("active", self.on_radio(i))
-        group.on_change("active", self.on_radio_button(row_index))
-        self.groups.append(group)
+        button_group.on_change("active", self.on_radio_button(row_index))
+        self.groups.append(button_group)
 
-        row = bokeh.layouts.row(dropdown, group)
+        # Row
+        row = bokeh.layouts.row(dropdown, button_group)
         self.columns["rows"].children.append(row)
 
     def remove_row(self):
-        """Remove a row from self.column"""
-        if len(self.columns["rows"].children) > 1:
-            i = self.rows # - 1
-            self.flags.pop(i, None)
-            self.dropdowns.pop(-1)
-            self.groups.pop(-1)
-            self.columns["rows"].children.pop(-1)
+        """Remove a row from user interface"""
+        if len(self.columns["rows"].children) > 0:
+            self.dropdowns.pop()
+            self.groups.pop()
+            self.columns["rows"].children.pop()
 
-    @property
-    def rows(self):
-        return len(self.columns["rows"].children) - 1
-
-    def on_label(self, irow):
+    def on_label(self, row_index: int):
         """Notify listeners of set_label action"""
-        def wrapper(attr, old, new):
+        def _callback(attr, old, new):
             if old != new:
-                self.notify(set_label(irow, new))
-        return wrapper
-
-    def on_radio(self, i):
-        """Factory to create radiogroup callback with row number baked in
-
-        This handler performs reducer logic that could be implemented
-        elsewhere
-
-        :returns: callback with (attr, old, new) signature
-        """
-        def wrapper(attr, old, new):
-            self.flags = self._flags(
-                self.flags, i, old, new, self.defaults["flags"])
-
-            # if i not in self.flags:
-            #     self.flags[i] = list(self.defaults["flags"])
-
-            # flags = self.flags[i]
-            # for j in old:
-            #     if j not in new:
-            #         flags[j] = False
-            # for j in new:
-            #     if j not in old:
-            #         flags[j] = True
-            self._render()
-        return wrapper
+                self.notify(set_label(row_index, new))
+        return _callback
 
     def on_radio_button(self, row_index: int):
         """Translate radio button event into Action"""
         def _callback(attr, old, new):
             self.notify(on_radio_button(row_index, new))
         return _callback
-
-    @staticmethod
-    def _flags(self_flags, i, old, new, default_flags):
-        """Extracted flag update logic"""
-        new_flags = copy.deepcopy(self_flags)
-        if i not in new_flags:
-            new_flags[i] = list(default_flags)
-        for j in old:
-            if j not in new:
-                new_flags[i][j] = False
-        for j in new:
-            if j not in old:
-                new_flags[i][j] = True
-        return new_flags
-
-    def _render(self):
-        """This is not a render method"""
-        self.notify(on_visible_state(self.combine(self.models, self.flags)))
-
-    @staticmethod
-    def combine(models, flags):
-        """Combine model selection and visiblity settings into a single dict
-
-        Handles case where multiple dropdowns refer to the same layer
-        but may have different radio button choices
-
-        :returns: dict
-        """
-        agg = {}
-        for k in set(models.keys()).intersection(
-                set(flags.keys())):
-            if models[k] in agg:
-                agg[models[k]].append(flags[k])
-            else:
-                agg[models[k]] = [flags[k]]
-        combined = {}
-        for k, v in agg.items():
-            if len(agg[k]) > 1:
-                combined[k] = np.logical_or(*agg[k]).tolist()
-            else:
-                combined[k] = agg[k][0]
-        return combined
 
 
 class Artist(object):

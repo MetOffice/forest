@@ -67,19 +67,6 @@ def test_reducer(state, actions, expect):
     assert state == expect
 
 
-def test_controls__render(listener):
-    """Test case to understand Controls.render()
-
-    Controls has two dicts self.models and self.flags which
-    are populated from dropdown, radio button and add/remove events
-
-    """
-    controls = layers.Controls([])
-    controls.subscribe(listener)
-    controls._render()
-    listener.assert_called_once_with(layers.on_visible_state({}))
-
-
 def test_controls_render():
     state = {"layers": [None, "B", "C"]}
     controls = layers.Controls([])
@@ -87,23 +74,6 @@ def test_controls_render():
     assert controls.dropdowns[0].label == "Model/observation"
     assert controls.dropdowns[1].label == "B"
     assert controls.dropdowns[2].label == "C"
-
-
-@pytest.mark.skip("refactor to redux pattern")
-def test_controls_emit_visible_state(listener):
-    """Test to understand how visible_state is structured"""
-    controls = layers.Controls([])
-    controls.subscribe(listener)
-    controls.on_dropdown(0)(None, None, "new")  # attr, old, new
-    controls.on_radio(0)(None, [], [0])  # attr, old, new
-    assert controls.models == {0: "new"}
-    assert controls.flags == {0: [True, False, False]}
-    listener.assert_has_calls([
-        unittest.mock.call(
-            layers.on_visible_state({})),
-        unittest.mock.call(
-            layers.on_visible_state({"new": [True, False, False]})),
-    ])
 
 
 def test_on_radio_button(listener):
