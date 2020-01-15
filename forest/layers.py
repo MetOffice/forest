@@ -244,41 +244,18 @@ class FigureRow:
                     self.figures[2]]
 
 
-class LeftCenterRight:
-    # TODO: Inline this class into Controls
-    def __init__(self, controls):
-        self.controls = controls
-
-    def connect(self, store):
-        stream = (rx.Stream()
-                    .listen_to(store)
-                    .map(self.to_props)
-                    .filter(lambda x: x is not None)
-                    .distinct())
-        stream.map(lambda props: self.render(*props))
-
-    def to_props(self, state):
-        try:
-            return (state["figures"],)
-        except KeyError:
-            pass
-
-    def render(self, n):
-        if int(n) == 1:
-            self.controls.labels = ["Show"]
-        elif int(n) == 2:
-            self.controls.labels = ["L", "R"]
-        elif int(n) == 3:
-            self.controls.labels = ["L", "C", "R"]
-
-
 class Controls(Observable):
     """Collection of user interface components to manage layers"""
     def __init__(self, menu):
         self.menu = menu  # TODO: Derive this from application state
         self.defaults = {
             "label": "Model/observation",
-            "flags": [False, False, False]
+            "flags": [False, False, False],
+            "figure": {
+                1: ["Show"],
+                2: ["L", "R"],
+                3: ["L", "C", "R"]
+            }
         }
         self.groups = []
         self.dropdowns = []
@@ -309,15 +286,18 @@ class Controls(Observable):
     @staticmethod
     def to_props(state) -> tuple:
         """Select data from state that satisfies self.render(*props)"""
-        return (state.get("layers", []),)
+        return (
+            state.get("layers", []),
+            state.get("visible", []),
+            state.get("figures", None)
+        )
 
-    def render(self, labels):
+    def render(self, labels, active_list, figure_index):
         """Display latest application state in user interface
 
         :param n: integer representing number of rows
         """
-        self.models = dict(enumerate(labels))  # TODO: remove this
-
+        # Match rows to number of labels
         n = len(labels)
         nrows = len(self.columns["rows"].children) # - 1
         if n > nrows:
@@ -333,6 +313,14 @@ class Controls(Observable):
                 dropdown.label = self.defaults["label"]
             else:
                 dropdown.label = label
+
+        # Set radio group active
+        for radio_group, active in zip(self.groups, active_list): 
+            radio_group.active = active
+
+        # Set radio group labels
+        if figure_index is not None:
+            self.labels = self.defaults["figure"][figure_index]
 
     def on_click_add(self):
         """Event-handler when Add button is clicked"""

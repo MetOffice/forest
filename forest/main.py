@@ -207,8 +207,6 @@ def main(argv=None):
         menu.append((k, k))
 
     image_controls = layers.Controls(menu)
-    left_center_right = layers.LeftCenterRight(image_controls)
-
     image_controls.subscribe(artist.on_visible)
 
     div = bokeh.models.Div(text="", width=10)
@@ -263,7 +261,6 @@ def main(argv=None):
     figure_ui = layers.FigureUI()
     figure_ui.subscribe(store.dispatch)
     figure_row.connect(store)
-    left_center_right.connect(store)
 
     # Connect color palette controls
     color_palette = colors.ColorPalette(color_mapper).connect(store)

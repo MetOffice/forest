@@ -76,6 +76,17 @@ def test_controls_render():
     assert controls.dropdowns[2].label == "C"
 
 
+def test_controls_render_sets_radio_buttons():
+    state = {"figures": 3,
+             "layers": [None],
+             "visible": [[0, 1, 2]]}
+    controls = layers.Controls([])
+    controls.render(*controls.to_props(state))
+    assert controls.dropdowns[0].label == "Model/observation"
+    assert controls.groups[0].active == [0, 1, 2]
+    assert controls.groups[0].labels == ["L", "C", "R"]
+
+
 def test_on_radio_button(listener):
     row_index = 3
     attr, old, new = None, [], [2]
