@@ -39,36 +39,30 @@ def test_remove(listener):
 
 @pytest.mark.parametrize("state,actions,expect", [
     ({}, layers.set_figures(3), {"figures": 3}),
-    ({}, layers.on_add(), {"layers": [None]}),
-    ({}, [layers.on_add(), layers.on_add()], {"layers": [None, None]}),
-    ({}, layers.on_remove(), {"layers": []}),
-    ({"layers": [None, None]}, layers.on_remove(), {"layers": [None]}),
-    ({}, layers.set_label(0, "Label"), {"layers": ["Label"]}),
-    ({}, layers.set_label(0, "Other"), {"layers": ["Other"]}),
-    ({}, layers.set_label(1, "Label"), {"layers": [None, "Label"]}),
-    ({}, layers.set_label(2, "Label"), {"layers": [None, None, "Label"]}),
-    (
-        {},
-        layers.set_visible({"label": [False, False, False]}),
-        {"visible": {"label": [False, False, False]}},
-    ), (
-        {"visible": {"other": [False, False, False]}},
-        layers.set_visible({"label": [False, False, False]}),
-        {"visible": {
-            "other": [False, False, False],
-            "label": [False, False, False]}},
-    )
+    ({}, layers.on_add(), {"labels": [None]}),
+    ({}, [layers.on_add(), layers.on_add()], {"labels": [None, None]}),
+    ({}, layers.on_remove(), {"labels": []}),
+    ({"layers": {"labels": [None, None]}}, layers.on_remove(), {"labels": [None]}),
+    ({}, layers.set_label(0, "Label"), {"labels": ["Label"]}),
+    ({}, layers.set_label(0, "Other"), {"labels": ["Other"]}),
+    ({}, layers.set_label(1, "Label"), {"labels": [None, "Label"]}),
+    ({}, layers.set_label(2, "Label"), {"labels": [None, None, "Label"]}),
 ])
 def test_reducer(state, actions, expect):
     if isinstance(actions, dict):
         actions = [actions]
     for action in actions:
         state = layers.reducer(state, action)
-    assert state == expect
+    result = state["layers"]
+    assert result == expect
 
 
 def test_controls_render():
-    state = {"layers": [None, "B", "C"]}
+    state = {
+        "layers": {
+            "labels": [None, "B", "C"]
+        }
+    }
     controls = layers.Controls([])
     controls.render(*controls.to_props(state))
     assert controls.dropdowns[0].label == "Model/observation"
@@ -77,9 +71,13 @@ def test_controls_render():
 
 
 def test_controls_render_sets_radio_buttons():
-    state = {"figures": 3,
-             "layers": [None],
-             "visible": [[0, 1, 2]]}
+    state = {
+        "layers": {
+            "figures": 3,
+            "labels": [None],
+            "visible": [[0, 1, 2]]
+        }
+    }
     controls = layers.Controls([])
     controls.render(*controls.to_props(state))
     assert controls.dropdowns[0].label == "Model/observation"

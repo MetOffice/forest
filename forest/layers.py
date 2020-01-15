@@ -59,48 +59,59 @@ def reducer(state: State, action: Action) -> State:
     """Combine state and action to produce new state"""
     state = copy.deepcopy(state)
     kind = action["kind"]
+    if kind in [
+            SET_FIGURES,
+            LAYERS_ON_ADD,
+            LAYERS_ON_REMOVE,
+            LAYERS_SET_LABEL]:
+        layers = state.get("layers", {})
+        state["layers"] = _layers_reducer(layers, action)
+    return state
+
+
+def _layers_reducer(state, action):
+    kind = action["kind"]
     if kind == SET_FIGURES:
         state["figures"] = action["payload"]
+
     elif kind == LAYERS_ON_ADD:
-        labels = state.get("layers", [])
+        labels = state.get("labels", [])
         labels.append(None)
-        state["layers"] = labels
+        state["labels"] = labels
+
     elif kind == LAYERS_ON_REMOVE:
-        labels = state.get("layers", [])
-        state["layers"] = labels[:-1]
+        labels = state.get("labels", [])
+        state["labels"] = labels[:-1]
+
     elif kind == LAYERS_SET_LABEL:
         index = action["payload"]["index"]
         label = action["payload"]["label"]
-        labels = state.get("layers", [])
+        labels = state.get("labels", [])
 
         # Pad labels with None for each missing element
         missing_elements = (index + 1) - len(labels)
         if missing_elements > 0:
             labels += missing_elements * [None]
         labels[index] = label
-        state["layers"] = labels
-    elif kind == LAYERS_SET_VISIBLE:
-        visible = state.get("visible", {})
-        visible.update(action["payload"])
-        state["visible"] = visible
+        state["labels"] = labels
     return state
 
 
-def to_visible_state(ui_state):
+def to_visible_state(app_state):
     """Maps user interface settings to visible flags
 
-    >>> ui_state = {
+    >>> app_state = {
         'layers': ['label'],
         'visible': [[1, 2]]
     }
-    >>> to_visible_state(ui_state)
+    >>> to_visible_state(app_state)
     {
         'label': [False, True, True]
     }
 
     """
-    labels = ui_state.get("layers", [])
-    active_list = ui_state.get("visible", [])
+    labels = app_state.get("layers", [])
+    active_list = app_state.get("visible", [])
     result = {}
     for label, active in zip(labels, active_list):
         if label not in result:
@@ -179,7 +190,8 @@ class Counter:
 
     @staticmethod
     def to_props(state):
-        return (len(state.get("layers", [])),)
+        labels = state.get("layers", {}).get("labels", [])
+        return (len(labels),)
 
     def render(self, n):
         self.div.text = f"Rows: {n}"
@@ -224,8 +236,9 @@ class FigureRow:
         stream.map(lambda props: self.render(*props))
 
     def to_props(self, state):
+        layers = state.get("layers", {})
         try:
-            return (state["figures"],)
+            return (layers["figures"],)
         except KeyError:
             pass
 
@@ -286,10 +299,11 @@ class Controls(Observable):
     @staticmethod
     def to_props(state) -> tuple:
         """Select data from state that satisfies self.render(*props)"""
+        layers = state.get("layers", {})
         return (
-            state.get("layers", []),
-            state.get("visible", []),
-            state.get("figures", None)
+            layers.get("labels", []),
+            layers.get("visible", []),
+            layers.get("figures", None)
         )
 
     def render(self, labels, active_list, figure_index):
@@ -396,7 +410,7 @@ class Controls(Observable):
         return _callback
 
 
-class Artist(object):
+class Artist:
     """Applies visible and render logic to viewers and renderers
 
 
@@ -413,6 +427,15 @@ class Artist(object):
         self.renderers = renderers
         self.visible_state = None
         self.state = None
+
+    def connect(self, store):
+        """Connect component to the store"""
+        store.subscribe(self.on_dispatch)
+        return self
+
+    def on_dispatch(self, state):
+        layers = state.get("layers", {})
+        print(f"Artist: {layers}")
 
     def on_visible(self, action):
         """

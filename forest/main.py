@@ -253,6 +253,9 @@ def main(argv=None):
         initial_state=initial_state,
         middlewares=middlewares)
 
+    # Connect renderer/viwer artist to store
+    artist.connect(store)
+
     # Connect layers controls
     image_controls.subscribe(store.dispatch)
     image_controls.connect(store)
