@@ -18,10 +18,11 @@ from forest.observe import Observable
 from forest.db.util import autolabel
 
 
-SET_FIGURES = "LAYERS_SET_FIGURES"
 ON_ADD = "LAYERS_ON_ADD"
 ON_REMOVE = "LAYERS_ON_REMOVE"
-ON_RADIO_BUTTON = "LAYERS_ON_RADIO_BUTTON"
+ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
+ON_BUTTON_GROUP = "LAYERS_ON_BUTTON_GROUP"
+SET_FIGURES = "LAYERS_SET_FIGURES"
 SET_ACTIVE = "LAYERS_SET_ACTIVE"
 SET_LABEL = "LAYERS_SET_LABEL"
 
@@ -38,9 +39,9 @@ def on_remove() -> Action:
     return {"kind": ON_REMOVE}
 
 
-def on_radio_button(row_index: int, active: List[int]) -> Action:
+def on_button_group(row_index: int, active: List[int]) -> Action:
     return {
-        "kind": ON_RADIO_BUTTON,
+        "kind": ON_BUTTON_GROUP,
         "payload": {"row_index": row_index, "active": active}
     }
 
@@ -52,6 +53,13 @@ def set_active(row_index: int, active: List[int]) -> Action:
     }
 
 
+def on_dropdown(row_index: int, label: str) -> Action:
+    return {
+        "kind": ON_DROPDOWN,
+        "payload": {"row_index": row_index, "label": label}
+    }
+
+
 def set_label(index: int, label: str) -> Action:
     """Set i-th layer label"""
     return {"kind": SET_LABEL, "payload": {"index": index, "label": label}}
@@ -60,9 +68,12 @@ def set_label(index: int, label: str) -> Action:
 def middleware(store: Store, action: Action) -> Iterable[Action]:
     """Action generator given current state and action"""
     kind = action["kind"]
-    if kind == ON_RADIO_BUTTON:
+    if kind == ON_BUTTON_GROUP:
         payload = action["payload"]
         yield set_active(payload["row_index"], payload["active"])
+    elif kind == ON_DROPDOWN:
+        payload = action["payload"]
+        yield set_label(payload["row_index"], payload["label"])
     else:
         yield action
 
@@ -205,7 +216,7 @@ class LayersUI(Observable):
                 3: ["L", "C", "R"]
             }
         }
-        self.groups = []
+        self.button_groups = []
         self.dropdowns = []
         self.buttons = {
             "add": bokeh.models.Button(label="Add", width=50),
@@ -263,12 +274,11 @@ class LayersUI(Observable):
             else:
                 dropdown.label = label
 
-        # Set radio group active
-        for radio_group, active in zip(self.groups, active_list):
-            print(radio_group, active)
-            radio_group.active = active
+        # Set button group active
+        for button_group, active in zip(self.button_groups, active_list):
+            button_group.active = active
 
-        # Set radio group labels
+        # Set button group labels
         if figure_index is not None:
             self.labels = self.defaults["figure"][figure_index]
 
@@ -287,11 +297,11 @@ class LayersUI(Observable):
     @labels.setter
     def labels(self, labels):
         self._labels = labels
-        for g in self.groups:
+        for g in self.button_groups:
             g.labels = labels
 
     def add_row(self):
-        """Add a bokeh.layouts.row with a dropdown and radiobuttongroup"""
+        """Add a bokeh.layouts.row with a dropdown and checkboxbuttongroup"""
         row_index = len(self.columns["rows"].children)
 
         # Dropdown
@@ -299,15 +309,15 @@ class LayersUI(Observable):
                 menu=self.menu,
                 label=self.defaults["label"],
                 width=230,)
-        dropdown.on_change('value', self.on_label(row_index))
+        dropdown.on_change('value', self.on_dropdown(row_index))
         self.dropdowns.append(dropdown)
 
         # Button group
         button_group = bokeh.models.CheckboxButtonGroup(
                 labels=self.labels,
                 width=50)
-        button_group.on_change("active", self.on_radio_button(row_index))
-        self.groups.append(button_group)
+        button_group.on_change("active", self.on_button_group(row_index))
+        self.button_groups.append(button_group)
 
         # Row
         row = bokeh.layouts.row(dropdown, button_group)
@@ -317,23 +327,23 @@ class LayersUI(Observable):
         """Remove a row from user interface"""
         if len(self.columns["rows"].children) > 0:
             self.dropdowns.pop()
-            self.groups.pop()
+            self.button_groups.pop()
             self.columns["rows"].children.pop()
 
-    def on_label(self, row_index: int):
-        """Notify listeners of set_label action"""
+    def on_dropdown(self, row_index: int):
+        """Translate event into Action"""
         def _callback(attr, old, new):
             if old != new:
-                self.notify(set_label(row_index, new))
+                self.notify(on_dropdown(row_index, new))
         return _callback
 
-    def on_radio_button(self, row_index: int):
-        """Translate radio button event into Action"""
+    def on_button_group(self, row_index: int):
+        """Translate event into Action"""
         def _callback(attr, old, new):
             # Note: bokeh.core.PropertyList can not be deep copied
             #       it RuntimeErrors, cast as list instead
             active = list(new)
-            self.notify(on_radio_button(row_index, active))
+            self.notify(on_button_group(row_index, active))
         return _callback
 
 

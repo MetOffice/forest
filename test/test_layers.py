@@ -71,7 +71,7 @@ def test_controls_render():
     assert controls.dropdowns[2].label == "C"
 
 
-def test_controls_render_sets_radio_buttons():
+def test_controls_render_sets_button_groups():
     state = {
         "layers": {
             "figures": 3,
@@ -82,17 +82,17 @@ def test_controls_render_sets_radio_buttons():
     controls = layers.LayersUI([])
     controls.render(*controls.to_props(state))
     assert controls.dropdowns[0].label == "Model/observation"
-    assert controls.groups[0].active == [0, 1, 2]
-    assert controls.groups[0].labels == ["L", "C", "R"]
+    assert controls.button_groups[0].active == [0, 1, 2]
+    assert controls.button_groups[0].labels == ["L", "C", "R"]
 
 
-def test_on_radio_button(listener):
+def test_on_button_group(listener):
     row_index = 3
     attr, old, new = None, [], [2]
     controls = layers.LayersUI([])
     controls.subscribe(listener)
-    controls.on_radio_button(row_index)(attr, old, new)
-    listener.assert_called_once_with(layers.on_radio_button(row_index, new))
+    controls.on_button_group(row_index)(attr, old, new)
+    listener.assert_called_once_with(layers.on_button_group(row_index, new))
 
 
 @pytest.mark.parametrize("labels,active_list,expect", [
