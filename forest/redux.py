@@ -30,6 +30,14 @@ import copy
 from functools import wraps
 from forest.observe import Observable
 from forest.export import export
+from typing import Callable, Iterable
+
+
+# Type aliases
+Action = dict
+State = dict
+Reducer = Callable[[State, Action], State]
+Middleware = Callable[['Store', Action], Iterable[Action]]
 
 
 __all__ = []

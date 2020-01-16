@@ -129,13 +129,8 @@ def main(argv=None):
                 viewer.add_figure(f)
                 for f in figures]
 
-    artist = layers.Artist(viewers, renderers)
-    renderers = []
-    for _, r in artist.renderers.items():
-        renderers += r
-
     image_sources = []
-    for name, viewer in artist.viewers.items():
+    for name, viewer in viewers.items():
         if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
             image_sources.append(viewer.source)
 
@@ -182,6 +177,7 @@ def main(argv=None):
 
     dropdown.on_change("value", on_change)
 
+    # Image opacity user interface (client-side)
     slider = bokeh.models.Slider(
         start=0,
         end=1,
@@ -192,7 +188,10 @@ def main(argv=None):
     def is_image(renderer):
         return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
 
-    image_renderers = [r for r in renderers if is_image(r)]
+    renderers_list = []
+    for _, r in renderers.items():
+        renderers_list += r
+    image_renderers = [r for r in renderers_list if is_image(r)]
     custom_js = bokeh.models.CustomJS(
             args=dict(renderers=image_renderers),
             code="""
@@ -206,10 +205,7 @@ def main(argv=None):
     for k, _ in config.patterns:
         menu.append((k, k))
 
-    image_controls = layers.Controls(menu)
-    left_center_right = layers.LeftCenterRight(image_controls)
-
-    image_controls.subscribe(artist.on_visible)
+    layers_ui = layers.LayersUI(menu)
 
     div = bokeh.models.Div(text="", width=10)
     border_row = bokeh.layouts.row(
@@ -217,10 +213,6 @@ def main(argv=None):
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
-    # Pre-select first layer
-    for name, _ in config.patterns:
-        image_controls.select(name)
-        break
 
     navigator = navigate.Navigator(config)
 
@@ -243,6 +235,7 @@ def main(argv=None):
         colors.palettes,
         presets.Middleware(presets.proxy_storage(config.presets_file)),
         presets.middleware,
+        layers.middleware,
     ]
     store = redux.Store(
         redux.combine_reducers(
@@ -254,11 +247,18 @@ def main(argv=None):
         initial_state=initial_state,
         middlewares=middlewares)
 
+    # Connect renderer.visible states to store
+    artist = layers.Artist(renderers)
+    artist.connect(store)
+
+    # Connect layers controls
+    layers_ui.subscribe(store.dispatch)
+    layers_ui.connect(store)
+
     # Connect figure controls/views
     figure_ui = layers.FigureUI()
     figure_ui.subscribe(store.dispatch)
     figure_row.connect(store)
-    left_center_right.connect(store)
 
     # Connect color palette controls
     color_palette = colors.ColorPalette(color_mapper).connect(store)
@@ -281,14 +281,17 @@ def main(argv=None):
         kwargs = {k: state.get(k, None) for k in db.State._fields}
         return db.State(**kwargs)
 
-    old_states = (rx.Stream()
-                    .listen_to(store)
-                    .map(old_world)
-                    .distinct())
-    old_states.subscribe(artist.on_state)
+    connector = layers.ViewerConnector(viewers, old_world).connect(store)
 
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
+
+    # Pre-select first layer
+    for name, _ in config.patterns:
+        row_index = 0
+        store.dispatch(layers.set_label(row_index, name))
+        store.dispatch(layers.set_active(row_index, [0]))
+        break
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
@@ -298,7 +301,7 @@ def main(argv=None):
                 bokeh.models.Div(text="Navigate:"),
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
-                image_controls.column),
+                layers_ui.layout),
             title="Control"
         ),
         bokeh.models.Panel(
