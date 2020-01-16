@@ -428,17 +428,32 @@ class ViewerConnector:
     def __init__(self, viewers, old_world):
         self.viewers = viewers
         self.old_world = old_world
+        self._previous = None
 
     def connect(self, store):
-        # Two streams might be a better design
-        # - One for tuples of labels
-        # - One for States
         stream = (
             rx.Stream()
               .listen_to(store)
-              .map(self.to_props))
+              .map(self.to_props)
+              .filter(self.unique)
+        )
         stream.map(lambda props: self.render(*props))
         return self
+
+    def unique(self, props: tuple) -> bool:
+        """Check for duplicate labels, old_state events"""
+        if self._previous is None:
+            flag = True
+        else:
+            labels, state = props
+            previous_labels, previous_state = self._previous
+            if ((tuple(labels) == tuple(previous_labels)) and
+                    (state == previous_state)):
+                flag = False
+            else:
+                flag = True
+        self._previous = props
+        return flag
 
     def to_props(self, state):
         return (
@@ -450,37 +465,26 @@ class ViewerConnector:
         return state.get("layers", {}).get("labels", [])
 
     def render(self, labels, old_state):
+        """Send forest.db.State to each View.render"""
         for label in labels:
             if label is None:
                 continue
-            print(self.viewers[label].render)
+            self.viewers[label].render(old_state)
 
 
 class Artist:
-    """Applies visible and render logic to viewers and renderers
-
-
-    This could easily be broken into two classes, one responsible
-    for maintaining ``renderer.visible`` and one for calling
-    ``viewer.render(state)``
-
-
-    .. note:: This should be middleware that applies logic
-              given current state and an action
-    """
-    def __init__(self, viewers, renderers):
-        self.viewers = viewers
+    """Applies renderer.visible logic to renderers"""
+    def __init__(self, renderers: dict):
         self.renderers = renderers
-        self.visible_state = None
         self.previous_visible_state = None
-        self.state = None
 
     def connect(self, store):
         """Connect component to the store"""
-        store.subscribe(self.on_dispatch)
+        store.subscribe(self.render)
         return self
 
-    def on_dispatch(self, state):
+    def render(self, state: dict):
+        """Update visible settings of renderers"""
         labels = state.get("layers", {}).get("labels", [])
         active_list = state.get("layers", {}).get("active", [])
         visible_state = to_visible_state(labels, active_list)
@@ -490,68 +494,5 @@ class Artist:
             changes = diff_visible_states(
                 self.previous_visible_state, visible_state)
         for label, figure_index, flag in changes:
-            self.renderers[label][figure_index] = flag
+            self.renderers[label][figure_index].visible = flag
         self.previous_visible_state = visible_state
-
-    # def on_visible(self, action):
-    #     """
-
-    #     Uses current visible layers and incoming visible state to toggle
-    #     on/off GlyphRenderers
-
-    #     """
-    #     # Ignore actions for now
-    #     # TODO: Refactor to use application state or state_to_props
-    #     kind = action["kind"]
-    #     if kind != ON_VISIBLE_STATE:
-    #         return
-
-    #     visible_state = action["payload"]
-
-    #     if self.visible_state is not None:
-    #         # Hide deselected states
-    #         lost_items = (
-    #                 set(self.flatten(self.visible_state)) -
-    #                 set(self.flatten(visible_state)))
-    #         for key, i, _ in lost_items:
-    #             self.renderers[key][i].visible = False
-
-    #     # Sync visible states with menu choices
-    #     states = set(self.flatten(visible_state))
-    #     hidden = [(i, j) for i, j, v in states if not v]
-    #     visible = [(i, j) for i, j, v in states if v]
-    #     for i, j in hidden:
-    #         self.renderers[i][j].visible = False
-    #     for i, j in visible:
-    #         self.renderers[i][j].visible = True
-
-    #     self.visible_state = dict(visible_state)
-    #     self.render()
-
-    # @staticmethod
-    # def flatten(state):
-    #     items = []
-    #     for key, flags in state.items():
-    #         items += [(key, i, f) for i, f in enumerate(flags)]
-    #     return items
-
-    # def on_state(self, app_state):
-    #     """On application state handler"""
-    #     # print("Artist: {}".format(app_state))
-    #     self.state = app_state
-    #     self.render()
-
-    # def render(self):
-    #     """
-
-    #     Notify visible viewers to render themselves given most
-    #     recently received application state
-
-    #     """
-    #     if self.visible_state is None:
-    #         return
-    #     if self.state is None:
-    #         return
-    #     for name in self.visible_state:
-    #         viewer = self.viewers[name]
-    #         viewer.render(self.state)

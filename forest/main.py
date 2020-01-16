@@ -129,13 +129,13 @@ def main(argv=None):
                 viewer.add_figure(f)
                 for f in figures]
 
-    artist = layers.Artist(viewers, renderers)
+    artist = layers.Artist(renderers)
     renderers = []
-    for _, r in artist.renderers.items():
+    for _, r in renderers.items():
         renderers += r
 
     image_sources = []
-    for name, viewer in artist.viewers.items():
+    for name, viewer in viewers.items():
         if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
             image_sources.append(viewer.source)
 
