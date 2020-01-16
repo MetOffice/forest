@@ -1,3 +1,12 @@
+"""
+Layers
+------
+
+Users can select combinations of visualisations displayed across
+multiple figures. Components for organising view layers associated
+with each figure can be found here.
+
+"""
 import copy
 import bokeh.models
 import bokeh.layouts
@@ -53,7 +62,6 @@ def middleware(store: Store, action: Action) -> Iterable[Action]:
     kind = action["kind"]
     if kind == ON_RADIO_BUTTON:
         payload = action["payload"]
-        print(type(payload["active"]))
         yield set_active(payload["row_index"], payload["active"])
     else:
         yield action
@@ -110,74 +118,6 @@ def _layers_reducer(state, action):
     return state
 
 
-def to_visible_state(labels, active_list):
-    """Maps user interface settings to visible flags
-
-    >>> to_visible_state(['label'], [[1, 2]])
-    {
-        'label': [False, True, True]
-    }
-
-    """
-    result = {}
-    for label, active in zip(labels, active_list):
-        if label is None:
-            continue
-        if label not in result:
-            result[label] = [False, False, False]
-        for i in active:
-            result[label][i] = True
-    return result
-
-
-def diff_visible_states(left: dict, right: dict) -> List[tuple]:
-    """Calculate changes needed to map from left to right state
-
-    There are essentially three situations:
-       1. A label has been added, apply all flags
-       2. A label has been removed, mute True flags
-       3. The flags of an existing label have been altered
-
-    >>> left = {
-       'label': [True, False, False]
-    }
-    >>> right = {
-       'label': [True, True, False]
-    }
-    >>> diff_visible(left, right)
-    [('label', 1, True)]
-
-    A change is defined as a tuple ``(label, figure_index, flag)``, to
-    make it easy to update renderer visible attributes
-
-    .. note:: If nothing has changed an empty list is returned
-
-    :returns: list of changes
-    """
-    diff = []
-
-    # Detect additions to state
-    for key in right:
-        if key not in left:
-            for i, flag in enumerate(right[key]):
-                diff.append((key, i, flag))
-
-    # Detect removals from state
-    for key in left:
-        if key not in right:
-            for i, flag in enumerate(left[key]):
-                if flag:
-                    diff.append((key, i, False))  # Turn off True flags
-
-    # Detect alterations to existing labels
-    for key in left:
-        if key in right:
-            for i, flag in enumerate(left[key]):
-                if flag != right[key][i]:
-                    diff.append((key, i, right[key][i]))
-    return diff
-
-
 def _connect(view, store):
     stream = (rx.Stream()
                 .listen_to(store)
@@ -185,25 +125,6 @@ def _connect(view, store):
                 .filter(lambda x: x is not None)
                 .distinct())
     stream.map(lambda props: view.render(*props))
-
-
-class Counter:
-    """Reactive layer counter component"""
-    def __init__(self):
-        self.div = bokeh.models.Div(text="Hello, world")
-        self.layout = bokeh.layouts.row(self.div)
-
-    def connect(self, store):
-        _connect(self, store)
-        return self
-
-    @staticmethod
-    def to_props(state):
-        labels = state.get("layers", {}).get("labels", [])
-        return (len(labels),)
-
-    def render(self, n):
-        self.div.text = f"Rows: {n}"
 
 
 class FigureUI(Observable):
@@ -225,11 +146,13 @@ class FigureUI(Observable):
         super().__init__()
 
     def on_change(self, attr, old, new):
+        """Emit action to set number of figures in state"""
         n = self.labels.index(new) + 1 # Select 0-indexed
         self.notify(set_figures(n))
 
 
 class FigureRow:
+    """Component to toggle number of displayed figures"""
     def __init__(self, figures):
         self.figures = figures
         self.layout = bokeh.layouts.row(*figures,
@@ -237,6 +160,7 @@ class FigureRow:
         self.layout.children = [self.figures[0]]  # Trick to keep correct sizing modes
 
     def connect(self, store):
+        """Connect to the Store"""
         stream = (rx.Stream()
                     .listen_to(store)
                     .map(self.to_props)
@@ -244,14 +168,16 @@ class FigureRow:
                     .distinct())
         stream.map(lambda props: self.render(*props))
 
-    def to_props(self, state):
+    def to_props(self, state: State):
+        """Select number of figures from state"""
         layers = state.get("layers", {})
         try:
             return (layers["figures"],)
         except KeyError:
             pass
 
-    def render(self, n):
+    def render(self, n: int):
+        """Assign figures to row"""
         if int(n) == 1:
             self.layout.children = [
                     self.figures[0]]
@@ -484,3 +410,71 @@ class Artist:
         for label, figure_index, flag in changes:
             self.renderers[label][figure_index].visible = flag
         self.previous_visible_state = visible_state
+
+
+def to_visible_state(labels, active_list):
+    """Maps user interface settings to visible flags
+
+    >>> to_visible_state(['label'], [[1, 2]])
+    {
+        'label': [False, True, True]
+    }
+
+    """
+    result = {}
+    for label, active in zip(labels, active_list):
+        if label is None:
+            continue
+        if label not in result:
+            result[label] = [False, False, False]
+        for i in active:
+            result[label][i] = True
+    return result
+
+
+def diff_visible_states(left: dict, right: dict) -> List[tuple]:
+    """Calculate changes needed to map from left to right state
+
+    There are essentially three situations:
+       1. A label has been added, apply all flags
+       2. A label has been removed, mute True flags
+       3. The flags of an existing label have been altered
+
+    >>> left = {
+       'label': [True, False, False]
+    }
+    >>> right = {
+       'label': [True, True, False]
+    }
+    >>> diff_visible(left, right)
+    [('label', 1, True)]
+
+    A change is defined as a tuple ``(label, figure_index, flag)``, to
+    make it easy to update renderer visible attributes
+
+    .. note:: If nothing has changed an empty list is returned
+
+    :returns: list of changes
+    """
+    diff = []
+
+    # Detect additions to state
+    for key in right:
+        if key not in left:
+            for i, flag in enumerate(right[key]):
+                diff.append((key, i, flag))
+
+    # Detect removals from state
+    for key in left:
+        if key not in right:
+            for i, flag in enumerate(left[key]):
+                if flag:
+                    diff.append((key, i, False))  # Turn off True flags
+
+    # Detect alterations to existing labels
+    for key in left:
+        if key in right:
+            for i, flag in enumerate(left[key]):
+                if flag != right[key][i]:
+                    diff.append((key, i, right[key][i]))
+    return diff
