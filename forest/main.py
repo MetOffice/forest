@@ -205,7 +205,7 @@ def main(argv=None):
     for k, _ in config.patterns:
         menu.append((k, k))
 
-    layers_ui = layers.Controls(menu)
+    layers_ui = layers.LayersUI(menu)
 
     div = bokeh.models.Div(text="", width=10)
     border_row = bokeh.layouts.row(
@@ -281,7 +281,6 @@ def main(argv=None):
         kwargs = {k: state.get(k, None) for k in db.State._fields}
         return db.State(**kwargs)
 
-    counter = layers.Counter().connect(store)
     connector = layers.ViewerConnector(viewers, old_world).connect(store)
 
     # Set top-level navigation
@@ -302,7 +301,6 @@ def main(argv=None):
                 bokeh.models.Div(text="Navigate:"),
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
-                counter.layout,
                 layers_ui.layout),
             title="Control"
         ),

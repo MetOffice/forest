@@ -192,7 +192,7 @@ class FigureRow:
                     self.figures[2]]
 
 
-class Controls(Observable):
+class LayersUI(Observable):
     """Collection of user interface components to manage layers"""
     def __init__(self, menu):
         self.menu = menu  # TODO: Derive this from application state

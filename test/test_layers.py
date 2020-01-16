@@ -24,14 +24,14 @@ def test_figure_dropdown(listener):
 
 
 def test_add(listener):
-    ui = layers.Controls([])
+    ui = layers.LayersUI([])
     ui.subscribe(listener)
     ui.on_click_add()
     listener.assert_called_once_with(layers.on_add())
 
 
 def test_remove(listener):
-    ui = layers.Controls([])
+    ui = layers.LayersUI([])
     ui.subscribe(listener)
     ui.on_click_remove()
     listener.assert_called_once_with(layers.on_remove())
@@ -64,7 +64,7 @@ def test_controls_render():
             "labels": [None, "B", "C"]
         }
     }
-    controls = layers.Controls([])
+    controls = layers.LayersUI([])
     controls.render(*controls.to_props(state))
     assert controls.dropdowns[0].label == "Model/observation"
     assert controls.dropdowns[1].label == "B"
@@ -79,7 +79,7 @@ def test_controls_render_sets_radio_buttons():
             "active": [[0, 1, 2]]
         }
     }
-    controls = layers.Controls([])
+    controls = layers.LayersUI([])
     controls.render(*controls.to_props(state))
     assert controls.dropdowns[0].label == "Model/observation"
     assert controls.groups[0].active == [0, 1, 2]
@@ -89,7 +89,7 @@ def test_controls_render_sets_radio_buttons():
 def test_on_radio_button(listener):
     row_index = 3
     attr, old, new = None, [], [2]
-    controls = layers.Controls([])
+    controls = layers.LayersUI([])
     controls.subscribe(listener)
     controls.on_radio_button(row_index)(attr, old, new)
     listener.assert_called_once_with(layers.on_radio_button(row_index, new))
