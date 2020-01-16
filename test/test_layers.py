@@ -1,13 +1,17 @@
 import pytest
 import unittest.mock
+import bokeh.plotting
 from forest import layers, redux
 
 
-def test_middleware():
+@pytest.mark.parametrize("action,expect", [
+    ({"kind": "ANY"}, [{"kind": "ANY"}]),
+    (layers.on_dropdown(0, "label"), [layers.set_label(0, "label")]),
+    (layers.on_button_group(0, [0, 1, 2]), [layers.set_active(0, [0, 1, 2])]),
+])
+def test_middleware(action, expect):
     store = redux.Store(layers.reducer)
-    action = {"kind": "ANY"}
     result = list(layers.middleware(store, action))
-    expect = [action]
     assert expect == result
 
 
@@ -48,6 +52,8 @@ def test_remove(listener):
     ({}, layers.set_label(1, "Label"), {"labels": [None, "Label"]}),
     ({}, layers.set_label(2, "Label"), {"labels": [None, None, "Label"]}),
     ({}, layers.set_active(0, []), {"active": [[]]}),
+    ({}, layers.set_active(1, []), {"active": [None, []]}),
+    ({"layers": {"active": [[]]}}, layers.set_active(0, [0]), {"active": [[0]]}),
 ])
 def test_reducer(state, actions, expect):
     if isinstance(actions, dict):
@@ -86,6 +92,27 @@ def test_controls_render_sets_button_groups():
     assert controls.button_groups[0].labels == ["L", "C", "R"]
 
 
+@pytest.mark.parametrize("from_labels,to_labels,expect", [
+    ([], [], 0),
+    ([], ["label"], 1),
+    ([], ["label", "label"], 2),
+    (["label"], [], 0),
+    (["label", "label"], [], 0),
+    (["label", "label"], ["label"], 1),
+])
+def test_controls_render_number_of_rows(from_labels, to_labels, expect):
+    from_state = {
+        "layers": {"labels": from_labels}
+    }
+    to_state = {
+        "layers": {"labels": to_labels}
+    }
+    controls = layers.LayersUI([])
+    controls.render(*controls.to_props(from_state))
+    controls.render(*controls.to_props(to_state))
+    assert len(controls.columns["rows"].children) == expect
+
+
 def test_on_button_group(listener):
     row_index = 3
     attr, old, new = None, [], [2]
@@ -93,6 +120,15 @@ def test_on_button_group(listener):
     controls.subscribe(listener)
     controls.on_button_group(row_index)(attr, old, new)
     listener.assert_called_once_with(layers.on_button_group(row_index, new))
+
+
+def test_on_dropdown(listener):
+    row_index = 3
+    attr, old, new = None, None, "label"
+    controls = layers.LayersUI([])
+    controls.subscribe(listener)
+    controls.on_dropdown(row_index)(attr, old, new)
+    listener.assert_called_once_with(layers.on_dropdown(row_index, new))
 
 
 @pytest.mark.parametrize("labels,active_list,expect", [
@@ -128,3 +164,11 @@ def test_diff_visible_states(left, right, expect):
        viewer.render(tuple_state)"""
     result = layers.diff_visible_states(left, right)
     assert expect == result
+
+
+@pytest.mark.parametrize("n", [1, 2, 3])
+def test_figure_row(n):
+    figures = [bokeh.plotting.figure() for _ in range(3)]
+    figure_row = layers.FigureRow(figures)
+    figure_row.render(n)
+    assert len(figure_row.layout.children) == n
