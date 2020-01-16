@@ -76,7 +76,7 @@ def test_controls_render_sets_radio_buttons():
         "layers": {
             "figures": 3,
             "labels": [None],
-            "visible": [[0, 1, 2]]
+            "active": [[0, 1, 2]]
         }
     }
     controls = layers.Controls([])
@@ -128,32 +128,3 @@ def test_diff_visible_states(left, right, expect):
        viewer.render(tuple_state)"""
     result = layers.diff_visible_states(left, right)
     assert expect == result
-
-
-@pytest.mark.skip("not needed after refactor")
-def test_artist_on_visible():
-    """Test case to understand Artist code
-
-    The Artist class has two responsibilities
-        - Toggle renderer.visible
-        - Call viewer.render(old_state) based on visible state
-
-    Viewers are expected to be a dict with dataset names as keys
-
-    Renderers are expected to be a dict[str]list indexed renderers[name][figure]
-
-    """
-    from forest import db
-    old_state = db.State()
-    label = "label"
-    renderers = [unittest.mock.Mock(), unittest.mock.Mock()]  # Per dataset per figure
-    viewer = unittest.mock.Mock()  # Per dataset
-    visible_state = {
-        label: [True, False]
-    }
-    artist = layers.Artist({label: viewer}, {label: renderers})
-    artist.on_state(old_state)
-    artist.on_visible(layers.on_visible_state(visible_state))
-    assert renderers[0].visible == True
-    assert renderers[1].visible == False
-    viewer.render.assert_called_once_with(old_state)

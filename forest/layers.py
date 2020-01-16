@@ -12,7 +12,6 @@ from forest.db.util import autolabel
 SET_FIGURES = "LAYERS_SET_FIGURES"
 ON_ADD = "LAYERS_ON_ADD"
 ON_REMOVE = "LAYERS_ON_REMOVE"
-ON_VISIBLE_STATE = "LAYERS_ON_VISIBLE_STATE"
 ON_RADIO_BUTTON = "LAYERS_ON_RADIO_BUTTON"
 SET_ACTIVE = "LAYERS_SET_ACTIVE"
 SET_LABEL = "LAYERS_SET_LABEL"
@@ -312,7 +311,7 @@ class Controls(Observable):
         layers = state.get("layers", {})
         return (
             layers.get("labels", []),
-            layers.get("visible", []),
+            layers.get("active", []),
             layers.get("figures", None)
         )
 
@@ -339,7 +338,8 @@ class Controls(Observable):
                 dropdown.label = label
 
         # Set radio group active
-        for radio_group, active in zip(self.groups, active_list): 
+        for radio_group, active in zip(self.groups, active_list):
+            print(radio_group, active)
             radio_group.active = active
 
         # Set radio group labels
@@ -353,18 +353,6 @@ class Controls(Observable):
     def on_click_remove(self):
         """Event-handler when Remove button is clicked"""
         self.notify(on_remove())
-
-    def select(self, name):
-        """Select particular layers and visibility states
-
-        .. note:: Called in main.py to select first layer
-        """
-        return
-        self.groups[0].active = [0]
-        dropdown = self.dropdowns[0]
-        for k, v in dropdown.menu:
-            if k == name:
-                dropdown.value = v
 
     @property
     def labels(self):
