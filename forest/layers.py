@@ -412,7 +412,7 @@ class Artist:
         self.previous_visible_state = visible_state
 
 
-def to_visible_state(labels, active_list):
+def to_visible_state(labels: List[str], active_list: List[List[int]]) -> dict:
     """Maps user interface settings to visible flags
 
     >>> to_visible_state(['label'], [[1, 2]])
