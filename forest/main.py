@@ -205,7 +205,7 @@ def main(argv=None):
     for k, _ in config.patterns:
         menu.append((k, k))
 
-    image_controls = layers.Controls(menu)
+    layers_ui = layers.Controls(menu)
 
     div = bokeh.models.Div(text="", width=10)
     border_row = bokeh.layouts.row(
@@ -247,13 +247,13 @@ def main(argv=None):
         initial_state=initial_state,
         middlewares=middlewares)
 
-    # Connect renderer/viwer artist to store
+    # Connect renderer.visible states to store
     artist = layers.Artist(renderers)
     artist.connect(store)
 
     # Connect layers controls
-    image_controls.subscribe(store.dispatch)
-    image_controls.connect(store)
+    layers_ui.subscribe(store.dispatch)
+    layers_ui.connect(store)
 
     # Connect figure controls/views
     figure_ui = layers.FigureUI()
@@ -303,7 +303,7 @@ def main(argv=None):
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
                 counter.layout,
-                image_controls.layout),
+                layers_ui.layout),
             title="Control"
         ),
         bokeh.models.Panel(
