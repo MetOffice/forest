@@ -255,6 +255,10 @@ def main(argv=None):
     layers_ui.subscribe(store.dispatch)
     layers_ui.connect(store)
 
+    # Connect tools controls
+    tools_panel = series.ToolsPanel()
+    tools_panel.connect(store)
+
     # Connect figure controls/views
     figure_ui = layers.FigureUI()
     figure_ui.subscribe(store.dispatch)
@@ -306,6 +310,11 @@ def main(argv=None):
         ),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                tools_panel.buttons["toggle_time_series"],
+                ),
+            title="Tools"),
+        bokeh.models.Panel(
+            child=bokeh.layouts.column(
                 border_row,
                 bokeh.layouts.row(slider),
                 preset_ui.layout,
@@ -323,9 +332,9 @@ def main(argv=None):
                 toolbar_location=None,
                 border_fill_alpha=0)
     series_figure.toolbar.logo = None
-    series_row = bokeh.layouts.row(
-            series_figure,
-            name="series")
+
+    tool_layout = series.ToolLayout(series_figure)
+    tool_layout.connect(store)
 
     def place_marker(figure, source):
         figure.circle(
@@ -402,7 +411,7 @@ def main(argv=None):
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"
     document.add_root(control_root)
-    document.add_root(series_row)
+    document.add_root(tool_layout.figures_row)
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
 
