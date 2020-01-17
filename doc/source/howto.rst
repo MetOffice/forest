@@ -76,7 +76,10 @@ with it.
 
     class OneWayUI(Observable):
         # Only sends actions to the store
-        ...
+        def __init__(self):
+            ...
+            super().__init__()  # Needed for inheritance
+
         def connect(self, store):
             # Add store.dispatch to list of subscribers
             self.subscribe(store.dispatch)
