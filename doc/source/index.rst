@@ -19,7 +19,6 @@ The code is available on `GitHub <https://github.com/informatics-lab/forest>`_ a
    start
    user
    guide
-   component
    release-notes
    api
 
