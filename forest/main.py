@@ -7,6 +7,7 @@ import os
 import glob
 from forest import (
         satellite,
+        screen,
         series,
         data,
         load,
@@ -259,6 +260,10 @@ def main(argv=None):
     tools_panel = series.ToolsPanel()
     tools_panel.connect(store)
 
+    # Connect tap listener
+    tap_listener = screen.TapListener()
+    tap_listener.connect(store)
+
     # Connect figure controls/views
     figure_ui = layers.FigureUI()
     figure_ui.add_subscriber(store.dispatch)
@@ -286,6 +291,9 @@ def main(argv=None):
         return db.State(**kwargs)
 
     connector = layers.ViewerConnector(viewers, old_world).connect(store)
+
+    # Set default time series visibility
+    store.dispatch(series.on_toggle())
 
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
@@ -336,21 +344,6 @@ def main(argv=None):
     tool_layout = series.ToolLayout(series_figure)
     tool_layout.connect(store)
 
-    def place_marker(figure, source):
-        figure.circle(
-                x="x",
-                y="y",
-                color="red",
-                source=source)
-        def cb(event):
-            source.data = {
-                    "x": [event.x],
-                    "y": [event.y]}
-        return cb
-
-    marker_source = bokeh.models.ColumnDataSource({
-            "x": [],
-            "y": []})
     series_view = series.SeriesView.from_groups(
             series_figure,
             config.file_groups)
@@ -363,8 +356,8 @@ def main(argv=None):
     series_args.map(lambda a: series_view.render(*a))
     series_args.map(print)  # Note: map(print) creates None stream
     for f in figures:
-        f.on_event(bokeh.events.Tap, series_view.on_tap)
-        f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
+        f.on_event(bokeh.events.Tap, tap_listener.update_xy)
+        marker = screen.MarkDraw(f).connect(store)
 
 
     # Minimise controls to ease navigation

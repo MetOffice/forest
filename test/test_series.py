@@ -6,7 +6,7 @@ import numpy as np
 import numpy.testing as npt
 import datetime as dt
 import bokeh.plotting
-from forest import series, redux, rx, db, config
+from forest import screen, series, redux, rx, db, config
 
 
 @pytest.mark.parametrize("state,expect", [
@@ -16,14 +16,16 @@ from forest import series, redux, rx, db, config
         ({
             "variable": "mslp",
             "initial_time": "2019-01-01 00:00:00",
-            "position": {"x": 1, "y": 2}},
-            (dt.datetime(2019, 1, 1), "mslp", 1, 2)),
+            "position": {"x": 1, "y": 2},
+            "time_series_visible": True},
+            (dt.datetime(2019, 1, 1), "mslp", 1, 2, True)),
         ({
             "variable": "air_temperature",
             "pressure": 1000.,
             "initial_time": "2019-01-01 00:00:00",
-            "position": {"x": 1, "y": 2}},
-            (dt.datetime(2019, 1, 1), "air_temperature", 1, 2, 1000.)),
+            "position": {"x": 1, "y": 2},
+            "time_series_visible": False},
+            (dt.datetime(2019, 1, 1), "air_temperature", 1, 2, False, 1000.)),
     ])
 def test_select_args(state, expect):
     result = series.select_args(state)
@@ -65,29 +67,24 @@ def test_stream_filter(values, predicate, expect):
     listener.assert_has_calls(calls)
 
 
-def test_series_set_position_action():
-    action = series.set_position(0, 0)
-    assert action == {"kind": series.SET_POSITION, "payload": {"x": 0, "y": 0}}
-
-
 def test_series_reducer():
-    state = series.reducer({}, series.set_position(0, 0))
+    state = series.reducer({}, screen.set_position(0, 0))
     assert state == {"position": {"x": 0, "y": 0}}
 
 
 def test_series_reducer_immutable_state():
     state = {"position": {"x": 1, "y": 1}}
-    next_state = series.reducer(state, series.set_position(0, 0))
+    next_state = series.reducer(state, screen.set_position(0, 0))
     assert state == {"position": {"x": 1, "y": 1}}
     assert next_state == {"position": {"x": 0, "y": 0}}
 
 
 @pytest.mark.parametrize("actions,expect", [
     ([], {}),
-    ([series.set_position(0, 0)], {"position": {"x": 0, "y": 0}}),
+    ([screen.set_position(0, 0)], {"position": {"x": 0, "y": 0}}),
     ([db.set_value("key", "value")], {"key": "value"}),
     ([
-        series.set_position(0, 0),
+        screen.set_position(0, 0),
         db.set_value("key", "value")], {
             "key": "value",
             "position": {"x": 0, "y": 0}}),
@@ -112,18 +109,8 @@ def test_series_view_render():
     variable = "mslp"
     x = 0
     y = 0
-    view.render(time, variable, x, y)
-
-
-def test_series_on_tap_emits_action():
-    x, y = 1, 2  # different values to assert order
-    listener = unittest.mock.Mock()
-    figure = bokeh.plotting.figure()
-    event = bokeh.events.Tap(figure, x=x, y=y)
-    view = series.SeriesView(figure, {})
-    view.add_subscriber(listener)
-    view.on_tap(event)
-    listener.assert_called_once_with(series.set_position(x, y))
+    visible = True
+    view.render(time, variable, x, y, visible)
 
 
 def test_series_view_from_groups():
