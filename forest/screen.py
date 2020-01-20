@@ -3,7 +3,7 @@ Split tapping or clicking places on the screen from triggering events.
 
 First pass the bokeh tap event state into the the forest state using TapListener.
 
-On any update of position, place a mark with mark_draw.
+On any update of position, place a mark with MarkDraw.place_marker.
 
 This split allows other parts of forest (such as the time series) to listen for
 an update of the position of the marker and update themselves accordingly.

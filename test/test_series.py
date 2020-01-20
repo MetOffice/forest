@@ -6,7 +6,7 @@ import numpy as np
 import numpy.testing as npt
 import datetime as dt
 import bokeh.plotting
-from forest import position, series, redux, rx, db, config
+from forest import screen, series, redux, rx, db, config
 
 
 @pytest.mark.parametrize("state,expect", [
@@ -68,23 +68,23 @@ def test_stream_filter(values, predicate, expect):
 
 
 def test_series_reducer():
-    state = series.reducer({}, position.set_position(0, 0))
+    state = series.reducer({}, screen.set_position(0, 0))
     assert state == {"position": {"x": 0, "y": 0}}
 
 
 def test_series_reducer_immutable_state():
     state = {"position": {"x": 1, "y": 1}}
-    next_state = series.reducer(state, position.set_position(0, 0))
+    next_state = series.reducer(state, screen.set_position(0, 0))
     assert state == {"position": {"x": 1, "y": 1}}
     assert next_state == {"position": {"x": 0, "y": 0}}
 
 
 @pytest.mark.parametrize("actions,expect", [
     ([], {}),
-    ([position.set_position(0, 0)], {"position": {"x": 0, "y": 0}}),
+    ([screen.set_position(0, 0)], {"position": {"x": 0, "y": 0}}),
     ([db.set_value("key", "value")], {"key": "value"}),
     ([
-        position.set_position(0, 0),
+        screen.set_position(0, 0),
         db.set_value("key", "value")], {
             "key": "value",
             "position": {"x": 0, "y": 0}}),

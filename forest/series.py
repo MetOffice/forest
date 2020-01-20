@@ -64,7 +64,7 @@ from forest.observe import Observable
 from forest.redux import Action
 from forest.util import initial_time as _initial_time
 from forest.gridded_forecast import _to_datetime
-from forest.position import SET_POSITION
+from forest.screen import SET_POSITION
 try:
     import iris
 except ModuleNotFoundError:
@@ -82,7 +82,7 @@ def on_toggle() -> Action:
 def reducer(state, action):
     """Time series specific reducer
 
-    Given :func:`position.set_position` action adds "position" data
+    Given :func:`screen.set_position` action adds "position" data
     to state
 
     :param state: data structure representing current state

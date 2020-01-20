@@ -7,7 +7,7 @@ import os
 import glob
 from forest import (
         satellite,
-        position,
+        screen,
         series,
         data,
         load,
@@ -261,7 +261,7 @@ def main(argv=None):
     tools_panel.connect(store)
 
     # Connect tap listener
-    tap_listener = position.TapListener()
+    tap_listener = screen.TapListener()
     tap_listener.connect(store)
 
     # Connect figure controls/views
@@ -357,7 +357,7 @@ def main(argv=None):
     series_args.map(print)  # Note: map(print) creates None stream
     for f in figures:
         f.on_event(bokeh.events.Tap, tap_listener.update_xy)
-        marker = position.MarkDraw(f).connect(store)
+        marker = screen.MarkDraw(f).connect(store)
 
 
     # Minimise controls to ease navigation
