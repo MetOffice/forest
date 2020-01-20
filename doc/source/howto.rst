@@ -62,7 +62,7 @@ update?
        ...
        def connect(self, store):
            # Views merely react to state changes
-           store.subscribe(self.render)
+           store.add_subscriber(self.render)
 
        def render(self, state):
            # Called by store.dispatch
@@ -82,7 +82,7 @@ with it.
 
         def connect(self, store):
             # Add store.dispatch to list of subscribers
-            self.subscribe(store.dispatch)
+            self.add_subscriber(store.dispatch)
 
         def on_event(self):
             self.notify(action())  # Sends "message" to store.dispatch
@@ -97,11 +97,11 @@ respond to state changes by updating its representation.
         ...
         def connect(self, store):
             # Store calls self.render with state
-            store.subscribe(self.render)
+            store.add_subscriber(self.render)
 
             # Component sends actions to the store
             # when self.notify is called
-            self.subscribe(store.dispatch)
+            self.add_subscriber(store.dispatch)
 
         def on_event(self):
             self.notify(action())  # Sends "message" to store.dispatch
