@@ -30,7 +30,8 @@ long-winded. How about we wrap it into a tiny function to save our fingers?
 .. code:: python
 
    def add_dataset(label):
-       {'kind': 'ADD_DATASET', 'payload': label}
+       # 'kind' and 'payload' are used by convention throughout the codebase
+       return {'kind': 'ADD_DATASET', 'payload': label}
 
 Nice touch. Now we need to think about where this information belongs in the state, for
 example, we could store a list of strings under the key ``dataset``.
