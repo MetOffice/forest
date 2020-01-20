@@ -40,7 +40,7 @@ long-winded. How about we wrap it into a tiny function to save our fingers?
        return {'kind': 'ADD_DATASET', 'payload': label}
 
 Nice touch. Now we need to think about where this information belongs in the state, for
-example, we could store a list of strings under the key ``dataset``.
+example, we could store a list of strings under the dictionary key ``'datasets'``.
 
 .. code:: python
 
@@ -54,6 +54,7 @@ and our state in some way. Enter the reducer.
 .. code:: python
 
    def list_reducer(state, action):
+       # A simple example of a reducer
        state = copy.deepcopy(state)
        if action['kind'] == 'ADD_DATASET':
            dataset = action['payload']
@@ -61,15 +62,16 @@ and our state in some way. Enter the reducer.
            state['datasets'] = datasets
        return state
 
-.. note:: A reducer must always return a new state, modifying states by
-          reference introduces a side-effect that violates purity and
-          leads to hard to track down bugs
+.. warning:: A reducer must always return a new state. Modifying a reference to
+          a state in-place introduces side-effects that generate hard to
+          diagnose bugs. States are considered to be immutable
 
 We now have all of the ingredients needed to continually update our state. For
 example repeated application of our reducer builds a list of datasets.
 
 .. code:: python
 
+   >>> # Pseudo-code to illustrate repeated reducing
    >>> state_0 = {}
    >>> state_1 = list_reducer(state_0, add_dataset('A'))
    >>> state_2 = list_reducer(state_1, add_dataset('B'))
@@ -78,8 +80,14 @@ example repeated application of our reducer builds a list of datasets.
 
 
 If you are used to object-oriented designs this approach may seem a bit long
-winded. However, although it takes a little more time to decompose our
-intentions we gain an awful lot of nice features.
+winded. It is. Luckily for us, the :class:`forest.redux.Store` takes care
+of the boilerplate. Repeated application of the reducer and usage of
+middleware is abstracted away from us so we only need to implement
+the methods.
+
+That said, it does take a little more time to decompose our
+thoughts into actions, states and reducers. However after going through
+that effort we gain many nice features
 
    - Easy to unit test, no side-effects or complicated mocking needed
    - Behaviour and state separated simpler mental model
@@ -89,3 +97,6 @@ intentions we gain an awful lot of nice features.
    - Decoupled components, a view does not care how the state came to be
      it simply reacts to the data presented to it
 
+
+.. note:: :meth:`forest.redux.combine_reducers` provides a simple way
+   to compose multiple reducers into a single function
