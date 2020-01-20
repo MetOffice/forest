@@ -81,8 +81,8 @@ class MarkDraw:
     def to_props(self, state):
         return (state.get('position'),)
 
-    def place_marker(self, position):
+    def place_marker(self, pos):
         """ Update the marker position based on position state. """
-        self.source.data = {"x": [position["x"]],
-                            "y": [position["y"]]}
+        self.source.data = {"x": [pos["x"]],
+                            "y": [pos["y"]]}
 
