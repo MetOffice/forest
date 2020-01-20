@@ -13,7 +13,7 @@ using a simple user interface.
 The code is available on `GitHub <https://github.com/informatics-lab/forest>`_ and contributions are welcome.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    start
