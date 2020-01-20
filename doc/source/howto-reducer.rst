@@ -71,11 +71,12 @@ example repeated application of our reducer builds a list of datasets.
 
 .. code:: python
 
-   >>> # Pseudo-code to illustrate repeated reducing
+   >>> # illustrate repeat reducer application
    >>> state_0 = {}
    >>> state_1 = list_reducer(state_0, add_dataset('A'))
    >>> state_2 = list_reducer(state_1, add_dataset('B'))
    >>> state_3 = list_reducer(state_2, add_dataset('C'))
+   >>> state_3
    {'datasets': ['A', 'B', 'C']}
 
 
@@ -84,6 +85,17 @@ winded. It is. Luckily for us, the :class:`forest.redux.Store` takes care
 of the boilerplate. Repeated application of the reducer and usage of
 middleware is abstracted away from us so we only need to implement
 the methods.
+
+.. code:: python
+
+   >>> # Using Store
+   >>> from forest.redux import Store
+   >>> store = Store(list_reducer)
+   >>> for letter in ['A', 'B', 'C']:
+   ...     store.dispatch(add_dataset(letter))
+   ...
+   >>> store.state
+   {'datasets': ['A', 'B', 'C']}
 
 That said, it does take a little more time to decompose our
 thoughts into actions, states and reducers. However after going through
