@@ -121,7 +121,7 @@ def test_ui_actions(call_method, action):
     ui = presets.PresetUI()
     ui.select.value = "label"
     ui.text_input.value = "label"
-    ui.subscribe(listener)
+    ui.add_subscriber(listener)
     call_method(ui)
     listener.assert_called_once_with(action)
 

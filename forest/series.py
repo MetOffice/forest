@@ -153,7 +153,7 @@ class ToolsPanel(Observable):
 
     def connect(self, store):
         # this should only subscribe to a tool-button-toggle state change in the store?
-        self.subscribe(store.dispatch)
+        self.add_subscriber(store.dispatch)
         
         return self
 
@@ -171,7 +171,7 @@ class ToolLayout:
         self.tool_figure = tool_figure
 
     def connect(self, store):
-        store.subscribe(self.render)
+        store.add_subscriber(self.render)
 
     def render(self, state):
         if state.get("time_series_visible"):

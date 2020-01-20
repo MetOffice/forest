@@ -59,7 +59,7 @@ def test_color_controls():
 def test_controls_on_name(listener):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.ColorPalette(color_mapper)
-    controls.subscribe(listener)
+    controls.add_subscriber(listener)
     controls.on_number(None, None, 5)
     listener.assert_called_once_with(colors.set_palette_number(5))
 
@@ -130,7 +130,7 @@ def test_palette_numbers(name, expect):
 def test_controls_on_number(listener):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.ColorPalette(color_mapper)
-    controls.subscribe(listener)
+    controls.add_subscriber(listener)
     controls.on_number(None, None, 5)
     listener.assert_called_once_with(colors.set_palette_number(5))
 
@@ -138,7 +138,7 @@ def test_controls_on_number(listener):
 def test_controls_on_reverse(listener):
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.ColorPalette(color_mapper)
-    controls.subscribe(listener)
+    controls.add_subscriber(listener)
     controls.on_reverse(None, None, [0])
     listener.assert_called_once_with(colors.set_reverse(True))
 
@@ -225,7 +225,7 @@ def test_user_limits_render():
 ])
 def test_user_limits_on_fixed(listener, new, action):
     user_limits = colors.UserLimits()
-    user_limits.subscribe(listener)
+    user_limits.add_subscriber(listener)
     user_limits.on_checkbox_change(None, None, new)
     listener.assert_called_once_with(action)
 
@@ -239,7 +239,7 @@ def test_user_limits_on_fixed(listener, new, action):
 ])
 def test_source_limits_on_change(listener, sources, low, high):
     source_limits = colors.SourceLimits(sources)
-    source_limits.subscribe(listener)
+    source_limits.add_subscriber(listener)
     source_limits.on_change(None, None, None)  # attr, old, new
     listener.assert_called_once_with(colors.set_source_limits(low, high))
 

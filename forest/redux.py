@@ -73,7 +73,7 @@ class Store(Observable):
     themselves with the store to receive the latest states as and
     when they are created.
 
-    >>> store.subscribe(listener)
+    >>> store.add_subscriber(listener)
 
     :param reducer: function combines action and state to produce new state
     :param initial_state: optional initial state, default {}

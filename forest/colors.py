@@ -305,7 +305,7 @@ class SourceLimits(Observable):
     subscribe ``store.dispatch`` to action events.
 
     >>> source_limits = SourceLimits(sources)
-    >>> source_limits.subscribe(store.dispatch)
+    >>> source_limits.add_subscriber(store.dispatch)
 
     .. note:: Unlike a typical component there is no ``layout`` property
               to attach to a bokeh document
@@ -434,7 +434,7 @@ def connect(view, store):
     to a stream of states, maps the states to
     props and filters out duplicates.
     """
-    view.subscribe(store.dispatch)
+    view.add_subscriber(store.dispatch)
     stream = (Stream()
                 .listen_to(store)
                 .map(state_to_props)

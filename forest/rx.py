@@ -26,7 +26,7 @@ class Stream(Observable):
 
         :returns: current stream
         """
-        observable.subscribe(self.notify)
+        observable.add_subscriber(self.notify)
         return self
 
     def map(self, f):
@@ -37,7 +37,7 @@ class Stream(Observable):
         stream = Stream()
         def callback(x):
             stream.notify(f(x))
-        self.subscribe(callback)
+        self.add_subscriber(callback)
         return stream
 
     def distinct(self):
@@ -61,7 +61,7 @@ class Stream(Observable):
                     stream.notify(x)
             return callback
 
-        self.subscribe(closure())
+        self.add_subscriber(closure())
         return stream
 
     def filter(self, f):
@@ -73,5 +73,5 @@ class Stream(Observable):
         def callback(x):
             if f(x):
                 stream.notify(x)
-        self.subscribe(callback)
+        self.add_subscriber(callback)
         return stream
