@@ -94,7 +94,7 @@ def reducer(state, action):
     if action["kind"] == SET_POSITION:
         state["position"] = action["payload"]
     if action["kind"] == ON_TOGGLE:
-        if state.get("time_series_visible", True) == True:
+        if state.get("time_series_visible", False) == True:
             state["time_series_visible"] = False
         else:
             state["time_series_visible"] = True
@@ -124,7 +124,7 @@ def select_args(state):
             state["variable"],
             state["position"]["x"],
             state["position"]["y"],
-            state.get("time_series_visible", True)) + optional
+            state["time_series_visible"]) + optional
 
 
 class ToolsPanel(Observable):

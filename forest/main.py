@@ -292,6 +292,9 @@ def main(argv=None):
 
     connector = layers.ViewerConnector(viewers, old_world).connect(store)
 
+    # Set default time series visibility
+    store.dispatch(series.on_toggle())
+
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
 

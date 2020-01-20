@@ -16,7 +16,8 @@ from forest import position, series, redux, rx, db, config
         ({
             "variable": "mslp",
             "initial_time": "2019-01-01 00:00:00",
-            "position": {"x": 1, "y": 2}},
+            "position": {"x": 1, "y": 2},
+            "time_series_visible": True},
             (dt.datetime(2019, 1, 1), "mslp", 1, 2, True)),
         ({
             "variable": "air_temperature",
