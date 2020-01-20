@@ -6,6 +6,12 @@ Write a reducer
 A reducer is a pure function that given a state and an action produces a
 new state.
 
+.. image:: reducer-signature.png
+   :width: 400
+   :align: center
+
+Or expressed in code, it has the following signature.
+
 .. code:: python
 
    def reducer(state: State, action: Action) -> State:
