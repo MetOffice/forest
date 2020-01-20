@@ -6,7 +6,7 @@ Write a reducer
 A reducer is a pure function that given a state and an action produces a
 new state.
 
-.. code-block::
+.. code:: python
 
    def reducer(state: State, action: Action) -> State:
        # Reduction logic goes here
@@ -20,14 +20,14 @@ could then be used to populate dropdowns in the user interface. The first thing
 to do is to create an action that describes an instruction to change the
 state
 
-.. code-block::
+.. code:: python
 
    action = {'kind': 'ADD_DATASET', 'payload': 'Lightning'}
 
 Writing a dict literal every time we want to use this action is a bit
 long-winded. How about we wrap it into a tiny function to save our fingers?
 
-.. code-block::
+.. code:: python
 
    def add_dataset(label):
        {'kind': 'ADD_DATASET', 'payload': label}
@@ -35,7 +35,7 @@ long-winded. How about we wrap it into a tiny function to save our fingers?
 Nice touch. Now we need to think about where this information belongs in the state, for
 example, we could store a list of strings under the key ``dataset``.
 
-.. code-block::
+.. code:: python
 
    state = {'datasets': ['Lightning', 'Satellite', etc.]}
 
@@ -44,7 +44,7 @@ the state. All that is missing is a way of going from a state without our
 information to a state with our information. We need to combine our action
 and our state in some way. Enter the reducer.
 
-.. code-block::
+.. code:: python
 
    def list_reducer(state, action):
        state = copy.deepcopy(state)
@@ -61,13 +61,13 @@ and our state in some way. Enter the reducer.
 We now have all of the ingredients needed to continually update our state. For
 example repeated application of our reducer builds a list of datasets.
 
-.. code-block::
+.. code:: python
 
-   state_0 = {}
-   state_1 = list_reducer(state_0, add_dataset('A'))
-   state_2 = list_reducer(state_1, add_dataset('B'))
-   state_3 = list_reducer(state_2, add_dataset('C'))
-   # state_3 -> {'datasets': ['A', 'B', 'C']}
+   >>> state_0 = {}
+   >>> state_1 = list_reducer(state_0, add_dataset('A'))
+   >>> state_2 = list_reducer(state_1, add_dataset('B'))
+   >>> state_3 = list_reducer(state_2, add_dataset('C'))
+   {'datasets': ['A', 'B', 'C']}
 
 
 If you are used to object-oriented designs this approach may seem a bit long
