@@ -3,40 +3,50 @@
 Write a reducer
 ---------------
 
-A reducer is a pure function that takes the current state and an action
-and produces a new state.
+A reducer is a pure function that given a state and an action produces a
+new state.
 
 .. code-block::
 
    def reducer(state: State, action: Action) -> State:
+       # Reduction logic goes here
        return state
 
-It's job is to incorporate the information described by the action into the
-application state.
+It's only responsibility is to incorporate information described by an action
+into the state.
 
 For example, say we wanted to store a list of datasets in the state. The list
-can be used to populate dropdowns in the user interface. The first thing
-to do is to create an action that encapsulates an instruction to change the
+could then be used to populate dropdowns in the user interface. The first thing
+to do is to create an action that describes an instruction to change the
 state
 
 .. code-block::
 
    action = {'kind': 'ADD_DATASET', 'payload': 'Lightning'}
 
-Then we need to think about where in the state this information belongs, for
-example, we could store datasets as a list of strings under the key ``dataset``.
+Writing a dict literal every time we want to use this action is a bit
+long-winded. How about we wrap it into a tiny function to save our fingers?
+
+.. code-block::
+
+   def add_dataset(label):
+       {'kind': 'ADD_DATASET', 'payload': label}
+
+Nice touch. Now we need to think about where this information belongs in the state, for
+example, we could store a list of strings under the key ``dataset``.
 
 .. code-block::
 
    state = {'datasets': ['Lightning', 'Satellite', etc.]}
 
-Now we have encoded our message and know where to find our information inside
-the state. All that is missing is a way of going from one state to the next.
-Introducing, the reducer, a function that can do that one-trick.
+Great, we have encoded our action and have a good idea where to find our information inside
+the state. All that is missing is a way of going from a state without our
+information to a state with our information. We need to combine our action
+and our state in some way. Enter the reducer.
 
 .. code-block::
 
-   def datasets_reducer(state, action):
+   def list_reducer(state, action):
        state = copy.deepcopy(state)
        if action['kind'] == 'ADD_DATASET':
            dataset = action['payload']
@@ -48,19 +58,21 @@ Introducing, the reducer, a function that can do that one-trick.
           reference introduces a side-effect that violates purity and
           leads to hard to track down bugs
 
-We now have all of the ingredients needed to continually update our state.
+We now have all of the ingredients needed to continually update our state. For
+example repeated application of our reducer builds a list of datasets.
 
 .. code-block::
 
-   state = {}
-   state = datasets_reducer(state, add_dataset('A'))
-   state = datasets_reducer(state, add_dataset('B'))
-   state = datasets_reducer(state, add_dataset('C'))
-   # state -> {'datasets': ['A', 'B', 'C']}
+   state_0 = {}
+   state_1 = list_reducer(state_0, add_dataset('A'))
+   state_2 = list_reducer(state_1, add_dataset('B'))
+   state_3 = list_reducer(state_2, add_dataset('C'))
+   # state_3 -> {'datasets': ['A', 'B', 'C']}
 
 
-This may feel like a long winded approach with plenty of boilerplate and you
-would be correct. However, the benefits far outweigh the additional typing
+If you are used to object-oriented designs this approach may seem a bit long
+winded. However, although it takes a little more time to decompose our
+intentions we gain an awful lot of nice features.
 
    - Easy to unit test, no side-effects or complicated mocking needed
    - Behaviour and state separated simpler mental model
