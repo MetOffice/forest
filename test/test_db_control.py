@@ -101,7 +101,7 @@ class TestControls(unittest.TestCase):
         value = "token"
         listener = unittest.mock.Mock()
         view = db.ControlView()
-        view.subscribe(listener)
+        view.add_subscriber(listener)
         view.on_change("variable")(None, None, value)
         listener.assert_called_once_with(db.set_value("variable", value))
 
@@ -114,7 +114,7 @@ class TestControls(unittest.TestCase):
                 db.next_previous,
                 db.Controls(self.database)])
         view = db.ControlView()
-        view.subscribe(store.dispatch)
+        view.add_subscriber(store.dispatch)
         view.on_next('pressure', 'pressures')()
         result = store.state
         expect = {
@@ -132,7 +132,7 @@ class TestControls(unittest.TestCase):
                 db.Controls(self.database)
             ])
         view = db.ControlView()
-        view.subscribe(store.dispatch)
+        view.add_subscriber(store.dispatch)
         view.on_next('pressure', 'pressures')()
         result = store.state
         expect = {}
@@ -153,7 +153,7 @@ class TestControls(unittest.TestCase):
                 db.Controls(self.database)
             ])
         view = db.ControlView()
-        view.subscribe(store.dispatch)
+        view.add_subscriber(store.dispatch)
         view.on_next('pressure', 'pressures')()
         result = store.state["pressure"]
         expect = 800
@@ -166,7 +166,7 @@ class TestControlView(unittest.TestCase):
 
     def test_on_click_emits_action(self):
         listener = unittest.mock.Mock()
-        self.view.subscribe(listener)
+        self.view.add_subscriber(listener)
         self.view.on_next("pressure", "pressures")()
         expect = db.next_value("pressure", "pressures")
         listener.assert_called_once_with(expect)
@@ -426,7 +426,7 @@ class TestStateStream(unittest.TestCase):
         old_states = (rx.Stream()
                   .listen_to(store)
                   .map(lambda x: db.State(**x)))
-        old_states.subscribe(listener)
+        old_states.add_subscriber(listener)
         store.dispatch(db.set_value("pressure", 1000))
         expect = db.State(pressure=1000)
         listener.assert_called_once_with(expect)

@@ -375,7 +375,7 @@ class PresetUI(Observable):
 
     def connect(self, store):
         """Convenient method to map state to props needed by render"""
-        self.subscribe(store.dispatch)
+        self.add_subscriber(store.dispatch)
         stream = (rx.Stream()
                     .listen_to(store)
                     .map(state_to_props)

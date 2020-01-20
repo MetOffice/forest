@@ -404,7 +404,7 @@ class Artist:
 
     def connect(self, store):
         """Connect component to the store"""
-        store.subscribe(self.render)
+        store.add_subscriber(self.render)
         return self
 
     def render(self, state: dict):

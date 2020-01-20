@@ -40,7 +40,7 @@ def test_stream_distinct(values, expect):
     stream = rx.Stream()
     deduped = stream.distinct()
     listener = unittest.mock.Mock()
-    deduped.subscribe(listener)
+    deduped.add_subscriber(listener)
     for value in values:
         stream.notify(value)
     calls = [unittest.mock.call(v) for v in expect]
@@ -58,7 +58,7 @@ def test_stream_filter(values, predicate, expect):
     stream = rx.Stream()
     filtered = stream.filter(predicate)
     listener = unittest.mock.Mock()
-    filtered.subscribe(listener)
+    filtered.add_subscriber(listener)
     for value in values:
         stream.notify(value)
     calls = [unittest.mock.call(v) for v in expect]
@@ -121,7 +121,7 @@ def test_series_on_tap_emits_action():
     figure = bokeh.plotting.figure()
     event = bokeh.events.Tap(figure, x=x, y=y)
     view = series.SeriesView(figure, {})
-    view.subscribe(listener)
+    view.add_subscriber(listener)
     view.on_tap(event)
     listener.assert_called_once_with(series.set_position(x, y))
 

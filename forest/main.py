@@ -252,7 +252,7 @@ def main(argv=None):
     artist.connect(store)
 
     # Connect layers controls
-    layers_ui.subscribe(store.dispatch)
+    layers_ui.add_subscriber(store.dispatch)
     layers_ui.connect(store)
 
     # Connect tools controls
@@ -261,7 +261,7 @@ def main(argv=None):
 
     # Connect figure controls/views
     figure_ui = layers.FigureUI()
-    figure_ui.subscribe(store.dispatch)
+    figure_ui.add_subscriber(store.dispatch)
     figure_row.connect(store)
 
     # Connect color palette controls
@@ -269,7 +269,7 @@ def main(argv=None):
 
     # Connect limit controllers to store
     source_limits = colors.SourceLimits(image_sources)
-    source_limits.subscribe(store.dispatch)
+    source_limits.add_subscriber(store.dispatch)
 
     user_limits = colors.UserLimits().connect(store)
 
@@ -278,8 +278,8 @@ def main(argv=None):
 
     # Connect navigation controls
     controls = db.ControlView()
-    controls.subscribe(store.dispatch)
-    store.subscribe(controls.render)
+    controls.add_subscriber(store.dispatch)
+    store.add_subscriber(controls.render)
 
     def old_world(state):
         kwargs = {k: state.get(k, None) for k in db.State._fields}
@@ -354,7 +354,7 @@ def main(argv=None):
     series_view = series.SeriesView.from_groups(
             series_figure,
             config.file_groups)
-    series_view.subscribe(store.dispatch)
+    series_view.add_subscriber(store.dispatch)
     series_args = (rx.Stream()
                 .listen_to(store)
                 .map(series.select_args)
@@ -406,7 +406,7 @@ def main(argv=None):
 
     # Add key press support
     key_press = keys.KeyPress()
-    key_press.subscribe(store.dispatch)
+    key_press.add_subscriber(store.dispatch)
 
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"

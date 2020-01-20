@@ -22,21 +22,21 @@ def listener():
 
 def test_figure_dropdown(listener):
     ui = layers.FigureUI()
-    ui.subscribe(listener)
+    ui.add_subscriber(listener)
     ui.on_change(None, None, ui.labels[0])
     listener.assert_called_once_with(layers.set_figures(1))
 
 
 def test_add(listener):
     ui = layers.LayersUI([])
-    ui.subscribe(listener)
+    ui.add_subscriber(listener)
     ui.on_click_add()
     listener.assert_called_once_with(layers.on_add())
 
 
 def test_remove(listener):
     ui = layers.LayersUI([])
-    ui.subscribe(listener)
+    ui.add_subscriber(listener)
     ui.on_click_remove()
     listener.assert_called_once_with(layers.on_remove())
 
@@ -117,7 +117,7 @@ def test_on_button_group(listener):
     row_index = 3
     attr, old, new = None, [], [2]
     controls = layers.LayersUI([])
-    controls.subscribe(listener)
+    controls.add_subscriber(listener)
     controls.on_button_group(row_index)(attr, old, new)
     listener.assert_called_once_with(layers.on_button_group(row_index, new))
 
@@ -126,7 +126,7 @@ def test_on_dropdown(listener):
     row_index = 3
     attr, old, new = None, None, "label"
     controls = layers.LayersUI([])
-    controls.subscribe(listener)
+    controls.add_subscriber(listener)
     controls.on_dropdown(row_index)(attr, old, new)
     listener.assert_called_once_with(layers.on_dropdown(row_index, new))
 

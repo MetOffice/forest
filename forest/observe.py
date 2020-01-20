@@ -17,7 +17,7 @@ class Observable(object):
     def __init__(self):
         self.subscribers = []
 
-    def subscribe(self, method):
+    def add_subscriber(self, method):
         """Append method to list of subscribers"""
         self.subscribers.append(method)
 
