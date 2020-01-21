@@ -36,3 +36,4 @@ from . import (
 from .db import Database
 from .keys import *
 from .load import *
+from .drivers import load_driver
