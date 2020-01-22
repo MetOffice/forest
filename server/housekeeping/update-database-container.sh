@@ -1,20 +1,23 @@
 #!/bin/bash
 set -x
 
-# Make a custom directory inside container
+# Environment variables
 PREFIX=/home/custom
+export PYTHONPATH=${PREFIX}/lib/python3.6/site-packages:${PYTHONPATH}
+export PATH=${PREFIX}/bin:${PATH}
+
+# Make a custom directory inside container
 mkdir -p ${PREFIX}
 
-# Install forestdb to custom directory needed by custom Python
+# Install forestdb to custom directory needed by update script
 cd /repo/forest
-PYTHONPATH=${PREFIX}/lib/python3.6/site-packages \
-    python setup.py install --prefix ${PREFIX}
+python setup.py install --prefix ${PREFIX}
 cd -
 
 # Check forestdb available inside container
-PYTHONPATH=${PREFIX}/lib/python3.6/site-packages ${PREFIX}/bin/forestdb -h
+forestdb -h
 
 # Run custom update Python script
-ls -l /database
-ls -l /repo/forest
-ls -l /s3
+/repo/forest/server/housekeeping/update-database.py \
+    /s3/met-office-rmed-forest \
+    /database/philippines.db
