@@ -1,0 +1,1 @@
+*/15 * * * * /home/ec2-user/forest/server/housekeeping/update-database.sh
