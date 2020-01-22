@@ -6,6 +6,7 @@ import argparse
 import os
 import sqlite3
 import glob
+import forest.db
 
 
 def parse_args():
@@ -28,14 +29,22 @@ def main():
     connection.close()
 
     # S3 bucket contents
-    pattern = os.path.join(args.bucket_dir, "wcssp/*vietnam*.nc")
+    pattern = os.path.join(args.bucket_dir, "wcssp", "*vietnam*.nc")
     paths = glob.glob(pattern)
     s3_names = [os.path.basename(path) for path in paths]
 
-    # Summary
+    # Find extra files
     extra_names = set(s3_names) - set(sql_names)
-    for name in sorted(extra_names):
-        print(name)
+    extra_paths = [os.path.join(args.bucket_dir, "wcssp", name)
+                   for name in extra_names]
+
+    # Add NetCDF files to database
+    print("connecting to: {}".format(args.database_file))
+    with forest.db.Database.connect(args.database_file) as database:
+        for path in extra_paths:
+            print("inserting: '{}'".format(path))
+            database.insert_netcdf(path)
+    print("finished")
 
 
 if __name__ == '__main__':
