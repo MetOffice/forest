@@ -10,6 +10,7 @@ import forest.db
 
 
 def parse_args():
+    """Command line parser"""
     parser = argparse.ArgumentParser()
     parser.add_argument("bucket_dir")
     parser.add_argument("database_file")
@@ -17,21 +18,41 @@ def parse_args():
 
 
 def main():
+    """Update database with files not already in the database
+
+    - Query database to find existing names
+    - List S3 buckets mounted on disk to find addtional files
+    - Add missing file entries into the database
+    """
     args = parse_args()
 
+    # Search patterns in SQL and on disk
+    sql_patterns = [
+        "*ga7*.nc",
+        "*ga6*.nc",
+        "*4p4km*.nc",
+        "*philippines*.nc",
+        "*malaysia*.nc",
+        "*indonesia*.nc",
+        "*vietnam*.nc",
+    ]
+
     # SQL database contents
-    query = "SELECT name FROM file WHERE name GLOB ?;"
-    sql_glob_pattern = "*vietnam*"
     connection = sqlite3.connect(args.database_file)
     cursor = connection.cursor()
-    rows = cursor.execute(query, (sql_glob_pattern,)).fetchall()
-    sql_names = [os.path.basename(row[0]) for row in rows]
+    query = "SELECT name FROM file WHERE name GLOB ?;"
+    sql_names = []
+    for sql_pattern in sql_patterns:
+        rows = cursor.execute(query, (sql_pattern,)).fetchall()
+        sql_names += [os.path.basename(row[0]) for row in rows]
     connection.close()
 
     # S3 bucket contents
-    pattern = os.path.join(args.bucket_dir, "wcssp", "*vietnam*.nc")
-    paths = glob.glob(pattern)
-    s3_names = [os.path.basename(path) for path in paths]
+    s3_names = []
+    for sql_pattern in sql_patterns:
+        full_pattern = os.path.join(args.bucket_dir, "wcssp", sql_pattern)
+        paths = glob.glob(full_pattern)
+        s3_names += [os.path.basename(path) for path in paths]
 
     # Find extra files
     extra_names = set(s3_names) - set(sql_names)
