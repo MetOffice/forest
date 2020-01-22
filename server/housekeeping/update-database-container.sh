@@ -6,11 +6,9 @@ PREFIX=/home/custom
 export PYTHONPATH=${PREFIX}/lib/python3.6/site-packages:${PYTHONPATH}
 export PATH=${PREFIX}/bin:${PATH}
 
-# Make a custom directory inside container
-mkdir -p ${PREFIX}
-
 # Install forestdb to custom directory needed by update script
 cd /repo/forest
+mkdir -p ${PREFIX}/lib/python3.6/site-packages
 python setup.py install --prefix ${PREFIX}
 cd -
 
