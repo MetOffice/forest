@@ -1,5 +1,6 @@
 #!/bin/bash
 # Script to keep local database in-sync with S3 contents
+set -x
 docker run \
     --rm \
     --name forest-cron \
