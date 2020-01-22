@@ -23,7 +23,7 @@ def main():
     sql_glob_pattern = "*vietnam*"
     connection = sqlite3.connect(args.database_file)
     cursor = connection.cursor()
-    rows = cursor.execute(query, sql_glob_pattern).fetchall()
+    rows = cursor.execute(query, (sql_glob_pattern,)).fetchall()
     sql_names = [os.path.basename(row[0]) for row in rows]
     connection.close()
 
