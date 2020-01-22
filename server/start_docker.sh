@@ -37,4 +37,7 @@ exec sudo -u ec2-user /bin/bash - <<EOF
       -v /s3/met-office-rmed-forest:/s3/met-office-rmed-forest \
       -v /mnt/efs:/mnt/efs \
       informaticslab/forest bash -c '. /repo/forest/server/run-ec2.sh /repo/forest /s3'
+
+    # Install crontab
+    crontab /home/ec2-user/forest/server/housekeeping/cron.file
 EOF
