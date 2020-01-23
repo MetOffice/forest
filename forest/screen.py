@@ -83,6 +83,8 @@ class MarkDraw:
 
     def place_marker(self, pos):
         """ Update the marker position based on position state. """
+        if pos is None:
+            # Position not yet specified
+            return
         self.source.data = {"x": [pos["x"]],
                             "y": [pos["y"]]}
-

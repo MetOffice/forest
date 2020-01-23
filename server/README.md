@@ -36,3 +36,18 @@ usage of that section
 As bokeh apps return a `302` redirect code instead of `200` on navigation to `/`, the EC2
 application load balancer target group health check has been modified
 to expect a `302` to signify a healthy FOREST instance
+
+# House keeping
+
+FOREST uses a SQL database to power it's menu system. This database needs to
+be kept up to date with the latest contents of S3. To sync the database a cron
+job is installed when an EC2 instance is provisioned.
+
+The cronjob runs a docker container, inside which a Python script runs to update
+the database. The container is run with the `--rm` flag to automatically
+remove the container when the task finishes. This prevents name conflicts that
+would arise if `docker run --name forest-cron ...` were repeatedly invoked.
+
+Admittedly this periodic updating is not ideal but it is the simplest way to
+ensure consistency between the contents of our S3 buckets and the buttons in
+the menu system.
