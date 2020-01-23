@@ -8,17 +8,20 @@ import glob
 from forest import (
         nearcast,
         satellite,
+        screen,
         series,
         data,
         load,
         view,
-        images,
         earth_networks,
         rdt,
+        nearcast,
         geo,
         colors,
+        layers,
         db,
         keys,
+        presets,
         redux,
         rx,
         unified_model,
@@ -26,6 +29,7 @@ from forest import (
         navigate,
         parse_args)
 import forest.config as cfg
+import forest.middlewares as mws
 from forest.observe import Observable
 from forest.db.util import autolabel
 import datetime as dt
@@ -41,12 +45,6 @@ def main(argv=None):
                 variables=cfg.combine_variables(
                     os.environ,
                     args.variables))
-
-    database = None
-    if args.database is not None:
-        if args.database != ':memory:':
-            assert os.path.exists(args.database), "{} must exist".format(args.database)
-        database = db.Database.connect(args.database)
 
     # Full screen map
     lon_range = (90, 140)
@@ -82,29 +80,7 @@ def main(argv=None):
         f.min_border = 0
         f.add_tile(tile)
 
-    figure_row = bokeh.layouts.row(*figures,
-            sizing_mode="stretch_both")
-    figure_row.children = [figures[0]]  # Trick to keep correct sizing modes
-
-    figure_drop = bokeh.models.Dropdown(
-            label="Figure",
-            menu=[(str(i), str(i)) for i in [1, 2, 3]])
-
-    def on_change(attr, old, new):
-        if int(new) == 1:
-            figure_row.children = [
-                    figures[0]]
-        elif int(new) == 2:
-            figure_row.children = [
-                    figures[0],
-                    figures[1]]
-        elif int(new) == 3:
-            figure_row.children = [
-                    figures[0],
-                    figures[1],
-                    figures[2]]
-
-    figure_drop.on_change("value", on_change)
+    figure_row = layers.FigureRow(figures)
 
     color_mapper = bokeh.models.LinearColorMapper(
             low=0,
@@ -123,12 +99,11 @@ def main(argv=None):
     # Database/File system loader(s)
     for group in config.file_groups:
         if group.label not in data.LOADERS:
+            database = None
             if group.locator == "database":
-                loader = load.Loader.group_args(
-                        group, args, database=database)
-            else:
-                loader = load.Loader.group_args(
-                        group, args)
+                database = db.get_database(group.database_path)
+            loader = load.Loader.group_args(
+                    group, args, database=database)
             data.add_loader(group.label, loader)
 
     renderers = {}
@@ -142,6 +117,9 @@ def main(argv=None):
             viewer = view.GPMView(loader, color_mapper)
         elif isinstance(loader, satellite.EIDA50):
             viewer = view.EIDA50(loader, color_mapper)
+        elif isinstance(loader, nearcast.NearCast):
+            viewer = view.NearCast(loader, color_mapper)
+            viewer.set_hover_properties(nearcast.NEARCAST_TOOLTIPS)
         elif isinstance(loader, intake_loader.IntakeLoader):
             viewer = view.UMView(loader, color_mapper)
             viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
@@ -153,13 +131,8 @@ def main(argv=None):
                 viewer.add_figure(f)
                 for f in figures]
 
-    artist = Artist(viewers, renderers)
-    renderers = []
-    for _, r in artist.renderers.items():
-        renderers += r
-
     image_sources = []
-    for name, viewer in artist.viewers.items():
+    for name, viewer in viewers.items():
         if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
             image_sources.append(viewer.source)
 
@@ -206,6 +179,7 @@ def main(argv=None):
 
     dropdown.on_change("value", on_change)
 
+    # Image opacity user interface (client-side)
     slider = bokeh.models.Slider(
         start=0,
         end=1,
@@ -216,7 +190,10 @@ def main(argv=None):
     def is_image(renderer):
         return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
 
-    image_renderers = [r for r in renderers if is_image(r)]
+    renderers_list = []
+    for _, r in renderers.items():
+        renderers_list += r
+    image_renderers = [r for r in renderers_list if is_image(r)]
     custom_js = bokeh.models.CustomJS(
             args=dict(renderers=image_renderers),
             code="""
@@ -230,19 +207,7 @@ def main(argv=None):
     for k, _ in config.patterns:
         menu.append((k, k))
 
-    image_controls = images.Controls(menu)
-
-    def on_change(attr, old, new):
-        if int(new) == 1:
-            image_controls.labels = ["Show"]
-        elif int(new) == 2:
-            image_controls.labels = ["L", "R"]
-        elif int(new) == 3:
-            image_controls.labels = ["L", "C", "R"]
-
-    figure_drop.on_change("value", on_change)
-
-    image_controls.subscribe(artist.on_visible)
+    layers_ui = layers.LayersUI(menu)
 
     div = bokeh.models.Div(text="", width=10)
     border_row = bokeh.layouts.row(
@@ -250,12 +215,8 @@ def main(argv=None):
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
-    # Pre-select first layer
-    for name, _ in config.patterns:
-        image_controls.select(name)
-        break
 
-    navigator = navigate.Navigator(config, database)
+    navigator = navigate.Navigator(config)
 
     # Pre-select menu choices (if any)
     initial_state = {}
@@ -264,7 +225,7 @@ def main(argv=None):
         break
 
     middlewares = [
-        db.Log(verbose=True),
+        mws.echo,
         keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,
@@ -273,63 +234,99 @@ def main(argv=None):
             "valid_times": db.stamps,
             "inital_times": db.stamps
         }),
-        colors.palettes
+        colors.palettes,
+        presets.Middleware(presets.proxy_storage(config.presets_file)),
+        presets.middleware,
+        layers.middleware,
     ]
     store = redux.Store(
         redux.combine_reducers(
             db.reducer,
+            layers.reducer,
             series.reducer,
-            colors.reducer),
+            colors.reducer,
+            presets.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
 
+    # Connect renderer.visible states to store
+    artist = layers.Artist(renderers)
+    artist.connect(store)
+
+    # Connect layers controls
+    layers_ui.add_subscriber(store.dispatch)
+    layers_ui.connect(store)
+
+    # Connect tools controls
+    tools_panel = series.ToolsPanel()
+    tools_panel.connect(store)
+
+    # Connect tap listener
+    tap_listener = screen.TapListener()
+    tap_listener.connect(store)
+
+    # Connect figure controls/views
+    figure_ui = layers.FigureUI()
+    figure_ui.add_subscriber(store.dispatch)
+    figure_row.connect(store)
+
     # Connect color palette controls
-    color_palette = colors.ColorPalette(color_mapper)
-    color_palette.connect(store)
-    names = list(sorted(bokeh.palettes.all_palettes.keys()))
-    store.dispatch(colors.set_palette_name("Viridis"))
-    store.dispatch(colors.set_palette_number(256))
-    store.dispatch(colors.set_palette_names(names))
+    color_palette = colors.ColorPalette(color_mapper).connect(store)
 
     # Connect limit controllers to store
     source_limits = colors.SourceLimits(image_sources)
-    source_limits.subscribe(store.dispatch)
+    source_limits.add_subscriber(store.dispatch)
 
-    user_limits = colors.UserLimits()
-    user_limits.connect(store)
+    user_limits = colors.UserLimits().connect(store)
+
+    # Preset
+    preset_ui = presets.PresetUI().connect(store)
 
     # Connect navigation controls
     controls = db.ControlView()
-    controls.subscribe(store.dispatch)
-    store.subscribe(controls.render)
+    controls.add_subscriber(store.dispatch)
+    store.add_subscriber(controls.render)
 
     def old_world(state):
         kwargs = {k: state.get(k, None) for k in db.State._fields}
         return db.State(**kwargs)
 
-    old_states = (rx.Stream()
-                    .listen_to(store)
-                    .map(old_world)
-                    .distinct())
-    old_states.subscribe(artist.on_state)
+    connector = layers.ViewerConnector(viewers, old_world).connect(store)
+
+    # Set default time series visibility
+    store.dispatch(series.on_toggle())
 
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
 
+    # Pre-select first layer
+    for name, _ in config.patterns:
+        row_index = 0
+        store.dispatch(layers.set_label(row_index, name))
+        store.dispatch(layers.set_active(row_index, [0]))
+        break
+
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                bokeh.models.Div(text="Layout:"),
+                figure_ui.layout,
                 bokeh.models.Div(text="Navigate:"),
                 controls.layout,
                 bokeh.models.Div(text="Compare:"),
-                bokeh.layouts.row(figure_drop),
-                image_controls.column),
+                layers_ui.layout),
             title="Control"
         ),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
+                tools_panel.buttons["toggle_time_series"],
+                ),
+            title="Tools"),
+        bokeh.models.Panel(
+            child=bokeh.layouts.column(
                 border_row,
                 bokeh.layouts.row(slider),
+                preset_ui.layout,
                 color_palette.layout,
                 user_limits.layout
                 ),
@@ -344,29 +341,14 @@ def main(argv=None):
                 toolbar_location=None,
                 border_fill_alpha=0)
     series_figure.toolbar.logo = None
-    series_row = bokeh.layouts.row(
-            series_figure,
-            name="series")
 
-    def place_marker(figure, source):
-        figure.circle(
-                x="x",
-                y="y",
-                color="red",
-                source=source)
-        def cb(event):
-            source.data = {
-                    "x": [event.x],
-                    "y": [event.y]}
-        return cb
+    tool_layout = series.ToolLayout(series_figure)
+    tool_layout.connect(store)
 
-    marker_source = bokeh.models.ColumnDataSource({
-            "x": [],
-            "y": []})
     series_view = series.SeriesView.from_groups(
             series_figure,
             config.file_groups)
-    series_view.subscribe(store.dispatch)
+    series_view.add_subscriber(store.dispatch)
     series_args = (rx.Stream()
                 .listen_to(store)
                 .map(series.select_args)
@@ -375,8 +357,8 @@ def main(argv=None):
     series_args.map(lambda a: series_view.render(*a))
     series_args.map(print)  # Note: map(print) creates None stream
     for f in figures:
-        f.on_event(bokeh.events.Tap, series_view.on_tap)
-        f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
+        f.on_event(bokeh.events.Tap, tap_listener.update_xy)
+        marker = screen.MarkDraw(f).connect(store)
 
 
     # Minimise controls to ease navigation
@@ -418,143 +400,18 @@ def main(argv=None):
 
     # Add key press support
     key_press = keys.KeyPress()
-    key_press.subscribe(store.dispatch)
+    key_press.add_subscriber(store.dispatch)
 
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"
     document.add_root(control_root)
-    document.add_root(series_row)
-    document.add_root(figure_row)
+    document.add_root(tool_layout.figures_row)
+    document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
 
 
 def any_none(obj, attrs):
     return any([getattr(obj, x) is None for x in attrs])
-
-
-class Artist(object):
-    def __init__(self, viewers, renderers):
-        self.viewers = viewers
-        self.renderers = renderers
-        self.visible_state = None
-        self.state = None
-
-    def on_visible(self, visible_state):
-        if self.visible_state is not None:
-            # Hide deselected states
-            lost_items = (
-                    set(self.flatten(self.visible_state)) -
-                    set(self.flatten(visible_state)))
-            for key, i, _ in lost_items:
-                self.renderers[key][i].visible = False
-
-        # Sync visible states with menu choices
-        states = set(self.flatten(visible_state))
-        hidden = [(i, j) for i, j, v in states if not v]
-        visible = [(i, j) for i, j, v in states if v]
-        for i, j in hidden:
-            self.renderers[i][j].visible = False
-        for i, j in visible:
-            self.renderers[i][j].visible = True
-
-        self.visible_state = dict(visible_state)
-        self.render()
-
-    @staticmethod
-    def flatten(state):
-        items = []
-        for key, flags in state.items():
-            items += [(key, i, f) for i, f in enumerate(flags)]
-        return items
-
-    def on_state(self, state):
-        # print("Artist: {}".format(state))
-        self.state = state
-        self.render()
-
-    def render(self):
-        if self.visible_state is None:
-            return
-        if self.state is None:
-            return
-        for name in self.visible_state:
-            viewer = self.viewers[name]
-            viewer.render(self.state)
-
-
-class TimeControls(Observable):
-    def __init__(self, steps):
-        self.steps = steps
-        self.labels = ["T{:+}".format(int(s))
-                for s in self.steps]
-        self.plus = bokeh.models.Button(label="+", width=80)
-        self.plus.on_click(self.on_plus)
-        self.minus = bokeh.models.Button(label="-", width=80)
-        self.minus.on_click(self.on_minus)
-        self.dropdown = bokeh.models.Dropdown(
-                label="Time step",
-                menu=list(zip(self.labels, self.labels)),
-                width=80)
-        autolabel(self.dropdown)
-        self.dropdown.on_click(self.on_dropdown)
-        sizing_mode = "fixed"
-        self.layout = bokeh.layouts.row(
-                bokeh.layouts.column(self.minus, width=90,
-                    sizing_mode=sizing_mode),
-                bokeh.layouts.column(self.dropdown, width=100,
-                    sizing_mode=sizing_mode),
-                bokeh.layouts.column(self.plus, width=90,
-                    sizing_mode=sizing_mode),
-                width=300)
-        super().__init__()
-
-    def set_times(self, times):
-        self.steps = self.as_steps(times)
-        self.labels = ["T{:+}".format(int(s))
-                for s in self.steps]
-        self.dropdown.menu = list(zip(
-            self.labels, self.labels))
-
-    @staticmethod
-    def as_steps(times):
-        t0 = times[0]
-        return [(t - t0).total_seconds() / (60 * 60)
-                for t in times]
-
-    def on_plus(self):
-        if self.dropdown.value is None:
-            self.dropdown.value = self.labels[0]
-            return
-        if self.index == (len(self.labels) - 1):
-            return
-        else:
-            value = self.labels[self.index + 1]
-            self.dropdown.value = value
-
-    def on_minus(self):
-        if self.dropdown.value is None:
-            self.dropdown.value = self.labels[0]
-            return
-        if self.index == 0:
-            return
-        else:
-            value = self.labels[self.index - 1]
-            self.dropdown.value = value
-
-    def on_dropdown(self, value):
-        self.announce((self.index, self.step))
-
-    @property
-    def index(self):
-        if self.dropdown.value is None:
-            return
-        return self.labels.index(self.dropdown.value)
-
-    @property
-    def step(self):
-        if self.index is None:
-            return
-        return self.steps[self.index]
 
 
 def add_feature(figure, data, color="black"):

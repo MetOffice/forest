@@ -1,8 +1,27 @@
 import pytest
 import unittest
+import pytest
 import yaml
 import os
 import forest
+
+
+SERVER_CONFIG = os.path.join(os.path.dirname(__file__),
+                             '../server/config-philippines.yaml')
+
+
+@pytest.mark.parametrize("label,settings", [
+    ("GA7", {"pattern": "*ga7*.nc"}),
+])
+def test_server_config(label, settings):
+    with open(SERVER_CONFIG) as stream:
+        data = yaml.load(stream)
+    labels = [ds["label"] for ds in data["files"]]
+    assert label in labels
+    for dataset in data["files"]:
+        if dataset["label"] == label:
+            for key, value in settings.items():
+                assert dataset[key] == value
 
 
 @pytest.mark.parametrize("env,args,expected", [
@@ -170,3 +189,13 @@ def test_config_parser_given_json(tmpdir):
     assert group.label == "Hello"
     assert group.pattern == "*.nc"
     assert group.locator == "file_system"
+
+
+@pytest.mark.parametrize("data,expect", [
+    ({}, None),
+    ({"presets": {}}, None),
+    ({"presets": {"file": "/some.json"}}, "/some.json")
+])
+def test_config_parser_presets_file(data, expect):
+    config = forest.config.Config(data)
+    assert config.presets_file == expect

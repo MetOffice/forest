@@ -23,11 +23,11 @@ communicate with other parts of the system. They
 help de-couple the entity creating an action from
 the components that depend on state changes
 
-.. data:: SET_POSITION
+.. data:: ON_TOGGLE
 
-    Constant to indicate set position action
+    Constant to indicate toggle action
 
-.. autofunction:: set_position
+.. autofunction:: on_toggle
 
 Reducer
 ~~~~~~~
@@ -61,8 +61,10 @@ import numpy as np
 import netCDF4
 from forest import geo
 from forest.observe import Observable
+from forest.redux import Action
 from forest.util import initial_time as _initial_time
 from forest.gridded_forecast import _to_datetime
+from forest.screen import SET_POSITION
 try:
     import iris
 except ModuleNotFoundError:
@@ -70,32 +72,17 @@ except ModuleNotFoundError:
     # ReadTheDocs can't import iris
 
 
-SET_POSITION = "SET_POSITION"
+ON_TOGGLE = "TOGGLE_VISIBILITY"
 
 
-def set_position(x, y):
-    """Action that represents a position has been selected
-
-    .. code-block:: python
-
-        {
-            "kind": "SET_POSITION",
-            "payload": {
-                "x": x,
-                "y": y
-            }
-        }
-
-    :returns: data representing action
-    :rtype: dict
-    """
-    return {"kind": SET_POSITION, "payload": {"x": x, "y": y}}
+def on_toggle() -> Action:
+    return {"kind": ON_TOGGLE}
 
 
 def reducer(state, action):
     """Time series specific reducer
 
-    Given :func:`set_position` action adds "position" data
+    Given :func:`screen.set_position` action adds "position" data
     to state
 
     :param state: data structure representing current state
@@ -106,6 +93,12 @@ def reducer(state, action):
     state = copy.deepcopy(state)
     if action["kind"] == SET_POSITION:
         state["position"] = action["payload"]
+    if action["kind"] == ON_TOGGLE:
+        if state.get("time_series_visible", False) == True:
+            state["time_series_visible"] = False
+        else:
+            state["time_series_visible"] = True
+            
     return state
 
 
@@ -130,7 +123,41 @@ def select_args(state):
             _to_datetime(state["initial_time"]),
             state["variable"],
             state["position"]["x"],
-            state["position"]["y"]) + optional
+            state["position"]["y"],
+            state["time_series_visible"]) + optional
+
+
+class ToolsPanel(Observable):
+    """ A panel that contains buttons to turn extra tools on and off"""
+    def __init__(self):
+        self.buttons = {"toggle_time_series": bokeh.models.Button(label="Display Time Series")}
+        self.buttons["toggle_time_series"].on_click(self.on_click_time_series)
+        super().__init__()
+
+    def connect(self, store):
+        self.add_subscriber(store.dispatch)
+        return self
+
+    def on_click_time_series(self):
+        """update the store."""
+        self.notify(on_toggle())
+
+
+class ToolLayout:
+    def __init__(self, tool_figure):
+        self.figures_row = bokeh.layouts.row(
+                tool_figure,
+                name="series")
+        self.tool_figure = tool_figure
+
+    def connect(self, store):
+        store.add_subscriber(self.render)
+
+    def render(self, state):
+        if state.get("time_series_visible"):
+            self.figures_row.children = [self.tool_figure]
+        else:
+            self.figures_row.children = []
 
 
 class SeriesView(Observable):
@@ -207,23 +234,21 @@ class SeriesView(Observable):
                 loaders[group.label] = SeriesLoader.from_pattern(pattern)
         return cls(figure, loaders)
 
-    def on_tap(self, event):
-        self.notify(set_position(event.x, event.y))
-
-    def render(self, initial_time, variable, x, y, pressure=None):
+    def render(self, initial_time, variable, x, y, visible, pressure=None):
         """Update data for a particular application setting"""
-        assert isinstance(initial_time, dt.datetime), "only support datetime"
-        self.figure.title.text = variable
-        for name, source in self.sources.items():
-            loader = self.loaders[name]
-            lon, lat = geo.plate_carree(x, y)
-            lon, lat = lon[0], lat[0]  # Map to scalar
-            source.data = loader.series(
-                    initial_time,
-                    variable,
-                    lon,
-                    lat,
-                    pressure)
+        if visible:
+            assert isinstance(initial_time, dt.datetime), "only support datetime"
+            self.figure.title.text = variable
+            for name, source in self.sources.items():
+                loader = self.loaders[name]
+                lon, lat = geo.plate_carree(x, y)
+                lon, lat = lon[0], lat[0]  # Map to scalar
+                source.data = loader.series(
+                        initial_time,
+                        variable,
+                        lon,
+                        lat,
+                        pressure)
 
 
 class SeriesLoader(object):

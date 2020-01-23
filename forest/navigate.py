@@ -7,6 +7,8 @@ from .exceptions import (
         ValidTimesNotFound,
         PressuresNotFound)
 from forest import (
+        earth_networks,
+        db,
         gridded_forecast,
         ghrsstl4,
         unified_model,
@@ -14,11 +16,11 @@ from forest import (
         rdt,
         intake_loader,
         saf,
-)
+        nearcast)
 
 
 class Navigator:
-    def __init__(self, config, database):
+    def __init__(self, config):
         # TODO: Once the idea of a "Group" exists we can avoid using the
         # config and defer the sub-navigator creation to each of the
         # groups. This will remove the need for the `_from_group` helper
@@ -28,13 +30,13 @@ class Navigator:
         # group would have a `pattern`.
         # e.g.
         # self._navigators = {group.label: group.navigator for group in ...}
-        self._navigators = {group.pattern: self._from_group(group, database)
+        self._navigators = {group.pattern: self._from_group(group)
                            for group in config.file_groups}
 
     @classmethod
-    def _from_group(cls, group, database):
+    def _from_group(cls, group):
         if group.locator == 'database':
-            navigator = database
+            navigator = db.get_database(group.database_path)
         else:
             paths = cls._expand_paths(group.pattern)
             navigator = FileSystemNavigator.from_file_type(paths,
@@ -91,6 +93,10 @@ class FileSystemNavigator:
             coordinates = unified_model.Coordinates()
         elif file_type.lower() == "saf":
             coordinates = saf.Coordinates()
+        elif file_type.lower() == "earth_networks":
+            return earth_networks.Navigator(paths)
+        elif file_type.lower() == "nearcast":
+            coordinates = nearcast.Coordinates()
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)

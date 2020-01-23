@@ -1,36 +1,71 @@
+presets:
+  file: /mnt/efs/forest-presets.json
 files:
   - label: GA7
     pattern: '*ga7*.nc'
-    directory: wcssp
+    directory: ${DIRECTORY}/wcssp
     file_type: unified_model
     locator: database
+    database_path: ${DATABASE}
   - label: GA6
     pattern: '*ga6*.nc'
-    directory: wcssp
+    directory: ${DIRECTORY}/wcssp
     file_type: unified_model
     locator: database
+    database_path: ${DATABASE}
   - label: 4p4km
     pattern: '*4p4km*.nc'
-    directory: wcssp
+    directory: ${DIRECTORY}/wcssp
     file_type: unified_model
     locator: database
+    database_path: ${DATABASE}
   - label: Philippines
     pattern: '*philippines*.nc'
-    directory: wcssp
+    directory: ${DIRECTORY}/wcssp
     file_type: unified_model
     locator: database
+    database_path: ${DATABASE}
   - label: Malaysia
     pattern: '*malaysia*.nc'
-    directory: wcssp
+    directory: ${DIRECTORY}/wcssp
     file_type: unified_model
     locator: database
+    database_path: ${DATABASE}
   - label: Indonesia
     pattern: '*indonesia*.nc'
-    directory: wcssp
+    directory: ${DIRECTORY}/wcssp
     file_type: unified_model
     locator: database
+    database_path: ${DATABASE}
   - label: Vietnam
     pattern: '*vietnam*.nc'
-    directory: wcssp
+    directory: ${DIRECTORY}/wcssp
     file_type: unified_model
     locator: database
+    database_path: ${DATABASE}
+  - label: Met Office Tropical Africa (Demo)
+    pattern: '*20190830T0000Z_op_takm4p4.nc'
+    directory: ${DIRECTORY}/demo
+    locator: database
+    database_path: ${DATABASE}
+    file_type: unified_model
+  - label: Met Office Global (Demo)
+    pattern: '*20190830T0000Z_op_ga6.nc'
+    directory: ${DIRECTORY}/demo
+    locator: database
+    database_path: ${DATABASE}
+    file_type: unified_model
+  - label: Tanzania Met Agency WRF (Demo)
+    pattern: '*20190830T0000Z_tma_wrf.nc'
+    directory: ${DIRECTORY}/demo
+    file_type: unified_model
+    locator: database
+    database_path: ${DATABASE}
+  - label: EIDA50 (Demo)
+    pattern: 'EIDA50*.nc'
+    directory: ${DIRECTORY}/demo
+    file_type: eida50
+  - label: RDT (Demo)
+    pattern: 'RDT*.json'
+    directory: ${DIRECTORY}/demo
+    file_type: rdt

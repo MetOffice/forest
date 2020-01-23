@@ -6,40 +6,73 @@ import os
 import glob
 import re
 import datetime as dt
-#import pygrib as pg
 import numpy as np
 from forest import geo
 from forest.util import timeout_cache
 from forest.exceptions import FileNotFound
 
-class Nearcast(object):
+try:
+    import pygrib as pg
+except ModuleNotFoundError:
+    pg = None
+
+NEARCAST_TOOLTIPS = [("Name", "@name"),
+                     ("Value", "@image @units"),
+                     ('Valid', '@valid'),
+                     ("Sigma Layer", "@layer")]
+
+class NearCast(object):
     def __init__(self, pattern):
-        self.locator = Locator(pattern)        
+        self.locator = Locator(pattern)
 
-    def image(self, date):
-        file_name = self.locator.find_file(date)
-        return self.load_image(file_name)
+    def image(self, state):    
+        imageData = self.get_grib2_data(state.pattern, state.valid_time, state.variable, state.pressure)
+        
+        data = self.load_image(imageData)
+        
+        data.update({"name" : [imageData["name"]],
+                     "units" : [imageData["units"]],
+                     "valid" : [imageData["valid"]],
+                     "layer" : [imageData["layer"]]})
+        
+        return data
 
-    def load_image(self, path):
-        imageData = self.get_data(path)
+    def load_image(self, imageData):
         return geo.stretch_image(
                 imageData["longitude"], imageData["latitude"], imageData["data"])
 
-    def get_data(self, path):
-        self.cache = {}
-        gribFields = pg.index(path, "name", "scaledValueOfFirstFixedSurface", "forecastTime")
-        if len(path) > 0:
-            field = gribFields.select(name="Precipitable water", scaledValueOfFirstFixedSurface=699999988, forecastTime=0)[0]
-            
-            self.cache["longitude"] = field.latlons()[1][0,:]
-            self.cache["latitude"] = field.latlons()[0][:,0]
-            self.cache["data"] = field.values
-        gribFields.close()
-        return self.cache
+    def get_grib2_data(self, path, valid_time, variable, pressure):
+        cache = {}
 
+        validTime = dt.datetime.strptime(str(valid_time), "%Y-%m-%d %H:%M:%S")
+        vTime = "{0:d}{1:02d}".format(validTime.hour, validTime.minute)
+
+        messages = pg.index(path, "name", "scaledValueOfFirstFixedSurface", "validityTime")
+        if len(path) > 0:
+            field = messages.select(name=variable, scaledValueOfFirstFixedSurface=int(pressure), validityTime=vTime)[0]            
+            cache["longitude"] = field.latlons()[1][0,:]
+            cache["latitude"] = field.latlons()[0][:,0]
+            cache["data"] = field.values
+            cache["units"] = field.units
+            cache["name"] = field.name
+            cache["valid"] = "{0:02d}:{1:02d} UTC".format(validTime.hour, validTime.minute)
+            cache["initial"] = "blah"
+            
+            scaledLowerLevel = float(field.scaledValueOfFirstFixedSurface)
+            scaleFactorLowerLevel = float(field.scaleFactorOfFirstFixedSurface)
+            lowerSigmaLevel = str(round(scaledLowerLevel * 10**-scaleFactorLowerLevel, 2))
+            scaledUpperLevel = float(field.scaledValueOfSecondFixedSurface)
+            scaleFactorUpperLevel = float(field.scaleFactorOfSecondFixedSurface)
+            upperSigmaLevel = str(round(scaledUpperLevel * 10**-scaleFactorUpperLevel, 2))
+            
+            cache['layer'] = lowerSigmaLevel+"-"+upperSigmaLevel
+            
+        messages.close()
+
+        return cache
+        
 class Locator(object):
     def __init__(self, pattern):
-        print("nearcast.Locator('{}')".format(pattern))
         self.pattern = pattern
 
     def find_file(self, valid_date):
@@ -69,24 +102,33 @@ class Locator(object):
         if groups is not None:
             return dt.datetime.strptime(groups[0], "%Y%m%d_%H%M")
 
-
 class Coordinates(object):
     """Menu system interface"""
     def initial_time(self, path):
-        times = self.valid_times(path, None)
-        if len(times) > 0:
-            return times[0]
-        return None
+        initTime = Locator.parse_date(path)
+        return initTime
 
     def variables(self, path):
-        return ["NearCast"]
+        messages = pg.open(path)
+        varList = []
+        for message in messages.select():
+            varList.append(message['name'])
+        messages.close()
+        return list(set(varList))
 
     def valid_times(self, path, variable):
-        #gribMessages = pg.
-        date = Locator.parse_date(path)
-        if date is None:
-            return []
-        return [str(date)]
+        messages = pg.index(path, "name")
+        validTimeList = []
+        for message in messages.select(name=variable):
+            validTime = "{0:8d}{1:04d}".format(message["validityDate"], message["validityTime"])
+            validTimeList.append(dt.datetime.strptime(validTime, "%Y%m%d%H%M"))
+        messages.close()
+        return list(set(validTimeList))
 
     def pressures(self, path, variable):
-        return 
+        messages = pg.index(path, "name")
+        pressureList = []
+        for message in messages.select(name=variable):
+            pressureList.append(message["scaledValueOfFirstFixedSurface"])
+        messages.close()
+        return list(set(pressureList))

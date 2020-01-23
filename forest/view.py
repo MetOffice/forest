@@ -138,3 +138,40 @@ class EIDA50(object):
                 image="image",
                 source=self.source,
                 color_mapper=self.color_mapper)
+
+class NearCast(object):
+    def __init__(self, loader, color_mapper):
+        self.loader = loader
+        self.color_mapper = color_mapper
+        self.color_mapper.nan_color = bokeh.colors.RGB(0, 0, 0, a=0) 
+        self.source = bokeh.models.ColumnDataSource({
+                "x": [],
+                "y": [],
+                "dw": [],
+                "dh": [],
+                "image": []})
+                
+    def render(self, state):
+        self.source.data = self.loader.image(state)
+
+    def set_hover_properties(self, tooltips):
+        self.tooltips = tooltips
+
+    def add_figure(self, figure):
+        renderer = figure.image(
+                   x="x",
+                   y="y",
+                   dw="dw",
+                   dh="dh",
+                   image="image",
+                   source=self.source,
+                   color_mapper=self.color_mapper)
+
+        tool = bokeh.models.HoverTool(
+               renderers=[renderer],
+               tooltips=self.tooltips)
+
+        figure.add_tools(tool)
+
+        return renderer
+

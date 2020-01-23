@@ -4,9 +4,11 @@ import bokeh.models
 from bokeh.core.properties import DistanceSpec
 
 
-class Barb(bokeh.models.Marker):
+class Barb(bokeh.models.XYGlyph):
     __implementation__ = "barb.ts"
     _args = ('x', 'y', 'u', 'v')
+    x = DistanceSpec(units_default="screen")
+    y = DistanceSpec(units_default="screen")
     u = DistanceSpec(units_default="screen")
     v = DistanceSpec(units_default="screen")
 

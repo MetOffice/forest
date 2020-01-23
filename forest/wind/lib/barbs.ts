@@ -6,7 +6,7 @@ export interface Arrow {
     half_barbs: number;
 }
 
-export const draw = function(ctx, u, v, scale=1) {
+export const draw = function(ctx: any, u: any, v: any, scale=1) {
     let length = 7
     let radius = length * 0.15
     let c = speed(u, v)

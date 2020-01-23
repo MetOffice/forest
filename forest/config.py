@@ -68,6 +68,24 @@ class Config(object):
                 self.data)
 
     @property
+    def presets_file(self):
+        """Colorbar presets JSON file
+
+        A location on disk where colorbar settings can be saved/loaded. If
+        the file does not exist it will be created by the application.
+
+        Use the following syntax to declare the presets file location
+
+        .. code-block:: yaml
+
+            presets:
+              file: ${HOME}/example/preset-save.json
+
+        :returns: location on disk to save colorbar presets
+        """
+        return self.data.get("presets", {}).get("file", None)
+
+    @property
     def patterns(self):
         if "files" in self.data:
             return [(f["label"], f["pattern"])
@@ -154,12 +172,14 @@ class FileGroup(object):
             pattern,
             locator="file_system",
             file_type="unified_model",
-            directory=None):
+            directory=None,
+            database_path=None):
         self.label = label
         self.pattern = pattern
         self.locator = locator
         self.file_type = file_type
         self.directory = directory
+        self.database_path = database_path
 
     @property
     def full_pattern(self):
@@ -184,7 +204,8 @@ class FileGroup(object):
         kwarg_attrs = [
             "locator",
             "file_type",
-            "directory"]
+            "directory",
+            "database_path"]
         kwargs = [
             "{}={}".format(attr, self._str(getattr(self, attr)))
                 for attr in kwarg_attrs]

@@ -30,7 +30,8 @@ def test_build_loader_given_database(tmpdir):
                 "label": "UM",
                 "pattern": "*.nc",
                 "directory": "/replace",
-                "locator": "database"
+                "locator": "database",
+                "database_path": database_file
             }
         ]
     }
@@ -38,7 +39,6 @@ def test_build_loader_given_database(tmpdir):
         yaml.dump(settings, stream)
 
     args = main.parse_args.parse_args([
-        "--database", database_file,
         "--config-file", config_file])
     config = forest.config.load_config(args.config_file)
     group = config.file_groups[0]
