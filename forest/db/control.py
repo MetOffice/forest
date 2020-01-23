@@ -156,16 +156,6 @@ def initial_state(navigator, pattern=None):
 
 
 @export
-def stamps(times):
-    labels = []
-    for t in times:
-        if isinstance(t, np.datetime64):
-            t = t.astype(dt.datetime)
-        labels.append(str(t))
-    return labels
-
-
-@export
 def reducer(state, action):
     state = copy.copy(state)
     kind = action["kind"]
@@ -340,7 +330,7 @@ class Controls(object):
 
 
 @export
-class ControlView(Observable):
+class ControlView:
     def __init__(self):
         self.rows = {}
         self.rows["pattern"] = _PatternRow()
