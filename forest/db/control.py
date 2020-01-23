@@ -331,28 +331,34 @@ class Controls(object):
 
 @export
 class ControlView:
+    """Layout of navigation controls
+
+    A high-level view that delegates to low-level views
+    which in turn perform navigation.
+    """
     def __init__(self):
-        self.rows = {}
-        self.rows["pattern"] = _PatternRow()
-        self.rows["variable"] = _Row("variable", "variables", next_previous=False)
-        self.rows["initial_time"] = _Row("initial_time", "initial_times")
-        self.rows["valid_time"] = _Row("valid_time", "valid_times")
-        self.rows["pressure"] = _Row("pressure", "pressures", formatter=self.hpa)
+        self.views = {}
+        self.views["dataset"] = DatasetView()
+        self.views["variable"] = DimensionView("variable", "variables", next_previous=False)
+        self.views["initial_time"] = DimensionView("initial_time", "initial_times")
+        self.views["valid_time"] = DimensionView("valid_time", "valid_times")
+        self.views["pressure"] = DimensionView("pressure", "pressures", formatter=self.hpa)
         self.layout = bokeh.layouts.column(
-            self.rows["pattern"].layout,
-            self.rows["variable"].layout,
-            self.rows["initial_time"].layout,
-            self.rows["valid_time"].layout,
-            self.rows["pressure"].layout,
+            self.views["dataset"].layout,
+            self.views["variable"].layout,
+            self.views["initial_time"].layout,
+            self.views["valid_time"].layout,
+            self.views["pressure"].layout,
         )
         super().__init__()
 
     def connect(self, store):
-        self.rows["pattern"].connect(store)
-        self.rows["variable"].connect(store)
-        self.rows["initial_time"].connect(store)
-        self.rows["valid_time"].connect(store)
-        self.rows["pressure"].connect(store)
+        """Connect views to the store"""
+        self.views["dataset"].connect(store)
+        self.views["variable"].connect(store)
+        self.views["initial_time"].connect(store)
+        self.views["valid_time"].connect(store)
+        self.views["pressure"].connect(store)
 
     @staticmethod
     def hpa(p):
@@ -363,7 +369,12 @@ class ControlView:
         return "{}hPa".format(int(p))
 
 
-class _PatternRow(Observable):
+class DatasetView(Observable):
+    """View to select datasets
+
+    .. note:: Currently 'pattern' is the primary key for
+              dataset selection
+    """
     def __init__(self):
         self._table = {}
         self.item_key = "pattern"
@@ -376,10 +387,12 @@ class _PatternRow(Observable):
         super().__init__()
 
     def on_select(self, attr, old, new):
+        """On click handler for select widget"""
         value = self._table.get(new, new)
         self.notify(set_value(self.item_key, value))
 
     def connect(self, store):
+        """Wire up component to the Store"""
         self.add_subscriber(store.dispatch)
         store.add_subscriber(self.render)
 
@@ -398,7 +411,7 @@ class _PatternRow(Observable):
             self.select.value = pattern
 
 
-class _Row(Observable):
+class DimensionView(Observable):
     """Widgets used to navigate a dimension"""
     def __init__(self, item_key, items_key, next_previous=True, formatter=str):
         self.item_key = item_key
@@ -435,13 +448,16 @@ class _Row(Observable):
         super().__init__()
 
     def on_select(self, attr, old, new):
+        """Handler for select widget"""
         value = self._lookup.get(new, new)
         self.notify(set_value(self.item_key, value))
 
     def on_next(self):
+        """Handler for next button"""
         self.notify(next_value(self.item_key, self.items_key))
 
     def on_previous(self):
+        """Handler for previous button"""
         self.notify(previous_value(self.item_key, self.items_key))
 
     def connect(self, store):
@@ -450,7 +466,7 @@ class _Row(Observable):
         store.add_subscriber(self.render)
 
     def render(self, state):
-        """Apply latest application state to controls"""
+        """Apply state to widgets"""
         value = state.get(self.item_key)
         values = state.get(self.items_key, [])
         option = self.formatter(value)
