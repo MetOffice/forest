@@ -38,7 +38,7 @@ class Test_to_datetime(unittest.TestCase):
         self.assertEqual(result, datetime(2019, 10, 10, 11, 22, 33))
 
     def test_unsupported(self):
-        with self.assertRaisesRegexp(Exception, 'Unknown value'):
+        with self.assertRaisesRegex(Exception, 'Unknown value'):
             ghrsstl4._to_datetime(12)
 
 

@@ -16,14 +16,12 @@ def test_main_given_rdt_files(tmp_path):
 def test_file_groups_given_config_file(tmpdir):
     label = "UM"
     pattern = "*.nc"
-    directory = "/dir"
     config_file = str(tmpdir / "config.yml")
     settings = {
         "files": [
             {
                 "label": label,
                 "pattern": pattern,
-                "directory": directory,
                 "locator": "database"
             }
         ]
@@ -36,6 +34,5 @@ def test_file_groups_given_config_file(tmpdir):
     expected = forest.config.FileGroup(
             label,
             pattern,
-            directory=directory,
             locator="database")
     assert actual == expected

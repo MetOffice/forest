@@ -15,8 +15,8 @@ def parse_args(argv=None):
 
 def add_arguments(parser):
     parser.add_argument(
-        "--directory",
-        help="directory to use with paths returned from database")
+        "files", nargs="*", metavar="FILE",
+        help="FILE(s) to display")
     parser.add_argument(
         "--database",
         help="SQL database to optimise menu system")
@@ -25,8 +25,9 @@ def add_arguments(parser):
         metavar="YAML_FILE",
         help="YAML file to configure application")
     parser.add_argument(
-        "files", nargs="*", metavar="FILE",
-        help="FILE(s) to display")
-    parser.add_argument(
         "--file-type", default="unified_model", metavar="FILETYPE",
         help="keyword to navigate/display file(s)")
+    parser.add_argument(
+        "--var", action="append", dest="variables",
+        nargs=2, metavar=("KEY", "VALUE"),
+        help="variable(s) to substitute in --config-file, may be repeated")

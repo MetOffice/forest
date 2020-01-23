@@ -8,6 +8,7 @@ import glob
 from forest import (
         nearcast,
         satellite,
+        series,
         data,
         load,
         view,
@@ -19,7 +20,9 @@ from forest import (
         db,
         keys,
         redux,
+        rx,
         unified_model,
+        intake_loader,
         navigate,
         parse_args)
 import forest.config as cfg
@@ -33,7 +36,11 @@ def main(argv=None):
     if len(args.files) > 0:
         config = cfg.from_files(args.files, args.file_type)
     else:
-        config = cfg.load_config(args.config_file)
+        config = cfg.Config.load(
+                args.config_file,
+                variables=cfg.combine_variables(
+                    os.environ,
+                    args.variables))
 
     database = None
     if args.database is not None:
@@ -135,6 +142,10 @@ def main(argv=None):
             viewer = view.GPMView(loader, color_mapper)
         elif isinstance(loader, satellite.EIDA50):
             viewer = view.EIDA50(loader, color_mapper)
+        elif isinstance(loader, intake_loader.IntakeLoader):
+            viewer = view.UMView(loader, color_mapper)
+            viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
+                                        intake_loader.INTAKE_FORMATTERS)
         else:
             viewer = view.UMView(loader, color_mapper)
         viewers[name] = viewer
@@ -166,7 +177,7 @@ def main(argv=None):
     for figure in figures:
         add_feature(figure, data.DISPUTED, color="red")
 
-    toggle = bokeh.models.CheckboxButtonGroup(
+    toggle = bokeh.models.CheckboxGroup(
             labels=["Coastlines"],
             active=[0],
             width=135)
@@ -215,11 +226,6 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
-    colors_controls = colors.Controls(
-            color_mapper, "Plasma", 256)
-
-    mapper_limits = MapperLimits(image_sources, color_mapper)
-
     menu = []
     for k, _ in config.patterns:
         menu.append((k, k))
@@ -256,6 +262,7 @@ def main(argv=None):
     for _, pattern in config.patterns:
         initial_state = db.initial_state(navigator, pattern=pattern)
         break
+
     middlewares = [
         db.Log(verbose=True),
         keys.navigate,
@@ -265,22 +272,48 @@ def main(argv=None):
         db.Converter({
             "valid_times": db.stamps,
             "inital_times": db.stamps
-        })
+        }),
+        colors.palettes
     ]
     store = redux.Store(
-        db.reducer,
+        redux.combine_reducers(
+            db.reducer,
+            series.reducer,
+            colors.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
+
+    # Connect color palette controls
+    color_palette = colors.ColorPalette(color_mapper)
+    color_palette.connect(store)
+    names = list(sorted(bokeh.palettes.all_palettes.keys()))
+    store.dispatch(colors.set_palette_name("Viridis"))
+    store.dispatch(colors.set_palette_number(256))
+    store.dispatch(colors.set_palette_names(names))
+
+    # Connect limit controllers to store
+    source_limits = colors.SourceLimits(image_sources)
+    source_limits.subscribe(store.dispatch)
+
+    user_limits = colors.UserLimits()
+    user_limits.connect(store)
+
+    # Connect navigation controls
     controls = db.ControlView()
     controls.subscribe(store.dispatch)
     store.subscribe(controls.render)
-    old_states = (db.Stream()
+
+    def old_world(state):
+        kwargs = {k: state.get(k, None) for k in db.State._fields}
+        return db.State(**kwargs)
+
+    old_states = (rx.Stream()
                     .listen_to(store)
-                    .map(lambda x: db.State(**x)))
+                    .map(old_world)
+                    .distinct())
     old_states.subscribe(artist.on_state)
 
-    # Ensure all listeners are pointing to the current state
-    store.notify(store.state)
+    # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
 
     tabs = bokeh.models.Tabs(tabs=[
@@ -297,10 +330,8 @@ def main(argv=None):
             child=bokeh.layouts.column(
                 border_row,
                 bokeh.layouts.row(slider),
-                colors_controls.layout,
-                bokeh.layouts.row(mapper_limits.low_input),
-                bokeh.layouts.row(mapper_limits.high_input),
-                bokeh.layouts.row(mapper_limits.checkbox),
+                color_palette.layout,
+                user_limits.layout
                 ),
             title="Settings")
         ])
@@ -332,13 +363,19 @@ def main(argv=None):
     marker_source = bokeh.models.ColumnDataSource({
             "x": [],
             "y": []})
-    series = Series.from_groups(
+    series_view = series.SeriesView.from_groups(
             series_figure,
-            config.file_groups,
-            directory=args.directory)
-    old_states.subscribe(series.on_state)
+            config.file_groups)
+    series_view.subscribe(store.dispatch)
+    series_args = (rx.Stream()
+                .listen_to(store)
+                .map(series.select_args)
+                .filter(lambda x: x is not None)
+                .distinct())
+    series_args.map(lambda a: series_view.render(*a))
+    series_args.map(print)  # Note: map(print) creates None stream
     for f in figures:
-        f.on_event(bokeh.events.Tap, series.on_tap)
+        f.on_event(bokeh.events.Tap, series_view.on_tap)
         f.on_event(bokeh.events.Tap, place_marker(f, marker_source))
 
 
@@ -389,126 +426,6 @@ def main(argv=None):
     document.add_root(series_row)
     document.add_root(figure_row)
     document.add_root(key_press.hidden_button)
-
-
-from itertools import cycle
-
-
-class Series(object):
-    def __init__(self, figure, loaders):
-        self.figure = figure
-        self.loaders = loaders
-        self.sources = {}
-        circles = []
-        items = []
-        colors = cycle(bokeh.palettes.Colorblind[6][::-1])
-        for name in self.loaders.keys():
-            source = bokeh.models.ColumnDataSource({
-                "x": [],
-                "y": [],
-            })
-            color = next(colors)
-            r = self.figure.line(
-                    x="x",
-                    y="y",
-                    color=color,
-                    line_width=1.5,
-                    source=source)
-            r.nonselection_glyph = bokeh.models.Line(
-                    line_width=1.5,
-                    line_color=color)
-            c = self.figure.circle(
-                    x="x",
-                    y="y",
-                    color=color,
-                    source=source)
-            c.selection_glyph = bokeh.models.Circle(
-                    fill_color="red")
-            c.nonselection_glyph = bokeh.models.Circle(
-                    fill_color=color,
-                    fill_alpha=0.5,
-                    line_alpha=0)
-            circles.append(c)
-            items.append((name, [r]))
-            self.sources[name] = source
-
-        legend = bokeh.models.Legend(items=items,
-                orientation="horizontal",
-                click_policy="hide")
-        self.figure.add_layout(legend, "below")
-
-        tool = bokeh.models.HoverTool(
-                tooltips=[
-                    ('Time', '@x{%F %H:%M}'),
-                    ('Value', '@y')
-                ],
-                formatters={
-                    'x': 'datetime'
-                })
-        self.figure.add_tools(tool)
-
-        tool = bokeh.models.TapTool(
-                renderers=circles)
-        self.figure.add_tools(tool)
-
-        # Underlying state
-        self.state = {}
-
-    @classmethod
-    def from_groups(cls, figure, groups, directory=None):
-        loaders = {}
-        for group in groups:
-            if group.file_type == "unified_model":
-                if directory is None:
-                    pattern = group.full_pattern
-                else:
-                    pattern = os.path.join(directory, group.full_pattern)
-                loaders[group.label] = data.SeriesLoader.from_pattern(pattern)
-        return cls(figure, loaders)
-
-    def on_state(self, app_state):
-        next_state = dict(self.state)
-        attrs = [
-                "initial_time",
-                "variable",
-                "pressure"]
-        for attr in attrs:
-            if getattr(app_state, attr) is not None:
-                next_state[attr] = getattr(app_state, attr)
-        state_change = any(
-                next_state.get(k, None) != self.state.get(k, None)
-                for k in attrs)
-        if state_change:
-            self.render()
-        self.state = next_state
-
-    def on_tap(self, event):
-        self.state["x"] = event.x
-        self.state["y"] = event.y
-        self.render()
-
-    def render(self):
-        for attr in ["x", "y", "variable", "initial_time"]:
-            if attr not in self.state:
-                return
-        x = self.state["x"]
-        y = self.state["y"]
-        variable = self.state["variable"]
-        initial_time = dt.datetime.strptime(
-                self.state["initial_time"],
-                "%Y-%m-%d %H:%M:%S")
-        pressure = self.state.get("pressure", None)
-        self.figure.title.text = variable
-        for name, source in self.sources.items():
-            loader = self.loaders[name]
-            lon, lat = geo.plate_carree(x, y)
-            lon, lat = lon[0], lat[0]  # Map to scalar
-            source.data = loader.series(
-                    initial_time,
-                    variable,
-                    lon,
-                    lat,
-                    pressure)
 
 
 def any_none(obj, attrs):
@@ -638,71 +555,6 @@ class TimeControls(Observable):
         if self.index is None:
             return
         return self.steps[self.index]
-
-
-class MapperLimits(object):
-    def __init__(self, sources, color_mapper, fixed=False):
-        self.fixed = fixed
-        self.sources = sources
-        for source in self.sources:
-            source.on_change("data", self.on_source_change)
-        self.color_mapper = color_mapper
-        self.low_input = bokeh.models.TextInput(title="Low:")
-        self.low_input.on_change("value",
-                self.change(color_mapper, "low", float))
-        self.color_mapper.on_change("low",
-                self.change(self.low_input, "value", str))
-        self.high_input = bokeh.models.TextInput(title="High:")
-        self.high_input.on_change("value",
-                self.change(color_mapper, "high", float))
-        self.color_mapper.on_change("high",
-                self.change(self.high_input, "value", str))
-        self.checkbox = bokeh.models.CheckboxGroup(
-                labels=["Fixed"],
-                active=[])
-        self.checkbox.on_change("active", self.on_checkbox_change)
-
-    def on_checkbox_change(self, attr, old, new):
-        if len(new) == 1:
-            self.fixed = True
-        else:
-            self.fixed = False
-
-    def on_source_change(self, attr, old, new):
-        if self.fixed:
-            return
-        images = []
-        for source in self.sources:
-            if len(source.data["image"]) == 0:
-                continue
-            images.append(source.data["image"][0])
-        if len(images) > 0:
-            low = np.min([np.min(x) for x in images])
-            high = np.max([np.max(x) for x in images])
-            self.color_mapper.low = low
-            self.color_mapper.high = high
-            self.color_mapper.low_color = bokeh.colors.RGB(0, 0, 0, a=0)
-            self.color_mapper.high_color = bokeh.colors.RGB(0, 0, 0, a=0)
-
-    @staticmethod
-    def change(widget, prop, dtype):
-        def wrapper(attr, old, new):
-            if old == new:
-                return
-            if getattr(widget, prop) == dtype(new):
-                return
-            setattr(widget, prop, dtype(new))
-        return wrapper
-
-
-def change(widget, prop, dtype):
-    def wrapper(attr, old, new):
-        if old == new:
-            return
-        if getattr(widget, prop) == dtype(new):
-            return
-        setattr(widget, prop, dtype(new))
-    return wrapper
 
 
 def add_feature(figure, data, color="black"):

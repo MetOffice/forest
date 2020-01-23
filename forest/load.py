@@ -30,7 +30,9 @@ from forest import (
         unified_model,
         rdt,
         satellite,
-        saf)
+        intake_loader,
+        saf,
+)
 
 
 __all__ = []
@@ -55,8 +57,7 @@ class Loader(object):
                     group.file_type,
                     group.label,
                     group.pattern,
-                    replacement_dir=cls.replace_dir(
-                        args.directory, group.directory))
+                    replacement_dir=group.directory)
         elif group.locator == "file_system":
             if args.config_file is None:
                 return cls.from_files(
@@ -65,11 +66,7 @@ class Loader(object):
                         args.files,
                         group.file_type)
             else:
-                pattern = os.path.expanduser(
-                        cls.full_pattern(
-                            group.pattern,
-                            group.directory,
-                            args.directory))
+                pattern = os.path.expanduser(group.pattern)
                 return cls.from_pattern(
                         group.label,
                         pattern,
@@ -148,36 +145,9 @@ class Loader(object):
             return ghrsstl4.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
+        elif file_type == 'intake':
+            return intake_loader.IntakeLoader(pattern)
         elif file_type == 'saf':
             return saf.saf(pattern, label, locator)
         else:
             raise Exception("unrecognised file_type: {}".format(file_type))
-
-    @staticmethod
-    def full_pattern(pattern, leaf_dir, prefix_dir):
-        """Combine user specified patterns to files on disk
-
-        .. note:: absolute path leaf directory takes precedence over prefix
-                  directory
-
-        :param pattern: str representing file name wildcard pattern
-        :param leaf_dir: leaf directory to add after prefix directory
-        :param prefix_dir: directory to place before leaf and pattern
-        """
-        dirs = [d for d in [prefix_dir, leaf_dir] if d is not None]
-        return os.path.join(*dirs, pattern)
-
-    @staticmethod
-    def replace_dir(prefix_dir, leaf_dir):
-        """Replacement directory for SQL queries
-
-        Combine two user defined directories to allow flexible
-        approach to directory specification
-
-        :param prefix_dir: directory to put before relative leaf directory
-        :param leaf_dir: directory to append to prefix
-        """
-        dirs = [d for d in [prefix_dir, leaf_dir] if d is not None]
-        if len(dirs) == 0:
-            return
-        return os.path.join(*dirs)
