@@ -2,6 +2,7 @@ import unittest
 import unittest.mock
 import datetime as dt
 import numpy as np
+import forest.db.control
 from forest import db, redux, rx
 
 
@@ -158,6 +159,12 @@ class TestControls(unittest.TestCase):
         result = store.state["pressure"]
         expect = 800
         self.assertEqual(expect, result)
+
+
+def test_row():
+    _row = forest.db.control._Row("item", "items")
+    _row.render({})
+    assert _row.select.options == []
 
 
 class TestControlView(unittest.TestCase):

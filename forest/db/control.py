@@ -264,22 +264,6 @@ class Navigator(object):
 
 
 @export
-class Converter(object):
-    def __init__(self, maps):
-        self.maps = maps
-
-    def __call__(self, store, action):
-        if action["kind"] == SET_VALUE:
-            key = action["payload"]["key"]
-            value = action["payload"]["value"]
-            if key in self.maps:
-                value = self.maps[key](value)
-            yield set_value(key, value)
-        else:
-            yield action
-
-
-@export
 class Controls(object):
     def __init__(self, navigator):
         self.navigator = navigator
@@ -358,119 +342,130 @@ class Controls(object):
 @export
 class ControlView(Observable):
     def __init__(self):
-        dropdown_width = 180
-        button_width = 75
-        self.dropdowns = {
-            "pattern": bokeh.models.Dropdown(
-                label="Model/observation"),
-            "variable": bokeh.models.Dropdown(
-                label="Variable"),
-            "initial_time": bokeh.models.Dropdown(
-                label="Initial time",
-                width=dropdown_width),
-            "valid_time": bokeh.models.Dropdown(
-                label="Valid time",
-                width=dropdown_width),
-            "pressure": bokeh.models.Dropdown(
-                label="Pressure",
-                width=dropdown_width)
-        }
-        for key, dropdown in self.dropdowns.items():
-            util.autolabel(dropdown)
-            util.autowarn(dropdown)
-            dropdown.on_change("value", self.on_change(key))
         self.rows = {}
-        self.buttons = {}
-        for key, items_key in [
-                ('pressure', 'pressures'),
-                ('valid_time', 'valid_times'),
-                ('initial_time', 'initial_times')]:
-            self.buttons[key] = {
-                'next': bokeh.models.Button(
-                    label="Next",
-                    width=button_width),
-                'previous': bokeh.models.Button(
-                    label="Previous",
-                    width=button_width),
-            }
-            self.buttons[key]['next'].on_click(
-                self.on_next(key, items_key))
-            self.buttons[key]['previous'].on_click(
-                self.on_previous(key, items_key))
-            self.rows[key] = bokeh.layouts.row(
-                self.buttons[key]["previous"],
-                self.dropdowns[key],
-                self.buttons[key]["next"])
+        self.rows["pattern"] = _PatternRow()
+        self.rows["variable"] = _Row("variable", "variables", next_previous=False)
+        self.rows["initial_time"] = _Row("initial_time", "initial_times")
+        self.rows["valid_time"] = _Row("valid_time", "valid_times")
+        self.rows["pressure"] = _Row("pressure", "pressures", formatter=self.hpa)
         self.layout = bokeh.layouts.column(
-            self.dropdowns["pattern"],
-            self.dropdowns["variable"],
-            self.rows["initial_time"],
-            self.rows["valid_time"],
-            self.rows["pressure"])
+            self.rows["pattern"].layout,
+            self.rows["variable"].layout,
+            self.rows["initial_time"].layout,
+            self.rows["valid_time"].layout,
+            self.rows["pressure"].layout,
+        )
         super().__init__()
 
-    def on_change(self, key):
-        def callback(attr, old, new):
-            self.notify(set_value(key, new))
-        return callback
-
-    def on_next(self, item_key, items_key):
-        def callback():
-            self.notify(next_value(item_key, items_key))
-        return callback
-
-    def on_previous(self, item_key, items_key):
-        def callback():
-            self.notify(previous_value(item_key, items_key))
-        return callback
-
-    def render(self, state):
-        """Configure dropdown menus"""
-        assert isinstance(state, dict), "Only support dict"
-        for key, items_key in [
-                ("pattern", "patterns"),
-                ("variable", "variables"),
-                ("initial_time", "initial_times"),
-                ("valid_time", "valid_times"),
-                ("pressure", "pressures")]:
-            if items_key not in state:
-                disabled = True
-            else:
-                values = state[items_key]
-                disabled = len(values) == 0
-                if key == "pressure":
-                    menu = [(self.hpa(p), str(p)) for p in values]
-                elif key == "pattern":
-                    menu = state["patterns"]
-                else:
-                    menu = self.menu(values)
-                self.dropdowns[key].menu = menu
-            self.dropdowns[key].disabled = disabled
-            if key in self.buttons:
-                self.buttons[key]["next"].disabled = disabled
-                self.buttons[key]["previous"].disabled = disabled
-
-        if ("pattern" in state) and ("patterns" in state):
-            for _, pattern in state["patterns"]:
-                if pattern == state["pattern"]:
-                    self.dropdowns["pattern"].value = pattern
-
-        for key in [
-                "variable",
-                "initial_time",
-                "pressure",
-                "valid_time"]:
-            if key in state:
-                if state[key] is None:
-                    continue
-                self.dropdowns[key].value = str(state[key])
-
-    @staticmethod
-    def menu(values, formatter=str):
-        return [(formatter(o), formatter(o)) for o in values]
+    def connect(self, store):
+        self.rows["pattern"].connect(store)
+        self.rows["variable"].connect(store)
+        self.rows["initial_time"].connect(store)
+        self.rows["valid_time"].connect(store)
+        self.rows["pressure"].connect(store)
 
     @staticmethod
     def hpa(p):
-        if p < 1:
+        if p is None:
+            return "Pressure"
+        if float(p) < 1:
             return "{}hPa".format(str(p))
         return "{}hPa".format(int(p))
+
+
+class _PatternRow(Observable):
+    def __init__(self):
+        self._table = {}
+        self.item_key = "pattern"
+        self.items_key = "patterns"
+        self.select = bokeh.models.Select(width=350)
+        self.select.on_change("value", self.on_select)
+        self.layout = bokeh.layouts.row(
+            self.select
+        )
+        super().__init__()
+
+    def on_select(self, attr, old, new):
+        value = self._table.get(new, new)
+        self.notify(set_value(self.item_key, value))
+
+    def connect(self, store):
+        self.add_subscriber(store.dispatch)
+        store.add_subscriber(self.render)
+
+    def render(self, state):
+        """Render application state"""
+        pattern = state.get(self.item_key)
+        patterns = state.get(self.items_key, [])
+        self._table.update(patterns)
+        option = None
+        for label, _pattern in patterns:
+            if _pattern == pattern:
+                option = label
+        options = [label for label, _ in patterns]
+        self.select.options = options
+        if option in options:
+            self.select.value = pattern
+
+
+class _Row(Observable):
+    """Widgets used to navigate a dimension"""
+    def __init__(self, item_key, items_key, next_previous=True, formatter=str):
+        self.item_key = item_key
+        self.items_key = items_key
+        self.formatter = formatter
+        self._lookup = {}  # Look-up table to convert from label to value
+        if next_previous:
+            # Include next/previous buttons
+            self.select = bokeh.models.Select(
+                width=180)
+            self.select.on_change("value", self.on_select)
+            self.buttons = {
+                "next": bokeh.models.Button(
+                    label="Next",
+                    width=75),
+                "previous": bokeh.models.Button(
+                    label="Previous",
+                    width=75),
+            }
+            self.buttons["next"].on_click(self.on_next)
+            self.buttons["previous"].on_click(self.on_previous)
+            self.layout = bokeh.layouts.row(
+                self.buttons["previous"],
+                self.select,
+                self.buttons["next"],
+            )
+        else:
+            # Without next/previous buttons
+            self.select = bokeh.models.Select(width=350)
+            self.select.on_change("value", self.on_select)
+            self.layout = bokeh.layouts.row(
+                self.select
+            )
+        super().__init__()
+
+    def on_select(self, attr, old, new):
+        value = self._lookup.get(new, new)
+        self.notify(set_value(self.item_key, value))
+
+    def on_next(self):
+        self.notify(next_value(self.item_key, self.items_key))
+
+    def on_previous(self):
+        self.notify(previous_value(self.item_key, self.items_key))
+
+    def connect(self, store):
+        """Connect user interactions to the store"""
+        self.add_subscriber(store.dispatch)
+        store.add_subscriber(self.render)
+
+    def render(self, state):
+        """Apply latest application state to controls"""
+        value = state.get(self.item_key)
+        values = state.get(self.items_key, [])
+        option = self.formatter(value)
+        options = [self.formatter(value) for value in values]
+        self._lookup.update(zip(options, values))
+        self.select.options = options
+        if option in options:
+            self.select.value = option

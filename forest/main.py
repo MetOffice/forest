@@ -229,10 +229,6 @@ def main(argv=None):
         db.InverseCoordinate("pressure"),
         db.next_previous,
         db.Controls(navigator),
-        db.Converter({
-            "valid_times": db.stamps,
-            "inital_times": db.stamps
-        }),
         colors.palettes,
         presets.Middleware(presets.proxy_storage(config.presets_file)),
         presets.middleware,
@@ -283,8 +279,7 @@ def main(argv=None):
 
     # Connect navigation controls
     controls = db.ControlView()
-    controls.add_subscriber(store.dispatch)
-    store.add_subscriber(controls.render)
+    controls.connect(store)
 
     def old_world(state):
         kwargs = {k: state.get(k, None) for k in db.State._fields}
