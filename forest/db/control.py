@@ -418,7 +418,8 @@ class DimensionView(Observable):
         self.items_key = items_key
         self.formatter = formatter
         self._lookup = {}  # Look-up table to convert from label to value
-        if next_previous:
+        self.next_previous = next_previous
+        if self.next_previous:
             # Include next/previous buttons
             self.select = bokeh.models.Select(
                 width=180)
@@ -475,3 +476,10 @@ class DimensionView(Observable):
         self.select.options = options
         if option in options:
             self.select.value = option
+
+        # Deactivate widgets if no options available
+        disabled = len(options) == 0
+        self.select.disabled = disabled
+        if self.next_previous:
+            self.buttons["next"].disabled = disabled
+            self.buttons["previous"].disabled = disabled
