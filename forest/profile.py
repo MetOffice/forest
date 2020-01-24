@@ -1,18 +1,18 @@
 """
-Time series
------------
+Profile sub plot
+----------------
 
-Support for time series uses the redux
+Support for the profile window uses the redux
 design pattern. The View reacts to State
 changes.
 
-.. autoclass:: SeriesView
+.. autoclass:: ProfileView
     :members:
 
-.. autoclass:: SeriesLoader
+.. autoclass:: ProfileLoader
     :members:
 
-.. autoclass:: SeriesLocator
+.. autoclass:: ProfileLocator
     :members:
 
 Reducer
@@ -43,7 +43,6 @@ import os
 from itertools import cycle
 from collections import defaultdict
 import bokeh.palettes
-import bokeh.models
 import numpy as np
 import netCDF4
 from forest import geo
@@ -52,7 +51,6 @@ from forest.redux import Action
 from forest.util import initial_time as _initial_time
 from forest.gridded_forecast import _to_datetime
 from forest.screen import SET_POSITION
-
 try:
     import iris
 except ModuleNotFoundError:
@@ -61,7 +59,7 @@ except ModuleNotFoundError:
 
 
 def reducer(state, action):
-    """Time series specific reducer
+    """Profile specific reducer
 
     Given :func:`screen.set_position` action adds "position" data
     to state
@@ -78,7 +76,7 @@ def reducer(state, action):
 
 
 def select_args(state):
-    """Select args needed by :func:`SeriesView.render`
+    """Select args needed by :func:`ProfileView.render`
 
     .. note:: If all criteria are not present None is returned
 
@@ -99,13 +97,13 @@ def select_args(state):
             state["variable"],
             state["position"]["x"],
             state["position"]["y"],
-            state["tools"]["time_series"]) + optional
+            state["tools"]["profile"]) + optional
 
 
-class SeriesView(Observable):
-    """Time series view
+class ProfileView(Observable):
+    """Profile view
 
-    Responsible for keeping the lines on the series figure
+    Responsible for keeping the lines on the profile figure
     up to date.
     """
     def __init__(self, figure, loaders):
@@ -173,7 +171,7 @@ class SeriesView(Observable):
         for group in groups:
             if group.file_type == "unified_model":
                 pattern = group.full_pattern
-                loaders[group.label] = SeriesLoader.from_pattern(pattern)
+                loaders[group.label] = ProfileLoader.from_pattern(pattern)
         return cls(figure, loaders)
 
     def render(self, initial_time, variable, x, y, visible, pressure=None):
@@ -185,7 +183,7 @@ class SeriesView(Observable):
                 loader = self.loaders[name]
                 lon, lat = geo.plate_carree(x, y)
                 lon, lat = lon[0], lat[0]  # Map to scalar
-                source.data = loader.series(
+                source.data = loader.profile(
                         initial_time,
                         variable,
                         lon,
@@ -193,16 +191,16 @@ class SeriesView(Observable):
                         pressure)
 
 
-class SeriesLoader(object):
-    """Time series loader"""
+class ProfileLoader(object):
+    """Profile loader"""
     def __init__(self, paths):
-        self.locator = SeriesLocator(paths)
+        self.locator = ProfileLocator(paths)
 
     @classmethod
     def from_pattern(cls, pattern):
         return cls(sorted(glob.glob(os.path.expanduser(pattern))))
 
-    def series(self,
+    def profile(self,
             initial_time,
             variable,
             lon0,
@@ -211,7 +209,7 @@ class SeriesLoader(object):
         data = {"x": [], "y": []}
         paths = self.locator.locate(initial_time)
         for path in paths:
-            segment = self.series_file(
+            segment = self.profile_file(
                     path,
                     variable,
                     lon0,
@@ -221,7 +219,7 @@ class SeriesLoader(object):
             data["y"] += list(segment["y"])
         return data
 
-    def series_file(self, *args, **kwargs):
+    def profile_file(self, *args, **kwargs):
         try:
             return self._load_netcdf4(*args, **kwargs)
         except:
@@ -238,7 +236,7 @@ class SeriesLoader(object):
             lon0 = iris.analysis.cartography.wrap_lons(np.asarray(lon0), 0, 360)
         # Construct constraint
         coord_values={cube.coord(axis='X').standard_name: lon0,
-                      cube.coord(axis='Y').standard_name: lat0,                     
+                      cube.coord(axis='Y').standard_name: lat0,
                       }
         if pressure is not None and 'pressure' in [coord.name() for coord in cube.coords()]:
             ptol = 0.01 * pressure
@@ -333,8 +331,8 @@ class SeriesLoader(object):
         return np.abs(pressures - pressure) < (rtol * pressure)
 
 
-class SeriesLocator(object):
-    """Helper to find files related to Series"""
+class ProfileLocator(object):
+    """Helper to find files related to Profile"""
     def __init__(self, paths):
         self.paths = paths
         self.table = defaultdict(list)
