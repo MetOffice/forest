@@ -333,15 +333,37 @@ class TestNextPrevious(unittest.TestCase):
         }
         self.assertEqual(expect, result)
 
-    def test_next_item_given_last_item_returns_first_item(self):
-        result = db.control.next_item([0, 1, 2], 2)
-        expect = 0
-        self.assertEqual(expect, result)
-
     def test_previous_item_given_first_item_returns_last_item(self):
         result = db.control.previous_item([0, 1, 2], 0)
         expect = 2
         self.assertEqual(expect, result)
+
+
+@pytest.mark.parametrize("items,item,expect", [
+    ([0, 1, 2], 2, 0),
+    ([0, 1, 2], 2.000001, 0),
+])
+def test_next_item(items, item, expect):
+    assert db.control.next_item(items, item) == expect
+
+
+@pytest.mark.parametrize("items,item,expect", [
+    ([3, 4, 5], 5, 2),
+    ([3, 4, 5], 5.000001, 2),
+    ([dt.datetime(2020, 1, 1)], dt.datetime(2020, 1, 1), 0)
+])
+def test_index(items, item, expect):
+    assert db.control._index(items, item) == expect
+
+
+@pytest.mark.parametrize("items,item,error", [
+    ([], 0, ValueError),
+    ([1], 0, ValueError),
+])
+def test_index_raises_value_error(items, item, error):
+    with pytest.raises(error):
+        db.control._index(items, item)
+
 
 
 class TestPressureMiddleware(unittest.TestCase):

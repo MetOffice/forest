@@ -227,14 +227,25 @@ def next_previous(store, action):
 
 def next_item(items, item):
     items = list(sorted(items))
-    i = items.index(item)
+    i = _index(items, item)
     return items[(i + 1) % len(items)]
 
 
 def previous_item(items, item):
     items = list(sorted(items))
-    i = items.index(item)
+    i = _index(items, item)
     return items[i - 1]
+
+
+def _index(items, item):
+    try:
+        return items.index(item)
+    except ValueError as e:
+        # Index of first float within tolerance
+        if any(np.isclose(items, item)):
+            return np.isclose(items, item).argmax()
+        else:
+            raise e
 
 
 @export
