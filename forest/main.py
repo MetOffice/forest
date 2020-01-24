@@ -8,6 +8,7 @@ import glob
 from forest import (
         satellite,
         screen,
+        tools,
         series,
         data,
         load,
@@ -257,7 +258,7 @@ def main(argv=None):
     layers_ui.connect(store)
 
     # Connect tools controls
-    tools_panel = series.ToolsPanel()
+    tools_panel = tools.ToolsPanel()
     tools_panel.connect(store)
 
     # Connect tap listener
@@ -293,7 +294,7 @@ def main(argv=None):
     connector = layers.ViewerConnector(viewers, old_world).connect(store)
 
     # Set default time series visibility
-    store.dispatch(series.on_toggle())
+    store.dispatch(tools.on_toggle())
 
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
@@ -341,7 +342,7 @@ def main(argv=None):
                 border_fill_alpha=0)
     series_figure.toolbar.logo = None
 
-    tool_layout = series.ToolLayout(series_figure)
+    tool_layout = tools.ToolLayout(series_figure)
     tool_layout.connect(store)
 
     series_view = series.SeriesView.from_groups(

@@ -57,6 +57,7 @@ import os
 from itertools import cycle
 from collections import defaultdict
 import bokeh.palettes
+import bokeh.models
 import numpy as np
 import netCDF4
 from forest import geo
@@ -65,18 +66,13 @@ from forest.redux import Action
 from forest.util import initial_time as _initial_time
 from forest.gridded_forecast import _to_datetime
 from forest.screen import SET_POSITION
+from forest.tools import ON_TOGGLE
+
 try:
     import iris
 except ModuleNotFoundError:
     iris = None
     # ReadTheDocs can't import iris
-
-
-ON_TOGGLE = "TOGGLE_VISIBILITY"
-
-
-def on_toggle() -> Action:
-    return {"kind": ON_TOGGLE}
 
 
 def reducer(state, action):
@@ -125,39 +121,6 @@ def select_args(state):
             state["position"]["x"],
             state["position"]["y"],
             state["time_series_visible"]) + optional
-
-
-class ToolsPanel(Observable):
-    """ A panel that contains buttons to turn extra tools on and off"""
-    def __init__(self):
-        self.buttons = {"toggle_time_series": bokeh.models.Button(label="Display Time Series")}
-        self.buttons["toggle_time_series"].on_click(self.on_click_time_series)
-        super().__init__()
-
-    def connect(self, store):
-        self.add_subscriber(store.dispatch)
-        return self
-
-    def on_click_time_series(self):
-        """update the store."""
-        self.notify(on_toggle())
-
-
-class ToolLayout:
-    def __init__(self, tool_figure):
-        self.figures_row = bokeh.layouts.row(
-                tool_figure,
-                name="series")
-        self.tool_figure = tool_figure
-
-    def connect(self, store):
-        store.add_subscriber(self.render)
-
-    def render(self, state):
-        if state.get("time_series_visible"):
-            self.figures_row.children = [self.tool_figure]
-        else:
-            self.figures_row.children = []
 
 
 class SeriesView(Observable):
