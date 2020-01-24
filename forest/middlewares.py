@@ -6,7 +6,9 @@ def echo(store, action):
         item: store.state.get(item) for item in [
             "variable",
             "initial_time",
+            "initial_times",
             "valid_time",
+            "valid_times",
             "pressure",
             "pressures"]}
     print(action, items)

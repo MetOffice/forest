@@ -171,21 +171,24 @@ def test_dimension_view_render_sets_pressure_levels():
             "pressure", "pressures",
             formatter=forest.db.control.format_hpa)
     view.render(state)
-    assert view.select.options == ["1000hPa", "950hPa", "850hPa"]
+    assert view.select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.select.options[1:] == ["1000hPa", "950hPa", "850hPa"]
 
 
 def test_dimension_view_render_valid_times():
     state = {"valid_times": [dt.datetime(2019, 1, 1, 3)]}
     view = forest.db.control.DimensionView("valid_time", "valid_times")
     view.render(state)
-    assert view.select.options == ["2019-01-01 03:00:00"]
+    assert view.select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.select.options[1:] == ["2019-01-01 03:00:00"]
 
 
 def test_dimension_view_render_variables():
     state = {"variables": ["mslp"]}
     view = forest.db.control.DimensionView("variable", "variables")
     view.render(state)
-    assert view.select.options == ["mslp"]
+    assert view.select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.select.options[1:] == ["mslp"]
 
 
 def test_dimension_view_render_initial_times():
@@ -193,7 +196,8 @@ def test_dimension_view_render_initial_times():
     state = {"initial_times": initial_times}
     view = forest.db.control.DimensionView("initial_time", "initial_times")
     view.render(state)
-    assert view.select.options == initial_times
+    assert view.select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.select.options[1:] == initial_times
 
 
 def test_hpa_given_small_pressures():

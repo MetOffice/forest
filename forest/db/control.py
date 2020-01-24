@@ -17,6 +17,10 @@ __all__ = [
 ]
 
 
+# Message to user when option not available
+UNAVAILABLE = "Please specify"
+
+# Action keys
 SET_VALUE = "SET_VALUE"
 NEXT_VALUE = "NEXT_VALUE"
 PREVIOUS_VALUE = "PREVIOUS_VALUE"
@@ -408,6 +412,8 @@ class DatasetView(Observable):
 
     def on_select(self, attr, old, new):
         """On click handler for select widget"""
+        if new == UNAVAILABLE:
+            return
         value = self._table.get(new, new)
         self.notify(set_value(self.item_key, value))
 
@@ -426,9 +432,11 @@ class DatasetView(Observable):
             if _pattern == pattern:
                 option = label
         options = [label for label, _ in patterns]
-        self.select.options = options
+        self.select.options = [UNAVAILABLE] + options
         if option in options:
             self.select.value = pattern
+        else:
+            self.select.value = UNAVAILABLE
 
 
 class DimensionView(Observable):
@@ -470,6 +478,8 @@ class DimensionView(Observable):
 
     def on_select(self, attr, old, new):
         """Handler for select widget"""
+        if new == UNAVAILABLE:
+            return
         value = self._lookup.get(new, new)
         self.notify(set_value(self.item_key, value))
 
@@ -493,9 +503,11 @@ class DimensionView(Observable):
         option = self.formatter(value)
         options = [self.formatter(value) for value in values]
         self._lookup.update(zip(options, values))
-        self.select.options = options
+        self.select.options = [UNAVAILABLE] + options
         if option in options:
             self.select.value = option
+        else:
+            self.select.value = UNAVAILABLE
 
         # Deactivate widgets if no options available
         disabled = len(options) == 0
