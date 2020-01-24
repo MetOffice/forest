@@ -100,14 +100,12 @@ def database():
     in_memory_database.close()
 
 
-def test_middleware_next_pressure_given_pressures_returns_first_element(database):
+def test_middleware_next_pressure_given_pressures_returns_first_element():
     pressure = 950
     store = redux.Store(
         db.reducer,
         initial_state={"pressures": [pressure]},
-        middlewares=[
-            db.next_previous,
-            db.Controls(database)])
+        middlewares=[db.next_previous])
     action = forest.db.control.next_value("pressure", "pressures")
     store.dispatch(action)
     result = store.state
@@ -118,20 +116,19 @@ def test_middleware_next_pressure_given_pressures_returns_first_element(database
     assert expect == result
 
 
-def test_middleware_next_pressure_given_pressures_none(database):
+def test_middleware_next_pressure_given_pressures_none():
     store = redux.Store(
         db.reducer,
         middlewares=[
             db.InverseCoordinate("pressure"),
             db.next_previous,
-            db.Controls(database)
         ])
     action = forest.db.control.next_value("pressure", "pressures")
     store.dispatch(action)
     assert store.state == {}
 
 
-def test_middleware_next_pressure_given_current_pressure(database):
+def test_middleware_next_pressure_given_current_pressure():
     pressure = 950
     pressures = [1000, 950, 800]
     store = redux.Store(
@@ -142,8 +139,7 @@ def test_middleware_next_pressure_given_current_pressure(database):
         },
         middlewares=[
             db.InverseCoordinate("pressure"),
-            db.next_previous,
-            db.Controls(database)
+            db.next_previous
         ])
     action = forest.db.control.next_value("pressure", "pressures")
     store.dispatch(action)
