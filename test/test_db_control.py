@@ -139,17 +139,19 @@ class TestControls(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
+def test_dimension_view_on_next_action():
+    listener = unittest.mock.Mock()
+    view = forest.db.control.DimensionView("pressure", "pressures")
+    view.add_subscriber(listener)
+    view.on_next()
+    expect = db.next_value("pressure", "pressures")
+    listener.assert_called_once_with(expect)
+
+
 @unittest.skip("waiting on green light")
 class TestControlView(unittest.TestCase):
     def setUp(self):
         self.view = db.ControlView()
-
-    def test_on_click_emits_action(self):
-        listener = unittest.mock.Mock()
-        self.view.add_subscriber(listener)
-        self.view.on_next("pressure", "pressures")()
-        expect = db.next_value("pressure", "pressures")
-        listener.assert_called_once_with(expect)
 
     def test_render_given_no_variables_disables_dropdown(self):
         self.view.render({"variables": []})
