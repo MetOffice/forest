@@ -326,6 +326,8 @@ class Controls(object):
         yield action
         yield set_value("valid_times", valid_times)
         yield set_value("pressures", pressures)
+        if ("pressure" not in store.state) and len(pressures) > 0:
+            yield set_value("pressure", max(pressures))
 
     def _initial_time(self, store, action):
         for attr in ["pattern", "variable"]:

@@ -389,6 +389,61 @@ class TestPressureMiddleware(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
+def test_controls_middleware(database):
+    middleware = forest.db.Controls(database)
+    store = forest.redux.Store(forest.db.control.reducer)
+    action = {"kind": "ANY"}
+    assert list(middleware(store, action)) == [action]
+
+
+def test_controls_middleware_given_set_variable():
+    """Should set pressure level"""
+    navigator = unittest.mock.Mock()
+    middleware = forest.db.Controls(navigator)
+    # Configure Store.state
+    store = forest.redux.Store(forest.db.control.reducer)
+    for action in [
+            forest.db.control.set_value("pattern", "*"),
+            forest.db.control.set_value("initial_time", "2020-01-01 00:00:00"),
+            forest.db.control.set_value("valid_time", "2020-01-01 00:00:00")]:
+        store.dispatch(action)
+    # Configure navigator
+    valid_times = ["2020-01-01 00:00:00"]
+    pressures = [950., 1000., 750.]
+    navigator.valid_times.return_value = valid_times
+    navigator.pressures.return_value = pressures
+    action = forest.db.control.set_value("variable", "name")
+    assert list(middleware(store, action)) == [
+            action,
+            forest.db.control.set_value("valid_times", valid_times),
+            forest.db.control.set_value("pressures", list(reversed(pressures))),
+            forest.db.control.set_value("pressure", 1000.),
+    ]
+
+
+def test_controls_middleware_given_set_variable_no_pressures():
+    navigator = unittest.mock.Mock()
+    middleware = forest.db.Controls(navigator)
+    # Configure Store.state
+    store = forest.redux.Store(forest.db.control.reducer)
+    for action in [
+            forest.db.control.set_value("pattern", "*"),
+            forest.db.control.set_value("initial_time", "2020-01-01 00:00:00"),
+            forest.db.control.set_value("valid_time", "2020-01-01 00:00:00")]:
+        store.dispatch(action)
+    # Configure navigator
+    valid_times = ["2020-01-01 00:00:00"]
+    pressures = []
+    navigator.valid_times.return_value = valid_times
+    navigator.pressures.return_value = pressures
+    action = forest.db.control.set_value("variable", "name")
+    assert list(middleware(store, action)) == [
+            action,
+            forest.db.control.set_value("valid_times", valid_times),
+            forest.db.control.set_value("pressures", []),
+    ]
+
+
 class TestStateStream(unittest.TestCase):
     def test_support_old_style_state(self):
         """Not all components are ready to accept dict() states"""
