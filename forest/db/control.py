@@ -9,6 +9,7 @@ from collections import namedtuple
 from forest.observe import Observable
 from forest.gridded_forecast import _to_datetime
 from forest.export import export
+from typing import List, Any
 
 
 __all__ = [
@@ -112,6 +113,7 @@ def state_eq(self, other):
             time_equal(self.valid_time, other.valid_time) and
             time_array_equal(self.valid_times, other.valid_times) and
             equal_value(self.pressure, other.pressure) and
+            np.shape(self.pressures) == np.shape(other.pressures) and
             equal_value(self.pressures, other.pressures)
     )
 
@@ -237,7 +239,7 @@ def previous_item(items, item):
     return items[i - 1]
 
 
-def _index(items, item):
+def _index(items: List[Any], item: Any):
     try:
         return items.index(item)
     except ValueError as e:
