@@ -362,11 +362,16 @@ class ControlView:
 
     @staticmethod
     def hpa(p):
-        if p is None:
-            return "Pressure"
-        if float(p) < 1:
-            return "{}hPa".format(str(p))
-        return "{}hPa".format(int(p))
+        return format_hpa(p)
+
+
+def format_hpa(p):
+    """Text representation of atmospheric pressure"""
+    if p is None:
+        return "Pressure"
+    if float(p) < 1:
+        return "{}hPa".format(str(p))
+    return "{}hPa".format(int(p))
 
 
 class DatasetView(Observable):

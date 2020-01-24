@@ -148,6 +148,18 @@ def test_dimension_view_on_next_action():
     listener.assert_called_once_with(expect)
 
 
+def test_dimension_view_render_given_pressure():
+    state = {
+        "pressures": [1000],
+        "pressure": 1000
+    }
+    view = forest.db.control.DimensionView(
+            "pressure", "pressures",
+            formatter=forest.db.control.format_hpa)
+    view.render(state)
+    assert view.select.value == "1000hPa"
+
+
 @unittest.skip("waiting on green light")
 class TestControlView(unittest.TestCase):
     def setUp(self):
@@ -157,16 +169,6 @@ class TestControlView(unittest.TestCase):
         self.view.render({"variables": []})
         result = self.view.dropdowns["variable"].disabled
         expect = True
-        self.assertEqual(expect, result)
-
-    def test_render_given_pressure(self):
-        state = {
-            "pressures": [1000],
-            "pressure": 1000
-        }
-        self.view.render(state)
-        result = self.view.dropdowns["pressure"].label
-        expect = "1000hPa"
         self.assertEqual(expect, result)
 
     def test_render_sets_pressure_levels(self):
