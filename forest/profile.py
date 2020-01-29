@@ -86,10 +86,11 @@ def select_args(state):
             for att in [
                 "variable",
                 "initial_time",
-                "position"]):
+                "position",
+                "pressure"]):
         return
-    if "pressure" in state:
-        optional = (state["pressure"],)
+    if "valid_time" in state:
+        optional = (state["valid_time"],)
     else:
         optional = ()
     return (
@@ -97,7 +98,12 @@ def select_args(state):
             state["variable"],
             state["position"]["x"],
             state["position"]["y"],
+            state["pressure"],
             state["tools"]["profile"]) + optional
+
+def _find_nearest(value, array):
+    idx = (np.abs(array - value)).argmin()
+    return array[np.array(idx)]
 
 
 class ProfileView(Observable):
@@ -174,7 +180,7 @@ class ProfileView(Observable):
                 loaders[group.label] = ProfileLoader.from_pattern(pattern)
         return cls(figure, loaders)
 
-    def render(self, initial_time, variable, x, y, visible, pressure=None):
+    def render(self, initial_time, variable, x, y, pressure, visible, time=None):
         """Update data for a particular application setting"""
         if visible:
             assert isinstance(initial_time, dt.datetime), "only support datetime"
@@ -188,7 +194,7 @@ class ProfileView(Observable):
                         variable,
                         lon,
                         lat,
-                        pressure)
+                        time)
 
 
 class ProfileLoader(object):
@@ -205,7 +211,7 @@ class ProfileLoader(object):
             variable,
             lon0,
             lat0,
-            pressure=None):
+            time=None):
         data = {"x": [], "y": []}
         paths = self.locator.locate(initial_time)
         for path in paths:
@@ -214,20 +220,19 @@ class ProfileLoader(object):
                     variable,
                     lon0,
                     lat0,
-                    pressure=pressure)
+                    time=time)
             data["x"] += list(segment["x"])
             data["y"] += list(segment["y"])
         return data
 
     def profile_file(self, *args, **kwargs):
-        try:
-            return self._load_netcdf4(*args, **kwargs)
-        except:
-            return self._load_cube(*args, **kwargs)
+        return self._load_cube(*args, **kwargs)
 
-    def _load_cube(self, path, variable, lon0, lat0, pressure=None):
+    def _load_cube(self, path, variable, lon0, lat0, time=None):
         """ Constrain data loading to points required """
+
         cube = iris.load_cube(path, variable)
+
         # reference longitude axis by "axis='X'" and latitude axis as axis='Y',
         # to accommodate various types of coordinate system.
         # e.g. 'grid_longitude'. See iris.utils.guess_coord_axis.
@@ -235,100 +240,29 @@ class ProfileLoader(object):
             # get circular longitude values
             lon0 = iris.analysis.cartography.wrap_lons(np.asarray(lon0), 0, 360)
         # Construct constraint
-        coord_values={cube.coord(axis='X').standard_name: lon0,
-                      cube.coord(axis='Y').standard_name: lat0,
-                      }
-        if pressure is not None and 'pressure' in [coord.name() for coord in cube.coords()]:
-            ptol = 0.01 * pressure
-            coord_values['pressure'] = (
-                lambda cell: (pressure - ptol) < cell < (pressure + ptol)
+        lon_nearest = _find_nearest(lon0, cube.coord(axis='X').points)
+        lat_nearest = _find_nearest(lat0, cube.coord(axis='Y').points)
+        coord_values={
+            cube.coord(axis='X').standard_name: (lambda cell: lon_nearest == cell.point),
+            cube.coord(axis='Y').standard_name: (lambda cell: lat_nearest == cell.point),
+            }
+        if time is not None and 'time' in [coord.name() for coord in cube.coords()]:
+            coord_values['time'] = (
+                lambda cell: _to_datetime(time) == cell
             )
-        cube = cube.extract(iris.Constraint(coord_values=coord_values))
-        assert cube is not None
-        # Get validity times and data values
-        # list the validity times as datetime objects
-        time_coord = cube.coord('time')
-        times = time_coord.units.num2date(time_coord.points).tolist()
+        constraint = iris.Constraint(coord_values=coord_values)
+
+        # Extract nearest profile
+        cube = cube.extract(constraint)
+        assert cube is not None, "Error: No profile data found for these coordinates"
+
+        # Get level info and data values
+        pressure_coord = cube.coord('pressure')
+        pressures = pressure_coord.points.tolist()
         values = cube.data
         return {
-            "x": times,
-            "y": values}
-
-    def _load_netcdf4(self, path, variable, lon0, lat0, pressure=None):
-        with netCDF4.Dataset(path) as dataset:
-            try:
-                var = dataset.variables[variable]
-            except KeyError:
-                return {"x": [], "y": []}
-            lons = geo.to_180(self._longitudes(dataset, var))
-            lats = self._latitudes(dataset, var)
-            i = np.argmin(np.abs(lons - lon0))
-            j = np.argmin(np.abs(lats - lat0))
-            times = self._times(dataset, var)
-            values = var[..., j, i]
-            if (
-                    ("pressure" in var.coordinates) or
-                    ("pressure" in var.dimensions)):
-                pressures = self._pressures(dataset, var)
-                if len(var.dimensions) == 3:
-                    pts = self.search(pressures, pressure)
-                    values = values[pts]
-                    if isinstance(times, dt.datetime):
-                        times = [times]
-                    else:
-                        times = times[pts]
-                else:
-                    mask = self.search(pressures, pressure)
-                    values = values[:, mask][:, 0]
-        return {
-            "x": times,
-            "y": values}
-
-    @staticmethod
-    def _times(dataset, variable):
-        """Find times related to variable in dataset"""
-        time_dimension = variable.dimensions[0]
-        coordinates = variable.coordinates.split()
-        for c in coordinates:
-            if c.startswith("time"):
-                try:
-                    var = dataset.variables[c]
-                    return netCDF4.num2date(var[:], units=var.units)
-                except KeyError:
-                    pass
-        for v, var in dataset.variables.items():
-            if len(var.dimensions) != 1:
-                continue
-            if v.startswith("time"):
-                d = var.dimensions[0]
-                if d == time_dimension:
-                    return netCDF4.num2date(var[:], units=var.units)
-
-    def _pressures(self, dataset, variable):
-        return self._dimension("pressure", dataset, variable)
-
-    def _longitudes(self, dataset, variable):
-        return self._dimension("longitude", dataset, variable)
-
-    def _latitudes(self, dataset, variable):
-        return self._dimension("latitude", dataset, variable)
-
-    @staticmethod
-    def _dimension(prefix, dataset, variable):
-        for d in variable.dimensions:
-            if not d.startswith(prefix):
-                continue
-            if d in dataset.variables:
-                return dataset.variables[d][:]
-        for c in variable.coordinates.split():
-            if not c.startswith(prefix):
-                continue
-            if c in dataset.variables:
-                return dataset.variables[c][:]
-
-    @staticmethod
-    def search(pressures, pressure, rtol=0.01):
-        return np.abs(pressures - pressure) < (rtol * pressure)
+            "x": values,
+            "y": pressures}
 
 
 class ProfileLocator(object):

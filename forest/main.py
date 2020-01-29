@@ -350,9 +350,8 @@ def main(argv=None):
 
     # Profile sub-figure widget
     profile_figure = bokeh.plotting.figure(
-                plot_width=400,
-                plot_height=200,
-                x_axis_type="datetime",
+                plot_width=200,
+                plot_height=300,
                 toolbar_location=None,
                 border_fill_alpha=0)
     profile_figure.toolbar.logo = None

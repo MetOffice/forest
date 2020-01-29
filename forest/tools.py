@@ -32,7 +32,7 @@ def reducer(state: State, action: Action):
     if action["kind"] == ON_TOGGLE_TOOL:
         if state.get("tools") is None:
             state["tools"] = {}
-        if state["tools"].get(action["tool_name"], False) == True:
+        if state["tools"].get(action["tool_name"], True) == True:
             state["tools"][action["tool_name"]] = False
         else:
             state["tools"][action["tool_name"]] = True

@@ -224,7 +224,8 @@ class SeriesLoader(object):
     def series_file(self, *args, **kwargs):
         try:
             return self._load_netcdf4(*args, **kwargs)
-        except:
+        except Exception as ex:
+            print("WARNING: exception in loading revert to iris.load_cube ", ex.__name__)
             return self._load_cube(*args, **kwargs)
 
     def _load_cube(self, path, variable, lon0, lat0, pressure=None):
