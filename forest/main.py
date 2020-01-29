@@ -296,10 +296,10 @@ def main(argv=None):
     connector = layers.ViewerConnector(viewers, old_world).connect(store)
 
     # Set default time series visibility
-    store.dispatch(tools.on_toggle_tool("time_series"))
+    store.dispatch(tools.on_toggle_tool("time_series", False))
 
     # Set default profile visibility
-    store.dispatch(tools.on_toggle_tool("profile"))
+    store.dispatch(tools.on_toggle_tool("profile", False))
 
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))

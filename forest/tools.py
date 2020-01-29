@@ -28,25 +28,24 @@ ON_TOGGLE_TOOL = "TOGGLE_TOOL_VISIBILITY"
 
 
 def reducer(state: State, action: Action):
+    """ Reduce a change in state caused by the ToolsPanel"""
     state = copy.deepcopy(state)
     if action["kind"] == ON_TOGGLE_TOOL:
         if state.get("tools") is None:
             state["tools"] = {}
-        if state["tools"].get(action["tool_name"], True) == True:
-            state["tools"][action["tool_name"]] = False
-        else:
-            state["tools"][action["tool_name"]] = True
+        state["tools"][action["tool_name"]] = action["value"]
     return state
 
-def on_toggle_tool(tool_name) -> Action:
-    return {"kind": ON_TOGGLE_TOOL, "tool_name": tool_name}
+def on_toggle_tool(tool_name, value) -> Action:
+    """ Convert some arguments into an Action message to the state"""
+    return {"kind": ON_TOGGLE_TOOL, "tool_name": tool_name, "value": value}
 
 class ToolsPanel(Observable):
     """ A panel that contains buttons to turn extra tools on and off"""
     def __init__(self):
         self.buttons = {
-            "toggle_time_series": bokeh.models.Button(label="Display Time Series"),
-            "toggle_profile": bokeh.models.Button(label="Display Profile")}
+            "toggle_time_series": bokeh.models.Toggle(label="Display Time Series"),
+            "toggle_profile": bokeh.models.Toggle(label="Display Profile")}
         self.buttons["toggle_time_series"].on_click(self.on_click_time_series)
         self.buttons["toggle_profile"].on_click(self.on_click_profile)
         super().__init__()
@@ -55,15 +54,16 @@ class ToolsPanel(Observable):
         self.add_subscriber(store.dispatch)
         return self
 
-    def on_click_time_series(self):
+    def on_click_time_series(self, toggle_state):
         """update the store."""
-        self.notify(on_toggle_tool("time_series"))
+        self.notify(on_toggle_tool("time_series", toggle_state))
 
-    def on_click_profile(self):
+    def on_click_profile(self, toggle_state):
         """update the store."""
-        self.notify(on_toggle_tool("profile"))
+        self.notify(on_toggle_tool("profile", toggle_state))
 
 class ToolLayout:
+    """ Manage the row containing the tool plots """
     def __init__(self, series_figure, profile_figure):
         self.figures_row = bokeh.layouts.row(
                 name="series") # TODO: This name is used by CSS somewhere 
