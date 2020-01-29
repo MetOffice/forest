@@ -46,6 +46,26 @@
         width: auto;
         z-index: 2;
     }
+    .time-panel {
+        position: absolute;
+        left: 0;
+        bottom: 10px;
+        width: auto;
+        z-index: 2;
+        margin: 10px;
+        margin-bottom: 0px;
+        padding: 10px;
+    }
+    .colorbar-panel {
+        position: absolute;
+        right: 0;
+        bottom: 10px;
+        width: auto;
+        z-index: 2;
+        margin: 10px;
+        margin-bottom: 0px;
+        padding: 10px;
+    }
     .keypress-hidden-btn {
         display: none !important;
     }
@@ -62,6 +82,14 @@
                 <div class="series-panel">
                 {{ embed(root) | indent(10) }}
                 </div>
+            {% elif root.name == "time" %}
+                <div class="time-panel">
+                {{ embed(root) | indent(10) }}
+                </div>
+            {% elif root.name == "colorbar" %}
+                <div class="colorbar-panel">
+                {{ embed(root) | indent(10) }}
+                </div>
             {% else %}
                 {{ embed(root) | indent(10) }}
             {% endif %}
@@ -71,7 +99,7 @@
 // Re-attach roots if WebSocket request served by different machine
 let reattachRoots = function() {
     // Find template roots
-    let classNames = ["control-panel", "series-panel"];
+    let classNames = ["control-panel", "series-panel", "time-panel", "colorbar-panel"];
     let parents = classNames.reduce(function(data, className) {
         data[className] = document.getElementsByClassName(className)[0];
         return data
@@ -92,6 +120,8 @@ let reattachRoots = function() {
     // NOTE: Order important since orphaned roots have no data-root-id attr
     parents['control-panel'].appendChild(orphans[0])
     parents['series-panel'].appendChild(orphans[1])
+    parents['time-panel'].appendChild(orphans[2])
+    parents['colorbar-panel'].appendChild(orphans[3])
 }
 
 // Trigger KeyPress.hidden_button if present
