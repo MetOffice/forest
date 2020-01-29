@@ -17,14 +17,14 @@ from forest import screen, series, redux, rx, db, config
             "variable": "mslp",
             "initial_time": "2019-01-01 00:00:00",
             "position": {"x": 1, "y": 2},
-            "time_series_visible": True},
+            "tools": {"time_series": True}},
             (dt.datetime(2019, 1, 1), "mslp", 1, 2, True)),
         ({
             "variable": "air_temperature",
             "pressure": 1000.,
             "initial_time": "2019-01-01 00:00:00",
             "position": {"x": 1, "y": 2},
-            "time_series_visible": False},
+            "tools": {"time_series": False}},
             (dt.datetime(2019, 1, 1), "air_temperature", 1, 2, False, 1000.)),
     ])
 def test_select_args(state, expect):

@@ -86,11 +86,10 @@ def select_args(state):
             for att in [
                 "variable",
                 "initial_time",
-                "position",
-                "pressure"]):
+                "position"]):
         return
     if "valid_time" in state:
-        optional = (state["valid_time"],)
+        optional = (_to_datetime(state["valid_time"]),)
     else:
         optional = ()
     return (
@@ -98,7 +97,6 @@ def select_args(state):
             state["variable"],
             state["position"]["x"],
             state["position"]["y"],
-            state["pressure"],
             state["tools"]["profile"]) + optional
 
 def _find_nearest(value, array):
@@ -180,7 +178,7 @@ class ProfileView(Observable):
                 loaders[group.label] = ProfileLoader.from_pattern(pattern)
         return cls(figure, loaders)
 
-    def render(self, initial_time, variable, x, y, pressure, visible, time=None):
+    def render(self, initial_time, variable, x, y, visible, time=None):
         """Update data for a particular application setting"""
         if visible:
             assert isinstance(initial_time, dt.datetime), "only support datetime"
@@ -257,8 +255,11 @@ class ProfileLoader(object):
         assert cube is not None, "Error: No profile data found for these coordinates"
 
         # Get level info and data values
-        pressure_coord = cube.coord('pressure')
-        pressures = pressure_coord.points.tolist()
+        if 'pressure' in [coord.name() for coord in cube.coords()]: 
+            pressure_coord = cube.coord('pressure')
+            pressures = pressure_coord.points.tolist()
+        else:
+            pressures = [0,]
         values = cube.data
         return {
             "x": values,
