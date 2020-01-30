@@ -6,7 +6,7 @@ import numpy as np
 import numpy.testing as npt
 import datetime as dt
 import bokeh.plotting
-from forest import screen, profile, redux, rx, db, config
+from forest import screen, profile, redux, rx, config
 
 
 @pytest.mark.parametrize("state,expect", [
@@ -66,36 +66,6 @@ def test_stream_filter(values, predicate, expect):
         stream.notify(value)
     calls = [unittest.mock.call(v) for v in expect]
     listener.assert_has_calls(calls)
-
-
-def test_profile_reducer():
-    state = profile.reducer({}, screen.set_position(0, 0))
-    assert state == {"position": {"x": 0, "y": 0}}
-
-
-def test_profile_reducer_immutable_state():
-    state = {"position": {"x": 1, "y": 1}}
-    next_state = profile.reducer(state, screen.set_position(0, 0))
-    assert state == {"position": {"x": 1, "y": 1}}
-    assert next_state == {"position": {"x": 0, "y": 0}}
-
-
-@pytest.mark.parametrize("actions,expect", [
-    ([], {}),
-    ([screen.set_position(0, 0)], {"position": {"x": 0, "y": 0}}),
-    ([db.set_value("key", "value")], {"key": "value"}),
-    ([
-        screen.set_position(0, 0),
-        db.set_value("key", "value")], {
-            "key": "value",
-            "position": {"x": 0, "y": 0}}),
-])
-def test_combine_reducers(actions, expect):
-    reducer = redux.combine_reducers(profile.reducer, db.reducer)
-    state = {}
-    for action in actions:
-        state = reducer(state, action)
-    assert state == expect
 
 
 def test_profile_view():

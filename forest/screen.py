@@ -8,8 +8,19 @@ On any update of position, place a mark with MarkDraw.place_marker.
 This split allows other parts of forest (such as the time series) to listen for
 an update of the position of the marker and update themselves accordingly.
 
+Reducer
+~~~~~~~
+
+A reducer is a pure function that combines a
+state and an action to return a new state. Reducers
+can be combined so that individual reducers are
+responsible only for a limited set of actions
+
+.. autofunction:: reducer
+
 """
 
+import copy
 import bokeh.events
 import bokeh.models
 from forest import rx
@@ -17,6 +28,22 @@ from forest.redux import Action
 from forest.observe import Observable
 
 SET_POSITION = "SET_POSITION"
+
+def reducer(state, action):
+    """Screen specific reducer
+
+    Given :func:`screen.set_position` action adds "position" data
+    to state
+
+    :param state: data structure representing current state
+    :type state: dict
+    :param action: data structure representing action
+    :type action: dict
+    """
+    state = copy.deepcopy(state)
+    if action["kind"] == SET_POSITION:
+        state["position"] = action["payload"]
+    return state
 
 def set_position(x, y) -> Action:
     """Action that stores a selected position

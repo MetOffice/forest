@@ -36,7 +36,6 @@ into values, selectors can do that job on behalf of the view.
 .. autofunction:: select_args
 
 """
-import copy
 import datetime as dt
 import glob
 import os
@@ -56,23 +55,6 @@ try:
 except ModuleNotFoundError:
     iris = None
     # ReadTheDocs can't import iris
-
-
-def reducer(state, action):
-    """Profile specific reducer
-
-    Given :func:`screen.set_position` action adds "position" data
-    to state
-
-    :param state: data structure representing current state
-    :type state: dict
-    :param action: data structure representing action
-    :type action: dict
-    """
-    state = copy.deepcopy(state)
-    if action["kind"] == SET_POSITION:
-        state["position"] = action["payload"]
-    return state
 
 
 def select_args(state):

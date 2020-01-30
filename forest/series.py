@@ -15,16 +15,6 @@ changes.
 .. autoclass:: SeriesLocator
     :members:
 
-Reducer
-~~~~~~~
-
-A reducer is a pure function that combines a
-state and an action to return a new state. Reducers
-can be combined so that individual reducers are
-responsible only for a limited set of actions
-
-.. autofunction:: reducer
-
 Selector
 ~~~~~~~~
 
@@ -36,7 +26,6 @@ into values, selectors can do that job on behalf of the view.
 .. autofunction:: select_args
 
 """
-import copy
 import datetime as dt
 import glob
 import os
@@ -58,23 +47,6 @@ try:
 except ModuleNotFoundError:
     iris = None
     # ReadTheDocs can't import iris
-
-
-def reducer(state, action):
-    """Time series specific reducer
-
-    Given :func:`screen.set_position` action adds "position" data
-    to state
-
-    :param state: data structure representing current state
-    :type state: dict
-    :param action: data structure representing action
-    :type action: dict
-    """
-    state = copy.deepcopy(state)
-    if action["kind"] == SET_POSITION:
-        state["position"] = action["payload"]
-    return state
 
 
 def select_args(state):

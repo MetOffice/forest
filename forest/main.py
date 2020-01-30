@@ -244,7 +244,7 @@ def main(argv=None):
         redux.combine_reducers(
             db.reducer,
             layers.reducer,
-            series.reducer,
+            screen.reducer,
             tools.reducer,
             colors.reducer,
             presets.reducer),
