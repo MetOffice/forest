@@ -227,9 +227,21 @@ class ProfileLoader(object):
         return self._load_cube(*args, **kwargs)
 
     def _load_cube(self, path, variable, lon0, lat0, time=None):
-        """ Constrain data loading to points required """
+        """
+        Constrain data loading to points required 
+        
+        TODO: Not tested for netcdf files with "dim0" style dimensions that
+              could be time or pressure for example.
 
-        cube = iris.load_cube(path, variable)
+        """
+
+        try:
+            cube = iris.load_cube(path, variable)
+        except iris.exceptions.ConstraintMismatchError as e:
+            print("WARNING: {} No data found for profile plot".format(type(e).__name__))
+            return {
+                "x": [],
+                "y": []}
 
         # reference longitude axis by "axis='X'" and latitude axis as axis='Y',
         # to accommodate various types of coordinate system.
@@ -260,7 +272,12 @@ class ProfileLoader(object):
             pressures = pressure_coord.points.tolist()
         else:
             pressures = [0,]
-        values = cube.data
+        if time is None and 'time' in [coord.name() for coord in cube.coords()]:
+            print("Warning: no time specified, selecting first element of array")
+            values = cube.data[0,...]
+        else:
+            values = cube.data
+
         return {
             "x": values,
             "y": pressures}
