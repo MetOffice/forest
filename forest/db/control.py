@@ -427,16 +427,19 @@ class DatasetView(Observable):
         pattern = state.get(self.item_key)
         patterns = state.get(self.items_key, [])
         self._table.update(patterns)
-        option = None
-        for label, _pattern in patterns:
-            if _pattern == pattern:
-                option = label
+        option = self.find_label(patterns, pattern)
         options = [label for label, _ in patterns]
         self.select.options = [UNAVAILABLE] + options
         if option in options:
-            self.select.value = pattern
+            self.select.value = option
         else:
             self.select.value = UNAVAILABLE
+
+    @staticmethod
+    def find_label(patterns, pattern):
+        for label, _pattern in patterns:
+            if _pattern == pattern:
+                return label
 
 
 class DimensionView(Observable):
