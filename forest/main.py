@@ -27,6 +27,7 @@ from forest import (
         intake_loader,
         navigate,
         parse_args)
+import forest.components
 import forest.config as cfg
 import forest.middlewares as mws
 from forest.observe import Observable
@@ -85,15 +86,9 @@ def main(argv=None):
             low=0,
             high=1,
             palette=bokeh.palettes.Plasma[256])
-    for figure in figures:
-        colorbar = bokeh.models.ColorBar(
-            color_mapper=color_mapper,
-            orientation="horizontal",
-            background_fill_alpha=0.,
-            location="bottom_center",
-            major_tick_line_color="black",
-            bar_line_color="black")
-        figure.add_layout(colorbar, 'center')
+
+    # Colorbar user interface
+    colorbar_ui = forest.components.ColorbarUI(color_mapper)
 
     # Database/File system loader(s)
     for group in config.file_groups:
@@ -243,6 +238,10 @@ def main(argv=None):
             presets.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
+
+    # Add time user interface
+    time_ui = forest.components.TimeUI()
+    time_ui.connect(store)
 
     # Connect renderer.visible states to store
     artist = layers.Artist(renderers)
@@ -400,6 +399,10 @@ def main(argv=None):
     document.title = "FOREST"
     document.add_root(control_root)
     document.add_root(tool_layout.figures_row)
+    document.add_root(
+        bokeh.layouts.row(time_ui.layout, name="time"))
+    document.add_root(
+        bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
 
