@@ -136,8 +136,8 @@ class ProfileView(Observable):
 
         tool = bokeh.models.HoverTool(
                 tooltips=[
-                    ('Time', '@x{%F %H:%M}'),
-                    ('Value', '@y')
+                    ('Value', '@x'),
+                    ('Level', '@y')
                 ],
                 formatters={
                     'x': 'datetime'
