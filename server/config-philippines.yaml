@@ -1,3 +1,7 @@
+defaults:
+  viewport:
+    lon_range: [90, 140]
+    lat_range: [-23.5, 23.5]
 presets:
   file: /mnt/efs/forest-presets.json
 files:

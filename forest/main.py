@@ -47,11 +47,10 @@ def main(argv=None):
                     args.variables))
 
     # Full screen map
-    lon_range = (90, 140)
-    lat_range = (-23.5, 23.5)
+    viewport = config.default_viewport
     x_range, y_range = geo.web_mercator(
-        lon_range,
-        lat_range)
+        viewport.lon_range,
+        viewport.lat_range)
     figure = bokeh.plotting.figure(
         x_range=x_range,
         y_range=y_range,
