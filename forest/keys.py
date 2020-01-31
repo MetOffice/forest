@@ -19,7 +19,12 @@ that maps key actions to navigation actions, e.g.
 
 """
 import bokeh.models
-from forest import db
+from forest.db import (
+        next_initial_time,
+        previous_initial_time,
+        next_valid_time,
+        previous_valid_time)
+from forest.components.time import toggle_animation
 from forest.observe import Observable
 from forest.export import export
 
@@ -133,10 +138,12 @@ def navigate(store, action):
         return
     code = action["payload"]["code"].lower()
     if code == "arrowright":
-        yield db.next_valid_time()
+        yield next_valid_time()
     elif code == "arrowleft":
-        yield db.previous_valid_time()
+        yield previous_valid_time()
     elif code == "arrowup":
-        yield db.next_initial_time()
+        yield next_initial_time()
     elif code == "arrowdown":
-        yield db.previous_initial_time()
+        yield previous_initial_time()
+    elif code == "space":
+        yield toggle_animation()

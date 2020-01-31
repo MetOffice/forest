@@ -1,7 +1,12 @@
 import pytest
 import forest
 import unittest.mock
-from forest.db import next_value, previous_value
+from forest.db import (
+        next_initial_time,
+        previous_initial_time,
+        next_valid_time,
+        previous_valid_time)
+from forest.components.time import toggle_animation
 
 
 def test_on_change_emits_action():
@@ -15,10 +20,11 @@ def test_on_change_emits_action():
 
 
 @pytest.mark.parametrize("code,action", [
-    ("ArrowRight", next_value("valid_time", "valid_times")),
-    ("ArrowLeft", previous_value("valid_time", "valid_times")),
-    ("ArrowUp", next_value("initial_time", "initial_times")),
-    ("ArrowDown", previous_value("initial_time", "initial_times")),
+    ("ArrowRight", next_valid_time()),
+    ("ArrowLeft", previous_valid_time()),
+    ("ArrowUp", next_initial_time()),
+    ("ArrowDown", previous_initial_time()),
+    ("Space", toggle_animation()),
 ])
 def test_key(code, action):
     store = forest.redux.Store(forest.db.reducer)

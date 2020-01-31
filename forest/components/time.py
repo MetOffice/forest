@@ -5,6 +5,15 @@ from forest.gridded_forecast import _to_datetime
 import forest.db.control
 import bokeh.plotting
 import numpy as np
+from forest.redux import Action
+
+
+TOGGLE_ANIMATION = "TOGGLE_ANIMATION"
+
+
+def toggle_animation() -> Action:
+    """Action to turn animation on/off"""
+    return {"kind": TOGGLE_ANIMATION}
 
 
 class TimeUI(Observable):
