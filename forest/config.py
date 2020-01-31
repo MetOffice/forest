@@ -29,6 +29,12 @@ from forest.export import export
 __all__ = []
 
 
+class Viewport:
+    def __init__(self, lon_range, lat_range):
+        self.lon_range = lon_range
+        self.lat_range = lat_range
+
+
 def combine_variables(os_environ, args_variables):
     """Utility function to update environment with user-specified variables
 
@@ -66,6 +72,14 @@ class Config(object):
         return "{}({})".format(
                 self.__class__.__name__,
                 self.data)
+
+    @property
+    def default_viewport(self):
+        defaults = self.data.get('defaults', {})
+        viewport = defaults.get('viewport', {})
+        lon_range = viewport.get('lon_range', (-180, 180))
+        lat_range = viewport.get('lat_range', (-80, 80))
+        return Viewport(lon_range, lat_range)
 
     @property
     def presets_file(self):
