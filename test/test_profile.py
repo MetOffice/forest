@@ -90,16 +90,18 @@ def test_profile_view_from_groups():
     profile.ProfileView.from_groups(figure, [group])
 
 
-def variable_dim0(
+def variable_4d(
         dataset,
-        pressures,
+        variable,
         times,
+        pressures,
         longitudes,
         latitudes,
         values):
     dataset.createDimension("latitude", len(latitudes))
     dataset.createDimension("longitude", len(longitudes))
-    dataset.createDimension("dim0", len(pressures))
+    dataset.createDimension("time", len(times))
+    dataset.createDimension("pressure", len(pressures))
     var = dataset.createVariable(
             "longitude", "d", ("longitude",))
     var.axis = "X"
@@ -113,20 +115,27 @@ def variable_dim0(
     var.standard_name = "latitude"
     var[:] = latitudes
     var = dataset.createVariable(
-            "pressure", "d", ("dim0",))
+            "pressure", "d", ("pressure",))
     var[:] = pressures
-    units = "hours since 1970-01-01 00:00:00"
     var = dataset.createVariable(
-            "time", "d", ("dim0",))
+            "time", "d", ("time",))
+    units = "hours since 1970-01-01 00:00:00"
     var.units = units
     var[:] = netCDF4.date2num(times, units=units)
+    var.standard_name = "time"
     var = dataset.createVariable(
-            "relative_humidity", "f",
-            ("dim0", "latitude", "longitude"))
-    var.units = "%"
+            "forecast_reference_time", "d", ())
+    units = "hours since 1970-01-01 00:00:00"
+    var.units = units
+    var[:] = netCDF4.date2num(times, units=units)[0]
+    var = dataset.createVariable(
+            variable, "f",
+            ("time", "pressure", "latitude", "longitude"))
+    var.units = "K"
     var.grid_mapping = "latitude_longitude"
-    var.coordinates = "forecast_period forecast_reference_time pressure time"
+    var.coordinates = "forecast_period_1 forecast_reference_time"
     var[:] = values
+
 
 
 def variable_surface(
@@ -157,6 +166,11 @@ def variable_surface(
     var.units = units
     var[:] = netCDF4.date2num(times, units=units)
     var = dataset.createVariable(
+            "forecast_reference_time", "d", ())
+    units = "hours since 1970-01-01 00:00:00"
+    var.units = units
+    var[:] = netCDF4.date2num(times, units=units)[0]
+    var = dataset.createVariable(
             variable, "f",
             ("time", "latitude", "longitude"))
     var.units = "Pa"
@@ -177,24 +191,29 @@ class TestProfile(unittest.TestCase):
         pressure = 500
         lon = 1
         lat = 1
-        p0, p1 = 1000, 500
-        t0 = dt.datetime(2019, 1, 1)
-        t1 = dt.datetime(2019, 1, 1, 3)
-        longitudes = [0, 1]
-        latitudes = [0, 1]
-        pressures = [p0, p1, p0, p1]
-        times = [t0, t0, t1, t1]
-        values = np.arange(4*2*2).reshape(4, 2, 2)
+        times = [
+            dt.datetime(2019, 1, 1),
+            dt.datetime(2019, 1, 1, 6),
+            dt.datetime(2019, 1, 1, 12)]
+        pressures = [
+                1000.001,
+                500,
+                250]
+        longitudes = [0, 1, 2]
+        latitudes = [0, 1, 2]
+        values = np.arange(3*3*3*3).reshape(3, 3, 3, 3)
         with netCDF4.Dataset(self.path, "w") as dataset:
-            variable_dim0(
+            variable_4d(
                 dataset,
-                pressures,
+                "var_in_file",
                 times,
+                pressures,
                 longitudes,
                 latitudes,
                 values)
+
         loader = profile.ProfileLoader([self.path])
-        variable = "not_in_file"
+        variable = "var_not_in_file"
         result = loader.profile_file(
                 self.path, variable, lon, lat, pressure)
         expect = {
@@ -243,7 +262,7 @@ class TestProfile(unittest.TestCase):
         ]
         reference_time = dt.datetime(2019, 1, 1, 12)
         locator = profile.ProfileLocator(paths)
-        result = locator[reference_time]
+        result = locator.locate(reference_time)
         expect = [
             "/some/file_20190101T1200Z_000.nc",
             "/some/file_20190101T1200Z_006.nc",
@@ -262,7 +281,7 @@ class TestProfile(unittest.TestCase):
         ]
         reference_time = np.datetime64('2019-01-01T12:00:00', 's')
         locator = profile.ProfileLocator(paths)
-        result = locator[reference_time]
+        result = locator.locate(reference_time)
         expect = [
             "/some/file_20190101T1200Z_000.nc",
             "/some/file_20190101T1200Z_006.nc",

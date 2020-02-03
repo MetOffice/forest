@@ -40,10 +40,12 @@ import datetime as dt
 import glob
 import os
 from itertools import cycle
+import collections
 from collections import defaultdict
 import bokeh.palettes
 import numpy as np
 import netCDF4
+import xarray
 from forest import geo
 from forest.observe import Observable
 from forest.redux import Action
@@ -56,6 +58,8 @@ except ModuleNotFoundError:
     iris = None
     # ReadTheDocs can't import iris
 
+#Nanoseconds per second
+NS = 1e-9
 
 def select_args(state):
     """Select args needed by :func:`ProfileView.render`
@@ -132,16 +136,14 @@ class ProfileView(Observable):
         legend = bokeh.models.Legend(items=items,
                 orientation="horizontal",
                 click_policy="hide")
+        legend.label_text_font_size = "8pt"
         self.figure.add_layout(legend, "below")
 
         tool = bokeh.models.HoverTool(
                 tooltips=[
                     ('Value', '@x'),
                     ('Level', '@y')
-                ],
-                formatters={
-                    'x': 'datetime'
-                })
+                ])
         self.figure.add_tools(tool)
 
         tool = bokeh.models.TapTool(
@@ -193,28 +195,28 @@ class ProfileLoader(object):
             lat0,
             time=None):
         data = {"x": [], "y": []}
-        paths = self.locator.locate(initial_time)
+        paths = self.locator.locate(initial_time, time)
         for path in paths:
             segment = self.profile_file(
                     path,
                     variable,
                     lon0,
                     lat0,
-                    time=time)
+                    time)
             data["x"] += list(segment["x"])
             data["y"] += list(segment["y"])
         return data
 
     def profile_file(self, *args, **kwargs):
+        """ Read profile data from a file."""
         return self._load_cube(*args, **kwargs)
 
     def _load_cube(self, path, variable, lon0, lat0, time=None):
         """
-        Constrain data loading to points required 
-        
+        Constrain data loading to points required
+
         TODO: Not tested for netcdf files with "dim0" style dimensions that
               could be time or pressure for example.
-
         """
 
         try:
@@ -246,10 +248,11 @@ class ProfileLoader(object):
 
         # Extract nearest profile
         cube = cube.extract(constraint)
-        assert cube is not None, "Error: No profile data found for these coordinates"
+        assert cube is not None, "Error: No profile data found for these coordinates: time,lat,lon {},{},{}".format(
+            _to_datetime(time), lat_nearest, lon_nearest)
 
         # Get level info and data values
-        if 'pressure' in [coord.name() for coord in cube.coords()]: 
+        if 'pressure' in [coord.name() for coord in cube.coords()]:
             pressure_coord = cube.coord('pressure')
             pressures = pressure_coord.points.tolist()
         else:
@@ -269,30 +272,50 @@ class ProfileLocator(object):
     """Helper to find files related to Profile"""
     def __init__(self, paths):
         self.paths = paths
-        self.table = defaultdict(list)
+        self.ini_times_to_paths = defaultdict(list)
+        self.valid_times_to_paths = defaultdict(list)
         for path in paths:
-            time = _initial_time(path)
-            if time is None:
-                try:
-                    with netCDF4.Dataset(path) as dataset:
+            initial_time = _initial_time(path)
+            try:
+                with netCDF4.Dataset(path) as dataset:
+                    if initial_time is None:
                         var = dataset.variables["forecast_reference_time"]
-                        time = netCDF4.num2date(var[:], units=var.units)
-                except KeyError:
-                    continue
-            self.table[self.key(time)].append(path)
+                        initial_time = netCDF4.num2date(var[:], units=var.units)
+            except (FileNotFoundError, KeyError) as ex:
+                pass
+            self.ini_times_to_paths[self.key(initial_time)].append(path)
 
     def initial_times(self):
-        return np.array(list(self.table.keys()),
+        return np.array(list(self.ini_times_to_paths.keys()),
                 dtype='datetime64[s]')
 
-    def locate(self, initial_time):
+    def locate(self, initial_time, valid_time=None):
         if isinstance(initial_time, str):
-            return self.table[initial_time]
-        if isinstance(initial_time, np.datetime64):
+            initial_time_paths = self.ini_times_to_paths[initial_time]
+        elif isinstance(initial_time, np.datetime64):
             initial_time = initial_time.astype(dt.datetime)
-        return self.table[self.key(initial_time)]
-
-    __getitem__ = locate
+            initial_time_paths = self.ini_times_to_paths[self.key(initial_time)]
+        else:
+            initial_time_paths = self.ini_times_to_paths[self.key(initial_time)]
+        if valid_time is None:
+            return initial_time_paths
+        else:
+            # set valid times
+            for path in initial_time_paths:
+                with xarray.open_dataset(path) as xr_ds:
+                    for name in xr_ds.coords:
+                        if getattr(xr_ds.coords[name], "standard_name", None) == 'time':
+                            times = xr_ds.coords[name].values
+                            try:
+                                for valid_time in times:
+                                    valid_time = dt.datetime.utcfromtimestamp(valid_time.astype(int)*NS)
+                                    self.valid_times_to_paths[self.key(valid_time)].append(path)
+                            except TypeError:
+                                valid_time = dt.datetime.utcfromtimestamp(times.astype(int)*NS)
+                                self.valid_times_to_paths[self.key(valid_time)].append(path)
+                            break
+            valid_time_paths = self.valid_times_to_paths[self.key(valid_time)]
+            return list(set(initial_time_paths).intersection(set(valid_time_paths)))
 
     def key(self, time):
         return "{:%Y-%m-%d %H:%M:%S}".format(time)
