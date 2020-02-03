@@ -15,30 +15,6 @@ changes.
 .. autoclass:: SeriesLocator
     :members:
 
-Actions
-~~~~~~~
-
-Actions are tiny blobs of data used to
-communicate with other parts of the system. They
-help de-couple the entity creating an action from
-the components that depend on state changes
-
-.. data:: ON_TOGGLE
-
-    Constant to indicate toggle action
-
-.. autofunction:: on_toggle
-
-Reducer
-~~~~~~~
-
-A reducer is a pure function that combines a
-state and an action to return a new state. Reducers
-can be combined so that individual reducers are
-responsible only for a limited set of actions
-
-.. autofunction:: reducer
-
 Selector
 ~~~~~~~~
 
@@ -50,13 +26,13 @@ into values, selectors can do that job on behalf of the view.
 .. autofunction:: select_args
 
 """
-import copy
 import datetime as dt
 import glob
 import os
 from itertools import cycle
 from collections import defaultdict
 import bokeh.palettes
+import bokeh.models
 import numpy as np
 import netCDF4
 from forest import geo
@@ -65,41 +41,12 @@ from forest.redux import Action
 from forest.util import initial_time as _initial_time
 from forest.gridded_forecast import _to_datetime
 from forest.screen import SET_POSITION
+
 try:
     import iris
 except ModuleNotFoundError:
     iris = None
     # ReadTheDocs can't import iris
-
-
-ON_TOGGLE = "TOGGLE_VISIBILITY"
-
-
-def on_toggle() -> Action:
-    return {"kind": ON_TOGGLE}
-
-
-def reducer(state, action):
-    """Time series specific reducer
-
-    Given :func:`screen.set_position` action adds "position" data
-    to state
-
-    :param state: data structure representing current state
-    :type state: dict
-    :param action: data structure representing action
-    :type action: dict
-    """
-    state = copy.deepcopy(state)
-    if action["kind"] == SET_POSITION:
-        state["position"] = action["payload"]
-    if action["kind"] == ON_TOGGLE:
-        if state.get("time_series_visible", False) == True:
-            state["time_series_visible"] = False
-        else:
-            state["time_series_visible"] = True
-            
-    return state
 
 
 def select_args(state):
@@ -124,40 +71,7 @@ def select_args(state):
             state["variable"],
             state["position"]["x"],
             state["position"]["y"],
-            state["time_series_visible"]) + optional
-
-
-class ToolsPanel(Observable):
-    """ A panel that contains buttons to turn extra tools on and off"""
-    def __init__(self):
-        self.buttons = {"toggle_time_series": bokeh.models.Button(label="Display Time Series")}
-        self.buttons["toggle_time_series"].on_click(self.on_click_time_series)
-        super().__init__()
-
-    def connect(self, store):
-        self.add_subscriber(store.dispatch)
-        return self
-
-    def on_click_time_series(self):
-        """update the store."""
-        self.notify(on_toggle())
-
-
-class ToolLayout:
-    def __init__(self, tool_figure):
-        self.figures_row = bokeh.layouts.row(
-                tool_figure,
-                name="series")
-        self.tool_figure = tool_figure
-
-    def connect(self, store):
-        store.add_subscriber(self.render)
-
-    def render(self, state):
-        if state.get("time_series_visible"):
-            self.figures_row.children = [self.tool_figure]
-        else:
-            self.figures_row.children = []
+            state["tools"]["time_series"]) + optional
 
 
 class SeriesView(Observable):
@@ -282,7 +196,8 @@ class SeriesLoader(object):
     def series_file(self, *args, **kwargs):
         try:
             return self._load_netcdf4(*args, **kwargs)
-        except:
+        except Exception as ex:
+            print("WARNING: exception in loading revert to iris.load_cube ", type(ex).__name__)
             return self._load_cube(*args, **kwargs)
 
     def _load_cube(self, path, variable, lon0, lat0, pressure=None):
