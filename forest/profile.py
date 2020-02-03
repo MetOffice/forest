@@ -45,7 +45,10 @@ from collections import defaultdict
 import bokeh.palettes
 import numpy as np
 import netCDF4
-import xarray
+try:
+    import xarray
+except ModuleNotFoundError:
+    xarray = None
 from forest import geo
 from forest.observe import Observable
 from forest.redux import Action
@@ -295,6 +298,8 @@ class ProfileLocator(object):
             initial_time_paths = self.ini_times_to_paths[self.key(initial_time)]
         if valid_time is None:
             return initial_time_paths
+        elif xarray is None:
+            return []  # Always return list
         else:
             # set valid times
             for path in initial_time_paths:
