@@ -90,6 +90,50 @@ def test_profile_view_from_groups():
     profile.ProfileView.from_groups(figure, [group])
 
 
+def variable_dim0(
+        dataset,
+        pressures,
+        times,
+        longitudes,
+        latitudes,
+        values):
+    dataset.createDimension("latitude", len(latitudes))
+    dataset.createDimension("longitude", len(longitudes))
+    dataset.createDimension("dim0", len(pressures))
+    var = dataset.createVariable(
+            "longitude", "d", ("longitude",))
+    var.axis = "X"
+    var.units = "degrees_east"
+    var.standard_name = "longitude"
+    var[:] = longitudes
+    var = dataset.createVariable(
+            "latitude", "d", ("latitude",))
+    var.axis = "Y"
+    var.units = "degrees_north"
+    var.standard_name = "latitude"
+    var[:] = latitudes
+    var = dataset.createVariable(
+            "pressure", "d", ("dim0",))
+    var[:] = pressures
+    units = "hours since 1970-01-01 00:00:00"
+    var = dataset.createVariable(
+            "time", "d", ("dim0",))
+    var.units = units
+    var[:] = netCDF4.date2num(times, units=units)
+    var = dataset.createVariable(
+            "forecast_reference_time", "d", ())
+    units = "hours since 1970-01-01 00:00:00"
+    var.units = units
+    var[:] = netCDF4.date2num(times, units=units)[0]
+    var = dataset.createVariable(
+            "relative_humidity", "f",
+            ("dim0", "latitude", "longitude"))
+    var.units = "%"
+    var.grid_mapping = "latitude_longitude"
+    var.coordinates = "forecast_period forecast_reference_time pressure time"
+    var[:] = values
+
+
 def variable_4d(
         dataset,
         variable,
@@ -219,6 +263,37 @@ class TestProfile(unittest.TestCase):
         expect = {
             "x": [],
             "y": []
+        }
+        npt.assert_array_equal(expect["x"], result["x"])
+        npt.assert_array_equal(expect["y"], result["y"])
+
+    def test_profile_given_dim0_variable(self):
+        variable = "relative_humidity"
+        lon = 1
+        lat = 1
+        p0, p1 = 1000, 500
+        t0 = dt.datetime(2019, 1, 1)
+        t1 = dt.datetime(2019, 1, 1, 3)
+        longitudes = [0, 1]
+        latitudes = [0, 1]
+        pressures = [p0, p1, p0, p1]
+        times = [t0, t0, t1, t1]
+        values = np.arange(4*2*2).reshape(4, 2, 2)
+        with netCDF4.Dataset(self.path, "w") as dataset:
+            variable_dim0(
+                dataset,
+                pressures,
+                times,
+                longitudes,
+                latitudes,
+                values)
+        loader = profile.ProfileLoader([self.path])
+        result = loader.profile_file(
+                self.path, variable, lon, lat, t0)
+        i, j = 1, 1
+        expect = {
+            "x": [values[0, j, i], values[1, j, i]],
+            "y": [p0, p1]
         }
         npt.assert_array_equal(expect["x"], result["x"])
         npt.assert_array_equal(expect["y"], result["y"])

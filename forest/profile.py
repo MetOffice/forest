@@ -212,12 +212,7 @@ class ProfileLoader(object):
         return self._load_cube(*args, **kwargs)
 
     def _load_cube(self, path, variable, lon0, lat0, time=None):
-        """
-        Constrain data loading to points required
-
-        TODO: Not tested for netcdf files with "dim0" style dimensions that
-              could be time or pressure for example.
-        """
+        """ Load vertical profile slice from file via iris. """
 
         try:
             cube = iris.load_cube(path, variable)
