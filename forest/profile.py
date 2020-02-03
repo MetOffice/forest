@@ -271,8 +271,20 @@ class ProfileLocator(object):
     """Helper to find files related to Profile"""
     def __init__(self, paths):
         self.paths = paths
-        self.ini_times_to_paths = defaultdict(list)
         self.valid_times_to_paths = defaultdict(list)
+        self._ini_times_to_paths = None
+
+    @property
+    def ini_times_to_paths(self):
+        if self._ini_times_to_paths is None:
+            self._ini_times_to_paths = self._map_ini_times_to_paths(self.paths)
+        return self._ini_times_to_paths
+
+    def _map_ini_times_to_paths(self, paths):
+        """
+        .. note:: Potentially expensive I/O operation
+        """
+        mapping = defaultdict(list)
         for path in paths:
             initial_time = _initial_time(path)
             try:
@@ -282,7 +294,8 @@ class ProfileLocator(object):
                         initial_time = netCDF4.num2date(var[:], units=var.units)
             except (FileNotFoundError, KeyError) as ex:
                 pass
-            self.ini_times_to_paths[self.key(initial_time)].append(path)
+            mapping[self.key(initial_time)].append(path)
+        return mapping
 
     def initial_times(self):
         return np.array(list(self.ini_times_to_paths.keys()),
