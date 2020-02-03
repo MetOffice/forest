@@ -243,8 +243,9 @@ class ProfileLoader(object):
 
         # Extract nearest profile
         cube = cube.extract(constraint)
-        assert cube is not None, "Error: No profile data found for these coordinates: time,lat,lon {},{},{}".format(
-            _to_datetime(time), lat_nearest, lon_nearest)
+        assert cube is not None, ("Error: No profile data found for {}\n\t"
+                                  "at these coordinates: time,lat,lon {},{},{}").format(
+                                  path, _to_datetime(time), lat_nearest, lon_nearest)
 
         # Get level info and data values
         if 'pressure' in [coord.name() for coord in cube.coords()]:
@@ -302,12 +303,12 @@ class ProfileLocator(object):
                         if getattr(xr_ds.coords[name], "standard_name", None) == 'time':
                             times = xr_ds.coords[name].values
                             try:
-                                for valid_time in times:
-                                    valid_time = dt.datetime.utcfromtimestamp(valid_time.astype(int)*NS)
-                                    self.valid_times_to_paths[self.key(valid_time)].append(path)
+                                for time in times:
+                                    time = dt.datetime.utcfromtimestamp(time.astype(int)*NS)
+                                    self.valid_times_to_paths[self.key(time)].append(path)
                             except TypeError:
-                                valid_time = dt.datetime.utcfromtimestamp(times.astype(int)*NS)
-                                self.valid_times_to_paths[self.key(valid_time)].append(path)
+                                time = dt.datetime.utcfromtimestamp(times.astype(int)*NS)
+                                self.valid_times_to_paths[self.key(time)].append(path)
                             break
             valid_time_paths = self.valid_times_to_paths[self.key(valid_time)]
             return list(set(initial_time_paths).intersection(set(valid_time_paths)))
