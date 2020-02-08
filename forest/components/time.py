@@ -15,7 +15,7 @@ class TimeUI(Observable):
             y=[],
         ))
         self.figure = bokeh.plotting.figure(
-            plot_height=100,
+            plot_height=80,
             plot_width=800,
             border_fill_alpha=0,
             tools='xpan',
@@ -191,13 +191,16 @@ class TimeUI(Observable):
         self.buttons["next"].js_on_click(custom_js)
 
         self.layout = bokeh.layouts.column(
-            self.figure,
+            bokeh.layouts.row(
+                self.figure, sizing_mode="stretch_width"),
             bokeh.layouts.row(
                 self.buttons["previous"],
                 self.buttons["play"],
                 self.buttons["pause"],
                 self.buttons["next"],
-            ))
+                sizing_mode="stretch_width"
+            ),
+            sizing_mode="stretch_width")
 
         super().__init__()
 

@@ -11,16 +11,25 @@
     </div>
 
     <div id="main">
-        <!-- Custom HTML -->
         <nav>
             <ul>
                 <li onclick="openSideNav()"><a href="#">&plus;</a></li>
             </ul>
         </nav>
 
+        <!-- Layout figure row -->
+        <div id="figures">
+            {{ embed(roots.figures) | indent(10) }}
+        </div>
+
+        <!-- Layout footer widgets -->
         <footer>
-            {{ embed(roots.time) | indent(10) }}
-            {{ embed(roots.colorbar) | indent(10) }}
+            <div id="colorbar" class="colorbar">
+                {{ embed(roots.colorbar) | indent(10) }}
+            </div>
+            <div id="time" class="time">
+                {{ embed(roots.time) | indent(10) }}
+            </div>
         </footer>
 
         <!-- Bokeh document roots -->
