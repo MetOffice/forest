@@ -7,39 +7,27 @@
 {% block contents %}
     <div id="sidenav" class="sidenav">
             <a class="close-btn" href="javascript:void(0)" onclick="closeSideNav()">&minus;</a>
+            {{ embed(roots.controls) | indent(10) }}
     </div>
 
     <div id="main">
         <!-- Custom HTML -->
         <nav>
             <ul>
-                <li onclick="openSideNav()"><a href="#">Settings</a></li>
-                <li><a href="#">Contact</a></li>
-                <li><a href="#">About</a></li>
+                <li onclick="openSideNav()"><a href="#">&plus;</a></li>
             </ul>
         </nav>
 
         <footer>
-            <p>Time controls and colorbar</p>
+            {{ embed(roots.time) | indent(10) }}
+            {{ embed(roots.colorbar) | indent(10) }}
         </footer>
 
         <!-- Bokeh document roots -->
         {% for doc in docs %}
             {% for root in doc.roots %}
-                {% if root.name == "controls" %}
-                    <div class="control-panel">
-                    {{ embed(root) | indent(10) }}
-                    </div>
-                {% elif root.name == "series" %}
+                {% if root.name == "series" %}
                     <div class="series-panel">
-                    {{ embed(root) | indent(10) }}
-                    </div>
-                {% elif root.name == "time" %}
-                    <div class="time-panel">
-                    {{ embed(root) | indent(10) }}
-                    </div>
-                {% elif root.name == "colorbar" %}
-                    <div class="colorbar-panel">
                     {{ embed(root) | indent(10) }}
                     </div>
                 {% else %}
@@ -51,6 +39,9 @@
     <script>
 // Re-attach roots if WebSocket request served by different machine
 let reattachRoots = function() {
+    // TODO: Correct this method to work with new layout
+    return
+
     // Find template roots
     let classNames = ["control-panel", "series-panel", "time-panel", "colorbar-panel"];
     let parents = classNames.reduce(function(data, className) {

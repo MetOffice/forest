@@ -382,43 +382,9 @@ def main(argv=None):
         f.on_event(bokeh.events.Tap, tap_listener.update_xy)
         marker = screen.MarkDraw(f).connect(store)
 
-
-    # Minimise controls to ease navigation
-    compact_button = bokeh.models.Button(
-            label="Compact")
-    compact_minus = bokeh.models.Button(label="-", width=50)
-    compact_plus = bokeh.models.Button(label="+", width=50)
-    compact_navigation = bokeh.layouts.column(
-            compact_button,
-            bokeh.layouts.row(
-                compact_minus,
-                compact_plus,
-                width=100))
     control_root = bokeh.layouts.column(
-            compact_button,
             tabs,
             name="controls")
-
-    display = "large"
-    def on_compact():
-        nonlocal display
-        if display == "large":
-            control_root.height = 100
-            control_root.width = 120
-            compact_button.width = 100
-            compact_button.label = "Expand"
-            control_root.children = [
-                    compact_navigation]
-            display = "compact"
-        else:
-            control_root.height = 500
-            control_root.width = 300
-            compact_button.width = 300
-            compact_button.label = "Compact"
-            control_root.children = [compact_button, tabs]
-            display = "large"
-
-    compact_button.on_click(on_compact)
 
     # Add key press support
     key_press = keys.KeyPress()
