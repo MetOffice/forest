@@ -4,5 +4,4 @@ intake
 intake-esm
 pygrib
 libwebp=1.0.2  # Pin to prevent Travis issue
-numpy=1.17.*
 xarray
