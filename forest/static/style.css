@@ -2,6 +2,20 @@ body {
     margin: 0;
 }
 
+h3 {
+    margin: 0 auto;
+    padding: 0;
+    font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
+    font-weight: 100;
+}
+
+.heading-container {
+    margin-left: 410px;
+    max-height: 100px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
 /* Navigation */
 nav {
     color: black;

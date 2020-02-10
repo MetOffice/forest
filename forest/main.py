@@ -245,6 +245,10 @@ def main(argv=None):
     time_ui = forest.components.TimeUI()
     time_ui.connect(store)
 
+    # Add snippet of text for user
+    headline = forest.components.Headline()
+    headline.connect(store)
+
     # Connect renderer.visible states to store
     artist = layers.Artist(renderers)
     artist.connect(store)
@@ -396,6 +400,9 @@ def main(argv=None):
     document.add_root(tool_layout.figures_row)
     document.add_root(
         bokeh.layouts.row(time_ui.layout, name="time"))
+    document.add_root(
+        bokeh.layouts.column(headline.layout, name="headline",
+                          sizing_mode="stretch_width"))
     document.add_root(
         bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
     document.add_root(figure_row.layout)
