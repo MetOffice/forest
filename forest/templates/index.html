@@ -10,41 +10,41 @@
             {{ embed(roots.controls) | indent(10) }}
     </div>
 
-    <div id="main">
-        <nav>
-            <ul>
-                <li onclick="openSideNav()"><a href="#">&plus;</a></li>
-            </ul>
-        </nav>
+    <nav>
+        <ul>
+            <li onclick="openSideNav()"><a href="#">&plus;</a></li>
+        </ul>
+    </nav>
 
-        <!-- Layout figure row -->
-        <div id="figures">
-            {{ embed(roots.figures) | indent(10) }}
-        </div>
-
-        <!-- Layout footer widgets -->
-        <footer>
-            <div id="colorbar" class="colorbar">
-                {{ embed(roots.colorbar) | indent(10) }}
-            </div>
-            <div id="time" class="time">
-                {{ embed(roots.time) | indent(10) }}
-            </div>
-        </footer>
-
-        <!-- Bokeh document roots -->
-        {% for doc in docs %}
-            {% for root in doc.roots %}
-                {% if root.name == "series" %}
-                    <div class="series-panel">
-                    {{ embed(root) | indent(10) }}
-                    </div>
-                {% else %}
-                    {{ embed(root) | indent(10) }}
-                {% endif %}
-            {% endfor %}
-        {% endfor %}
+    <!-- Layout figure row -->
+    <div id="figures">
+        {{ embed(roots.figures) | indent(10) }}
     </div>
+
+    <!-- Layout footer widgets -->
+    <footer>
+        <div id="colorbar" class="colorbar">
+            {{ embed(roots.colorbar) | indent(10) }}
+        </div>
+        <div id="time" class="time">
+            {{ embed(roots.time) | indent(10) }}
+        </div>
+    </footer>
+
+    <!-- Bokeh document roots -->
+    {% for doc in docs %}
+        {% for root in doc.roots %}
+            {% if root.name == "series" %}
+                <div class="series-panel">
+                {{ embed(root) | indent(10) }}
+                </div>
+            {% else %}
+                <div class="display-none">
+                {{ embed(root) | indent(10) }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
     <script>
 // Re-attach roots if WebSocket request served by different machine
 let reattachRoots = function() {

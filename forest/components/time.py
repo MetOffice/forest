@@ -52,6 +52,7 @@ class TimeUI(Observable):
         self.figure.toolbar_location = None
         self.figure.xaxis.fixed_location = 0
         self.figure.title.text = "Select time"
+        self.figure.title.align = "center"
 
         # Hover interaction
         hover_tool = bokeh.models.HoverTool(tooltips=None)
