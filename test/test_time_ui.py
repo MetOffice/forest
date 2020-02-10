@@ -5,4 +5,4 @@ import forest.components.time
 def test_time_ui_render():
     time = dt.datetime(2020, 1, 1)
     ui = forest.components.time.TimeUI()
-    ui.render(0, [time])
+    ui.render(time, [time])
