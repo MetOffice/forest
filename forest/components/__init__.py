@@ -1,3 +1,3 @@
 from .time import TimeUI
 from .colorbar import ColorbarUI
-from .summary import Headline
+from .headline import Headline
