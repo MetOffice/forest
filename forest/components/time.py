@@ -287,7 +287,7 @@ class TimeUI(Observable):
         self.source.selected.indices = [index]
 
         # Title
-        time = times[index]
+        time = self._axis.datetimes[index]
         self.figure.title.text = f"{time:%A %d %B %Y %H:%M}"
 
         # Band
