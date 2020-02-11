@@ -245,6 +245,10 @@ def main(argv=None):
     time_ui = forest.components.TimeUI()
     time_ui.connect(store)
 
+    # Add snippet of text for user
+    headline = forest.components.Headline()
+    headline.connect(store)
+
     # Connect renderer.visible states to store
     artist = layers.Artist(renderers)
     artist.connect(store)
@@ -317,12 +321,6 @@ def main(argv=None):
         ),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
-                tools_panel.buttons["toggle_time_series"],
-                tools_panel.buttons["toggle_profile"],
-                ),
-            title="Tools"),
-        bokeh.models.Panel(
-            child=bokeh.layouts.column(
                 border_row,
                 bokeh.layouts.row(slider),
                 preset_ui.layout,
@@ -382,43 +380,9 @@ def main(argv=None):
         f.on_event(bokeh.events.Tap, tap_listener.update_xy)
         marker = screen.MarkDraw(f).connect(store)
 
-
-    # Minimise controls to ease navigation
-    compact_button = bokeh.models.Button(
-            label="Compact")
-    compact_minus = bokeh.models.Button(label="-", width=50)
-    compact_plus = bokeh.models.Button(label="+", width=50)
-    compact_navigation = bokeh.layouts.column(
-            compact_button,
-            bokeh.layouts.row(
-                compact_minus,
-                compact_plus,
-                width=100))
     control_root = bokeh.layouts.column(
-            compact_button,
             tabs,
             name="controls")
-
-    display = "large"
-    def on_compact():
-        nonlocal display
-        if display == "large":
-            control_root.height = 100
-            control_root.width = 120
-            compact_button.width = 100
-            compact_button.label = "Expand"
-            control_root.children = [
-                    compact_navigation]
-            display = "compact"
-        else:
-            control_root.height = 500
-            control_root.width = 300
-            compact_button.width = 300
-            compact_button.label = "Compact"
-            control_root.children = [compact_button, tabs]
-            display = "large"
-
-    compact_button.on_click(on_compact)
 
     # Add key press support
     key_press = keys.KeyPress()
@@ -427,9 +391,18 @@ def main(argv=None):
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"
     document.add_root(control_root)
-    document.add_root(tool_layout.figures_row)
+    document.add_root(
+        bokeh.layouts.column(
+            tools_panel.buttons["toggle_time_series"],
+            tools_panel.buttons["toggle_profile"],
+            tool_layout.layout,
+            width=400,
+            name="series"))
     document.add_root(
         bokeh.layouts.row(time_ui.layout, name="time"))
+    document.add_root(
+        bokeh.layouts.column(headline.layout, name="headline",
+                          sizing_mode="stretch_width"))
     document.add_root(
         bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
     document.add_root(figure_row.layout)

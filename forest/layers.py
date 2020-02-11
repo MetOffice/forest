@@ -167,7 +167,8 @@ class FigureRow:
     def __init__(self, figures):
         self.figures = figures
         self.layout = bokeh.layouts.row(*figures,
-                sizing_mode="stretch_both")
+                sizing_mode="stretch_both",
+                name="figures")
         self.layout.children = [self.figures[0]]  # Trick to keep correct sizing modes
 
     def connect(self, store):

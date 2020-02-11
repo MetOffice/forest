@@ -7,15 +7,53 @@ import bokeh.plotting
 import numpy as np
 
 
+class _Axis:
+    """Helper to find datetimes
+
+    Maps all datetime variants using str(datetime.datetime) as a key
+    """
+    def __init__(self):
+        self._mapping = {}
+        self._values = []
+
+    @property
+    def datetimes(self):
+        return [_to_datetime(t) for t in self.times]
+
+    @property
+    def times(self):
+        return self._values
+
+    @times.setter
+    def times(self, values):
+        """Intercept assignment to populate mapping"""
+        self._mapping = {self._key(v): i for i, v in enumerate(values)}
+        self._values = values
+
+    def index(self, time):
+        """Map random datetime object to index"""
+        return self._mapping[self._key(time)]
+
+    def value(self, i):
+        """Recover original value at index"""
+        return self._values[i]
+
+    @staticmethod
+    def _key(t):
+        return str(_to_datetime(t))
+
+
+
 class TimeUI(Observable):
     """Allow navigation through time"""
     def __init__(self):
+        self._axis = _Axis()
         self.source = bokeh.models.ColumnDataSource(dict(
             x=[],
             y=[],
         ))
         self.figure = bokeh.plotting.figure(
-            plot_height=100,
+            plot_height=80,
             plot_width=800,
             border_fill_alpha=0,
             tools='xpan',
@@ -52,6 +90,7 @@ class TimeUI(Observable):
         self.figure.toolbar_location = None
         self.figure.xaxis.fixed_location = 0
         self.figure.title.text = "Select time"
+        self.figure.title.align = "center"
 
         # Hover interaction
         hover_tool = bokeh.models.HoverTool(tooltips=None)
@@ -191,13 +230,16 @@ class TimeUI(Observable):
         self.buttons["next"].js_on_click(custom_js)
 
         self.layout = bokeh.layouts.column(
-            self.figure,
+            bokeh.layouts.row(
+                self.figure, sizing_mode="stretch_width"),
             bokeh.layouts.row(
                 self.buttons["previous"],
                 self.buttons["play"],
                 self.buttons["pause"],
                 self.buttons["next"],
-            ))
+                sizing_mode="stretch_width"
+            ),
+            sizing_mode="stretch_width")
 
         super().__init__()
 
@@ -205,8 +247,8 @@ class TimeUI(Observable):
         """Notify store of set valid time action"""
         if len(new) > 0:
             i = new[0]
-            value = self.source.data["x"][i]
-            print("on_selected", value)
+            value = self._axis.value(i)
+            print(value, self.source.data["x"][i])
             self.notify(forest.db.control.set_value('valid_time', value))
 
     def connect(self, store):
@@ -228,20 +270,24 @@ class TimeUI(Observable):
         """Convert state to properties needed by component"""
         if ('valid_time' not in state) or ('valid_times' not in state):
             return
-        time = _to_datetime(state['valid_time'])
-        times = sorted([_to_datetime(t) for t in state['valid_times']])
-        return times.index(time), times
+        return state['valid_time'], sorted(state['valid_times'])
 
-    def render(self, index, times):
+    def render(self, time, times):
         """React to state changes"""
+        self._axis.times = times
         self.source.data = {
-            "x": times,
+            "x": self._axis.datetimes,
             "y": np.zeros(len(times))
         }
+
+        try:
+            index = self._axis.index(time)
+        except KeyError:
+            return
         self.source.selected.indices = [index]
 
         # Title
-        time = times[index]
+        time = self._axis.datetimes[index]
         self.figure.title.text = f"{time:%A %d %B %Y %H:%M}"
 
         # Band
