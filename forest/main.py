@@ -396,6 +396,7 @@ def main(argv=None):
             tools_panel.buttons["toggle_time_series"],
             tools_panel.buttons["toggle_profile"],
             tool_layout.layout,
+            width=400,
             name="series"))
     document.add_root(
         bokeh.layouts.row(time_ui.layout, name="time"))

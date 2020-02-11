@@ -73,11 +73,10 @@ class ToolLayout:
         store.add_subscriber(self.render)
 
     def render(self, state):
-        self.layout.children = []
+        children = []
         for tool_name, value in state.get("tools", {}).items():
             if tool_name == "time_series" and value:
-                self.layout.children.append(self.series_figure)
+                children.append(self.series_figure)
             if tool_name == "profile" and value:
-                self.layout.children.append(self.profile_figure)
-
-
+                children.append(self.profile_figure)
+        self.layout.children = children
