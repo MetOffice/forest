@@ -9,8 +9,9 @@ h3 {
     font-weight: 100;
 }
 
-.heading-container {
+.headline-container {
     margin-left: 410px;
+    width: 800px;
     max-height: 100px;
     overflow-x: hidden;
     overflow-y: auto;
@@ -60,6 +61,21 @@ footer {
     box-shadow: 0px -2px 4px -2px rgba(0, 0, 0, 0.7);
 }
 
+/* Diagrams */
+.diagrams {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 6;
+    top: 0;
+    right: 0;
+    bacground-color: #333;
+    overflow-x: hidden;
+    transition: 0.2s;
+    background-color: #F1F1F1;
+    box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.7);
+}
+
 /* Side navigation */
 .sidenav {
     height: 100%;
@@ -97,8 +113,15 @@ footer {
     right: 0;
 }
 
+/* Atomic CSS */
 .display-none {
     display: none;
+}
+.float-left {
+    float: left;
+}
+.float-right {
+    float: right;
 }
 
 

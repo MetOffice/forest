@@ -1,6 +1,6 @@
-let openSideNav = function() {
-    document.getElementById("sidenav").style.width = "400px";
+let openId = function(id) {
+    document.getElementById(id).style.width = "400px";
 }
-let closeSideNav = function() {
-    document.getElementById("sidenav").style.width = "0";
+let closeId = function(id) {
+    document.getElementById(id).style.width = "0";
 }

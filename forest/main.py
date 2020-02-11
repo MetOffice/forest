@@ -321,12 +321,6 @@ def main(argv=None):
         ),
         bokeh.models.Panel(
             child=bokeh.layouts.column(
-                tools_panel.buttons["toggle_time_series"],
-                tools_panel.buttons["toggle_profile"],
-                ),
-            title="Tools"),
-        bokeh.models.Panel(
-            child=bokeh.layouts.column(
                 border_row,
                 bokeh.layouts.row(slider),
                 preset_ui.layout,
@@ -397,7 +391,12 @@ def main(argv=None):
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"
     document.add_root(control_root)
-    document.add_root(tool_layout.figures_row)
+    document.add_root(
+        bokeh.layouts.column(
+            tools_panel.buttons["toggle_time_series"],
+            tools_panel.buttons["toggle_profile"],
+            tool_layout.layout,
+            name="series"))
     document.add_root(
         bokeh.layouts.row(time_ui.layout, name="time"))
     document.add_root(

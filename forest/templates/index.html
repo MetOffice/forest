@@ -6,17 +6,20 @@
 {% endblock %}
 {% block contents %}
     <div id="sidenav" class="sidenav">
-            <a class="close-btn" href="javascript:void(0)" onclick="closeSideNav()">&minus;</a>
+            <button type="button" onclick="closeId('sidenav')">Close</button>
             {{ embed(roots.controls) | indent(10) }}
+    </div>
+    <div id="diagrams" class="diagrams">
+            <button type="button" onclick="closeId('diagrams')">Close</button>
+            {{ embed(roots.series) | indent(10) }}
     </div>
 
     <nav>
-        <ul>
-            <li onclick="openSideNav()"><a href="javascript:void(0)">&plus;</a></li>
-        </ul>
-        <div class="heading-container">
-            {{ embed(roots.headline) | indent(10) }}
+        <button class="float-left" type="button" onclick="openId('sidenav')">Settings</button>
+        <div class="float-left headline-container">
+        {{ embed(roots.headline) | indent(10) }}
         </div>
+        <button type="button" class="float-right" onclick="openId('diagrams')">Diagrams</button>
     </nav>
 
     <!-- Layout figure row -->
@@ -37,15 +40,9 @@
     <!-- Bokeh document roots -->
     {% for doc in docs %}
         {% for root in doc.roots %}
-            {% if root.name == "series" %}
-                <div class="series-panel">
-                {{ embed(root) | indent(10) }}
-                </div>
-            {% else %}
-                <div class="display-none">
-                {{ embed(root) | indent(10) }}
-                </div>
-            {% endif %}
+            <div class="display-none">
+            {{ embed(root) | indent(10) }}
+            </div>
         {% endfor %}
     {% endfor %}
     <script>

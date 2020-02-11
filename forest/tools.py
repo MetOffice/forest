@@ -65,8 +65,7 @@ class ToolsPanel(Observable):
 class ToolLayout:
     """ Manage the row containing the tool plots """
     def __init__(self, series_figure, profile_figure):
-        self.figures_row = bokeh.layouts.row(
-                name="series") # TODO: This name is used by CSS somewhere 
+        self.layout = bokeh.layouts.column()
         self.series_figure = series_figure
         self.profile_figure = profile_figure
 
@@ -74,11 +73,11 @@ class ToolLayout:
         store.add_subscriber(self.render)
 
     def render(self, state):
-        self.figures_row.children = []
+        self.layout.children = []
         for tool_name, value in state.get("tools", {}).items():
             if tool_name == "time_series" and value:
-                self.figures_row.children.append(self.series_figure)
+                self.layout.children.append(self.series_figure)
             if tool_name == "profile" and value:
-                self.figures_row.children.append(self.profile_figure)
+                self.layout.children.append(self.profile_figure)
 
 
