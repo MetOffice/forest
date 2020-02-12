@@ -61,11 +61,6 @@ def main(argv=None):
         y_axis_type="mercator",
         active_scroll="wheel_zoom")
 
-    tile = bokeh.models.WMTSTileSource(
-        url="https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
-        attribution=""
-    )
-
     figures = [figure]
     for _ in range(2):
         f = bokeh.plotting.figure(
@@ -81,7 +76,6 @@ def main(argv=None):
         f.toolbar.logo = None
         f.toolbar_location = None
         f.min_border = 0
-        f.add_tile(tile)
 
     figure_row = layers.FigureRow(figures)
 
@@ -274,7 +268,7 @@ def main(argv=None):
     figure_row.connect(store)
 
     # Tiling picker
-    tile_picker = forest.components.TilePicker(tile)
+    tile_picker = forest.components.TilePicker()
     for figure in figures:
         tile_picker.add_figure(figure)
     tile_picker.connect(store)
@@ -316,6 +310,10 @@ def main(argv=None):
         store.dispatch(layers.set_label(row_index, name))
         store.dispatch(layers.set_active(row_index, [0]))
         break
+
+    # Select web map tiling
+    store.dispatch(tiles.set_tile(tiles.STAMEN_TERRAIN))
+    store.dispatch(tiles.set_label_visible(True))
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(

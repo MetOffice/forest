@@ -4,38 +4,63 @@ import bokeh.models
 from forest.observe import Observable
 
 
+# Labels to identify tile servers
+OPEN_STREET_MAP = "Open street map"
+STAMEN_TERRAIN = "Stamen terrain"
+STAMEN_WATERCOLOR = "Stamen watercolor"
+STAMEN_TONER = "Stamen toner"
+STAMEN_TONER_LITE = "Stamen toner lite"
+WIKIMEDIA = "Wikimedia"
+
 URLS = {
-    "Wikimedia": "https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
-    "Open street maps": "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png",
-    "OSM Terrain": "http://tile.stamen.com/terrain/{Z}/{X}/{Y}.jpg",
-    "OSM Watercolor": "http://tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg",
-    "Toner": "http://tile.stamen.com/toner/{Z}/{X}/{Y}.png",
-    "Toner lite": "http://tile.stamen.com/toner-lite/{Z}/{X}/{Y}.png"
+    WIKIMEDIA: "https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
+    OPEN_STREET_MAP: "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png",
+    STAMEN_TERRAIN: "http://tile.stamen.com/terrain-background/{Z}/{X}/{Y}.jpg",
+    STAMEN_WATERCOLOR: "http://tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg",
+    STAMEN_TONER: "http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png",
+    STAMEN_TONER_LITE: "http://tile.stamen.com/toner-lite/{Z}/{X}/{Y}.png"
 }
 ATTRIBUTIONS = {
-    "Wikimedia": "",
-    "Open street maps": "",
-    "OSM Terrain": "",
-    "OSM Watercolor": """
+    WIKIMEDIA: "",
+    OPEN_STREET_MAP: "",
+    STAMEN_TERRAIN: "",
+    STAMEN_WATERCOLOR: """
 Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.
 """,
-    "Toner": "",
-    "Toner lite": """
+    STAMEN_TONER: "",
+    STAMEN_TONER_LITE: """
 Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.
 """
 }
 
 
+def background_url(name):
+    """Tile server URL for backgrounds"""
+    return URLS[name]
+
+
+def labels_url(name):
+    """Tile server URL for labels"""
+    default = "http://tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png"
+    return {
+        STAMEN_TERRAIN: "http://tile.stamen.com/terrain-labels/{Z}/{X}/{Y}.jpg"
+    }.get(name, default)
+
+
+def attribution(name):
+    return ""
+
+
 SET_TILE = "TILES_SET_TILE"
-SET_LABELS = "TILES_SET_LABELS"
+SET_LABEL_VISIBLE = "TILES_SET_LABEL_VISIBLE"
 
 
 def set_tile(key):
     return {"kind": SET_TILE, "payload": key}
 
 
-def set_labels(value):
-    return {"kind": SET_LABELS, "payload": value}
+def set_label_visible(value):
+    return {"kind": SET_LABEL_VISIBLE, "payload": value}
 
 
 def reducer(state, action):
@@ -43,7 +68,7 @@ def reducer(state, action):
     tree = state.get("tile", {})
     if action["kind"] == SET_TILE:
         tree["name"] = action["payload"]
-    elif action["kind"] == SET_LABELS:
+    elif action["kind"] == SET_LABEL_VISIBLE:
         tree["labels"] = action["payload"]
     state["tile"] = tree
     return state
@@ -51,8 +76,10 @@ def reducer(state, action):
 
 class TilePicker(Observable):
     """Web map tile selector"""
-    def __init__(self, tile_source):
-        self.tile_source = tile_source
+    def __init__(self):
+        self.tile_source =  bokeh.models.WMTSTileSource(
+            url="https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
+            attribution="")
         self.tiles = {
             "labels": bokeh.models.WMTSTileSource(
                 url="http://tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png",
@@ -71,6 +98,8 @@ class TilePicker(Observable):
         super().__init__()
 
     def add_figure(self, figure):
+        renderer = figure.add_tile(self.tile_source)
+        renderer.level = "underlay"
         renderer = figure.add_tile(self.tiles["labels"])
         renderer.alpha = 0
         self._renderers.append(renderer)
@@ -87,7 +116,7 @@ class TilePicker(Observable):
 
     def on_toggle(self, value):
         """Send toggle tile labels action to store"""
-        self.notify(set_labels(value))
+        self.notify(set_label_visible(value))
 
     def render(self, state):
         """Represent state"""
@@ -95,7 +124,10 @@ class TilePicker(Observable):
         if key is None:
             return
         self.tile_source.url = URLS[key]
-        self.tile_source.attribution = ATTRIBUTIONS[key]
+        self.tile_source.attribution = attribution(key)
+
+        # Labels URL
+        self.tiles["labels"].url = labels_url(key)
 
         # Hide/show overlay labels
         visible = state.get("tile", {}).get("labels", False)
