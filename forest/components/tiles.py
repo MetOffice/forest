@@ -2,6 +2,7 @@
 import copy
 import bokeh.models
 from forest.observe import Observable
+from forest.redux import Action, State
 
 
 # Labels to identify tile servers
@@ -20,7 +21,6 @@ URLS = {
     STAMEN_TONER: "http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png",
     STAMEN_TONER_LITE: "http://tile.stamen.com/toner-lite/{Z}/{X}/{Y}.png"
 }
-# TODO: Find correct attributions
 
 
 def background_url(name):
@@ -77,15 +77,18 @@ SET_TILE = "TILES_SET_TILE"
 SET_LABEL_VISIBLE = "TILES_SET_LABEL_VISIBLE"
 
 
-def set_tile(key):
-    return {"kind": SET_TILE, "payload": key}
+def set_tile(provider: str) -> Action:
+    """Action to choose tile provider"""
+    return {"kind": SET_TILE, "payload": provider}
 
 
-def set_label_visible(value):
+def set_label_visible(value: bool) -> Action:
+    """Action to set tile labels on/off"""
     return {"kind": SET_LABEL_VISIBLE, "payload": value}
 
 
-def reducer(state, action):
+def reducer(state: State, action: Action) -> State:
+    """Reducer to handle web map tiling settings"""
     state = copy.deepcopy(state)
     tree = state.get("tile", {})
     if action["kind"] == SET_TILE:
@@ -145,14 +148,14 @@ class TilePicker(Observable):
 
     def render(self, state):
         """Represent state"""
-        key = state.get("tile", {}).get("name")
-        if key is None:
+        provider = state.get("tile", {}).get("name")
+        if provider is None:
             return
-        self.tiles["underlay"].url = URLS[key]
-        self.tiles["underlay"].attribution = attribution(key)
+        self.tiles["underlay"].url = URLS[provider]
+        self.tiles["underlay"].attribution = attribution(provider)
 
         # Labels URL
-        self.tiles["labels"].url = labels_url(key)
+        self.tiles["labels"].url = labels_url(provider)
 
         # Hide/show overlay labels
         visible = state.get("tile", {}).get("labels", False)
@@ -164,8 +167,8 @@ class TilePicker(Observable):
             renderer.alpha = alpha
 
         # Select options
-        if self.select.value != key:
-            self.select.value = key
+        if self.select.value != provider:
+            self.select.value = provider
 
         # Toggle setting
         if self.toggle.active != visible:
