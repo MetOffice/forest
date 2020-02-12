@@ -25,8 +25,12 @@ def test_labels_url(name, expect):
 
 
 @pytest.mark.parametrize("name,expect", [
-    (tiles.STAMEN_TERRAIN, ""),
-    (tiles.STAMEN_WATERCOLOR, ""),
+    (tiles.OPEN_STREET_MAP, tiles.OPEN_STREET_MAP_ATTRIBUTION),
+    (tiles.STAMEN_TERRAIN, tiles.STAMEN_TONER_AND_TERRAIN_ATTRIBUTION),
+    (tiles.STAMEN_TONER, tiles.STAMEN_TONER_AND_TERRAIN_ATTRIBUTION),
+    (tiles.STAMEN_TONER_LITE, tiles.STAMEN_TONER_AND_TERRAIN_ATTRIBUTION),
+    (tiles.STAMEN_WATERCOLOR, tiles.STAMEN_WATERCOLOR_ATTRIBUTION),
+    (tiles.WIKIMEDIA, tiles.WIKIMEDIA_ATTRIBUTION),
 ])
 def test_attribution(name, expect):
-    assert tiles.attribution(name) == expect
+    assert tiles.attribution(name).strip() == expect.strip()

@@ -21,18 +21,6 @@ URLS = {
     STAMEN_TONER_LITE: "http://tile.stamen.com/toner-lite/{Z}/{X}/{Y}.png"
 }
 # TODO: Find correct attributions
-ATTRIBUTIONS = {
-    WIKIMEDIA: "",
-    OPEN_STREET_MAP: "",
-    STAMEN_TERRAIN: "",
-    STAMEN_WATERCOLOR: """
-Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.
-""",
-    STAMEN_TONER: "",
-    STAMEN_TONER_LITE: """
-Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.
-"""
-}
 
 
 def background_url(name):
@@ -48,8 +36,41 @@ def labels_url(name):
     }.get(name, default)
 
 
+OPEN_STREET_MAP_ATTRIBUTION = """
+© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors
+"""
+
+
+STAMEN_TONER_AND_TERRAIN_ATTRIBUTION = """
+Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.
+"""
+
+
+STAMEN_WATERCOLOR_ATTRIBUTION = """
+Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.
+"""
+
+
+WIKIMEDIA_ATTRIBUTION = """
+Wikimedia Maps | © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors
+"""
+
+
 def attribution(name):
-    return ""
+    """Tile server attribution"""
+    if name in [
+            STAMEN_TONER,
+            STAMEN_TERRAIN,
+            STAMEN_TONER_LITE]:
+        return STAMEN_TONER_AND_TERRAIN_ATTRIBUTION
+    elif name == STAMEN_WATERCOLOR:
+        return STAMEN_WATERCOLOR_ATTRIBUTION
+    elif name == WIKIMEDIA:
+        return WIKIMEDIA_ATTRIBUTION
+    elif name == OPEN_STREET_MAP:
+        return OPEN_STREET_MAP_ATTRIBUTION
+    else:
+        return ""
 
 
 SET_TILE = "TILES_SET_TILE"
