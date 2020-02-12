@@ -20,6 +20,7 @@ URLS = {
     STAMEN_TONER: "http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png",
     STAMEN_TONER_LITE: "http://tile.stamen.com/toner-lite/{Z}/{X}/{Y}.png"
 }
+# TODO: Find correct attributions
 ATTRIBUTIONS = {
     WIKIMEDIA: "",
     OPEN_STREET_MAP: "",
@@ -77,10 +78,10 @@ def reducer(state, action):
 class TilePicker(Observable):
     """Web map tile selector"""
     def __init__(self):
-        self.tile_source =  bokeh.models.WMTSTileSource(
-            url="https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
-            attribution="")
         self.tiles = {
+            "underlay": bokeh.models.WMTSTileSource(
+                url="https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
+                attribution=""),
             "labels": bokeh.models.WMTSTileSource(
                 url="http://tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png",
                 attribution="")
@@ -98,9 +99,12 @@ class TilePicker(Observable):
         super().__init__()
 
     def add_figure(self, figure):
-        renderer = figure.add_tile(self.tile_source)
+        # Underlay tile
+        renderer = figure.add_tile(self.tiles["underlay"])
         renderer.level = "underlay"
+        # Overlay tile
         renderer = figure.add_tile(self.tiles["labels"])
+        renderer.level = "overlay"
         renderer.alpha = 0
         self._renderers.append(renderer)
 
@@ -123,8 +127,8 @@ class TilePicker(Observable):
         key = state.get("tile", {}).get("name")
         if key is None:
             return
-        self.tile_source.url = URLS[key]
-        self.tile_source.attribution = attribution(key)
+        self.tiles["underlay"].url = URLS[key]
+        self.tiles["underlay"].attribution = attribution(key)
 
         # Labels URL
         self.tiles["labels"].url = labels_url(key)
@@ -137,3 +141,11 @@ class TilePicker(Observable):
             alpha = 0
         for renderer in self._renderers:
             renderer.alpha = alpha
+
+        # Select options
+        if self.select.value != key:
+            self.select.value = key
+
+        # Toggle setting
+        if self.toggle.active != visible:
+            self.toggle.active = visible
