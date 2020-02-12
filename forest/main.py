@@ -30,6 +30,7 @@ from forest import (
         navigate,
         parse_args)
 import forest.components
+from forest.components import tiles
 import forest.config as cfg
 import forest.middlewares as mws
 from forest.observe import Observable
@@ -59,10 +60,6 @@ def main(argv=None):
         x_axis_type="mercator",
         y_axis_type="mercator",
         active_scroll="wheel_zoom")
-    tile = bokeh.models.WMTSTileSource(
-        url="https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
-        attribution=""
-    )
 
     figures = [figure]
     for _ in range(2):
@@ -79,7 +76,6 @@ def main(argv=None):
         f.toolbar.logo = None
         f.toolbar_location = None
         f.min_border = 0
-        f.add_tile(tile)
 
     figure_row = layers.FigureRow(figures)
 
@@ -237,7 +233,8 @@ def main(argv=None):
             screen.reducer,
             tools.reducer,
             colors.reducer,
-            presets.reducer),
+            presets.reducer,
+            tiles.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
 
@@ -269,6 +266,12 @@ def main(argv=None):
     figure_ui = layers.FigureUI()
     figure_ui.add_subscriber(store.dispatch)
     figure_row.connect(store)
+
+    # Tiling picker
+    tile_picker = forest.components.TilePicker()
+    for figure in figures:
+        tile_picker.add_figure(figure)
+    tile_picker.connect(store)
 
     # Connect color palette controls
     color_palette = colors.ColorPalette(color_mapper).connect(store)
@@ -308,6 +311,10 @@ def main(argv=None):
         store.dispatch(layers.set_active(row_index, [0]))
         break
 
+    # Select web map tiling
+    store.dispatch(tiles.set_tile(tiles.STAMEN_TERRAIN))
+    store.dispatch(tiles.set_label_visible(True))
+
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
             child=bokeh.layouts.column(
@@ -325,7 +332,9 @@ def main(argv=None):
                 bokeh.layouts.row(slider),
                 preset_ui.layout,
                 color_palette.layout,
-                user_limits.layout
+                user_limits.layout,
+                bokeh.models.Div(text="Tiles:"),
+                tile_picker.layout,
                 ),
             title="Settings")
         ])
