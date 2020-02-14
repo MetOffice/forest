@@ -10,13 +10,14 @@ from forest import (
         earth_networks,
         db,
         gridded_forecast,
-        ghrsstl4,
         unified_model,
         eida50,
         rdt,
         intake_loader,
         saf,
         nearcast)
+
+from forest.drivers import ghrsstl4
 
 
 class Navigator:

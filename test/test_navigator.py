@@ -172,7 +172,7 @@ def test_FileSystemNavigator_from_file_type__griddedforecast(navigator_cls):
     assert navigator == sentinel.navigator
 
 
-@patch('forest.ghrsstl4.Navigator')
+@patch('forest.drivers.ghrsstl4.Navigator')
 def test_FileSystemNavigator_from_file_type__ghrsstl4(navigator_cls):
     navigator_cls.return_value = sentinel.navigator
 

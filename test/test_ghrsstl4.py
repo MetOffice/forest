@@ -5,7 +5,7 @@ import unittest
 import iris
 import numpy as np
 
-from forest import ghrsstl4
+from forest.drivers import ghrsstl4
 
 
 class Test_empty_image(unittest.TestCase):
