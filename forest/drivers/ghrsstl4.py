@@ -99,10 +99,7 @@ def _load(pattern):
             duplicate_counts[name] += 1
             name += f' ({duplicate_counts[name]})'
         cube_mapping[name] = cube
-    key_func = lambda t: "0" if t[0] == "sea_surface_foundation_temperature" else t[0]
-    cube_mapping_ordered = collections.OrderedDict(
-        sorted(cube_mapping.items(), key=key_func))
-    return cube_mapping_ordered
+    return cube_mapping
 
 
 class ImageLoader:
