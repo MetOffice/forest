@@ -16,7 +16,7 @@ WIKIMEDIA = "Wikimedia"
 URLS = {
     WIKIMEDIA: "https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
     OPEN_STREET_MAP: "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png",
-    STAMEN_TERRAIN: "http://tile.stamen.com/terrain-background/{Z}/{X}/{Y}.jpg",
+    STAMEN_TERRAIN: "http://tile.stamen.com/terrain-background/{Z}/{X}/{Y}.png",
     STAMEN_WATERCOLOR: "http://tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg",
     STAMEN_TONER: "http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png",
     STAMEN_TONER_LITE: "http://tile.stamen.com/toner-lite/{Z}/{X}/{Y}.png"
@@ -32,7 +32,7 @@ def labels_url(name):
     """Tile server URL for labels"""
     default = "http://tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png"
     return {
-        STAMEN_TERRAIN: "http://tile.stamen.com/terrain-labels/{Z}/{X}/{Y}.jpg"
+        STAMEN_TERRAIN: "http://tile.stamen.com/terrain-labels/{Z}/{X}/{Y}.png"
     }.get(name, default)
 
 
