@@ -72,6 +72,18 @@ class Config(object):
         return "{}({})".format(
                 self.__class__.__name__,
                 self.data)
+    @property
+    def use_web_map_tiles(self):
+        """Turns web map tiling backgrounds on/off
+
+        .. code-block:: yaml
+
+            use_web_map_tiles: false
+
+        .. note:: This is best used during development if an internet
+                  connection is not available
+        """
+        return self.data.get("use_web_map_tiles", True)
 
     @property
     def default_viewport(self):

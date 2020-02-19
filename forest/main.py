@@ -41,6 +41,8 @@ import datetime as dt
 def main(argv=None):
     args = parse_args.parse_args(argv)
     if len(args.files) > 0:
+        if args.config_file is not None:
+            raise Exception('--config-file and [FILE [FILE ...]] not compatible')
         config = cfg.from_files(args.files, args.file_type)
     else:
         config = cfg.Config.load(
@@ -268,10 +270,11 @@ def main(argv=None):
     figure_row.connect(store)
 
     # Tiling picker
-    tile_picker = forest.components.TilePicker()
-    for figure in figures:
-        tile_picker.add_figure(figure)
-    tile_picker.connect(store)
+    if config.use_web_map_tiles:
+        tile_picker = forest.components.TilePicker()
+        for figure in figures:
+            tile_picker.add_figure(figure)
+        tile_picker.connect(store)
 
     # Connect color palette controls
     color_palette = colors.ColorPalette(color_mapper).connect(store)
@@ -312,30 +315,38 @@ def main(argv=None):
         break
 
     # Select web map tiling
-    store.dispatch(tiles.set_tile(tiles.STAMEN_TERRAIN))
-    store.dispatch(tiles.set_label_visible(True))
+    if config.use_web_map_tiles:
+        store.dispatch(tiles.set_tile(tiles.STAMEN_TERRAIN))
+        store.dispatch(tiles.set_label_visible(True))
+
+    # Organise controls/settings
+    layouts = {}
+    layouts["controls"] = [
+        bokeh.models.Div(text="Layout:"),
+        figure_ui.layout,
+        bokeh.models.Div(text="Navigate:"),
+        controls.layout,
+        bokeh.models.Div(text="Compare:"),
+        layers_ui.layout
+    ]
+    layouts["settings"] = [
+        border_row,
+        bokeh.layouts.row(slider),
+        preset_ui.layout,
+        color_palette.layout,
+        user_limits.layout,
+        bokeh.models.Div(text="Tiles:"),
+    ]
+    if config.use_web_map_tiles:
+        layouts["settings"].append(tile_picker.layout)
 
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
-            child=bokeh.layouts.column(
-                bokeh.models.Div(text="Layout:"),
-                figure_ui.layout,
-                bokeh.models.Div(text="Navigate:"),
-                controls.layout,
-                bokeh.models.Div(text="Compare:"),
-                layers_ui.layout),
+            child=bokeh.layouts.column(*layouts["controls"]),
             title="Control"
         ),
         bokeh.models.Panel(
-            child=bokeh.layouts.column(
-                border_row,
-                bokeh.layouts.row(slider),
-                preset_ui.layout,
-                color_palette.layout,
-                user_limits.layout,
-                bokeh.models.Div(text="Tiles:"),
-                tile_picker.layout,
-                ),
+            child=bokeh.layouts.column(*layouts["settings"]),
             title="Settings")
         ])
 
