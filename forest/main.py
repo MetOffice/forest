@@ -292,11 +292,10 @@ def main(argv=None):
     controls = db.ControlView()
     controls.connect(store)
 
-    def old_world(state):
-        kwargs = {k: state.get(k, None) for k in db.State._fields}
-        return db.State(**kwargs)
-
-    connector = layers.ViewerConnector(viewers, old_world).connect(store)
+    # Connect views to state changes
+    connector = layers.ViewerConnector().connect(store)
+    for label, viewer in viewers.items():
+        connector.add_label_subscriber(label, viewer.render)
 
     # Set default time series visibility
     store.dispatch(tools.on_toggle_tool("time_series", False))
