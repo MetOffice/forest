@@ -16,8 +16,7 @@ def test_add_figure():
     loader.locator.find.return_value = "", 0
 
     color_mapper = None
-    state = unittest.mock.Mock()
-    state.valid_time = dt.datetime(2020, 1, 1)
+    state = {"valid_time": dt.datetime(2020, 1, 1)}
     figure = bokeh.plotting.figure()
     view = TiledImage(loader, color_mapper)
     view.add_figure(figure)

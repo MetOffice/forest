@@ -12,6 +12,7 @@ from tornado import gen
 import xarray
 import datashader
 import numpy as np
+from forest.old_state import unique
 from forest.gridded_forecast import _to_datetime
 from forest.geo import web_mercator
 
@@ -63,9 +64,12 @@ class TiledImage:
                      color_mapper=self.color_mapper)
 
     def render(self, state):
-        if state.valid_time is None:
+        if "valid_time" not in state:
             return
+        self._render(state["valid_time"])
 
+    @unique
+    def _render(self, valid_time):
         document = bokeh.plotting.curdoc()
         if len(self.source.data["x"]) == 0:
             method = "stream"
@@ -73,7 +77,7 @@ class TiledImage:
             method = "patch"
 
         # EIDA50 specific I/O
-        path, itime = self.loader.locator.find(_to_datetime(state.valid_time))
+        path, itime = self.loader.locator.find(_to_datetime(valid_time))
         z = self.loader.values(path, itime)
 
         # Map from Lon/Lat to WebMercator projection
