@@ -2,6 +2,7 @@ import datetime as dt
 import numpy as np
 import bokeh.models
 from forest import geo
+from forest.old_state import old_state, unique
 from forest.exceptions import FileNotFound, IndexNotFound
 
 
@@ -30,6 +31,8 @@ class UMView(object):
             'initial': 'datetime'
         }
 
+    @old_state
+    @unique
     def render(self, state):
         self.source.data = self.loader.image(state)
 
@@ -105,6 +108,8 @@ class EIDA50(object):
         self.source = bokeh.models.ColumnDataSource(
                 self.empty)
 
+    @old_state
+    @unique
     def render(self, state):
         if state.valid_time is not None:
             self.image(self.to_datetime(state.valid_time))

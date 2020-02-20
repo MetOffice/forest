@@ -18,3 +18,29 @@ def old_state(f):
 def _to_old(state):
     kwargs = {k: state.get(k, None) for k in db.State._fields}
     return db.State(**kwargs)
+
+
+def unique(f):
+    previous = None
+    called = False
+
+    @wraps(f)
+    def wrapper(*args):
+        nonlocal previous
+        nonlocal called
+
+        if len(args) == 2:
+            self, value = args
+        else:
+            value, = args
+
+        if (not called) or (value != previous):
+            called = True
+            previous = value
+            if len(args) == 2:
+                result = f(self, value)
+            else:
+                result = f(value)
+            return result
+
+    return wrapper
