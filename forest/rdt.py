@@ -12,6 +12,7 @@ import numpy as np
 from forest import (
         geo,
         locate)
+from forest.old_state import old_state
 from forest.util import timeout_cache
 from forest.exceptions import FileNotFound
 from bokeh.palettes import GnBu3, OrRd3
@@ -126,6 +127,7 @@ class View(object):
         self.tail_point_source = bokeh.models.ColumnDataSource(self.empty_tail_point)
         self.centre_point_source = bokeh.models.ColumnDataSource(self.empty_centre_point)
 
+    @old_state
     def render(self, state):
         """Gets called when a menu button is clicked (or when application state changes)"""
         if state.valid_time is not None:
