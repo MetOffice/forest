@@ -10,7 +10,7 @@ class UMView(object):
     def __init__(self, loader, color_mapper):
         self.loader = loader
         self.color_mapper = color_mapper
-        self.color_mapper.nan_color = bokeh.colors.RGB(0, 0, 0, a=0) 
+        self.color_mapper.nan_color = bokeh.colors.RGB(0, 0, 0, a=0)
         self.source = bokeh.models.ColumnDataSource({
                 "x": [],
                 "y": [],
@@ -79,6 +79,8 @@ class GPMView(object):
                 "image": []}
         self.source = bokeh.models.ColumnDataSource(self.empty)
 
+    @old_state
+    @unique
     def render(self, variable, pressure, itime):
         if variable != "precipitation_flux":
             self.source.data = self.empty
@@ -144,18 +146,21 @@ class EIDA50(object):
                 source=self.source,
                 color_mapper=self.color_mapper)
 
+
 class NearCast(object):
     def __init__(self, loader, color_mapper):
         self.loader = loader
         self.color_mapper = color_mapper
-        self.color_mapper.nan_color = bokeh.colors.RGB(0, 0, 0, a=0) 
+        self.color_mapper.nan_color = bokeh.colors.RGB(0, 0, 0, a=0)
         self.source = bokeh.models.ColumnDataSource({
                 "x": [],
                 "y": [],
                 "dw": [],
                 "dh": [],
                 "image": []})
-                
+
+    @old_state
+    @unique
     def render(self, state):
         self.source.data = self.loader.image(state)
 
@@ -177,6 +182,4 @@ class NearCast(object):
                tooltips=self.tooltips)
 
         figure.add_tools(tool)
-
         return renderer
-
