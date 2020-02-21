@@ -42,19 +42,12 @@ def on_toggle_tool(tool_name, value) -> Action:
 
 class ToolsPanel(Observable):
     """ A panel that contains buttons to turn extra tools on and off"""
-    def __init__(self, features):
-
-        features_to_buttons = {
-            "time_series": ("toggle_time_series", "Display Time Series"),
-            "profile": ("toggle_profile", "Display Profile")
-        }
+    def __init__(self, available_features):
 
         self.buttons = {}
-        for k, names in features_to_buttons.items():
-            if features[k]:
-                toggle_name, displayed_name = names
-                self.buttons[toggle_name] = bokeh.models.Toggle(label=displayed_name)
-                self.buttons[toggle_name].on_click(self.on_click(toggle_name))
+        for tool_name, display_name in available_features.items(): 
+            self.buttons[tool_name] = bokeh.models.Toggle(label=display_name)
+            self.buttons[tool_name].on_click(self.on_click(tool_name))
 
         self.layout = bokeh.layouts.column(*self.buttons.values())
         super().__init__()
@@ -65,7 +58,7 @@ class ToolsPanel(Observable):
 
     def on_click(self, toggle_name):
         """update the store callback."""
-        def callback(self, toggle_state):
+        def callback(toggle_state):
             self.notify(on_toggle_tool(toggle_name, toggle_state))
 
         return callback

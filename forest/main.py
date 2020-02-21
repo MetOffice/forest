@@ -257,7 +257,15 @@ def main(argv=None):
     layers_ui.connect(store)
 
     # Connect tools controls
-    tools_panel = tools.ToolsPanel(config.features)
+
+    display_names = {
+            "time_series": "Display Time Series",
+            "profile": "Display Profile"
+        }
+    available_features = {k: display_names[k]
+                          for k in display_names.keys() if config.features[k]}
+
+    tools_panel = tools.ToolsPanel(available_features)
     tools_panel.connect(store)
 
     # Connect tap listener
