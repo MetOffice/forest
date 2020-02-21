@@ -10,5 +10,6 @@ and tribulations associated with solving these problems.
 .. toctree::
    :maxdepth: 2
 
+   howto-feature-toggles
    howto-component
    howto-reducer

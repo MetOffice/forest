@@ -23,6 +23,7 @@ applications.
 import os
 import string
 import yaml
+from collections import defaultdict
 from forest.export import export
 
 
@@ -72,6 +73,14 @@ class Config(object):
         return "{}({})".format(
                 self.__class__.__name__,
                 self.data)
+
+    @property
+    def features(self):
+        """Dict of user-defined feature toggles"""
+        d = defaultdict(lambda: True)
+        d.update(self.data.get("features", {}))
+        return d
+
     @property
     def use_web_map_tiles(self):
         """Turns web map tiling backgrounds on/off
