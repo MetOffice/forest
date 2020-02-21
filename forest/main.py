@@ -257,7 +257,7 @@ def main(argv=None):
     layers_ui.connect(store)
 
     # Connect tools controls
-    tools_panel = tools.ToolsPanel()
+    tools_panel = tools.ToolsPanel(config.features)
     tools_panel.connect(store)
 
     # Connect tap listener

@@ -19,10 +19,10 @@ the components that depend on state changes
 """
 
 import copy
-from forest.observe import Observable
-from forest.redux import Action, State
 import bokeh.layouts
 import bokeh.models
+from forest.observe import Observable
+from forest.redux import Action, State
 
 ON_TOGGLE_TOOL = "TOGGLE_TOOL_VISIBILITY"
 
@@ -42,11 +42,19 @@ def on_toggle_tool(tool_name, value) -> Action:
 
 class ToolsPanel(Observable):
     """ A panel that contains buttons to turn extra tools on and off"""
-    def __init__(self, key_to_name):
+    def __init__(self, features):
+
+        features_to_buttons = {
+            "time_series": ("toggle_time_series", "Display Time Series"),
+            "profile": ("toggle_profile", "Display Profile")
+        }
+
         self.buttons = {}
-        for key, value in key_to_name.items():
-            self.buttons[key] = bokeh.models.Toggle(label=value)
-            self.buttons[key].on_click(self.on_click(key))
+        for k, names in features_to_buttons.items():
+            if features[k]:
+                toggle_name, displayed_name = names
+                self.buttons[toggle_name] = bokeh.models.Toggle(label=displayed_name)
+                self.buttons[toggle_name].on_click(self.on_click(toggle_name))
 
         self.layout = bokeh.layouts.column(*self.buttons.values())
         super().__init__()
