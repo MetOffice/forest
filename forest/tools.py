@@ -65,7 +65,7 @@ class ToolsPanel(Observable):
 
 class ToolLayout:
     """ Manage the row containing the tool plots """
-    def __init__(self, series_figure, profile_figure):
+    def __init__(self, series_figure=None, profile_figure=None):
         self.layout = bokeh.layouts.column()
         self.series_figure = series_figure
         self.profile_figure = profile_figure
