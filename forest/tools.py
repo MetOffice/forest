@@ -63,10 +63,10 @@ class ToolsPanel(Observable):
         self.add_subscriber(store.dispatch)
         return self
 
-    def on_click(self, key):
+    def on_click(self, toggle_name):
         """update the store callback."""
         def callback(self, toggle_state):
-            self.notify(on_toggle_tool(key, toggle_state))
+            self.notify(on_toggle_tool(toggle_name, toggle_state))
 
         return callback
 
