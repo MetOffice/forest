@@ -348,7 +348,6 @@ def main(argv=None):
             child=bokeh.layouts.column(*layouts["settings"]),
             title="Settings")
         ])
-
     # Series sub-figure widget
     series_figure = bokeh.plotting.figure(
                 plot_width=400,
@@ -412,8 +411,7 @@ def main(argv=None):
     document.add_root(control_root)
     document.add_root(
         bokeh.layouts.column(
-            tools_panel.buttons["toggle_time_series"],
-            tools_panel.buttons["toggle_profile"],
+            tools_panel.layout,
             tool_layout.layout,
             width=400,
             name="series"))

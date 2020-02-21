@@ -48,6 +48,8 @@ class ToolsPanel(Observable):
             "toggle_profile": bokeh.models.Toggle(label="Display Profile")}
         self.buttons["toggle_time_series"].on_click(self.on_click_time_series)
         self.buttons["toggle_profile"].on_click(self.on_click_profile)
+
+        self.layout = bokeh.layouts.column(*self.buttons.values())
         super().__init__()
 
     def connect(self, store):
