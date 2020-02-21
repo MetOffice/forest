@@ -42,12 +42,11 @@ def on_toggle_tool(tool_name, value) -> Action:
 
 class ToolsPanel(Observable):
     """ A panel that contains buttons to turn extra tools on and off"""
-    def __init__(self):
-        self.buttons = {
-            "toggle_time_series": bokeh.models.Toggle(label="Display Time Series"),
-            "toggle_profile": bokeh.models.Toggle(label="Display Profile")}
-        self.buttons["toggle_time_series"].on_click(self.on_click_time_series)
-        self.buttons["toggle_profile"].on_click(self.on_click_profile)
+    def __init__(self, key_to_name):
+        self.buttons = {}
+        for key, value in key_to_name.items():
+            self.buttons[key] = bokeh.models.Toggle(label=value)
+            self.buttons[key].on_click(self.on_click(key))
 
         self.layout = bokeh.layouts.column(*self.buttons.values())
         super().__init__()
@@ -56,13 +55,12 @@ class ToolsPanel(Observable):
         self.add_subscriber(store.dispatch)
         return self
 
-    def on_click_time_series(self, toggle_state):
-        """update the store."""
-        self.notify(on_toggle_tool("time_series", toggle_state))
+    def on_click(self, key):
+        """update the store callback."""
+        def callback(self, toggle_state):
+            self.notify(on_toggle_tool(key, toggle_state))
 
-    def on_click_profile(self, toggle_state):
-        """update the store."""
-        self.notify(on_toggle_tool("profile", toggle_state))
+        return callback
 
 class ToolLayout:
     """ Manage the row containing the tool plots """
