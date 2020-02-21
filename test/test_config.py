@@ -214,6 +214,6 @@ def test_config_parser_use_web_map_tiles(data, expect):
     ({}, True),
     ({"features": {"example": False}}, False),
 ])
-def test_config_parser_true(data, expect):
+def test_config_parser_features(data, expect):
     config = forest.config.Config(data)
     assert config.features["example"] == expect
