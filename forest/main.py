@@ -403,6 +403,31 @@ def main(argv=None):
             tabs,
             name="controls")
 
+    buttons = {}
+
+    # Add button to control left drawer
+    key = "sidenav_button"
+    buttons[key] = bokeh.models.Button(
+        label="Settings",
+        name=key)
+    custom_js = bokeh.models.CustomJS(code="""
+        openId("sidenav");
+    """)
+    buttons[key].js_on_click(custom_js)
+
+    # Add button to control right drawer
+    key = "diagrams_button"
+    buttons[key] = bokeh.models.Button(
+        label="Diagrams",
+        css_classes=["float-right"],
+        name=key)
+    custom_js = bokeh.models.CustomJS(code="""
+        openId("diagrams");
+    """)
+    buttons[key].js_on_click(custom_js)
+
+    headline.layout.name = "headline"
+
     # Add key press support
     key_press = keys.KeyPress()
     key_press.add_subscriber(store.dispatch)
@@ -419,9 +444,9 @@ def main(argv=None):
             name="series"))
     document.add_root(
         bokeh.layouts.row(time_ui.layout, name="time"))
-    document.add_root(
-        bokeh.layouts.column(headline.layout, name="headline",
-                          sizing_mode="stretch_width"))
+    document.add_root(buttons["sidenav_button"])
+    document.add_root(headline.layout)
+    document.add_root(buttons["diagrams_button"])
     document.add_root(
         bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
     document.add_root(figure_row.layout)
