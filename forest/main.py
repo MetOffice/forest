@@ -257,7 +257,15 @@ def main(argv=None):
     layers_ui.connect(store)
 
     # Connect tools controls
-    tools_panel = tools.ToolsPanel()
+
+    display_names = {
+            "time_series": "Display Time Series",
+            "profile": "Display Profile"
+        }
+    available_features = {k: display_names[k]
+                          for k in display_names.keys() if config.features[k]}
+
+    tools_panel = tools.ToolsPanel(available_features)
     tools_panel.connect(store)
 
     # Connect tap listener
@@ -349,51 +357,57 @@ def main(argv=None):
             title="Settings")
         ])
 
-    # Series sub-figure widget
-    series_figure = bokeh.plotting.figure(
-                plot_width=400,
-                plot_height=200,
-                x_axis_type="datetime",
-                toolbar_location=None,
-                border_fill_alpha=0)
-    series_figure.toolbar.logo = None
+    tool_figures = {}
+    if config.features["time_series"]:
+        # Series sub-figure widget
+        series_figure = bokeh.plotting.figure(
+                    plot_width=400,
+                    plot_height=200,
+                    x_axis_type="datetime",
+                    toolbar_location=None,
+                    border_fill_alpha=0)
+        series_figure.toolbar.logo = None
 
-    # Profile sub-figure widget
-    profile_figure = bokeh.plotting.figure(
-                plot_width=300,
-                plot_height=450,
-                toolbar_location=None,
-                border_fill_alpha=0)
-    profile_figure.toolbar.logo = None
-    profile_figure.y_range.flipped = True
+        series_view = series.SeriesView.from_groups(
+                series_figure,
+                config.file_groups)
+        series_view.add_subscriber(store.dispatch)
+        series_args = (rx.Stream()
+                    .listen_to(store)
+                    .map(series.select_args)
+                    .filter(lambda x: x is not None)
+                    .distinct())
+        series_args.map(lambda a: series_view.render(*a))
+        series_args.map(print)  # Note: map(print) creates None stream
 
-    tool_layout = tools.ToolLayout(series_figure, profile_figure)
+        tool_figures["series_figure"] = series_figure
+
+    if config.features["profile"]:
+        # Profile sub-figure widget
+        profile_figure = bokeh.plotting.figure(
+                    plot_width=300,
+                    plot_height=450,
+                    toolbar_location=None,
+                    border_fill_alpha=0)
+        profile_figure.toolbar.logo = None
+        profile_figure.y_range.flipped = True
+
+        profile_view = profile.ProfileView.from_groups(
+                profile_figure,
+                config.file_groups)
+        profile_view.add_subscriber(store.dispatch)
+        profile_args = (rx.Stream()
+                    .listen_to(store)
+                    .map(profile.select_args)
+                    .filter(lambda x: x is not None)
+                    .distinct())
+        profile_args.map(lambda a: profile_view.render(*a))
+        profile_args.map(print)  # Note: map(print) creates None stream
+
+        tool_figures["profile_figure"] = profile_figure
+
+    tool_layout = tools.ToolLayout(**tool_figures)
     tool_layout.connect(store)
-
-    series_view = series.SeriesView.from_groups(
-            series_figure,
-            config.file_groups)
-    series_view.add_subscriber(store.dispatch)
-    series_args = (rx.Stream()
-                .listen_to(store)
-                .map(series.select_args)
-                .filter(lambda x: x is not None)
-                .distinct())
-    series_args.map(lambda a: series_view.render(*a))
-    series_args.map(print)  # Note: map(print) creates None stream
-
-    profile_view = profile.ProfileView.from_groups(
-            profile_figure,
-            config.file_groups)
-    profile_view.add_subscriber(store.dispatch)
-    profile_args = (rx.Stream()
-                .listen_to(store)
-                .map(profile.select_args)
-                .filter(lambda x: x is not None)
-                .distinct())
-    profile_args.map(lambda a: profile_view.render(*a))
-    profile_args.map(print)  # Note: map(print) creates None stream
-
 
     for f in figures:
         f.on_event(bokeh.events.Tap, tap_listener.update_xy)
@@ -412,8 +426,7 @@ def main(argv=None):
     document.add_root(control_root)
     document.add_root(
         bokeh.layouts.column(
-            tools_panel.buttons["toggle_time_series"],
-            tools_panel.buttons["toggle_profile"],
+            tools_panel.layout,
             tool_layout.layout,
             width=400,
             name="series"))

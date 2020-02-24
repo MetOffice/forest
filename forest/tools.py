@@ -19,10 +19,10 @@ the components that depend on state changes
 """
 
 import copy
-from forest.observe import Observable
-from forest.redux import Action, State
 import bokeh.layouts
 import bokeh.models
+from forest.observe import Observable
+from forest.redux import Action, State
 
 ON_TOGGLE_TOOL = "TOGGLE_TOOL_VISIBILITY"
 
@@ -42,29 +42,30 @@ def on_toggle_tool(tool_name, value) -> Action:
 
 class ToolsPanel(Observable):
     """ A panel that contains buttons to turn extra tools on and off"""
-    def __init__(self):
-        self.buttons = {
-            "toggle_time_series": bokeh.models.Toggle(label="Display Time Series"),
-            "toggle_profile": bokeh.models.Toggle(label="Display Profile")}
-        self.buttons["toggle_time_series"].on_click(self.on_click_time_series)
-        self.buttons["toggle_profile"].on_click(self.on_click_profile)
+    def __init__(self, available_features):
+
+        self.buttons = {}
+        for tool_name, display_name in available_features.items(): 
+            self.buttons[tool_name] = bokeh.models.Toggle(label=display_name)
+            self.buttons[tool_name].on_click(self.on_click(tool_name))
+
+        self.layout = bokeh.layouts.column(*self.buttons.values())
         super().__init__()
 
     def connect(self, store):
         self.add_subscriber(store.dispatch)
         return self
 
-    def on_click_time_series(self, toggle_state):
-        """update the store."""
-        self.notify(on_toggle_tool("time_series", toggle_state))
+    def on_click(self, toggle_name):
+        """update the store callback."""
+        def callback(toggle_state):
+            self.notify(on_toggle_tool(toggle_name, toggle_state))
 
-    def on_click_profile(self, toggle_state):
-        """update the store."""
-        self.notify(on_toggle_tool("profile", toggle_state))
+        return callback
 
 class ToolLayout:
     """ Manage the row containing the tool plots """
-    def __init__(self, series_figure, profile_figure):
+    def __init__(self, series_figure=None, profile_figure=None):
         self.layout = bokeh.layouts.column()
         self.series_figure = series_figure
         self.profile_figure = profile_figure
