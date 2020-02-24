@@ -26,13 +26,13 @@ from forest import (
         db,
         earth_networks,
         gridded_forecast,
-        ghrsstl4,
         unified_model,
         rdt,
         satellite,
         intake_loader,
         saf,
         nearcast)
+from forest.drivers import ghrsstl4
 
 
 __all__ = []
