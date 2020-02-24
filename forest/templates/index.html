@@ -21,9 +21,11 @@
         <div class="margin-left-110 display-inline-block float-left">
         {{ embed(roots.headline) | indent(10) }}
         </div>
-        <div class="float-right">
-        {{ embed(roots.diagrams_button) | indent(10) }}
-        </div>
+        {% if roots.diagrams_button %}
+            <div class="float-right">
+            {{ embed(roots.diagrams_button) | indent(10) }}
+            </div>
+        {% endif %}
     </nav>
 
     <!-- Layout figure row -->
