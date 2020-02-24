@@ -244,10 +244,6 @@ def main(argv=None):
     time_ui = forest.components.TimeUI()
     time_ui.connect(store)
 
-    # Add snippet of text for user
-    headline = forest.components.Headline()
-    headline.connect(store)
-
     # Connect renderer.visible states to store
     artist = layers.Artist(renderers)
     artist.connect(store)
@@ -267,6 +263,10 @@ def main(argv=None):
 
     tools_panel = tools.ToolsPanel(available_features)
     tools_panel.connect(store)
+
+    # Navbar components
+    navbar = Navbar(show_diagram_button=len(available_features) > 0)
+    navbar.connect(store)
 
     # Connect tap listener
     tap_listener = screen.TapListener()
@@ -417,30 +417,6 @@ def main(argv=None):
             tabs,
             name="controls")
 
-    buttons = {}
-
-    # Add button to control left drawer
-    key = "sidenav_button"
-    buttons[key] = bokeh.models.Button(
-        label="Settings",
-        name=key)
-    custom_js = bokeh.models.CustomJS(code="""
-        openId("sidenav");
-    """)
-    buttons[key].js_on_click(custom_js)
-
-    # Add button to control right drawer
-    key = "diagrams_button"
-    buttons[key] = bokeh.models.Button(
-        label="Diagrams",
-        css_classes=["float-right"],
-        name=key)
-    custom_js = bokeh.models.CustomJS(code="""
-        openId("diagrams");
-    """)
-    buttons[key].js_on_click(custom_js)
-
-    headline.layout.name = "headline"
 
     # Add key press support
     key_press = keys.KeyPress()
@@ -457,13 +433,52 @@ def main(argv=None):
             name="series"))
     document.add_root(
         bokeh.layouts.row(time_ui.layout, name="time"))
-    document.add_root(buttons["sidenav_button"])
-    document.add_root(headline.layout)
-    document.add_root(buttons["diagrams_button"])
+    for root in navbar.roots:
+        document.add_root(root)
     document.add_root(
         bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
+
+
+class Navbar:
+    """Collection of navbar components"""
+    def __init__(self, show_diagram_button=True):
+        self.headline = forest.components.Headline()
+        self.headline.layout.name = "headline"
+
+        self.buttons = {}
+        # Add button to control left drawer
+        key = "sidenav_button"
+        self.buttons[key] = bokeh.models.Button(
+            label="Settings",
+            name=key)
+        custom_js = bokeh.models.CustomJS(code="""
+            openId("sidenav");
+        """)
+        self.buttons[key].js_on_click(custom_js)
+
+        # Add button to control right drawer
+        key = "diagrams_button"
+        self.buttons[key] = bokeh.models.Button(
+            label="Diagrams",
+            css_classes=["float-right"],
+            name=key)
+        custom_js = bokeh.models.CustomJS(code="""
+            openId("diagrams");
+        """)
+        self.buttons[key].js_on_click(custom_js)
+
+        roots = [
+            self.buttons["sidenav_button"],
+            self.headline.layout,
+        ]
+        if show_diagram_button:
+            roots.append(self.buttons["diagrams_button"])
+        self.roots = roots
+
+    def connect(self, store):
+        self.headline.connect(store)
 
 
 def any_none(obj, attrs):
