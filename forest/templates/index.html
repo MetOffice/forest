@@ -15,11 +15,15 @@
     </div>
 
     <nav>
-        <button class="float-left" type="button" onclick="openId('sidenav')">Settings</button>
-        <div class="float-left headline-container">
+        <div class="display-inline-block float-left">
+        {{ embed(roots.sidenav_button) | indent(10) }}
+        </div>
+        <div class="margin-left-110 display-inline-block float-left">
         {{ embed(roots.headline) | indent(10) }}
         </div>
-        <button type="button" class="float-right" onclick="openId('diagrams')">Diagrams</button>
+        <div class="float-right">
+        {{ embed(roots.diagrams_button) | indent(10) }}
+        </div>
     </nav>
 
     <!-- Layout figure row -->

@@ -85,11 +85,17 @@ footer {
 .display-none {
     display: none;
 }
+.display-inline-block {
+    display: inline-block;
+}
 .float-left {
     float: left;
 }
 .float-right {
     float: right;
+}
+.margin-left-110 {
+    margin-left: 110px;
 }
 
 
