@@ -21,11 +21,17 @@
         <div class="margin-left-110 display-inline-block float-left">
         {{ embed(roots.headline) | indent(10) }}
         </div>
-        {% if roots.diagrams_button %}
-            <div class="float-right">
-            {{ embed(roots.diagrams_button) | indent(10) }}
-            </div>
-        {% endif %}
+        <!-- Embed optional button -->
+        {% for root in roots %}
+            <!-- Note: roots.attname raises ValueError if attname not found
+                       see bokeh.embed.util.RenderRoots.__getitem__
+            -->
+            {% if root.name == 'diagrams_button' %}
+                <div class="float-right">
+                {{ embed(roots.diagrams_button) | indent(10) }}
+                </div>
+            {% endif %}
+        {% endfor %}
     </nav>
 
     <!-- Layout figure row -->
