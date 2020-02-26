@@ -87,7 +87,7 @@ def main(argv=None):
             palette=bokeh.palettes.Plasma[256])
 
     # Colorbar user interface
-    colorbar_ui = forest.components.ColorbarUI(color_mapper)
+    colorbar_ui = forest.components.ColorbarUI(color_mapper, n=3, name="colorbar")
 
     # Database/File system loader(s)
     for group in config.file_groups:
@@ -435,8 +435,7 @@ def main(argv=None):
         bokeh.layouts.row(time_ui.layout, name="time"))
     for root in navbar.roots:
         document.add_root(root)
-    document.add_root(
-        bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
+    document.add_root(colorbar_ui.layout)
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
 
