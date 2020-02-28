@@ -46,6 +46,5 @@ class Modal(Observable):
 
     def on_save(self):
         name = self.select.value
-        print(name)
         action = layers.add_layer(name)
         self.notify(action)
