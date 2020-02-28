@@ -19,6 +19,7 @@ from forest.observe import Observable
 from forest.db.util import autolabel
 
 
+ADD_LAYER = "LAYERS_ADD_LAYER"
 ON_ADD = "LAYERS_ON_ADD"
 ON_REMOVE = "LAYERS_ON_REMOVE"
 ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
@@ -30,6 +31,10 @@ SET_LABEL = "LAYERS_SET_LABEL"
 
 def set_figures(n: int) -> Action:
     return {"kind": SET_FIGURES, "payload": n}
+
+
+def add_layer(name) -> Action:
+    return {"kind": ADD_LAYER, "payload": name}
 
 
 def on_add() -> Action:
@@ -84,6 +89,7 @@ def reducer(state: State, action: Action) -> State:
     state = copy.deepcopy(state)
     kind = action["kind"]
     if kind in [
+            ADD_LAYER,
             SET_ACTIVE,
             SET_LABEL,
             SET_FIGURES,
@@ -98,6 +104,11 @@ def _layers_reducer(state, action):
     kind = action["kind"]
     if kind == SET_FIGURES:
         state["figures"] = action["payload"]
+
+    elif kind == ADD_LAYER:
+        labels = state.get("labels", [])
+        labels.append(action["payload"])
+        state["labels"] = labels
 
     elif kind == ON_ADD:
         labels = state.get("labels", [])

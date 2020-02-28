@@ -1,6 +1,7 @@
 import bokeh.models
 import bokeh.layouts
 from forest.observe import Observable
+from forest import layers
 
 
 class Modal(Observable):
@@ -36,10 +37,15 @@ class Modal(Observable):
 
     def render(self, state):
         self.select.options = self.to_props(state)
+        if len(self.select.options) > 0:
+            if self.select.value == "":
+                self.select.value = self.select.options[0]
 
     def to_props(self, state):
-        labels = state.get("layers", {}).get("labels", [])
-        return [label for label in labels if label is not None]
+        return [name for name, _ in state.get("patterns", [])]
 
     def on_save(self):
-        self.notify({"kind": "NO-OP"})
+        name = self.select.value
+        print(name)
+        action = layers.add_layer(name)
+        self.notify(action)

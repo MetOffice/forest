@@ -43,6 +43,7 @@ def test_remove(listener):
 
 @pytest.mark.parametrize("state,actions,expect", [
     ({}, layers.set_figures(3), {"figures": 3}),
+    ({}, layers.add_layer("Name"), {"labels": ["Name"]}),
     ({}, layers.on_add(), {"labels": [None]}),
     ({}, [layers.on_add(), layers.on_add()], {"labels": [None, None]}),
     ({}, layers.on_remove(), {"labels": []}),
