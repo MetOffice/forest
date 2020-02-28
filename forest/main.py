@@ -296,6 +296,10 @@ def main(argv=None):
     for label, map_view in map_views.items():
         connector.add_label_subscriber(label, map_view.render)
 
+    # Add support for a modal dialogue
+    modal = forest.components.Modal()
+    modal.connect(store)
+
     # Set default time series visibility
     store.dispatch(tools.on_toggle_tool("time_series", False))
 
@@ -430,16 +434,7 @@ def main(argv=None):
         bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
-
-    # Modal
-    button = bokeh.models.Button(label="Close")
-    custom_js = bokeh.models.CustomJS(code="""
-        let el = document.getElementById("dialogue");
-        el.style.visibility = "hidden";
-        console.log(el);
-    """)
-    button.js_on_click(custom_js)
-    document.add_root(bokeh.layouts.row(button, name="modal"))
+    document.add_root(modal.layout)
 
 
 class Navbar:
