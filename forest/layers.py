@@ -20,7 +20,6 @@ from forest.db.util import autolabel
 
 
 ADD_LAYER = "LAYERS_ADD_LAYER"
-ON_ADD = "LAYERS_ON_ADD"
 ON_REMOVE = "LAYERS_ON_REMOVE"
 ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
 ON_BUTTON_GROUP = "LAYERS_ON_BUTTON_GROUP"
@@ -35,10 +34,6 @@ def set_figures(n: int) -> Action:
 
 def add_layer(name) -> Action:
     return {"kind": ADD_LAYER, "payload": name}
-
-
-def on_add() -> Action:
-    return {"kind": ON_ADD}
 
 
 def on_remove() -> Action:
@@ -93,7 +88,6 @@ def reducer(state: State, action: Action) -> State:
             SET_ACTIVE,
             SET_LABEL,
             SET_FIGURES,
-            ON_ADD,
             ON_REMOVE]:
         layers = state.get("layers", {})
         state["layers"] = _layers_reducer(layers, action)
@@ -108,11 +102,6 @@ def _layers_reducer(state, action):
     elif kind == ADD_LAYER:
         labels = state.get("labels", [])
         labels.append(action["payload"])
-        state["labels"] = labels
-
-    elif kind == ON_ADD:
-        labels = state.get("labels", [])
-        labels.append(None)
         state["labels"] = labels
 
     elif kind == ON_REMOVE:
@@ -235,7 +224,6 @@ class LayersUI(Observable):
             "add": bokeh.models.Button(label="Add", width=50),
             "remove": bokeh.models.Button(label="Remove", width=50)
         }
-        # self.buttons["add"].on_click(self.on_click_add)
         custom_js = bokeh.models.CustomJS(code="""
             let el = document.getElementById("dialogue");
             el.style.visibility = "visible";
@@ -299,10 +287,6 @@ class LayersUI(Observable):
         # Set button group labels
         if figure_index is not None:
             self.labels = self.defaults["figure"][figure_index]
-
-    def on_click_add(self):
-        """Event-handler when Add button is clicked"""
-        self.notify(on_add())
 
     def on_click_remove(self):
         """Event-handler when Remove button is clicked"""

@@ -27,13 +27,6 @@ def test_figure_dropdown(listener):
     listener.assert_called_once_with(layers.set_figures(1))
 
 
-def test_add(listener):
-    ui = layers.LayersUI([])
-    ui.add_subscriber(listener)
-    ui.on_click_add()
-    listener.assert_called_once_with(layers.on_add())
-
-
 def test_remove(listener):
     ui = layers.LayersUI([])
     ui.add_subscriber(listener)
@@ -44,8 +37,6 @@ def test_remove(listener):
 @pytest.mark.parametrize("state,actions,expect", [
     ({}, layers.set_figures(3), {"figures": 3}),
     ({}, layers.add_layer("Name"), {"labels": ["Name"]}),
-    ({}, layers.on_add(), {"labels": [None]}),
-    ({}, [layers.on_add(), layers.on_add()], {"labels": [None, None]}),
     ({}, layers.on_remove(), {"labels": []}),
     ({"layers": {"labels": [None, None]}}, layers.on_remove(), {"labels": [None]}),
     ({}, layers.set_label(0, "Label"), {"labels": ["Label"]}),
