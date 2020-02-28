@@ -225,6 +225,11 @@ class LayersUI(Observable):
             "remove": bokeh.models.Button(label="Remove", width=50)
         }
         self.buttons["add"].on_click(self.on_click_add)
+        custom_js = bokeh.models.CustomJS(code="""
+            let el = document.getElementById("dialogue");
+            el.style.visibility = "visible";
+        """)
+        self.buttons["add"].js_on_click(custom_js)
         self.buttons["remove"].on_click(self.on_click_remove)
         self.columns = {
             "rows": bokeh.layouts.column(),

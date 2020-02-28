@@ -431,6 +431,16 @@ def main(argv=None):
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
 
+    # Modal
+    button = bokeh.models.Button(label="Close")
+    custom_js = bokeh.models.CustomJS(code="""
+        let el = document.getElementById("dialogue");
+        el.style.visibility = "hidden";
+        console.log(el);
+    """)
+    button.js_on_click(custom_js)
+    document.add_root(bokeh.layouts.row(button, name="modal"))
+
 
 class Navbar:
     """Collection of navbar components"""

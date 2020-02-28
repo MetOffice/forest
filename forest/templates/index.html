@@ -50,6 +50,11 @@
         {% endfor %}
     </nav>
 
+    <!-- Select layer dialogue -->
+    <div id="dialogue" class="popup-outer">
+        <div class="popup-inner">{{ embed(roots.modal) }}</div>
+    </div>
+
     <!-- Layout figure row -->
     <div id="figures">
         {% for root in roots %}
