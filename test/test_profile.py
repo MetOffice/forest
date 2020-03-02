@@ -6,7 +6,8 @@ import numpy as np
 import numpy.testing as npt
 import datetime as dt
 import bokeh.plotting
-from forest import screen, profile, redux, rx, config
+from forest import screen, redux, rx, config
+from forest import _profile as profile
 
 
 @pytest.mark.parametrize("state,expect", [
