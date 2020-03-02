@@ -5,7 +5,7 @@ from forest import layers
 
 
 class Modal(Observable):
-    """Modal dialogue component"""
+    """Modal component"""
     def __init__(self):
         div = bokeh.models.Div(text="Add layer",
                                css_classes=["custom"],
@@ -17,9 +17,8 @@ class Modal(Observable):
         buttons[0].on_click(self.on_save)
         for button in buttons:
             custom_js = bokeh.models.CustomJS(code="""
-                let el = document.getElementById("dialogue");
+                let el = document.getElementById("modal");
                 el.style.visibility = "hidden";
-                console.log(el);
             """)
             button.js_on_click(custom_js)
         self.layout = bokeh.layouts.column(

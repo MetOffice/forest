@@ -225,7 +225,7 @@ class LayersUI(Observable):
             "remove": bokeh.models.Button(label="Remove", width=50)
         }
         custom_js = bokeh.models.CustomJS(code="""
-            let el = document.getElementById("dialogue");
+            let el = document.getElementById("modal");
             el.style.visibility = "visible";
         """)
         self.buttons["add"].js_on_click(custom_js)

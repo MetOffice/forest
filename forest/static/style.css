@@ -105,11 +105,11 @@ footer {
 }
 
 
-/* Popup */
+/* Modal component */
 .bk.custom {
     font-size: 1.4rem;
 }
-.popup-outer {
+.modal-outer {
     visibility: hidden;
     z-index: 8;
     position: fixed;
@@ -119,7 +119,7 @@ footer {
     right: 0;
     background-color: rgba(0, 0, 0, 0.4);
 }
-.popup-inner {
+.modal-inner {
     z-index: 9;
     width: 30%;
     position: fixed;
