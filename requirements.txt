@@ -1,4 +1,5 @@
 bokeh
+datashader
 iris
 intake
 intake-esm
