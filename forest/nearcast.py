@@ -87,46 +87,71 @@ class NearCast(object):
 
 
 class Navigator:
-    """Simplified navigator"""
+    """Simplified navigator
+    """
     def __init__(self, pattern):
         self.pattern = pattern
         self.locator = Locator(pattern)
 
     def variables(self, pattern):
+        """Names of variables in dataset"""
         paths = self.locator.find(self.pattern)
         if len(paths) == 0:
             return []
-        return list(sorted(Coordinates.variables(paths[-1])))
+        return list(sorted(self._variables(paths[-1])))
+
+    @staticmethod
+    def _variables(path):
+        messages = pg.open(path)
+        for message in messages.select():
+            yield message['name']
+        messages.close()
 
     def initial_times(self, pattern, variable=None):
+        """Model initialisation times"""
         paths = self.locator.find(self.pattern)
-        return list(sorted(set([Locator.parse_date(path) for path in paths])))
+        return list(sorted(set(Locator.parse_date(path) for path in paths)))
 
     def valid_times(self, pattern, variable, initial_time):
-        return self._dim(Coordinates.valid_times, variable, initial_time)
+        """Validity times"""
+        return self._dim(self._valid_times, variable, initial_time)
+
+    @staticmethod
+    def _valid_times(variable, path):
+        messages = pg.index(path, "name")
+        for message in messages.select(name=variable):
+            validTime = "{0:8d}{1:04d}".format(message["validityDate"], message["validityTime"])
+            yield dt.datetime.strptime(validTime, "%Y%m%d%H%M")
+        messages.close()
 
     def pressures(self, pattern, variable, initial_time):
-        return self._dim(Coordinates.pressures, variable, initial_time)
+        """Vertical coordinate"""
+        return self._dim(self._pressures, variable, initial_time)
+
+    @staticmethod
+    def _pressures(variable, path):
+        messages = pg.index(path, "name")
+        for message in messages.select(name=variable):
+            yield message["scaledValueOfFirstFixedSurface"]
+        messages.close()
 
     def _dim(self, method, variable, initial_time):
         paths = self.locator.find_paths(initial_time)
-        def wrapped(path):
-            return method(path, variable)
-        return self._collect(wrapped, paths)
-
-    def _collect(self, method, args):
         values = []
-        for arg in args:
-            values += method(arg)
+        for path in paths:
+            for value in method(variable, path):
+                values.append(value)
         return list(sorted(set(values)))
 
 
 class Locator(object):
+    """Locate files on disk"""
     def __init__(self, pattern):
         self.pattern = pattern
         self._initial_time_to_path = {}
 
     def find_paths(self, initial_time):
+        """Find paths by initial time"""
         self.sync()
         key = str(_to_datetime(initial_time))
         try:
@@ -150,34 +175,3 @@ class Locator(object):
         groups = re.search("[0-9]{8}_[0-9]{4}", os.path.basename(path))
         if groups is not None:
             return dt.datetime.strptime(groups[0], "%Y%m%d_%H%M")
-
-
-class Coordinates(object):
-    """Menu system interface"""
-    @staticmethod
-    def variables(path):
-        messages = pg.open(path)
-        varList = []
-        for message in messages.select():
-            varList.append(message['name'])
-        messages.close()
-        return list(set(varList))
-
-    @staticmethod
-    def valid_times(path, variable):
-        messages = pg.index(path, "name")
-        validTimeList = []
-        for message in messages.select(name=variable):
-            validTime = "{0:8d}{1:04d}".format(message["validityDate"], message["validityTime"])
-            validTimeList.append(dt.datetime.strptime(validTime, "%Y%m%d%H%M"))
-        messages.close()
-        return list(set(validTimeList))
-
-    @staticmethod
-    def pressures(path, variable):
-        messages = pg.index(path, "name")
-        pressureList = []
-        for message in messages.select(name=variable):
-            pressureList.append(message["scaledValueOfFirstFixedSurface"])
-        messages.close()
-        return list(set(pressureList))
