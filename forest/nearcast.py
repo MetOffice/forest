@@ -24,17 +24,30 @@ NEARCAST_TOOLTIPS = [("Name", "@name"),
 class NearCast(object):
     def __init__(self, pattern):
         self.locator = Locator(pattern)
+        self.empty_image = {
+            "x": [],
+            "y": [],
+            "dw": [],
+            "dh": [],
+            "image": [],
+            "name": [],
+            "units": [],
+            "valid": [],
+            "layer": [],
+        }
 
-    def image(self, state):    
-        imageData = self.get_grib2_data(state.pattern, state.valid_time, state.variable, state.pressure)
-        
+    def image(self, state):
+        try:
+            path = self.locator.find_file(state.valid_time)
+        except FileNotFound:
+            return self.empty_image
+
+        imageData = self.get_grib2_data(path, state.valid_time, state.variable, state.pressure)
         data = self.load_image(imageData)
-        
         data.update({"name" : [imageData["name"]],
                      "units" : [imageData["units"]],
                      "valid" : [imageData["valid"]],
                      "layer" : [imageData["layer"]]})
-        
         return data
 
     def load_image(self, imageData):
