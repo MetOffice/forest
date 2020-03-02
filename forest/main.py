@@ -126,7 +126,8 @@ def main(argv=None):
 
     image_sources = []
     for name, viewer in viewers.items():
-        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
+        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50,
+                               view.NearCast)):
             image_sources.append(viewer.source)
 
     # Lakes
