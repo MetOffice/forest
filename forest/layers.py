@@ -267,18 +267,11 @@ class LayersUI(Observable):
         n = len(labels)
         nrows = len(self.columns["rows"].children) # - 1
         if n > nrows:
-            for _ in range(n - nrows):
-                self.add_row()
+            for label in labels[nrows:]:
+                self.add_row(label)
         if n < nrows:
             for _ in range(nrows - n):
                 self.remove_row()
-
-        # Set dropdown labels
-        for label, dropdown in zip(labels, self.dropdowns):
-            if label is None:
-                dropdown.label = self.defaults["label"]
-            else:
-                dropdown.label = label
 
         # Set button group active
         for button_group, active in zip(self.button_groups, active_list):
@@ -302,14 +295,16 @@ class LayersUI(Observable):
         for g in self.button_groups:
             g.labels = labels
 
-    def add_row(self):
+    def add_row(self, label=None):
         """Add a bokeh.layouts.row with a dropdown and checkboxbuttongroup"""
         row_index = len(self.columns["rows"].children)
 
         # Dropdown
+        if label is None:
+            label = self.defaults["label"]
         dropdown = bokeh.models.Dropdown(
                 menu=self.menu,
-                label=self.defaults["label"],
+                label=label,
                 width=230,)
         dropdown.on_change('value', self.on_dropdown(row_index))
         self.dropdowns.append(dropdown)
