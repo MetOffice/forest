@@ -10,6 +10,7 @@ import numpy as np
 from forest import geo
 from forest.util import timeout_cache
 from forest.exceptions import FileNotFound
+from forest.gridded_forecast import _to_datetime
 
 try:
     import pygrib as pg
@@ -37,12 +38,16 @@ class NearCast(object):
         }
 
     def image(self, state):
-        try:
-            path = self.locator.find_file(state.valid_time)
-        except FileNotFound:
+        paths = self.locator.find_paths(state.initial_time)
+        if len(paths) == 0:
             return self.empty_image
 
-        imageData = self.get_grib2_data(path, state.valid_time, state.variable, state.pressure)
+        try:
+            imageData = self.get_grib2_data(paths[0], state.valid_time, state.variable, state.pressure)
+        except ValueError:
+            # TODO: Fix this properly
+            return self.empty_image
+
         data = self.load_image(imageData)
         data.update({"name" : [imageData["name"]],
                      "units" : [imageData["units"]],
@@ -62,7 +67,7 @@ class NearCast(object):
 
         messages = pg.index(path, "name", "scaledValueOfFirstFixedSurface", "validityTime")
         if len(path) > 0:
-            field = messages.select(name=variable, scaledValueOfFirstFixedSurface=int(pressure), validityTime=vTime)[0]            
+            field = messages.select(name=variable, scaledValueOfFirstFixedSurface=int(pressure), validityTime=vTime)[0]
             cache["longitude"] = field.latlons()[1][0,:]
             cache["latitude"] = field.latlons()[0][:,0]
             cache["data"] = field.values
@@ -70,44 +75,75 @@ class NearCast(object):
             cache["name"] = field.name
             cache["valid"] = "{0:02d}:{1:02d} UTC".format(validTime.hour, validTime.minute)
             cache["initial"] = "blah"
-            
             scaledLowerLevel = float(field.scaledValueOfFirstFixedSurface)
             scaleFactorLowerLevel = float(field.scaleFactorOfFirstFixedSurface)
             lowerSigmaLevel = str(round(scaledLowerLevel * 10**-scaleFactorLowerLevel, 2))
             scaledUpperLevel = float(field.scaledValueOfSecondFixedSurface)
             scaleFactorUpperLevel = float(field.scaleFactorOfSecondFixedSurface)
             upperSigmaLevel = str(round(scaledUpperLevel * 10**-scaleFactorUpperLevel, 2))
-            
             cache['layer'] = lowerSigmaLevel+"-"+upperSigmaLevel
-            
         messages.close()
-
         return cache
-        
+
+
+class Navigator:
+    """Simplified navigator"""
+    def __init__(self, pattern):
+        self.pattern = pattern
+        self.locator = Locator(pattern)
+
+    def variables(self, pattern):
+        paths = self.locator.find(self.pattern)
+        if len(paths) == 0:
+            return []
+        return list(sorted(Coordinates.variables(paths[-1])))
+
+    def initial_times(self, pattern, variable=None):
+        paths = self.locator.find(self.pattern)
+        return list(sorted(set([Locator.parse_date(path) for path in paths])))
+
+    def valid_times(self, pattern, variable, initial_time):
+        return self._dim(Coordinates.valid_times, variable, initial_time)
+
+    def pressures(self, pattern, variable, initial_time):
+        return self._dim(Coordinates.pressures, variable, initial_time)
+
+    def _dim(self, method, variable, initial_time):
+        paths = self.locator.find_paths(initial_time)
+        def wrapped(path):
+            return method(path, variable)
+        return self._collect(wrapped, paths)
+
+    def _collect(self, method, args):
+        values = []
+        for arg in args:
+            values += method(arg)
+        return list(sorted(set(values)))
+
+
 class Locator(object):
     def __init__(self, pattern):
         self.pattern = pattern
+        self._initial_time_to_path = {}
 
-    def find_file(self, valid_date):
-        paths = np.array(self.paths)  # Note: timeout cache in use
-        if len(paths) > 0:
-            return paths[0]
-        else:
-            raise FileNotFound("NearCast: '{}' not found".format(valid_date))
+    def find_paths(self, initial_time):
+        self.sync()
+        key = str(_to_datetime(initial_time))
+        try:
+            return [self._initial_time_to_path[key]]
+        except KeyError:
+            return []
 
-    @property
-    def paths(self):
-        return self.find(self.pattern)
+    def sync(self):
+        paths = self.find(self.pattern)
+        for path in paths:
+            key = str(self.parse_date(path))
+            self._initial_time_to_path[key] = path
 
     @staticmethod
     @timeout_cache(dt.timedelta(minutes=10))
     def find(pattern):
         return sorted(glob.glob(pattern))
-
-    def dates(self, paths):
-        return np.array([
-            self.parse_date(p) for p in paths],
-            dtype='datetime64[s]')
 
     @staticmethod
     def parse_date(path):
@@ -115,13 +151,11 @@ class Locator(object):
         if groups is not None:
             return dt.datetime.strptime(groups[0], "%Y%m%d_%H%M")
 
+
 class Coordinates(object):
     """Menu system interface"""
-    def initial_time(self, path):
-        initTime = Locator.parse_date(path)
-        return initTime
-
-    def variables(self, path):
+    @staticmethod
+    def variables(path):
         messages = pg.open(path)
         varList = []
         for message in messages.select():
@@ -129,7 +163,8 @@ class Coordinates(object):
         messages.close()
         return list(set(varList))
 
-    def valid_times(self, path, variable):
+    @staticmethod
+    def valid_times(path, variable):
         messages = pg.index(path, "name")
         validTimeList = []
         for message in messages.select(name=variable):
@@ -138,7 +173,8 @@ class Coordinates(object):
         messages.close()
         return list(set(validTimeList))
 
-    def pressures(self, path, variable):
+    @staticmethod
+    def pressures(path, variable):
         messages = pg.index(path, "name")
         pressureList = []
         for message in messages.select(name=variable):
