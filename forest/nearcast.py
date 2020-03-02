@@ -9,7 +9,6 @@ import datetime as dt
 import numpy as np
 from forest import geo
 from forest.util import timeout_cache
-from forest.exceptions import FileNotFound
 from forest.gridded_forecast import _to_datetime
 
 try:
@@ -23,6 +22,7 @@ NEARCAST_TOOLTIPS = [("Name", "@name"),
                      ("Sigma Layer", "@layer")]
 
 class NearCast(object):
+    """View responsible for plotting Nearcast dataset"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
         self.empty_image = {
