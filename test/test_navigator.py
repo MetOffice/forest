@@ -51,7 +51,9 @@ def test_Navigator_from_group__use_paths(expand_paths, from_file_type):
     navigator = navigate.Navigator._from_group(group)
 
     expand_paths.assert_called_once_with(sentinel.pattern)
-    from_file_type.assert_called_once_with(sentinel.paths, sentinel.file_type)
+    from_file_type.assert_called_once_with(sentinel.paths,
+                                           sentinel.file_type,
+                                           sentinel.pattern)
     assert navigator == sentinel.navigator
 
 
