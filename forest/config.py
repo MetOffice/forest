@@ -23,10 +23,17 @@ applications.
 import os
 import string
 import yaml
+from collections import defaultdict
 from forest.export import export
 
 
 __all__ = []
+
+
+class Viewport:
+    def __init__(self, lon_range, lat_range):
+        self.lon_range = lon_range
+        self.lat_range = lat_range
 
 
 def combine_variables(os_environ, args_variables):
@@ -66,6 +73,34 @@ class Config(object):
         return "{}({})".format(
                 self.__class__.__name__,
                 self.data)
+
+    @property
+    def features(self):
+        """Dict of user-defined feature toggles"""
+        d = defaultdict(lambda: True)
+        d.update(self.data.get("features", {}))
+        return d
+
+    @property
+    def use_web_map_tiles(self):
+        """Turns web map tiling backgrounds on/off
+
+        .. code-block:: yaml
+
+            use_web_map_tiles: false
+
+        .. note:: This is best used during development if an internet
+                  connection is not available
+        """
+        return self.data.get("use_web_map_tiles", True)
+
+    @property
+    def default_viewport(self):
+        defaults = self.data.get('defaults', {})
+        viewport = defaults.get('viewport', {})
+        lon_range = viewport.get('lon_range', (-180, 180))
+        lat_range = viewport.get('lat_range', (-80, 80))
+        return Viewport(lon_range, lat_range)
 
     @property
     def presets_file(self):

@@ -51,7 +51,9 @@ def test_Navigator_from_group__use_paths(expand_paths, from_file_type):
     navigator = navigate.Navigator._from_group(group)
 
     expand_paths.assert_called_once_with(sentinel.pattern)
-    from_file_type.assert_called_once_with(sentinel.paths, sentinel.file_type)
+    from_file_type.assert_called_once_with(sentinel.paths,
+                                           sentinel.file_type,
+                                           sentinel.pattern)
     assert navigator == sentinel.navigator
 
 
@@ -172,7 +174,7 @@ def test_FileSystemNavigator_from_file_type__griddedforecast(navigator_cls):
     assert navigator == sentinel.navigator
 
 
-@patch('forest.ghrsstl4.Navigator')
+@patch('forest.drivers.ghrsstl4.Navigator')
 def test_FileSystemNavigator_from_file_type__ghrsstl4(navigator_cls):
     navigator_cls.return_value = sentinel.navigator
 

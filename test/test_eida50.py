@@ -200,7 +200,7 @@ def test_navigator_initial_times(tmpdir):
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES)
     result = navigator.initial_times(path)
-    expect = [TIMES[0]]
+    expect = [dt.datetime(1970, 1, 1)]
     assert expect == result
 
 

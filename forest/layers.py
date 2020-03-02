@@ -11,6 +11,7 @@ import copy
 import bokeh.models
 import bokeh.layouts
 import numpy as np
+from collections import defaultdict
 from typing import Iterable, List
 from forest import rx
 from forest.redux import Action, State, Store
@@ -167,7 +168,8 @@ class FigureRow:
     def __init__(self, figures):
         self.figures = figures
         self.layout = bokeh.layouts.row(*figures,
-                sizing_mode="stretch_both")
+                sizing_mode="stretch_both",
+                name="figures")
         self.layout.children = [self.figures[0]]  # Trick to keep correct sizing modes
 
     def connect(self, store):
@@ -348,52 +350,29 @@ class LayersUI(Observable):
 
 
 class ViewerConnector:
-    """Connect Viewers that depend on old state to Store"""
-    def __init__(self, viewers, old_world):
-        self.viewers = viewers
-        self.old_world = old_world
-        self._previous = None
+    """Connect Views to Store"""
+    def __init__(self):
+        self.subscribers = defaultdict(list)
+
+    def add_label_subscriber(self, label, callback):
+        """Register views that depend on a label"""
+        self.subscribers[label].append(callback)
 
     def connect(self, store):
-        stream = (
-            rx.Stream()
-              .listen_to(store)
-              .map(self.to_props)
-              .filter(self.unique)
-        )
-        stream.map(lambda props: self.render(*props))
+        """Subscribe to all store dispatch events"""
+        store.add_subscriber(self.render)
         return self
 
-    def unique(self, props: tuple) -> bool:
-        """Check for duplicate labels, old_state events"""
-        if self._previous is None:
-            flag = True
-        else:
-            labels, state = props
-            previous_labels, previous_state = self._previous
-            if ((tuple(labels) == tuple(previous_labels)) and
-                    (state == previous_state)):
-                flag = False
-            else:
-                flag = True
-        self._previous = props
-        return flag
-
-    def to_props(self, state):
-        return (
-            self.layers(state),
-            self.old_world(state)
-        )
-
-    def layers(self, state):
-        return state.get("layers", {}).get("labels", [])
-
-    def render(self, labels, old_state):
-        """Send forest.db.State to each View.render"""
-        for label in labels:
+    def render(self, state):
+        """Notify listeners related to labels"""
+        for label in self.labels(state):
             if label is None:
                 continue
-            self.viewers[label].render(old_state)
+            for method in self.subscribers[label]:
+                method(state)
+
+    def labels(self, state):
+        return state.get("layers", {}).get("labels", [])
 
 
 class Artist:

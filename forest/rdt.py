@@ -12,11 +12,13 @@ import numpy as np
 from forest import (
         geo,
         locate)
+from forest.old_state import old_state, unique
 from forest.util import timeout_cache
 from forest.exceptions import FileNotFound
 from bokeh.palettes import GnBu3, OrRd3
 import itertools
 import math
+from forest.gridded_forecast import _to_datetime
 
 
 class RenderGroup(object):
@@ -125,10 +127,12 @@ class View(object):
         self.tail_point_source = bokeh.models.ColumnDataSource(self.empty_tail_point)
         self.centre_point_source = bokeh.models.ColumnDataSource(self.empty_centre_point)
 
+    @old_state
+    @unique
     def render(self, state):
         """Gets called when a menu button is clicked (or when application state changes)"""
         if state.valid_time is not None:
-            date = dt.datetime.strptime(state.valid_time, '%Y-%m-%d %H:%M:%S')
+            date = _to_datetime(state.valid_time)
             try:
                 (self.source.geojson,
                  self.tail_line_source.data,

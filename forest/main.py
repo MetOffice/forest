@@ -9,6 +9,8 @@ from forest import (
         nearcast,
         satellite,
         screen,
+        tools,
+        profile,
         series,
         data,
         load,
@@ -28,6 +30,8 @@ from forest import (
         intake_loader,
         navigate,
         parse_args)
+import forest.components
+from forest.components import tiles
 import forest.config as cfg
 import forest.middlewares as mws
 from forest.observe import Observable
@@ -38,6 +42,8 @@ import datetime as dt
 def main(argv=None):
     args = parse_args.parse_args(argv)
     if len(args.files) > 0:
+        if args.config_file is not None:
+            raise Exception('--config-file and [FILE [FILE ...]] not compatible')
         config = cfg.from_files(args.files, args.file_type)
     else:
         config = cfg.Config.load(
@@ -47,21 +53,16 @@ def main(argv=None):
                     args.variables))
 
     # Full screen map
-    lon_range = (90, 140)
-    lat_range = (-23.5, 23.5)
+    viewport = config.default_viewport
     x_range, y_range = geo.web_mercator(
-        lon_range,
-        lat_range)
+        viewport.lon_range,
+        viewport.lat_range)
     figure = bokeh.plotting.figure(
         x_range=x_range,
         y_range=y_range,
         x_axis_type="mercator",
         y_axis_type="mercator",
         active_scroll="wheel_zoom")
-    tile = bokeh.models.WMTSTileSource(
-        url="https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
-        attribution=""
-    )
 
     figures = [figure]
     for _ in range(2):
@@ -78,7 +79,6 @@ def main(argv=None):
         f.toolbar.logo = None
         f.toolbar_location = None
         f.min_border = 0
-        f.add_tile(tile)
 
     figure_row = layers.FigureRow(figures)
 
@@ -86,15 +86,9 @@ def main(argv=None):
             low=0,
             high=1,
             palette=bokeh.palettes.Plasma[256])
-    for figure in figures:
-        colorbar = bokeh.models.ColorBar(
-            color_mapper=color_mapper,
-            orientation="horizontal",
-            background_fill_alpha=0.,
-            location="bottom_center",
-            major_tick_line_color="black",
-            bar_line_color="black")
-        figure.add_layout(colorbar, 'center')
+
+    # Colorbar user interface
+    colorbar_ui = forest.components.ColorbarUI(color_mapper)
 
     # Database/File system loader(s)
     for group in config.file_groups:
@@ -133,7 +127,8 @@ def main(argv=None):
 
     image_sources = []
     for name, viewer in viewers.items():
-        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50)):
+        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50,
+                               view.NearCast)):
             image_sources.append(viewer.source)
 
     # Lakes
@@ -230,10 +225,6 @@ def main(argv=None):
         db.InverseCoordinate("pressure"),
         db.next_previous,
         db.Controls(navigator),
-        db.Converter({
-            "valid_times": db.stamps,
-            "inital_times": db.stamps
-        }),
         colors.palettes,
         presets.Middleware(presets.proxy_storage(config.presets_file)),
         presets.middleware,
@@ -243,11 +234,17 @@ def main(argv=None):
         redux.combine_reducers(
             db.reducer,
             layers.reducer,
-            series.reducer,
+            screen.reducer,
+            tools.reducer,
             colors.reducer,
-            presets.reducer),
+            presets.reducer,
+            tiles.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
+
+    # Add time user interface
+    time_ui = forest.components.TimeUI()
+    time_ui.connect(store)
 
     # Connect renderer.visible states to store
     artist = layers.Artist(renderers)
@@ -258,8 +255,20 @@ def main(argv=None):
     layers_ui.connect(store)
 
     # Connect tools controls
-    tools_panel = series.ToolsPanel()
+
+    display_names = {
+            "time_series": "Display Time Series",
+            "profile": "Display Profile"
+        }
+    available_features = {k: display_names[k]
+                          for k in display_names.keys() if config.features[k]}
+
+    tools_panel = tools.ToolsPanel(available_features)
     tools_panel.connect(store)
+
+    # Navbar components
+    navbar = Navbar(show_diagram_button=len(available_features) > 0)
+    navbar.connect(store)
 
     # Connect tap listener
     tap_listener = screen.TapListener()
@@ -269,6 +278,13 @@ def main(argv=None):
     figure_ui = layers.FigureUI()
     figure_ui.add_subscriber(store.dispatch)
     figure_row.connect(store)
+
+    # Tiling picker
+    if config.use_web_map_tiles:
+        tile_picker = forest.components.TilePicker()
+        for figure in figures:
+            tile_picker.add_figure(figure)
+        tile_picker.connect(store)
 
     # Connect color palette controls
     color_palette = colors.ColorPalette(color_mapper).connect(store)
@@ -284,17 +300,18 @@ def main(argv=None):
 
     # Connect navigation controls
     controls = db.ControlView()
-    controls.add_subscriber(store.dispatch)
-    store.add_subscriber(controls.render)
+    controls.connect(store)
 
-    def old_world(state):
-        kwargs = {k: state.get(k, None) for k in db.State._fields}
-        return db.State(**kwargs)
-
-    connector = layers.ViewerConnector(viewers, old_world).connect(store)
+    # Connect views to state changes
+    connector = layers.ViewerConnector().connect(store)
+    for label, viewer in viewers.items():
+        connector.add_label_subscriber(label, viewer.render)
 
     # Set default time series visibility
-    store.dispatch(series.on_toggle())
+    store.dispatch(tools.on_toggle_tool("time_series", False))
+
+    # Set default profile visibility
+    store.dispatch(tools.on_toggle_tool("profile", False))
 
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
@@ -306,97 +323,102 @@ def main(argv=None):
         store.dispatch(layers.set_active(row_index, [0]))
         break
 
+    # Select web map tiling
+    if config.use_web_map_tiles:
+        store.dispatch(tiles.set_tile(tiles.STAMEN_TERRAIN))
+        store.dispatch(tiles.set_label_visible(True))
+
+    # Organise controls/settings
+    layouts = {}
+    layouts["controls"] = [
+        bokeh.models.Div(text="Layout:"),
+        figure_ui.layout,
+        bokeh.models.Div(text="Navigate:"),
+        controls.layout,
+        bokeh.models.Div(text="Compare:"),
+        layers_ui.layout
+    ]
+    layouts["settings"] = [
+        border_row,
+        bokeh.layouts.row(slider),
+        preset_ui.layout,
+        color_palette.layout,
+        user_limits.layout,
+        bokeh.models.Div(text="Tiles:"),
+    ]
+    if config.use_web_map_tiles:
+        layouts["settings"].append(tile_picker.layout)
+
     tabs = bokeh.models.Tabs(tabs=[
         bokeh.models.Panel(
-            child=bokeh.layouts.column(
-                bokeh.models.Div(text="Layout:"),
-                figure_ui.layout,
-                bokeh.models.Div(text="Navigate:"),
-                controls.layout,
-                bokeh.models.Div(text="Compare:"),
-                layers_ui.layout),
+            child=bokeh.layouts.column(*layouts["controls"]),
             title="Control"
         ),
         bokeh.models.Panel(
-            child=bokeh.layouts.column(
-                tools_panel.buttons["toggle_time_series"],
-                ),
-            title="Tools"),
-        bokeh.models.Panel(
-            child=bokeh.layouts.column(
-                border_row,
-                bokeh.layouts.row(slider),
-                preset_ui.layout,
-                color_palette.layout,
-                user_limits.layout
-                ),
+            child=bokeh.layouts.column(*layouts["settings"]),
             title="Settings")
         ])
 
-    # Series sub-figure widget
-    series_figure = bokeh.plotting.figure(
-                plot_width=400,
-                plot_height=200,
-                x_axis_type="datetime",
-                toolbar_location=None,
-                border_fill_alpha=0)
-    series_figure.toolbar.logo = None
+    tool_figures = {}
+    if config.features["time_series"]:
+        # Series sub-figure widget
+        series_figure = bokeh.plotting.figure(
+                    plot_width=400,
+                    plot_height=200,
+                    x_axis_type="datetime",
+                    toolbar_location=None,
+                    border_fill_alpha=0)
+        series_figure.toolbar.logo = None
 
-    tool_layout = series.ToolLayout(series_figure)
+        series_view = series.SeriesView.from_groups(
+                series_figure,
+                config.file_groups)
+        series_view.add_subscriber(store.dispatch)
+        series_args = (rx.Stream()
+                    .listen_to(store)
+                    .map(series.select_args)
+                    .filter(lambda x: x is not None)
+                    .distinct())
+        series_args.map(lambda a: series_view.render(*a))
+        series_args.map(print)  # Note: map(print) creates None stream
+
+        tool_figures["series_figure"] = series_figure
+
+    if config.features["profile"]:
+        # Profile sub-figure widget
+        profile_figure = bokeh.plotting.figure(
+                    plot_width=300,
+                    plot_height=450,
+                    toolbar_location=None,
+                    border_fill_alpha=0)
+        profile_figure.toolbar.logo = None
+        profile_figure.y_range.flipped = True
+
+        profile_view = profile.ProfileView.from_groups(
+                profile_figure,
+                config.file_groups)
+        profile_view.add_subscriber(store.dispatch)
+        profile_args = (rx.Stream()
+                    .listen_to(store)
+                    .map(profile.select_args)
+                    .filter(lambda x: x is not None)
+                    .distinct())
+        profile_args.map(lambda a: profile_view.render(*a))
+        profile_args.map(print)  # Note: map(print) creates None stream
+
+        tool_figures["profile_figure"] = profile_figure
+
+    tool_layout = tools.ToolLayout(**tool_figures)
     tool_layout.connect(store)
 
-    series_view = series.SeriesView.from_groups(
-            series_figure,
-            config.file_groups)
-    series_view.add_subscriber(store.dispatch)
-    series_args = (rx.Stream()
-                .listen_to(store)
-                .map(series.select_args)
-                .filter(lambda x: x is not None)
-                .distinct())
-    series_args.map(lambda a: series_view.render(*a))
-    series_args.map(print)  # Note: map(print) creates None stream
     for f in figures:
         f.on_event(bokeh.events.Tap, tap_listener.update_xy)
         marker = screen.MarkDraw(f).connect(store)
 
-
-    # Minimise controls to ease navigation
-    compact_button = bokeh.models.Button(
-            label="Compact")
-    compact_minus = bokeh.models.Button(label="-", width=50)
-    compact_plus = bokeh.models.Button(label="+", width=50)
-    compact_navigation = bokeh.layouts.column(
-            compact_button,
-            bokeh.layouts.row(
-                compact_minus,
-                compact_plus,
-                width=100))
     control_root = bokeh.layouts.column(
-            compact_button,
             tabs,
             name="controls")
 
-    display = "large"
-    def on_compact():
-        nonlocal display
-        if display == "large":
-            control_root.height = 100
-            control_root.width = 120
-            compact_button.width = 100
-            compact_button.label = "Expand"
-            control_root.children = [
-                    compact_navigation]
-            display = "compact"
-        else:
-            control_root.height = 500
-            control_root.width = 300
-            compact_button.width = 300
-            compact_button.label = "Compact"
-            control_root.children = [compact_button, tabs]
-            display = "large"
-
-    compact_button.on_click(on_compact)
 
     # Add key press support
     key_press = keys.KeyPress()
@@ -405,9 +427,60 @@ def main(argv=None):
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"
     document.add_root(control_root)
-    document.add_root(tool_layout.figures_row)
+    document.add_root(
+        bokeh.layouts.column(
+            tools_panel.layout,
+            tool_layout.layout,
+            width=400,
+            name="series"))
+    document.add_root(
+        bokeh.layouts.row(time_ui.layout, name="time"))
+    for root in navbar.roots:
+        document.add_root(root)
+    document.add_root(
+        bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
+
+
+class Navbar:
+    """Collection of navbar components"""
+    def __init__(self, show_diagram_button=True):
+        self.headline = forest.components.Headline()
+        self.headline.layout.name = "headline"
+
+        self.buttons = {}
+        # Add button to control left drawer
+        key = "sidenav_button"
+        self.buttons[key] = bokeh.models.Button(
+            label="Settings",
+            name=key)
+        custom_js = bokeh.models.CustomJS(code="""
+            openId("sidenav");
+        """)
+        self.buttons[key].js_on_click(custom_js)
+
+        # Add button to control right drawer
+        key = "diagrams_button"
+        self.buttons[key] = bokeh.models.Button(
+            label="Diagrams",
+            css_classes=["float-right"],
+            name=key)
+        custom_js = bokeh.models.CustomJS(code="""
+            openId("diagrams");
+        """)
+        self.buttons[key].js_on_click(custom_js)
+
+        roots = [
+            self.buttons["sidenav_button"],
+            self.headline.layout,
+        ]
+        if show_diagram_button:
+            roots.append(self.buttons["diagrams_button"])
+        self.roots = roots
+
+    def connect(self, store):
+        self.headline.connect(store)
 
 
 def any_none(obj, attrs):

@@ -4,6 +4,16 @@ from forest import (
         db)
 
 
+def test_cut():
+    lines = [[[0, 4, 6], [20, 30, 40]]]
+    result = list(data.cut(lines, x=5))
+    assert list(result[0][0]) == [0, 4]
+    assert list(result[0][1]) == [20, 30]
+    assert list(result[1][0]) == [6]
+    assert list(result[1][1]) == [40]
+
+
+
 class TestDBLoader(unittest.TestCase):
     def setUp(self):
         self.empty_image = {

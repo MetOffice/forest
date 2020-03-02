@@ -1,77 +1,70 @@
 {% from macros import embed %}
 {% extends base %}
 {% block postamble %}
-<style>
-    body {
-        margin: 0;
-    }
-    .bk-root .bk-widget {
-        margin-top: 0;
-    }
-    /* Use when empty label is causing flow problems
-    .bk-root label {
-        display: inline;
-    }
-    */
-    .control-panel {
-        position: absolute;
-        left: 0;
-        top: 0;
-        z-index: 2;
-        width: auto;
-        background-color: rgba(245, 245, 245, 0.7);
-        border-radius: 3px;
-    }
-    .bonsai-mg-lf-10 {
-        margin-left: 10px;
-    }
-    .bonsai-lh-24 {
-        line-height: 24px;
-    }
-    .height-panel {
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        margin: 0;
-        padding: 0;
-        width: auto;
-        z-index: 2;
-    }
-    .series-panel {
-        position: absolute;
-        right: 0;
-        top: 0;
-        margin: 0;
-        padding: 0;
-        width: auto;
-        z-index: 2;
-    }
-    .keypress-hidden-btn {
-        display: none !important;
-    }
-</style>
+<link rel="stylesheet" href="forest/static/style.css" type="text/css" media="all">
+<script src="forest/static/script.js" charset="utf-8"></script>
 {% endblock %}
 {% block contents %}
+    <div id="sidenav" class="sidenav">
+            <button type="button" onclick="closeId('sidenav')">Close</button>
+            {{ embed(roots.controls) | indent(10) }}
+    </div>
+    <div id="diagrams" class="diagrams">
+            <button type="button" onclick="closeId('diagrams')">Close</button>
+            {{ embed(roots.series) | indent(10) }}
+    </div>
+
+    <nav>
+        <div class="display-inline-block float-left">
+        {{ embed(roots.sidenav_button) | indent(10) }}
+        </div>
+        <div class="margin-left-110 display-inline-block float-left">
+        {{ embed(roots.headline) | indent(10) }}
+        </div>
+        <!-- Embed optional button -->
+        {% for root in roots %}
+            <!-- Note: roots.attname raises ValueError if attname not found
+                       see bokeh.embed.util.RenderRoots.__getitem__
+            -->
+            {% if root.name == 'diagrams_button' %}
+                <div class="float-right">
+                {{ embed(roots.diagrams_button) | indent(10) }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    </nav>
+
+    <!-- Layout figure row -->
+    <div id="figures">
+        {{ embed(roots.figures) | indent(10) }}
+    </div>
+
+    <!-- Layout footer widgets -->
+    <footer>
+        <div id="colorbar" class="colorbar">
+            {{ embed(roots.colorbar) | indent(10) }}
+        </div>
+        <div id="time" class="time">
+            {{ embed(roots.time) | indent(10) }}
+        </div>
+    </footer>
+
+    <!-- Bokeh document roots -->
     {% for doc in docs %}
         {% for root in doc.roots %}
-            {% if root.name == "controls" %}
-                <div class="control-panel">
-                {{ embed(root) | indent(10) }}
-                </div>
-            {% elif root.name == "series" %}
-                <div class="series-panel">
-                {{ embed(root) | indent(10) }}
-                </div>
-            {% else %}
-                {{ embed(root) | indent(10) }}
-            {% endif %}
+            <div class="display-none">
+            {{ embed(root) | indent(10) }}
+            </div>
         {% endfor %}
     {% endfor %}
     <script>
 // Re-attach roots if WebSocket request served by different machine
 let reattachRoots = function() {
+    // TODO: Correct this method to work with new layout
+    return
+
     // Find template roots
-    let classNames = ["control-panel", "series-panel"];
+    let classNames = ["control-panel", "series-panel", "time-panel", "colorbar-panel"];
     let parents = classNames.reduce(function(data, className) {
         data[className] = document.getElementsByClassName(className)[0];
         return data
@@ -92,6 +85,8 @@ let reattachRoots = function() {
     // NOTE: Order important since orphaned roots have no data-root-id attr
     parents['control-panel'].appendChild(orphans[0])
     parents['series-panel'].appendChild(orphans[1])
+    parents['time-panel'].appendChild(orphans[2])
+    parents['colorbar-panel'].appendChild(orphans[3])
 }
 
 // Trigger KeyPress.hidden_button if present

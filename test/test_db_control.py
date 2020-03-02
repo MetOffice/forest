@@ -1,7 +1,9 @@
+import pytest
 import unittest
 import unittest.mock
 import datetime as dt
 import numpy as np
+import forest.db.control
 from forest import db, redux, rx
 
 
@@ -10,29 +12,6 @@ def test_reducer_immutable_state():
     next_state = db.reducer(state, db.set_value("pressure", 950))
     assert state["pressure"] == 1000
     assert next_state["pressure"] == 950
-
-
-def test_convert_datetime64_array_to_strings():
-    times = np.array(
-            [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)],
-            dtype="datetime64[s]")
-    result = db.stamps(times)
-    expect = ["2019-01-01 00:00:00", "2019-01-02 00:00:00"]
-    assert expect == result
-
-
-def test_type_system_middleware():
-    times = np.array(
-            [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)],
-            dtype="datetime64[s]")
-    converter = db.Converter({"valid_times": db.stamps})
-    store = redux.Store(db.reducer, middlewares=[converter])
-    store.dispatch(db.set_value("valid_times", times))
-    result = store.state
-    expect = {
-        "valid_times": ["2019-01-01 00:00:00", "2019-01-02 00:00:00"]
-    }
-    assert expect == result
 
 
 class TestDatabaseMiddleware(unittest.TestCase):
@@ -90,189 +69,163 @@ class TestDatabaseMiddleware(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
-class TestControls(unittest.TestCase):
-    def setUp(self):
-        self.database = db.Database.connect(":memory:")
+def test_dimension_view_on_select():
+    listener = unittest.mock.Mock()
+    view = forest.db.control.DimensionView("item", "items")
+    view.add_subscriber(listener)
+    view.on_select(None, None, "token")
+    listener.assert_called_once_with(db.set_value("item", "token"))
 
-    def tearDown(self):
-        self.database.close()
 
-    def test_on_variable_emits_state(self):
-        value = "token"
-        listener = unittest.mock.Mock()
-        view = db.ControlView()
-        view.add_subscriber(listener)
-        view.on_change("variable")(None, None, value)
-        listener.assert_called_once_with(db.set_value("variable", value))
+def test_dimension_view_on_next():
+    listener = unittest.mock.Mock()
+    view = forest.db.control.DimensionView("item", "items")
+    view.add_subscriber(listener)
+    view.on_next()
+    listener.assert_called_once_with(db.next_value("item", "items"))
 
-    def test_next_pressure_given_pressures_returns_first_element(self):
-        pressure = 950
-        store = redux.Store(
-            db.reducer,
-            initial_state={"pressures": [pressure]},
-            middlewares=[
-                db.next_previous,
-                db.Controls(self.database)])
-        view = db.ControlView()
-        view.add_subscriber(store.dispatch)
-        view.on_next('pressure', 'pressures')()
-        result = store.state
-        expect = {
+
+def test_dimension_view_on_previous():
+    listener = unittest.mock.Mock()
+    view = forest.db.control.DimensionView("item", "items")
+    view.add_subscriber(listener)
+    view.on_previous()
+    listener.assert_called_once_with(db.previous_value("item", "items"))
+
+
+@pytest.fixture
+def database():
+    in_memory_database = db.Database.connect(":memory:")
+    yield in_memory_database
+    in_memory_database.close()
+
+
+def test_middleware_next_pressure_given_pressures_returns_first_element():
+    pressure = 950
+    store = redux.Store(
+        db.reducer,
+        initial_state={"pressures": [pressure]},
+        middlewares=[db.next_previous])
+    action = forest.db.control.next_value("pressure", "pressures")
+    store.dispatch(action)
+    result = store.state
+    expect = {
+        "pressure": pressure,
+        "pressures": [pressure]
+    }
+    assert expect == result
+
+
+def test_middleware_next_pressure_given_pressures_none():
+    store = redux.Store(
+        db.reducer,
+        middlewares=[
+            db.InverseCoordinate("pressure"),
+            db.next_previous,
+        ])
+    action = forest.db.control.next_value("pressure", "pressures")
+    store.dispatch(action)
+    assert store.state == {}
+
+
+def test_middleware_next_pressure_given_current_pressure():
+    pressure = 950
+    pressures = [1000, 950, 800]
+    store = redux.Store(
+        db.reducer,
+        initial_state={
             "pressure": pressure,
-            "pressures": [pressure]
-        }
-        self.assertEqual(expect, result)
-
-    def test_next_pressure_given_pressures_none(self):
-        store = redux.Store(
-            db.reducer,
-            middlewares=[
-                db.InverseCoordinate("pressure"),
-                db.next_previous,
-                db.Controls(self.database)
-            ])
-        view = db.ControlView()
-        view.add_subscriber(store.dispatch)
-        view.on_next('pressure', 'pressures')()
-        result = store.state
-        expect = {}
-        self.assertEqual(expect, result)
-
-    def test_next_pressure_given_current_pressure(self):
-        pressure = 950
-        pressures = [1000, 950, 800]
-        store = redux.Store(
-            db.reducer,
-            initial_state={
-                "pressure": pressure,
-                "pressures": pressures
-            },
-            middlewares=[
-                db.InverseCoordinate("pressure"),
-                db.next_previous,
-                db.Controls(self.database)
-            ])
-        view = db.ControlView()
-        view.add_subscriber(store.dispatch)
-        view.on_next('pressure', 'pressures')()
-        result = store.state["pressure"]
-        expect = 800
-        self.assertEqual(expect, result)
+            "pressures": pressures
+        },
+        middlewares=[
+            db.InverseCoordinate("pressure"),
+            db.next_previous
+        ])
+    action = forest.db.control.next_value("pressure", "pressures")
+    store.dispatch(action)
+    assert store.state["pressure"] == 800
 
 
-class TestControlView(unittest.TestCase):
-    def setUp(self):
-        self.view = db.ControlView()
+def test_dimension_view_on_next_action():
+    listener = unittest.mock.Mock()
+    view = forest.db.control.DimensionView("pressure", "pressures")
+    view.add_subscriber(listener)
+    view.on_next()
+    expect = db.next_value("pressure", "pressures")
+    listener.assert_called_once_with(expect)
 
-    def test_on_click_emits_action(self):
-        listener = unittest.mock.Mock()
-        self.view.add_subscriber(listener)
-        self.view.on_next("pressure", "pressures")()
-        expect = db.next_value("pressure", "pressures")
-        listener.assert_called_once_with(expect)
 
-    def test_render_given_no_variables_disables_dropdown(self):
-        self.view.render({"variables": []})
-        result = self.view.dropdowns["variable"].disabled
-        expect = True
-        self.assertEqual(expect, result)
+def test_dimension_view_render_given_pressure():
+    state = {"pressure": 1000, "pressures": [1000]}
+    view = forest.db.control.DimensionView(
+            "pressure", "pressures",
+            formatter=forest.db.control.format_hpa)
+    view.render(state)
+    assert view.select.value == "1000hPa"
 
-    def test_render_given_pressure(self):
-        state = {
-            "pressures": [1000],
-            "pressure": 1000
-        }
-        self.view.render(state)
-        result = self.view.dropdowns["pressure"].label
-        expect = "1000hPa"
-        self.assertEqual(expect, result)
 
-    def test_render_sets_pressure_levels(self):
-        pressures = [1000, 950, 850]
-        self.view.render({"pressures": pressures})
-        result = self.view.dropdowns["pressure"].menu
-        expect = ["1000hPa", "950hPa", "850hPa"]
-        self.assert_label_equal(expect, result)
+def test_dimension_view_render_sets_pressure_levels():
+    pressures = [1000, 950, 850]
+    state = {"pressures": pressures}
+    view = forest.db.control.DimensionView(
+            "pressure", "pressures",
+            formatter=forest.db.control.format_hpa)
+    view.render(state)
+    assert view.select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.select.options[1:] == ["1000hPa", "950hPa", "850hPa"]
 
-    def test_render_given_initial_time_populates_valid_time_menu(self):
-        state = {"valid_times": [dt.datetime(2019, 1, 1, 3)]}
-        self.view.render(state)
-        result = self.view.dropdowns["valid_time"].menu
-        expect = ["2019-01-01 03:00:00"]
-        self.assert_label_equal(expect, result)
 
-    def test_render_state_configures_variable_menu(self):
-        self.view.render({"variables": ["mslp"]})
-        result = self.view.dropdowns["variable"].menu
-        expect = ["mslp"]
-        self.assert_label_equal(expect, result)
-        self.assert_value_equal(expect, result)
+def test_dimension_view_render_valid_times():
+    state = {"valid_times": [dt.datetime(2019, 1, 1, 3)]}
+    view = forest.db.control.DimensionView("valid_time", "valid_times")
+    view.render(state)
+    assert view.select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.select.options[1:] == ["2019-01-01 03:00:00"]
 
-    def test_render_state_configures_initial_time_menu(self):
-        initial_times = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
-        state = {"initial_times": initial_times}
-        self.view.render(state)
-        result = self.view.dropdowns["initial_time"].menu
-        expect = initial_times
-        self.assert_label_equal(expect, result)
 
-    def assert_label_equal(self, expect, result):
-        result = [l for l, _ in result]
-        self.assertEqual(expect, result)
+def test_dimension_view_render_variables():
+    state = {"variables": ["mslp"]}
+    view = forest.db.control.DimensionView("variable", "variables")
+    view.render(state)
+    assert view.select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.select.options[1:] == ["mslp"]
 
-    def assert_value_equal(self, expect, result):
-        result = [v for _, v in result]
-        self.assertEqual(expect, result)
 
-    def test_render_initial_times_disables_buttons(self):
-        key = "initial_time"
-        self.view.render({})
-        self.assertEqual(self.view.dropdowns[key].disabled, True)
-        self.assertEqual(self.view.buttons[key]["next"].disabled, True)
-        self.assertEqual(self.view.buttons[key]["previous"].disabled, True)
+def test_dimension_view_render_initial_times():
+    initial_times = ["2019-01-01 12:00:00", "2019-01-01 00:00:00"]
+    state = {"initial_times": initial_times}
+    view = forest.db.control.DimensionView("initial_time", "initial_times")
+    view.render(state)
+    assert view.select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.select.options[1:] == initial_times
 
-    def test_hpa_given_small_pressures(self):
-        result = db.ControlView.hpa(0.001)
-        expect = "0.001hPa"
-        self.assertEqual(expect, result)
 
-    def test_render_variables_given_null_state_disables_dropdown(self):
-        self.view.render({})
-        result = self.view.dropdowns["variable"].disabled
-        expect = True
-        self.assertEqual(expect, result)
+def test_hpa_given_small_pressures():
+    assert db.ControlView.hpa(0.001) == "0.001hPa"
 
-    def test_render_initial_times_enables_buttons(self):
-        key = "initial_time"
-        self.view.render({"initial_times": ["2019-01-01 00:00:00"]})
-        self.assertEqual(self.view.dropdowns[key].disabled, False)
-        self.assertEqual(self.view.buttons[key]["next"].disabled, False)
-        self.assertEqual(self.view.buttons[key]["previous"].disabled, False)
 
-    def test_render_valid_times_given_null_state_disables_buttons(self):
-        self.check_disabled("valid_time", {}, True)
+@pytest.mark.parametrize("state,expect", [
+    ({}, True),
+    ({"items": []}, True),
+    ({"items": ["value"]}, False),
+])
+def test_dimension_view_disabled(state, expect):
+    view = forest.db.control.DimensionView("item", "items")
+    view.render(state)
+    assert view.select.disabled == expect
+    assert view.buttons["next"].disabled == expect
+    assert view.buttons["previous"].disabled == expect
 
-    def test_render_valid_times_given_empty_list_disables_buttons(self):
-        self.check_disabled("valid_time", {"valid_times": []}, True)
 
-    def test_render_valid_times_given_values_enables_buttons(self):
-        state = {"valid_times": ["2019-01-01 00:00:00"]}
-        self.check_disabled("valid_time", state, False)
-
-    def test_render_pressures_given_null_state_disables_buttons(self):
-        self.check_disabled("pressure", {}, True)
-
-    def test_render_pressures_given_empty_list_disables_buttons(self):
-        self.check_disabled("pressure", {"pressures": []}, True)
-
-    def test_render_pressures_given_values_enables_buttons(self):
-        self.check_disabled("pressure", {"pressures": [1000.00000001]}, False)
-
-    def check_disabled(self, key, state, expect):
-        self.view.render(state)
-        self.assertEqual(self.view.dropdowns[key].disabled, expect)
-        self.assertEqual(self.view.buttons[key]["next"].disabled, expect)
-        self.assertEqual(self.view.buttons[key]["previous"].disabled, expect)
+@pytest.mark.parametrize("state,expect", [
+    ({}, True),
+    ({"items": []}, True),
+    ({"items": ["value"]}, False),
+])
+def test_dimension_no_buttons_view_disabled(state, expect):
+    view = forest.db.control.DimensionView("item", "items", next_previous=False)
+    view.render(state)
+    assert view.select.disabled == expect
 
 
 class TestNextPrevious(unittest.TestCase):
@@ -384,15 +337,37 @@ class TestNextPrevious(unittest.TestCase):
         }
         self.assertEqual(expect, result)
 
-    def test_next_item_given_last_item_returns_first_item(self):
-        result = db.control.next_item([0, 1, 2], 2)
-        expect = 0
-        self.assertEqual(expect, result)
-
     def test_previous_item_given_first_item_returns_last_item(self):
         result = db.control.previous_item([0, 1, 2], 0)
         expect = 2
         self.assertEqual(expect, result)
+
+
+@pytest.mark.parametrize("items,item,expect", [
+    ([0, 1, 2], 2, 0),
+    ([0, 1, 2], 2.000001, 0),
+])
+def test_next_item(items, item, expect):
+    assert db.control.next_item(items, item) == expect
+
+
+@pytest.mark.parametrize("items,item,expect", [
+    ([3, 4, 5], 5, 2),
+    ([3, 4, 5], 5.000001, 2),
+    ([dt.datetime(2020, 1, 1)], dt.datetime(2020, 1, 1), 0)
+])
+def test_index(items, item, expect):
+    assert db.control._index(items, item) == expect
+
+
+@pytest.mark.parametrize("items,item,error", [
+    ([], 0, ValueError),
+    ([1], 0, ValueError),
+])
+def test_index_raises_value_error(items, item, error):
+    with pytest.raises(error):
+        db.control._index(items, item)
+
 
 
 class TestPressureMiddleware(unittest.TestCase):
@@ -416,6 +391,61 @@ class TestPressureMiddleware(unittest.TestCase):
             "pressures": pressures
         }
         self.assertEqual(expect, result)
+
+
+def test_controls_middleware(database):
+    middleware = forest.db.Controls(database)
+    store = forest.redux.Store(forest.db.control.reducer)
+    action = {"kind": "ANY"}
+    assert list(middleware(store, action)) == [action]
+
+
+def test_controls_middleware_given_set_variable():
+    """Should set pressure level"""
+    navigator = unittest.mock.Mock()
+    middleware = forest.db.Controls(navigator)
+    # Configure Store.state
+    store = forest.redux.Store(forest.db.control.reducer)
+    for action in [
+            forest.db.control.set_value("pattern", "*"),
+            forest.db.control.set_value("initial_time", "2020-01-01 00:00:00"),
+            forest.db.control.set_value("valid_time", "2020-01-01 00:00:00")]:
+        store.dispatch(action)
+    # Configure navigator
+    valid_times = ["2020-01-01 00:00:00"]
+    pressures = [950., 1000., 750.]
+    navigator.valid_times.return_value = valid_times
+    navigator.pressures.return_value = pressures
+    action = forest.db.control.set_value("variable", "name")
+    assert list(middleware(store, action)) == [
+            action,
+            forest.db.control.set_value("valid_times", valid_times),
+            forest.db.control.set_value("pressures", list(reversed(pressures))),
+            forest.db.control.set_value("pressure", 1000.),
+    ]
+
+
+def test_controls_middleware_given_set_variable_no_pressures():
+    navigator = unittest.mock.Mock()
+    middleware = forest.db.Controls(navigator)
+    # Configure Store.state
+    store = forest.redux.Store(forest.db.control.reducer)
+    for action in [
+            forest.db.control.set_value("pattern", "*"),
+            forest.db.control.set_value("initial_time", "2020-01-01 00:00:00"),
+            forest.db.control.set_value("valid_time", "2020-01-01 00:00:00")]:
+        store.dispatch(action)
+    # Configure navigator
+    valid_times = ["2020-01-01 00:00:00"]
+    pressures = []
+    navigator.valid_times.return_value = valid_times
+    navigator.pressures.return_value = pressures
+    action = forest.db.control.set_value("variable", "name")
+    assert list(middleware(store, action)) == [
+            action,
+            forest.db.control.set_value("valid_times", valid_times),
+            forest.db.control.set_value("pressures", []),
+    ]
 
 
 class TestStateStream(unittest.TestCase):

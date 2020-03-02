@@ -9,6 +9,7 @@ from collections import namedtuple
 from forest.observe import Observable
 from forest.gridded_forecast import _to_datetime
 from forest.export import export
+from typing import List, Any
 
 
 __all__ = [
@@ -16,6 +17,10 @@ __all__ = [
 ]
 
 
+# Message to user when option not available
+UNAVAILABLE = "Please specify"
+
+# Action keys
 SET_VALUE = "SET_VALUE"
 NEXT_VALUE = "NEXT_VALUE"
 PREVIOUS_VALUE = "PREVIOUS_VALUE"
@@ -112,6 +117,7 @@ def state_eq(self, other):
             time_equal(self.valid_time, other.valid_time) and
             time_array_equal(self.valid_times, other.valid_times) and
             equal_value(self.pressure, other.pressure) and
+            np.shape(self.pressures) == np.shape(other.pressures) and
             equal_value(self.pressures, other.pressures)
     )
 
@@ -153,16 +159,6 @@ def initial_state(navigator, pattern=None):
     if len(pressures) > 0:
         state["pressure"] = pressures[0]
     return state
-
-
-@export
-def stamps(times):
-    labels = []
-    for t in times:
-        if isinstance(t, np.datetime64):
-            t = t.astype(dt.datetime)
-        labels.append(str(t))
-    return labels
 
 
 @export
@@ -237,14 +233,25 @@ def next_previous(store, action):
 
 def next_item(items, item):
     items = list(sorted(items))
-    i = items.index(item)
+    i = _index(items, item)
     return items[(i + 1) % len(items)]
 
 
 def previous_item(items, item):
     items = list(sorted(items))
-    i = items.index(item)
+    i = _index(items, item)
     return items[i - 1]
+
+
+def _index(items: List[Any], item: Any):
+    try:
+        return items.index(item)
+    except ValueError as e:
+        # Index of first float within tolerance
+        if any(np.isclose(items, item)):
+            return np.isclose(items, item).argmax()
+        else:
+            raise e
 
 
 @export
@@ -261,22 +268,6 @@ class Navigator(object):
 
     def pressures(self, pattern, variable, initial_time):
         return [750.]
-
-
-@export
-class Converter(object):
-    def __init__(self, maps):
-        self.maps = maps
-
-    def __call__(self, store, action):
-        if action["kind"] == SET_VALUE:
-            key = action["payload"]["key"]
-            value = action["payload"]["value"]
-            if key in self.maps:
-                value = self.maps[key](value)
-            yield set_value(key, value)
-        else:
-            yield action
 
 
 @export
@@ -339,6 +330,8 @@ class Controls(object):
         yield action
         yield set_value("valid_times", valid_times)
         yield set_value("pressures", pressures)
+        if ("pressure" not in store.state) and len(pressures) > 0:
+            yield set_value("pressure", max(pressures))
 
     def _initial_time(self, store, action):
         for attr in ["pattern", "variable"]:
@@ -356,121 +349,172 @@ class Controls(object):
 
 
 @export
-class ControlView(Observable):
+class ControlView:
+    """Layout of navigation controls
+
+    A high-level view that delegates to low-level views
+    which in turn perform navigation.
+    """
     def __init__(self):
-        dropdown_width = 180
-        button_width = 75
-        self.dropdowns = {
-            "pattern": bokeh.models.Dropdown(
-                label="Model/observation"),
-            "variable": bokeh.models.Dropdown(
-                label="Variable"),
-            "initial_time": bokeh.models.Dropdown(
-                label="Initial time",
-                width=dropdown_width),
-            "valid_time": bokeh.models.Dropdown(
-                label="Valid time",
-                width=dropdown_width),
-            "pressure": bokeh.models.Dropdown(
-                label="Pressure",
-                width=dropdown_width)
-        }
-        for key, dropdown in self.dropdowns.items():
-            util.autolabel(dropdown)
-            util.autowarn(dropdown)
-            dropdown.on_change("value", self.on_change(key))
-        self.rows = {}
-        self.buttons = {}
-        for key, items_key in [
-                ('pressure', 'pressures'),
-                ('valid_time', 'valid_times'),
-                ('initial_time', 'initial_times')]:
-            self.buttons[key] = {
-                'next': bokeh.models.Button(
-                    label="Next",
-                    width=button_width),
-                'previous': bokeh.models.Button(
-                    label="Previous",
-                    width=button_width),
-            }
-            self.buttons[key]['next'].on_click(
-                self.on_next(key, items_key))
-            self.buttons[key]['previous'].on_click(
-                self.on_previous(key, items_key))
-            self.rows[key] = bokeh.layouts.row(
-                self.buttons[key]["previous"],
-                self.dropdowns[key],
-                self.buttons[key]["next"])
+        self.views = {}
+        self.views["dataset"] = DatasetView()
+        self.views["variable"] = DimensionView("variable", "variables", next_previous=False)
+        self.views["initial_time"] = DimensionView("initial_time", "initial_times")
+        self.views["valid_time"] = DimensionView("valid_time", "valid_times")
+        self.views["pressure"] = DimensionView("pressure", "pressures", formatter=self.hpa)
         self.layout = bokeh.layouts.column(
-            self.dropdowns["pattern"],
-            self.dropdowns["variable"],
-            self.rows["initial_time"],
-            self.rows["valid_time"],
-            self.rows["pressure"])
+            self.views["dataset"].layout,
+            self.views["variable"].layout,
+            self.views["initial_time"].layout,
+            self.views["valid_time"].layout,
+            self.views["pressure"].layout,
+        )
         super().__init__()
 
-    def on_change(self, key):
-        def callback(attr, old, new):
-            self.notify(set_value(key, new))
-        return callback
-
-    def on_next(self, item_key, items_key):
-        def callback():
-            self.notify(next_value(item_key, items_key))
-        return callback
-
-    def on_previous(self, item_key, items_key):
-        def callback():
-            self.notify(previous_value(item_key, items_key))
-        return callback
-
-    def render(self, state):
-        """Configure dropdown menus"""
-        assert isinstance(state, dict), "Only support dict"
-        for key, items_key in [
-                ("pattern", "patterns"),
-                ("variable", "variables"),
-                ("initial_time", "initial_times"),
-                ("valid_time", "valid_times"),
-                ("pressure", "pressures")]:
-            if items_key not in state:
-                disabled = True
-            else:
-                values = state[items_key]
-                disabled = len(values) == 0
-                if key == "pressure":
-                    menu = [(self.hpa(p), str(p)) for p in values]
-                elif key == "pattern":
-                    menu = state["patterns"]
-                else:
-                    menu = self.menu(values)
-                self.dropdowns[key].menu = menu
-            self.dropdowns[key].disabled = disabled
-            if key in self.buttons:
-                self.buttons[key]["next"].disabled = disabled
-                self.buttons[key]["previous"].disabled = disabled
-
-        if ("pattern" in state) and ("patterns" in state):
-            for _, pattern in state["patterns"]:
-                if pattern == state["pattern"]:
-                    self.dropdowns["pattern"].value = pattern
-
-        for key in [
-                "variable",
-                "initial_time",
-                "pressure",
-                "valid_time"]:
-            if key in state:
-                if state[key] is None:
-                    continue
-                self.dropdowns[key].value = str(state[key])
-
-    @staticmethod
-    def menu(values, formatter=str):
-        return [(formatter(o), formatter(o)) for o in values]
+    def connect(self, store):
+        """Connect views to the store"""
+        self.views["dataset"].connect(store)
+        self.views["variable"].connect(store)
+        self.views["initial_time"].connect(store)
+        self.views["valid_time"].connect(store)
+        self.views["pressure"].connect(store)
 
     @staticmethod
     def hpa(p):
-        if p < 1:
-            return "{}hPa".format(str(p))
-        return "{}hPa".format(int(p))
+        return format_hpa(p)
+
+
+def format_hpa(p):
+    """Text representation of atmospheric pressure"""
+    if p is None:
+        return "Pressure"
+    if float(p) < 1:
+        return "{}hPa".format(str(p))
+    return "{}hPa".format(int(p))
+
+
+class DatasetView(Observable):
+    """View to select datasets
+
+    .. note:: Currently 'pattern' is the primary key for
+              dataset selection
+    """
+    def __init__(self):
+        self._table = {}
+        self.item_key = "pattern"
+        self.items_key = "patterns"
+        self.select = bokeh.models.Select(width=350)
+        self.select.on_change("value", self.on_select)
+        self.layout = bokeh.layouts.row(
+            self.select
+        )
+        super().__init__()
+
+    def on_select(self, attr, old, new):
+        """On click handler for select widget"""
+        if new == UNAVAILABLE:
+            return
+        value = self._table.get(new, new)
+        self.notify(set_value(self.item_key, value))
+
+    def connect(self, store):
+        """Wire up component to the Store"""
+        self.add_subscriber(store.dispatch)
+        store.add_subscriber(self.render)
+
+    def render(self, state):
+        """Render application state"""
+        pattern = state.get(self.item_key)
+        patterns = state.get(self.items_key, [])
+        self._table.update(patterns)
+        option = self.find_label(patterns, pattern)
+        options = [label for label, _ in patterns]
+        self.select.options = [UNAVAILABLE] + options
+        if option in options:
+            self.select.value = option
+        else:
+            self.select.value = UNAVAILABLE
+
+    @staticmethod
+    def find_label(patterns, pattern):
+        for label, _pattern in patterns:
+            if _pattern == pattern:
+                return label
+
+
+class DimensionView(Observable):
+    """Widgets used to navigate a dimension"""
+    def __init__(self, item_key, items_key, next_previous=True, formatter=str):
+        self.item_key = item_key
+        self.items_key = items_key
+        self.formatter = formatter
+        self._lookup = {}  # Look-up table to convert from label to value
+        self.next_previous = next_previous
+        if self.next_previous:
+            # Include next/previous buttons
+            self.select = bokeh.models.Select(
+                width=180)
+            self.select.on_change("value", self.on_select)
+            self.buttons = {
+                "next": bokeh.models.Button(
+                    label="Next",
+                    width=75),
+                "previous": bokeh.models.Button(
+                    label="Previous",
+                    width=75),
+            }
+            self.buttons["next"].on_click(self.on_next)
+            self.buttons["previous"].on_click(self.on_previous)
+            self.layout = bokeh.layouts.row(
+                self.buttons["previous"],
+                self.select,
+                self.buttons["next"],
+            )
+        else:
+            # Without next/previous buttons
+            self.select = bokeh.models.Select(width=350)
+            self.select.on_change("value", self.on_select)
+            self.layout = bokeh.layouts.row(
+                self.select
+            )
+        super().__init__()
+
+    def on_select(self, attr, old, new):
+        """Handler for select widget"""
+        if new == UNAVAILABLE:
+            return
+        value = self._lookup.get(new, new)
+        self.notify(set_value(self.item_key, value))
+
+    def on_next(self):
+        """Handler for next button"""
+        self.notify(next_value(self.item_key, self.items_key))
+
+    def on_previous(self):
+        """Handler for previous button"""
+        self.notify(previous_value(self.item_key, self.items_key))
+
+    def connect(self, store):
+        """Connect user interactions to the store"""
+        self.add_subscriber(store.dispatch)
+        store.add_subscriber(self.render)
+
+    def render(self, state):
+        """Apply state to widgets"""
+        value = state.get(self.item_key)
+        values = state.get(self.items_key, [])
+        option = self.formatter(value)
+        options = [self.formatter(value) for value in values]
+        self._lookup.update(zip(options, values))
+        self.select.options = [UNAVAILABLE] + options
+        if option in options:
+            self.select.value = option
+        else:
+            self.select.value = UNAVAILABLE
+
+        # Deactivate widgets if no options available
+        disabled = len(options) == 0
+        self.select.disabled = disabled
+        if self.next_previous:
+            self.buttons["next"].disabled = disabled
+            self.buttons["previous"].disabled = disabled

@@ -199,3 +199,21 @@ def test_config_parser_given_json(tmpdir):
 def test_config_parser_presets_file(data, expect):
     config = forest.config.Config(data)
     assert config.presets_file == expect
+
+
+@pytest.mark.parametrize("data,expect", [
+    ({}, True),
+    ({"use_web_map_tiles": False}, False),
+])
+def test_config_parser_use_web_map_tiles(data, expect):
+    config = forest.config.Config(data)
+    assert config.use_web_map_tiles == expect
+
+
+@pytest.mark.parametrize("data,expect", [
+    ({}, True),
+    ({"features": {"example": False}}, False),
+])
+def test_config_parser_features(data, expect):
+    config = forest.config.Config(data)
+    assert config.features["example"] == expect

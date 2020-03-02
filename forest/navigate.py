@@ -10,13 +10,14 @@ from forest import (
         earth_networks,
         db,
         gridded_forecast,
-        ghrsstl4,
         unified_model,
         eida50,
         rdt,
         intake_loader,
         saf,
         nearcast)
+
+from forest.drivers import ghrsstl4
 
 
 class Navigator:
@@ -40,7 +41,8 @@ class Navigator:
         else:
             paths = cls._expand_paths(group.pattern)
             navigator = FileSystemNavigator.from_file_type(paths,
-                                                           group.file_type)
+                                                           group.file_type,
+                                                           group.pattern)
         return navigator
 
     @classmethod
@@ -77,7 +79,7 @@ class FileSystemNavigator:
         self.coordinates = coordinates
 
     @classmethod
-    def from_file_type(cls, paths, file_type):
+    def from_file_type(cls, paths, file_type, pattern=None):
         if file_type.lower() == "rdt":
             coordinates = rdt.Coordinates()
         elif file_type.lower() == "eida50":
@@ -96,7 +98,7 @@ class FileSystemNavigator:
         elif file_type.lower() == "earth_networks":
             return earth_networks.Navigator(paths)
         elif file_type.lower() == "nearcast":
-            coordinates = nearcast.Coordinates()
+            return nearcast.Navigator(pattern)
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
         return cls(paths, coordinates)

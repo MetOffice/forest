@@ -12,6 +12,15 @@ from forest.util import coarsify
 from forest.exceptions import FileNotFound, IndexNotFound
 
 
+MIN_DATETIME64 = np.datetime64('0001-01-01T00:00:00.000000')
+
+
+def _natargmax(arr):
+    """ Find the arg max when an array contains NaT's"""
+    no_nats = np.where(np.isnat(arr), MIN_DATETIME64, arr)
+    return np.argmax(no_nats)
+
+
 class EIDA50(object):
     def __init__(self, pattern):
         self.locator = Locator(pattern)
@@ -86,7 +95,7 @@ class Locator(object):
             raise FileNotFound(msg)
         before_dates = np.ma.array(
                 dates, mask=mask, dtype='datetime64[s]')
-        return np.ma.argmax(before_dates)
+        return _natargmax(before_dates.filled())
 
     @staticmethod
     def find_index(times, time, length):
@@ -99,7 +108,7 @@ class Locator(object):
         if valid_times.mask.all():
             msg = "{}: not found".format(time)
             raise IndexNotFound(msg)
-        return np.ma.argmax(valid_times)
+        return _natargmax(valid_times.filled())
 
     @staticmethod
     def parse_date(path):

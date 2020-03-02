@@ -5,6 +5,7 @@ import datetime as dt
 import pandas as pd
 from forest import geo
 from forest.gridded_forecast import _to_datetime
+from forest.old_state import old_state, unique
 import bokeh.models
 import bokeh.palettes
 import numpy as np
@@ -26,6 +27,8 @@ class View(object):
             "time_since_flash": []
         })
 
+    @old_state
+    @unique
     def render(self, state):
         valid_time = _to_datetime(state.valid_time)
         frame = self.loader.load_date(valid_time)
