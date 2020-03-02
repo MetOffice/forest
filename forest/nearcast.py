@@ -98,7 +98,7 @@ class Navigator:
         paths = self.locator.find(self.pattern)
         if len(paths) == 0:
             return []
-        return list(sorted(self._variables(paths[-1])))
+        return list(sorted(set(self._variables(paths[-1]))))
 
     @staticmethod
     def _variables(path):
