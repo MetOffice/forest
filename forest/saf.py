@@ -23,8 +23,11 @@ import os
 
 import numpy as np
 import numpy.ma as ma
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, LinearNDInterpolator
 #from metpy.interpolate import interpolate_to_grid
+from scipy.spatial import Delaunay
+import itertools
+
 import netCDF4
 
 from forest.gridded_forecast import _to_datetime, empty_image, coordinates
@@ -32,13 +35,16 @@ from forest.util import timeout_cache
 
 from forest import geo
 
-from functools import lru_cache
+#from functools import lru_cache
 
 class saf(object):
+    tri = None
+
     def __init__(self, pattern, label=None, locator=None):
         '''Object to process SAF NetCDF files
 
         :pattern: shell-style glob pattern of input file(s)'''
+
         if(locator):
             self.locator = locator
         else:
@@ -47,7 +53,7 @@ class saf(object):
         if(label):
             self.label = label
 
-    @lru_cache(maxsize=16)
+    #@lru_cache(maxsize=16)
     def image(self, state):
         '''gets actual data. 
 
@@ -69,18 +75,22 @@ class saf(object):
                 y = nc['lat'][:].flatten() #
                 z = nc[self.locator.varlist[state.variable]][:].flatten()
 
-                #define grid
+                #define regular grid
                 xi, yi = np.meshgrid(
                         np.linspace(x.min(),x.max(),nc.dimensions['nx'].size),
                         np.linspace(y.min(),y.max(),nc.dimensions['ny'].size), 
                             )
 
-                zi = griddata(
-                        np.array([x,y]).transpose(),
-                        z, 
-                        (xi, yi), 
-                        method='linear',
-                        fill_value=np.nan)
+                #define Delaunay Triangulation
+                #https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.spatial.Delaunay.html
+                #does it once and re-uses for speed
+                if not self.tri: 
+                    self.tri = Delaunay(np.array([x,y]).transpose())
+
+                #Interpolate onto regular grid
+                interpolator = LinearNDInterpolator(self.tri, z)
+
+                zi = interpolator(np.array([xi,yi]).transpose())
 
                 zi = np.ma.masked_invalid(zi, copy=False)
                 zi = np.ma.masked_outside(zi, nc[self.locator.varlist[state.variable]].valid_range[0], nc[self.locator.varlist[state.variable]].valid_range[1], copy=False)
