@@ -15,18 +15,18 @@ class Dataset:
     """High-level class to relate navigators, loaders and views"""
     def __init__(self, pattern=None):
         self.pattern = pattern
+        if pattern is not None:
+            self._paths = glob.glob(pattern)
+        else:
+            self._paths = []
 
     def navigator(self):
         """Construct navigator"""
-        return Navigator([])
-
-    def loader(self):
-        """Construct loader"""
-        return Loader([])
+        return Navigator(self._paths)
 
     def map_view(self):
         """Construct view"""
-        return View(self.loader())
+        return View(Loader(self._paths))
 
 
 class View(object):
