@@ -2,6 +2,10 @@ class DriverNotFound(Exception):
     pass
 
 
+class UnknownFileType(Exception):
+    pass
+
+
 class FileNotFound(Exception):
     pass
 

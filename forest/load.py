@@ -23,7 +23,6 @@ import os
 from forest.export import export
 from forest import (
         exceptions,
-        drivers,
         data,
         db,
         gridded_forecast,
@@ -130,15 +129,6 @@ class Loader(object):
 
     @staticmethod
     def file_loader(file_type, pattern, label=None, locator=None):
-        try:
-            settings = {
-                "pattern": pattern
-            }
-            dataset = drivers.get_dataset(file_type, settings)
-            return dataset.loader()
-        except exceptions.DriverNotFound:
-            pass
-
         file_type = file_type.lower().replace("_", "")
         if file_type == 'rdt':
             return rdt.Loader(pattern)
@@ -159,4 +149,4 @@ class Loader(object):
         elif file_type == 'nearcast':
             return nearcast.NearCast(pattern)
         else:
-            raise Exception("unrecognised file_type: {}".format(file_type))
+            raise exceptions.UnknownFileType("unrecognised file_type: {}".format(file_type))

@@ -17,12 +17,16 @@ class Dataset:
         self.pattern = pattern
 
     def navigator(self):
-        """Construct appropriate navigator"""
+        """Construct navigator"""
         return Navigator([])
 
     def loader(self):
-        """Construct appropriate loader"""
+        """Construct loader"""
         return Loader([])
+
+    def map_view(self):
+        """Construct view"""
+        return View(self.loader())
 
 
 class View(object):
@@ -43,6 +47,9 @@ class View(object):
     @old_state
     @unique
     def render(self, state):
+        if state.valid_time is None:
+            return
+
         valid_time = _to_datetime(state.valid_time)
         frame = self.loader.load_date(valid_time)
         x, y = geo.web_mercator(

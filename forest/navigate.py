@@ -84,7 +84,6 @@ class FileSystemNavigator:
     def from_file_type(cls, paths, file_type, pattern=None):
         try:
             settings = {
-                "paths": paths,
                 "pattern": pattern}
             dataset = drivers.get_dataset(file_type, settings)
             return dataset.navigator()
