@@ -1,7 +1,28 @@
 from importlib import import_module
 from forest.exceptions import DriverNotFound
+from functools import wraps
 
 
+_CACHE = {}
+
+
+def _cache(f):
+    # Ensure per-server dataset instances
+    def wrapped(driver_name, settings=None):
+        uid = _uid(driver_name, settings)
+        if uid not in _CACHE:
+            _CACHE[uid] = f(driver_name, settings)
+        return _CACHE[uid]
+    return wrapped
+
+
+def _uid(driver_name, settings):
+    if settings is None:
+        return (driver_name,)
+    return (driver_name,) + tuple(settings[k] for k in sorted(settings.keys()))
+
+
+@_cache
 def get_dataset(driver_name, settings=None):
     """Find Dataset related to file type"""
     if settings is None:
