@@ -11,6 +11,19 @@ import bokeh.palettes
 import numpy as np
 
 
+class Dataset:
+    """High-level class to relate navigators, loaders and views"""
+    def __init__(self, pattern=None):
+        self.pattern = pattern
+
+    def navigator(self):
+        """Construct appropriate navigator"""
+        return Navigator([])
+
+    def loader(self):
+        """Construct appropriate loader"""
+        return Loader([])
+
 
 class View(object):
     def __init__(self, loader):

@@ -1,11 +1,12 @@
 import yaml
 import forest
 from forest import main
+from forest.drivers import earth_networks
 
 
 def test_earth_networks_loader_given_pattern():
     loader = forest.Loader.from_pattern("Label", "EarthNetworks*.txt", "earth_networks")
-    assert isinstance(loader, forest.earth_networks.Loader)
+    assert isinstance(loader, earth_networks.Loader)
 
 
 def test_build_loader_given_files():

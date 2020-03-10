@@ -7,7 +7,8 @@ from .exceptions import (
         ValidTimesNotFound,
         PressuresNotFound)
 from forest import (
-        earth_networks,
+        exceptions,
+        drivers,
         db,
         gridded_forecast,
         unified_model,
@@ -17,7 +18,8 @@ from forest import (
         saf,
         nearcast)
 
-from forest.drivers import ghrsstl4
+from forest.drivers import (
+    ghrsstl4)
 
 
 class Navigator:
@@ -80,6 +82,16 @@ class FileSystemNavigator:
 
     @classmethod
     def from_file_type(cls, paths, file_type, pattern=None):
+        try:
+            settings = {
+                "paths": paths,
+                "pattern": pattern}
+            dataset = drivers.get_dataset(file_type, settings)
+            return dataset.navigator()
+        except exceptions.DriverNotFound:
+            # TODO: Migrate all file types to forest.drivers
+            pass
+
         if file_type.lower() == "rdt":
             coordinates = rdt.Coordinates()
         elif file_type.lower() == "eida50":
@@ -95,8 +107,6 @@ class FileSystemNavigator:
             coordinates = unified_model.Coordinates()
         elif file_type.lower() == "saf":
             coordinates = saf.Coordinates()
-        elif file_type.lower() == "earth_networks":
-            return earth_networks.Navigator(paths)
         elif file_type.lower() == "nearcast":
             return nearcast.Navigator(pattern)
         else:

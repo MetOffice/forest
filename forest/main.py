@@ -6,6 +6,7 @@ import numpy as np
 import os
 import glob
 from forest import _profile as profile
+from forest.drivers import earth_networks
 from forest import (
         satellite,
         screen,
@@ -14,7 +15,6 @@ from forest import (
         data,
         load,
         view,
-        earth_networks,
         rdt,
         nearcast,
         geo,

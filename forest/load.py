@@ -22,9 +22,10 @@ testing.
 import os
 from forest.export import export
 from forest import (
+        exceptions,
+        drivers,
         data,
         db,
-        earth_networks,
         gridded_forecast,
         unified_model,
         rdt,
@@ -129,13 +130,20 @@ class Loader(object):
 
     @staticmethod
     def file_loader(file_type, pattern, label=None, locator=None):
+        try:
+            settings = {
+                "pattern": pattern
+            }
+            dataset = drivers.get_dataset(file_type, settings)
+            return dataset.loader()
+        except exceptions.DriverNotFound:
+            pass
+
         file_type = file_type.lower().replace("_", "")
         if file_type == 'rdt':
             return rdt.Loader(pattern)
         elif file_type == 'gpm':
             return data.GPM(pattern)
-        elif file_type == 'earthnetworks':
-            return earth_networks.Loader.pattern(pattern)
         elif file_type == 'eida50':
             return satellite.EIDA50(pattern)
         elif file_type == 'griddedforecast':
