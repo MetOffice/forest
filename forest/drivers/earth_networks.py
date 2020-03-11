@@ -34,7 +34,7 @@ class View(object):
         self.loader = loader
         palette = bokeh.palettes.all_palettes['Spectral'][11][::-1]
         self.color_mapper = bokeh.models.LinearColorMapper(low=-1000, high=0, palette=palette)
-        self.source = bokeh.models.ColumnDataSource({
+        self.empty_image = {
             "x": [],
             "y": [],
             "date": [],
@@ -42,7 +42,8 @@ class View(object):
             "latitude": [],
             "flash_type": [],
             "time_since_flash": []
-        })
+        }
+        self.source = bokeh.models.ColumnDataSource(self.empty_image)
 
     @old_state
     @unique
@@ -52,6 +53,8 @@ class View(object):
 
         valid_time = _to_datetime(state.valid_time)
         frame = self.loader.load_date(valid_time)
+        if len(frame) == 0:
+            return self.empty_image
         x, y = geo.web_mercator(
                 frame.longitude,
                 frame.latitude)

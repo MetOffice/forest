@@ -31,12 +31,14 @@ def unique(f):
 
         if len(args) == 2:
             self, value = args
+            key = (id(self), value)  # Distinguish wrapped methods
         else:
             value, = args
+            key = value
 
-        if (not called) or (value != previous):
+        if (not called) or (key != previous):
             called = True
-            previous = value
+            previous = key
             if len(args) == 2:
                 result = f(self, value)
             else:
