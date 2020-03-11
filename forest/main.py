@@ -7,6 +7,8 @@ import os
 import glob
 from forest import _profile as profile
 from forest import (
+        drivers,
+        exceptions,
         satellite,
         screen,
         tools,
@@ -14,7 +16,6 @@ from forest import (
         data,
         load,
         view,
-        earth_networks,
         rdt,
         nearcast,
         geo,
@@ -95,32 +96,43 @@ def main(argv=None):
             database = None
             if group.locator == "database":
                 database = db.get_database(group.database_path)
-            loader = load.Loader.group_args(
-                    group, args, database=database)
+            try:
+                loader = load.Loader.group_args(
+                        group, args, database=database)
+            except exceptions.UnknownFileType:
+                # TODO: Deprecate load.Loader.group_args()
+                continue
             data.add_loader(group.label, loader)
 
     renderers = {}
     viewers = {}
-    for name, loader in data.LOADERS.items():
-        if isinstance(loader, rdt.Loader):
-            viewer = rdt.View(loader)
-        elif isinstance(loader, earth_networks.Loader):
-            viewer = earth_networks.View(loader)
-        elif isinstance(loader, data.GPM):
-            viewer = view.GPMView(loader, color_mapper)
-        elif isinstance(loader, satellite.EIDA50):
-            viewer = view.EIDA50(loader, color_mapper)
-        elif isinstance(loader, nearcast.NearCast):
-            viewer = view.NearCast(loader, color_mapper)
-            viewer.set_hover_properties(nearcast.NEARCAST_TOOLTIPS)
-        elif isinstance(loader, intake_loader.IntakeLoader):
-            viewer = view.UMView(loader, color_mapper)
-            viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
-                                        intake_loader.INTAKE_FORMATTERS)
+    for group in config.file_groups:
+        if group.label in data.LOADERS:
+            loader = data.LOADERS[group.label]
+            if isinstance(loader, rdt.Loader):
+                viewer = rdt.View(loader)
+            elif isinstance(loader, data.GPM):
+                viewer = view.GPMView(loader, color_mapper)
+            elif isinstance(loader, satellite.EIDA50):
+                viewer = view.EIDA50(loader, color_mapper)
+            elif isinstance(loader, nearcast.NearCast):
+                viewer = view.NearCast(loader, color_mapper)
+                viewer.set_hover_properties(nearcast.NEARCAST_TOOLTIPS)
+            elif isinstance(loader, intake_loader.IntakeLoader):
+                viewer = view.UMView(loader, color_mapper)
+                viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
+                                            intake_loader.INTAKE_FORMATTERS)
+            else:
+                viewer = view.UMView(loader, color_mapper)
         else:
-            viewer = view.UMView(loader, color_mapper)
-        viewers[name] = viewer
-        renderers[name] = [
+            # Use dataset interface
+            settings = {
+                "pattern": group.pattern
+            }
+            dataset = drivers.get_dataset(group.file_type, settings)
+            viewer = dataset.map_view()
+        viewers[group.label] = viewer
+        renderers[group.label] = [
                 viewer.add_figure(f)
                 for f in figures]
 

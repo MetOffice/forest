@@ -1,11 +1,11 @@
 import yaml
 import forest
-from forest import main
+from forest import main, rdt
 
 
-def test_earth_networks_loader_given_pattern():
-    loader = forest.Loader.from_pattern("Label", "EarthNetworks*.txt", "earth_networks")
-    assert isinstance(loader, forest.earth_networks.Loader)
+def test_rdt_loader_given_pattern():
+    loader = forest.Loader.from_pattern("Label", "RDT*.json", "rdt")
+    assert isinstance(loader, rdt.Loader)
 
 
 def test_build_loader_given_files():
