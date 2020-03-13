@@ -36,6 +36,7 @@ from functools import lru_cache
 
 
 class Dataset:
+    """High-level NWC/SAF dataset"""
     def __init__(self,
                  label=None,
                  pattern=None,
@@ -45,9 +46,29 @@ class Dataset:
         self.color_mapper = color_mapper
         self.locator = Locator(self.pattern)
 
+    def navigator(self):
+        """Construct navigator"""
+        return Navigator()
+
     def map_view(self):
+        """Construct view"""
         loader = saf(self.pattern, self.label, self.locator)
         return view.UMView(loader, self.color_mapper)
+
+
+class Navigator:
+    """Navigate NWC/SAF dataset"""
+    def variables(self):
+        return []
+
+    def initial_times(self):
+        return []
+
+    def valid_times(self):
+        return []
+
+    def pressures(self):
+        return []
 
 
 class saf(object):

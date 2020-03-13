@@ -31,7 +31,7 @@ from forest import (
         satellite,
         intake_loader,
         nearcast)
-from forest.drivers import saf, ghrsstl4
+from forest.drivers import ghrsstl4
 
 
 __all__ = []
