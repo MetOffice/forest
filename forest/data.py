@@ -308,15 +308,31 @@ def load_image(path, variable, itime, ipressure):
     return load_image_pts(path, variable, (itime,), (itime, ipressure))
 
 
+def _image_cache(hash_func):
+    """Simple wrapper to cache images per-server"""
+    def inner(load_func):
+        def innermost(*args):
+            key = hash_func(*args)
+            if key not in IMAGES:
+                # TODO: Replace this infinite cache
+                IMAGES[key] = load_func(*args)
+            return IMAGES[key]
+        return innermost
+    return inner
+
+
+def _image_hash(path, variable, pts_3d, pts_4d):
+    """Convert arguments to hashable type"""
+    return (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
+
+
+@_image_cache(_image_hash)
 def load_image_pts(path, variable, pts_3d, pts_4d):
-    key = (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
-    if key in IMAGES:
-        return IMAGES[key]
-    else:
-        try:
-            lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
-        except:
-            lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
+    """Load bokeh image glyph data from file using slices"""
+    try:
+        lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
+    except:
+        lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
 
     # Units
     if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
@@ -343,9 +359,7 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
         lons = np.roll(lons, shift_by)
         values = np.roll(values, shift_by, axis=1)
 
-    image = geo.stretch_image(lons, lats, values)
-    IMAGES[key] = image
-    return image
+    return geo.stretch_image(lons, lats, values)
 
 
 def _load_cube(path, variable, pts_3d, pts_4d):
