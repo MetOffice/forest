@@ -18,9 +18,6 @@ from forest import (
         saf,
         nearcast)
 
-from forest.drivers import (
-    ghrsstl4)
-
 
 class Navigator:
     def __init__(self, config):
@@ -100,8 +97,6 @@ class FileSystemNavigator:
             return gridded_forecast.Navigator(paths)
         elif file_type.lower() == 'intake':
             return intake_loader.Navigator()
-        elif file_type.lower() == 'ghrsstl4':
-            return ghrsstl4.Navigator(paths)
         elif file_type.lower() == "unified_model":
             coordinates = unified_model.Coordinates()
         elif file_type.lower() == "saf":

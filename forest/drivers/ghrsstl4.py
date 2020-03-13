@@ -17,7 +17,9 @@ except ModuleNotFoundError:
     # ReadTheDocs can't import iris
     iris = None
 
+import glob
 from forest import geo
+from forest.view import UMView
 
 
 def empty_image():
@@ -62,8 +64,6 @@ def coordinates(valid_time, initial_time, pressures, pressure):
         'length': [length],
         'level': [level]
     }
-
-
 def _is_valid_cube(cube):
     """Return True if, and only if, the cube conforms to a GHRSST data specification"""
     attributes = cube.metadata.attributes
@@ -101,6 +101,24 @@ def _load(pattern):
         cube_mapping[name] = cube
     return cube_mapping
 
+class Dataset:
+    """High-level class to relate navigators, loaders and views"""
+    def __init__(self, label=None, pattern=None, color_mapper=None, **kwargs):
+        self._label = label
+        self.pattern = pattern
+        self.color_mapper = color_mapper
+        if pattern is not None:
+            self._paths = glob.glob(pattern)
+        else:
+            self._paths = []
+
+    def navigator(self):
+        """Construct navigator"""
+        return Navigator(self._paths)
+
+    def map_view(self):
+        """Construct view"""
+        return UMView(ImageLoader(self._label, self._paths), self.color_mapper)
 
 class ImageLoader:
     def __init__(self, label, pattern):

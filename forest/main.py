@@ -127,7 +127,9 @@ def main(argv=None):
         else:
             # Use dataset interface
             settings = {
-                "pattern": group.pattern
+                "label": group.label,
+                "pattern": group.pattern,
+                "color_mapper": color_mapper
             }
             dataset = drivers.get_dataset(group.file_type, settings)
             viewer = dataset.map_view()

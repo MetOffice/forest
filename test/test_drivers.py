@@ -1,8 +1,9 @@
+import pytest
 from forest import drivers
 
 
-def test_singleton_dataset():
-    driver_name = "earth_networks"
+@pytest.mark.parametrize("driver_name", ["earth_networks", "ghrsstl4"])
+def test_singleton_dataset(driver_name):
     datasets = (
         drivers.get_dataset(driver_name),
         drivers.get_dataset(driver_name))
