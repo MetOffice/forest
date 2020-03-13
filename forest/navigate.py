@@ -15,8 +15,10 @@ from forest import (
         eida50,
         rdt,
         intake_loader,
-        saf,
         nearcast)
+from forest.drivers import (
+    saf,
+    ghrsstl4)
 
 
 class Navigator:
