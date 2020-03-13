@@ -39,12 +39,20 @@ def stretch_image(lons, lats, values):
                    size of latitude and longitude arrays.
     :return: A dictionary that can be used with the bokeh image glyph.
     """
-    gx, _ = web_mercator(
-        lons,
-        np.zeros(len(lons), dtype="d"))
-    _, gy = web_mercator(
-        np.zeros(len(lats), dtype="d"),
-        lats)
+    if (lons.ndim == 1):
+        gx, _ = web_mercator(
+            lons,
+            np.zeros(len(lons), dtype="d"))
+        _, gy = web_mercator(
+            np.zeros(len(lats), dtype="d"),
+            lats)
+    elif (lons.ndim == 2) and (lats.ndim == 2):
+        gx, gy = web_mercator(lons, lats)
+        gx = gx.reshape(lats.shape)
+        gy = gy.reshape(lons.shape)
+    else:
+        raise Exception("Either 1D or 2D lons/lats")
+
     if datashader:
         x_range = (gx.min(), gx.max())
         y_range = (gy.min(), gy.max())
@@ -53,8 +61,14 @@ def stretch_image(lons, lats, values):
         image = custom_stretch(values, gx, gy)
     x = gx.min()
     y = gy.min()
-    dw = gx[-1] - gx[0]
-    dh = gy[-1] - gy[0]
+    if gx.ndim == 1:
+        # 1D image extent
+        dw = gx[-1] - gx[0]
+        dh = gy[-1] - gy[0]
+    else:
+        # 2D image extent
+        dw = gx.max() - gx.min()
+        dh = gy.max() - gy.min()
     return {
         "x": [x],
         "y": [y],
@@ -80,8 +94,20 @@ def datashader_stretch(values, gx, gy, x_range, y_range):
                                plot_width=values.shape[1],
                                x_range=x_range,
                                y_range=y_range)
-    xarr = xarray.DataArray(values, coords=[('y', gy), ('x', gx)], name='Z')
-    image = canvas.quadmesh(xarr)
+    if gx.ndim == 1:
+        # 1D Quadmesh
+        xarr = xarray.DataArray(values, coords=[('y', gy), ('x', gx)], name='Z')
+        image = canvas.quadmesh(xarr)
+    else:
+        # 2D Quadmesh
+        xarr = xarray.DataArray(values,
+                                dims=['Y', 'X'],
+                                coords={
+                                    'Qx': (['Y', 'X'], gx),
+                                    'Qy': (['Y', 'X'], gy)
+                                },
+                                name='Z')
+        image = canvas.quadmesh(xarr, x='Qx', y='Qy')
     return np.ma.masked_array(image.values,
                           mask=np.isnan(
                               image.values))

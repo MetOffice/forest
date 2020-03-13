@@ -86,29 +86,30 @@ class Loader(object):
         print(valid_time, self.locator.find_paths(valid_time))
         for path in self.locator.find_paths(valid_time):
             with netCDF4.Dataset(path) as nc:
-                # Regrid to regular grid
-                x = nc['lon'][:].flatten() # lat & lon both 2D arrays
-                y = nc['lat'][:].flatten() #
+                x = nc['lon'][:]
+                y = nc['lat'][:]
                 var = nc[self.locator.long_name_to_variable[variable]]
-                z = var[:].flatten()
+                z = var[:]
+                print(z.shape)
 
-                # TODO: Replace with datashader pipeline
-                # Define grid
-                xi, yi = np.meshgrid(
-                        np.linspace(x.min(),x.max(),nc.dimensions['nx'].size),
-                        np.linspace(y.min(),y.max(),nc.dimensions['ny'].size),
-                            )
+                # # TODO: Replace with datashader pipeline
+                # # Define grid
+                # xi, yi = np.meshgrid(
+                #         np.linspace(x.min(),x.max(),nc.dimensions['nx'].size),
+                #         np.linspace(y.min(),y.max(),nc.dimensions['ny'].size),
+                #             )
 
-                zi = griddata(
-                        np.array([x,y]).transpose(),
-                        z,
-                        (xi, yi),
-                        method='linear',
-                        fill_value=np.nan)
+                # zi = griddata(
+                #         np.array([x,y]).transpose(),
+                #         z,
+                #         (xi, yi),
+                #         method='linear',
+                #         fill_value=np.nan)
 
-                zi = np.ma.masked_invalid(zi, copy=False)
-                zi = np.ma.masked_outside(zi, var.valid_range[0], var.valid_range[1], copy=False)
-                data = geo.stretch_image(xi[0,:], yi[:,0], zi)
+                # zi = np.ma.masked_invalid(zi, copy=False)
+                # zi = np.ma.masked_outside(zi, var.valid_range[0], var.valid_range[1], copy=False)
+                # data = geo.stretch_image(xi[0,:], yi[:,0], zi)
+                data = geo.stretch_image(x, y, z)
                 data.update(coordinates(valid_time, initial_time, pressures, pressure))
                 data['name'] = [str(var.long_name)]
                 if 'units' in var.ncattrs():
