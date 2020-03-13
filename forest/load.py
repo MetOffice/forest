@@ -32,7 +32,6 @@ from forest import (
         intake_loader,
         saf,
         nearcast)
-from forest.drivers import ghrsstl4
 
 
 __all__ = []
@@ -138,8 +137,6 @@ class Loader(object):
             return satellite.EIDA50(pattern)
         elif file_type == 'griddedforecast':
             return gridded_forecast.ImageLoader(label, pattern)
-        elif file_type == 'ghrsstl4':
-            return ghrsstl4.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
         elif file_type == 'intake':

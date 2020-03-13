@@ -155,9 +155,8 @@ class Test_ImageLoader(unittest.TestCase):
     @patch('forest.drivers.ghrsstl4._load')
     def test_init(self, load):
         load.return_value = sentinel.cubes
-        result = ghrsstl4.ImageLoader(sentinel.label, sentinel.pattern)
+        result = ghrsstl4.ImageLoader(sentinel.pattern)
         load.assert_called_once_with(sentinel.pattern)
-        self.assertEqual(result._label, sentinel.label)
         self.assertEqual(result._cubes, sentinel.cubes)
 
     @patch('forest.drivers.ghrsstl4.empty_image')
@@ -216,7 +215,7 @@ class Test_ImageLoader(unittest.TestCase):
                                             sentinel.pressures,
                                             sentinel.pressure)
         self.assertEqual(result, {'stretched_image': True, 'coordinates': True,
-                                  'name': ['my-label'], 'units': ['my-units']})
+                                  'units': ['my-units']})
 
 
 class Test_Navigator(unittest.TestCase):

@@ -174,17 +174,6 @@ def test_FileSystemNavigator_from_file_type__griddedforecast(navigator_cls):
     assert navigator == sentinel.navigator
 
 
-@patch('forest.drivers.ghrsstl4.Navigator')
-def test_FileSystemNavigator_from_file_type__ghrsstl4(navigator_cls):
-    navigator_cls.return_value = sentinel.navigator
-
-    navigator = navigate.FileSystemNavigator.from_file_type(sentinel.paths,
-                                                            'ghrssTL4')
-
-    navigator_cls.assert_called_once_with(sentinel.paths)
-    assert navigator == sentinel.navigator
-
-
 @patch('forest.unified_model.Coordinates')
 def test_FileSystemNavigator_from_file_type__unified_model(coordinates_cls):
     coordinates_cls.return_value = sentinel.coordinates

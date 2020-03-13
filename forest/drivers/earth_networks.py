@@ -13,7 +13,7 @@ import numpy as np
 
 class Dataset:
     """High-level class to relate navigators, loaders and views"""
-    def __init__(self, pattern=None):
+    def __init__(self, pattern=None, **kwargs):
         self.pattern = pattern
         if pattern is not None:
             self._paths = glob.glob(pattern)
