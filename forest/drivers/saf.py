@@ -30,9 +30,25 @@ import netCDF4
 from forest.gridded_forecast import _to_datetime, empty_image, coordinates
 from forest.util import timeout_cache
 
-from forest import geo
+from forest import geo, view
 
 from functools import lru_cache
+
+
+class Dataset:
+    def __init__(self,
+                 label=None,
+                 pattern=None,
+                 color_mapper=None):
+        self.label = label
+        self.pattern = pattern
+        self.color_mapper = color_mapper
+        self.locator = Locator(self.pattern)
+
+    def map_view(self):
+        loader = saf(self.pattern, self.label, self.locator)
+        return view.UMView(loader, self.color_mapper)
+
 
 class saf(object):
     def __init__(self, pattern, label=None, locator=None):

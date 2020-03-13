@@ -141,8 +141,6 @@ class Loader(object):
             return data.DBLoader(label, pattern, locator)
         elif file_type == 'intake':
             return intake_loader.IntakeLoader(pattern)
-        elif file_type == 'saf':
-            return saf.saf(pattern, label, locator)
         elif file_type == 'nearcast':
             return nearcast.NearCast(pattern)
         else:
