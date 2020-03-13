@@ -42,24 +42,24 @@ class saf(object):
         if(locator):
             self.locator = locator
         else:
-            self.locator = Locator(pattern)        
+            self.locator = Locator(pattern)
 
         if(label):
             self.label = label
 
     @lru_cache(maxsize=16)
     def image(self, state):
-        '''gets actual data. 
+        '''gets actual data.
 
-        X and Y passed to :meth:`geo.stretch_image` must be 1D arrays. NWCSAF data 
+        X and Y passed to :meth:`geo.stretch_image` must be 1D arrays. NWCSAF data
         are not on a regular grid so must be regridded.
 
-        `values` passed to :meth:`geo.stretch_image` must be a NumPy Masked Array. 
+        `values` passed to :meth:`geo.stretch_image` must be a NumPy Masked Array.
 
         :param state: Bokeh State object of info from UI
         :returns: Output data from :meth:`geo.stretch_image`'''
         data = empty_image()
-        for nc in self.locator._sets: 
+        for nc in self.locator._sets:
             if str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == state.valid_time and self.locator.varlist[state.variable] in nc.variables:
                 #regrid to regular grid
                 x = nc['lon'][:].flatten() # lat & lon both 2D arrays
@@ -69,13 +69,13 @@ class saf(object):
                 #define grid
                 xi, yi = np.meshgrid(
                         np.linspace(x.min(),x.max(),nc.dimensions['nx'].size),
-                        np.linspace(y.min(),y.max(),nc.dimensions['ny'].size), 
+                        np.linspace(y.min(),y.max(),nc.dimensions['ny'].size),
                             )
 
                 zi = griddata(
                         np.array([x,y]).transpose(),
-                        z, 
-                        (xi, yi), 
+                        z,
+                        (xi, yi),
                         method='linear',
                         fill_value=np.nan)
 
@@ -92,20 +92,20 @@ class saf(object):
                         'units': [str(nc[self.locator.varlist[state.variable]].units)]
                     })
 
-          
+
         return data
-          
+
 class Locator(object):
     def __init__(self, pattern):
         self.pattern = pattern
         self._sets = []
         for path in self.paths:
             #possibly use MFDataset which takes a glob pattern
-            self._sets.append(netCDF4.Dataset(path)) 
+            self._sets.append(netCDF4.Dataset(path))
 
         #Get variable names and keys
         self.varlist = {}
-        for nc in self._sets: 
+        for nc in self._sets:
             for variable in nc.variables:
                 #only display vars with lon/lat coords
                 if('coordinates' in nc.variables[variable].ncattrs() and nc.variables[variable].coordinates == "lon lat"):
@@ -140,7 +140,7 @@ class Locator(object):
         :param path: string representation of a path
         :returns: python Datetime object
         '''
-        # filename of form S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc 
+        # filename of form S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc
         groups = re.search("[0-9]{8}T[0-9]{6}Z", os.path.basename(path))
         if groups is not None:
             return datetime.datetime.strptime(groups[0].replace('Z','UTC'), "%Y%m%dT%H%M%S%Z") # always UTC
@@ -164,7 +164,7 @@ class Coordinates(object):
          :param pattern: glob pattern of filepaths
          :returns: list of strings of variable names
          '''
-        self.locator = Locator(pattern)        
+        self.locator = Locator(pattern)
 
         #return list of vars from Locator
         return self.locator.varlist.keys()
@@ -185,7 +185,7 @@ class Coordinates(object):
 
     def pressures(self, path, variable):
         '''There's no pressure levels in SAF data.
-        
+
         :returns: Nothing
         '''
-        return 
+        return
