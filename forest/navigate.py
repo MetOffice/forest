@@ -16,8 +16,6 @@ from forest import (
         rdt,
         intake_loader,
         nearcast)
-from forest.drivers import (
-    ghrsstl4)
 
 
 class Navigator:
