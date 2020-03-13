@@ -127,6 +127,7 @@ def main(argv=None):
         else:
             # Use dataset interface
             settings = {
+                "label": group.label,
                 "pattern": group.pattern,
                 "color_mapper": color_mapper
             }

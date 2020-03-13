@@ -64,8 +64,6 @@ def coordinates(valid_time, initial_time, pressures, pressure):
         'length': [length],
         'level': [level]
     }
-
-
 def _is_valid_cube(cube):
     """Return True if, and only if, the cube conforms to a GHRSST data specification"""
     attributes = cube.metadata.attributes
@@ -105,7 +103,8 @@ def _load(pattern):
 
 class Dataset:
     """High-level class to relate navigators, loaders and views"""
-    def __init__(self, pattern=None, color_mapper=None, **kwargs):
+    def __init__(self, label=None, pattern=None, color_mapper=None, **kwargs):
+        self._label = label
         self.pattern = pattern
         self.color_mapper = color_mapper
         if pattern is not None:
@@ -119,10 +118,11 @@ class Dataset:
 
     def map_view(self):
         """Construct view"""
-        return UMView(ImageLoader(self._paths), self.color_mapper)
+        return UMView(ImageLoader(self._label, self._paths), self.color_mapper)
 
 class ImageLoader:
-    def __init__(self, pattern):
+    def __init__(self, label, pattern):
+        self._label = label
         self._cubes = _load(pattern)
 
     def image(self, state):
@@ -138,6 +138,7 @@ class ImageLoader:
             data.update(coordinates(state.valid_time, state.initial_time,
                                     state.pressures, state.pressure))
             data.update({
+                'name': [self._label],
                 'units': [str(cube.units)]
             })
         return data
