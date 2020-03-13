@@ -316,6 +316,10 @@ def _image_cache(hash_func):
             if key not in IMAGES:
                 # TODO: Replace this infinite cache
                 IMAGES[key] = load_func(*args)
+            total_bytes = 0
+            for data in IMAGES.values():
+                total_bytes +=  _image_size(data)
+            print("Total bytes", total_bytes)
             return IMAGES[key]
         return innermost
     return inner
@@ -324,6 +328,11 @@ def _image_cache(hash_func):
 def _image_hash(path, variable, pts_3d, pts_4d):
     """Convert arguments to hashable type"""
     return (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
+
+
+def _image_size(data):
+    # Approx. image payload size
+    return sum(arr.nbytes for arr in data["image"])
 
 
 @_image_cache(_image_hash)

@@ -7,19 +7,35 @@
 {% block contents %}
     <div id="sidenav" class="sidenav">
             <button type="button" onclick="closeId('sidenav')">Close</button>
-            {{ embed(roots.controls) | indent(10) }}
+        {% for root in roots %}
+            {% if root.name == 'controls' %}
+                {{ embed(roots.controls) | indent(10) }}
+            {% endif %}
+        {% endfor %}
     </div>
     <div id="diagrams" class="diagrams">
             <button type="button" onclick="closeId('diagrams')">Close</button>
-            {{ embed(roots.series) | indent(10) }}
+            {% for root in roots %}
+                {% if root.name == 'series' %}
+                    {{ embed(roots.series) | indent(10) }}
+                {% endif %}
+            {% endfor %}
     </div>
 
     <nav>
         <div class="display-inline-block float-left">
-        {{ embed(roots.sidenav_button) | indent(10) }}
+        {% for root in roots %}
+            {% if root.name == 'sidenav_button' %}
+                {{ embed(roots.sidenav_button) | indent(10) }}
+            {% endif %}
+        {% endfor %}
         </div>
         <div class="margin-left-110 display-inline-block float-left">
-        {{ embed(roots.headline) | indent(10) }}
+        {% for root in roots %}
+            {% if root.name == 'headline' %}
+                {{ embed(roots.headline) | indent(10) }}
+            {% endif %}
+        {% endfor %}
         </div>
         <!-- Embed optional button -->
         {% for root in roots %}
@@ -36,16 +52,28 @@
 
     <!-- Layout figure row -->
     <div id="figures">
-        {{ embed(roots.figures) | indent(10) }}
+        {% for root in roots %}
+            {% if root.name == 'figures' %}
+                {{ embed(roots.figures) | indent(10) }}
+            {% endif %}
+        {% endfor %}
     </div>
 
     <!-- Layout footer widgets -->
     <footer>
         <div id="colorbar" class="colorbar">
-            {{ embed(roots.colorbar) | indent(10) }}
+            {% for root in roots %}
+                {% if root.name == 'colorbar' %}
+                    {{ embed(roots.colorbar) | indent(10) }}
+                {% endif %}
+            {% endfor %}
         </div>
         <div id="time" class="time">
-            {{ embed(roots.time) | indent(10) }}
+            {% for root in roots %}
+                {% if root.name == 'time' %}
+                    {{ embed(roots.time) | indent(10) }}
+                {% endif %}
+            {% endfor %}
         </div>
     </footer>
 

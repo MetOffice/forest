@@ -2,9 +2,7 @@ import bokeh.plotting
 import bokeh.models
 import bokeh.events
 import bokeh.colors
-import numpy as np
 import os
-import glob
 from forest import _profile as profile
 from forest import (
         drivers,
@@ -26,9 +24,7 @@ import forest.components
 from forest.components import tiles
 import forest.config as cfg
 import forest.middlewares as mws
-from forest.observe import Observable
 from forest.db.util import autolabel
-import datetime as dt
 
 
 def main(argv=None):
