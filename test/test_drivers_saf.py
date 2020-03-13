@@ -44,3 +44,14 @@ def test_navigator_valid_times(navigator):
 def test_navigator_pressures(navigator):
     pattern, variable, initial_time = "saf.nc", None, None
     assert navigator.pressures(pattern, variable, initial_time) == []
+
+
+def test_loader():
+    # Create seam to pass test data
+    variable = None
+    initial_time = None
+    valid_time = None
+    pressures = None
+    pressure = None
+    loader = saf.saf("saf.nc")
+    loader._image(variable, initial_time, valid_time, pressures, pressure)
