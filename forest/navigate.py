@@ -17,7 +17,6 @@ from forest import (
         intake_loader,
         nearcast)
 from forest.drivers import (
-    saf,
     ghrsstl4)
 
 
@@ -101,8 +100,6 @@ class FileSystemNavigator:
             return intake_loader.Navigator()
         elif file_type.lower() == "unified_model":
             coordinates = unified_model.Coordinates()
-        elif file_type.lower() == "saf":
-            coordinates = saf.Coordinates()
         elif file_type.lower() == "nearcast":
             return nearcast.Navigator(pattern)
         else:

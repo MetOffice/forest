@@ -10,7 +10,7 @@ Loads data from NWCSAF satellite NetCDF files.
 .. autoclass:: Locator
     :members:
 
-.. autoclass:: Coordinates
+.. autoclass:: Navigator
     :members:
 
 """
@@ -54,21 +54,6 @@ class Dataset:
         """Construct view"""
         loader = saf(self.pattern, self.label, self.locator)
         return view.UMView(loader, self.color_mapper)
-
-
-class Navigator:
-    """Navigate NWC/SAF dataset"""
-    def variables(self):
-        return []
-
-    def initial_times(self):
-        return []
-
-    def valid_times(self):
-        return []
-
-    def pressures(self):
-        return []
 
 
 class saf(object):
@@ -182,18 +167,18 @@ class Locator(object):
         if groups is not None:
             return datetime.datetime.strptime(groups[0].replace('Z','UTC'), "%Y%m%dT%H%M%S%Z") # always UTC
 
-class Coordinates(object):
+class Navigator:
     """Menu system interface"""
-    def initial_time(self, pattern):
+    def initial_times(self, pattern, variable):
         '''Return initial time.
 
         :param pattern: Glob pattern of filepaths
         :returns: Python Datetime object
         '''
-        times = self.valid_times(pattern, None)
+        times = self.valid_times(pattern, None, None)
         if len(times) > 0:
-            return times[0]
-        return None
+            return [times[0]]
+        return []
 
     def variables(self, pattern):
         '''Get list of variables.
@@ -202,11 +187,9 @@ class Coordinates(object):
          :returns: list of strings of variable names
          '''
         self.locator = Locator(pattern)
+        return list(sorted(self.locator.varlist.keys()))
 
-        #return list of vars from Locator
-        return self.locator.varlist.keys()
-
-    def valid_times(self, pattern, variable):
+    def valid_times(self, pattern, variable, initial_time):
         '''Gets valid times from input files
 
         :param pattern: Glob of file paths
@@ -220,9 +203,9 @@ class Coordinates(object):
                 times.append(str(datetime.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')))
         return times
 
-    def pressures(self, path, variable):
+    def pressures(self, path, variable, initial_time):
         '''There's no pressure levels in SAF data.
 
-        :returns: Nothing
+        :returns: empty list
         '''
-        return
+        return []
