@@ -1,3 +1,4 @@
+import datetime as dt
 import pytest
 import bokeh.models
 import forest.drivers
@@ -15,7 +16,7 @@ def dataset():
 
 @pytest.fixture
 def navigator():
-    return saf.Navigator()
+    return saf.Navigator(saf.Locator("fake.nc"))
 
 
 def test_dataset_map_view(dataset):
@@ -33,7 +34,7 @@ def test_navigator_variables(navigator):
 
 def test_navigator_initial_times(navigator):
     pattern, variable = "saf.nc", None
-    assert navigator.initial_times(pattern, variable) == []
+    assert navigator.initial_times(pattern, variable) == [dt.datetime(1970, 1, 1)]
 
 
 def test_navigator_valid_times(navigator):
@@ -53,5 +54,5 @@ def test_loader():
     valid_time = None
     pressures = None
     pressure = None
-    loader = saf.saf("saf.nc")
+    loader = saf.Loader(saf.Locator("saf.nc"))
     loader._image(variable, initial_time, valid_time, pressures, pressure)

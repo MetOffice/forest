@@ -48,23 +48,18 @@ class Dataset:
 
     def navigator(self):
         """Construct navigator"""
-        return Navigator()
+        return Navigator(self.locator)
 
     def map_view(self):
         """Construct view"""
-        loader = saf(self.pattern, self.label, self.locator)
+        loader = Loader(self.locator, self.label)
         return view.UMView(loader, self.color_mapper)
 
 
-class saf(object):
-    def __init__(self, pattern, label=None, locator=None):
-        '''Object to process SAF NetCDF files
-
-        :pattern: shell-style glob pattern of input file(s)'''
-        if(locator):
-            self.locator = locator
-        else:
-            self.locator = Locator(pattern)
+class Loader(object):
+    def __init__(self, locator, label=None):
+        '''Object to process SAF NetCDF files'''
+        self.locator = locator
 
         if(label):
             self.label = label
@@ -88,39 +83,36 @@ class saf(object):
 
     def _image(self, variable, initial_time, valid_time, pressures, pressure):
         data = empty_image()
-        for path in self.locator.paths:
+        print(valid_time, self.locator.find_paths(valid_time))
+        for path in self.locator.find_paths(valid_time):
             with netCDF4.Dataset(path) as nc:
-                if str(dt.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')) == valid_time and self.locator.varlist[variable] in nc.variables:
-                    #regrid to regular grid
-                    x = nc['lon'][:].flatten() # lat & lon both 2D arrays
-                    y = nc['lat'][:].flatten() #
-                    z = nc[self.locator.varlist[variable]][:].flatten()
+                # Regrid to regular grid
+                x = nc['lon'][:].flatten() # lat & lon both 2D arrays
+                y = nc['lat'][:].flatten() #
+                var = nc[self.locator.long_name_to_variable[variable]]
+                z = var[:].flatten()
 
-                    #define grid
-                    xi, yi = np.meshgrid(
-                            np.linspace(x.min(),x.max(),nc.dimensions['nx'].size),
-                            np.linspace(y.min(),y.max(),nc.dimensions['ny'].size),
-                                )
+                # TODO: Replace with datashader pipeline
+                # Define grid
+                xi, yi = np.meshgrid(
+                        np.linspace(x.min(),x.max(),nc.dimensions['nx'].size),
+                        np.linspace(y.min(),y.max(),nc.dimensions['ny'].size),
+                            )
 
-                    zi = griddata(
-                            np.array([x,y]).transpose(),
-                            z,
-                            (xi, yi),
-                            method='linear',
-                            fill_value=np.nan)
+                zi = griddata(
+                        np.array([x,y]).transpose(),
+                        z,
+                        (xi, yi),
+                        method='linear',
+                        fill_value=np.nan)
 
-                    zi = np.ma.masked_invalid(zi, copy=False)
-                    zi = np.ma.masked_outside(zi, nc[self.locator.varlist[variable]].valid_range[0], nc[self.locator.varlist[variable]].valid_range[1], copy=False)
-                    data = geo.stretch_image(xi[0,:], yi[:,0], zi)
-                    #data = geo.stretch_image(x[0,:], y[:,0], nc[variable][:])
-                    data.update(coordinates(valid_time, initial_time, pressures, pressure))
-                    data.update({
-                        'name': [str(nc[self.locator.varlist[variable]].long_name)],
-                    })
-                    if 'units' in nc[self.locator.varlist[variable]].ncattrs():
-                        data.update({
-                            'units': [str(nc[self.locator.varlist[variable]].units)]
-                        })
+                zi = np.ma.masked_invalid(zi, copy=False)
+                zi = np.ma.masked_outside(zi, var.valid_range[0], var.valid_range[1], copy=False)
+                data = geo.stretch_image(xi[0,:], yi[:,0], zi)
+                data.update(coordinates(valid_time, initial_time, pressures, pressure))
+                data['name'] = [str(var.long_name)]
+                if 'units' in var.ncattrs():
+                    data['units'] = [str(var.units)]
         return data
 
 
@@ -128,9 +120,12 @@ class Locator(object):
     def __init__(self, pattern):
         self.pattern = pattern
 
+        # Parse dates
+        self.date_to_path = {self.parse_date(path): path for path in self.paths}
+
         # Get variable names and keys
         self.long_name_to_variable = {}
-        for path in self.paths:
+        for path in self.paths[-1:]:
             with netCDF4.Dataset(path) as nc:
                 for variable, var in nc.variables.items():
                     # Only display variables with lon/lat coords
@@ -146,10 +141,11 @@ class Locator(object):
     def find(pattern):
         return sorted(glob.glob(pattern))
 
-    def dates(self, paths):
-        return np.array([
-            self.parse_date(p) for p in paths],
-            dtype='datetime64[s]')
+    def find_paths(self, date):
+        if date in self.date_to_path:
+            return [self.date_to_path[date]]
+        else:
+            return []
 
     @staticmethod
     def parse_date(path):
@@ -166,6 +162,9 @@ class Locator(object):
 
 class Navigator:
     """Menu system interface"""
+    def __init__(self, locator):
+        self.locator = locator
+
     def initial_times(self, pattern, variable):
         """Satellite data has no concept of initial time"""
         return [dt.datetime(1970, 1, 1)]
@@ -176,7 +175,6 @@ class Navigator:
          :param pattern: glob pattern of filepaths
          :returns: list of strings of variable names
          '''
-        self.locator = Locator(pattern)
         return list(sorted(self.locator.long_name_to_variable.keys()))
 
     def valid_times(self, pattern, variable, initial_time):
@@ -186,14 +184,7 @@ class Navigator:
         :param variable: String of variable name
         :return: List of Date strings
         '''
-        return [dt.datetime(1970, 1, 1)] # For now
-
-        self.locator = Locator(pattern)
-        times = []
-        for nc in self.locator._sets:
-            if variable is None or self.locator.varlist[variable] in nc.variables:
-                times.append(str(dt.datetime.strptime(nc.nominal_product_time.replace('Z','UTC'), '%Y-%m-%dT%H:%M:%S%Z')))
-        return times
+        return list(sorted(self.locator.date_to_path.keys()))
 
     def pressures(self, path, variable, initial_time):
         '''There's no pressure levels in SAF data.
