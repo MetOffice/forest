@@ -15,7 +15,6 @@ Loads data from NWCSAF satellite NetCDF files.
 
 """
 import datetime as dt
-import collections
 import glob
 import re
 import os
@@ -69,6 +68,7 @@ class Loader:
 
     def _image(self, variable, initial_time, valid_time, pressures, pressure):
         data = empty_image()
+        self.locator.sync()
         for path in self.locator.find_paths(valid_time):
             with netCDF4.Dataset(path) as nc:
                 x = nc['lon'][:]
@@ -87,36 +87,45 @@ class Locator:
     """Locate SAF files"""
     def __init__(self, pattern):
         self.pattern = pattern
-
-        # Parse dates
-        self.date_to_path = {self.parse_date(path): path for path in self.paths}
-
-        # Get variable names and keys
+        self._paths = []
+        self._date_to_path = {}
         self.long_name_to_variable = {}
-        for path in self.paths[-1:]:
-            with netCDF4.Dataset(path) as nc:
-                for variable, var in nc.variables.items():
-                    # Only display variables with lon/lat coords
-                    if('coordinates' in var.ncattrs() and var.coordinates == "lon lat"):
-                        self.long_name_to_variable[var.long_name] = variable
-
-    @property
-    def paths(self):
-        return self.find(self.pattern)
-
-    @staticmethod
-    @timeout_cache(dt.timedelta(minutes=10))
-    def find(pattern):
-        return sorted(glob.glob(pattern))
 
     def find_paths(self, date):
-        if date in self.date_to_path:
-            return [self.date_to_path[date]]
+        """Find a file(s) containing information related to date"""
+        if date in self._date_to_path:
+            return [self._date_to_path[date]]
         else:
             return []
 
+    def variables(self):
+        """Available variables"""
+        return list(sorted(self.long_name_to_variable.keys()))
+
+    def valid_times(self):
+        """Available validity times"""
+        return list(sorted(self._date_to_path.keys()))
+
+    @timeout_cache(dt.timedelta(minutes=10))
+    def sync(self):
+        """Synchronize with file system"""
+        self._paths = self._find(self.pattern)
+        self._date_to_path = {self._parse_date(path): path for path in self._paths}
+        if len(self.long_name_to_variable) == 0:
+            # Get variable names and keys (performed once)
+            for path in self._paths[-1:]:
+                with netCDF4.Dataset(path) as nc:
+                    for variable, var in nc.variables.items():
+                        # Only display variables with lon/lat coords
+                        if('coordinates' in var.ncattrs() and var.coordinates == "lon lat"):
+                            self.long_name_to_variable[var.long_name] = variable
+
     @staticmethod
-    def parse_date(path):
+    def _find(pattern):
+        return sorted(glob.glob(pattern))
+
+    @staticmethod
+    def _parse_date(path):
         '''Parses a date from a pathname
 
         :param path: string representation of a path
@@ -129,7 +138,10 @@ class Locator:
 
 
 class Navigator:
-    """Menu system interface"""
+    """Menu system interface
+
+    .. note:: This is a facade or adapter for the navigator interface
+    """
     def __init__(self, locator):
         self.locator = locator
 
@@ -142,8 +154,9 @@ class Navigator:
 
          :param pattern: glob pattern of filepaths
          :returns: list of strings of variable names
-         '''
-        return list(sorted(self.locator.long_name_to_variable.keys()))
+        '''
+        self.locator.sync()
+        return self.locator.variables()
 
     def valid_times(self, pattern, variable, initial_time):
         '''Gets valid times from input files
@@ -152,7 +165,8 @@ class Navigator:
         :param variable: String of variable name
         :return: List of Date strings
         '''
-        return list(sorted(self.locator.date_to_path.keys()))
+        self.locator.sync()
+        return self.locator.valid_times()
 
     def pressures(self, path, variable, initial_time):
         '''There's no pressure levels in SAF data.
