@@ -1,10 +1,10 @@
 """
-SAF Loader
+SAF Driver
 ----------
 
 Loads data from NWCSAF satellite NetCDF files.
 
-.. autoclass:: saf
+.. autoclass:: Loader
     :members:
 
 .. autoclass:: Locator
@@ -14,24 +14,15 @@ Loads data from NWCSAF satellite NetCDF files.
     :members:
 
 """
-
 import datetime as dt
 import collections
 import glob
 import re
 import os
-
-import numpy as np
-import numpy.ma as ma
-from scipy.interpolate import griddata
-#from metpy.interpolate import interpolate_to_grid
 import netCDF4
-
-from forest.gridded_forecast import _to_datetime, empty_image, coordinates
+from forest.gridded_forecast import empty_image, coordinates
 from forest.util import timeout_cache
-
 from forest import geo, view
-
 from functools import lru_cache
 
 
@@ -56,20 +47,15 @@ class Dataset:
         return view.UMView(loader, self.color_mapper)
 
 
-class Loader(object):
+class Loader:
     def __init__(self, locator, label=None):
         '''Object to process SAF NetCDF files'''
         self.locator = locator
-
-        if(label):
-            self.label = label
+        self.label = label
 
     @lru_cache(maxsize=16)
     def image(self, state):
-        '''gets actual data.
-
-        X and Y passed to :meth:`geo.stretch_image` must be 1D arrays. NWCSAF data
-        are not on a regular grid so must be regridded.
+        '''Gets actual data.
 
         `values` passed to :meth:`geo.stretch_image` must be a NumPy Masked Array.
 
@@ -97,7 +83,8 @@ class Loader(object):
         return data
 
 
-class Locator(object):
+class Locator:
+    """Locate SAF files"""
     def __init__(self, pattern):
         self.pattern = pattern
 
