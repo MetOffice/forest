@@ -66,14 +66,17 @@ class Loader:
                            state.pressures,
                            state.pressure)
 
-    def _image(self, variable, initial_time, valid_time, pressures, pressure):
+    def _image(self, long_name, initial_time, valid_time, pressures, pressure):
         data = empty_image()
-        self.locator.sync()
-        for path in self.locator.find_paths(valid_time):
+        paths = self.locator.glob()
+        long_name_to_variable = self.locator.long_name_to_variable(paths)
+        for path in self.locator.find_paths(paths, valid_time):
             with netCDF4.Dataset(path) as nc:
+                if long_name not in long_name_to_variable:
+                    continue
                 x = nc['lon'][:]
                 y = nc['lat'][:]
-                var = nc[self.locator.long_name_to_variable[variable]]
+                var = nc[long_name_to_variable[long_name]]
                 z = var[:]
                 data = geo.stretch_image(x, y, z)
                 data.update(coordinates(valid_time, initial_time, pressures, pressure))
@@ -87,42 +90,30 @@ class Locator:
     """Locate SAF files"""
     def __init__(self, pattern):
         self.pattern = pattern
-        self._paths = []
-        self._date_to_path = {}
-        self.long_name_to_variable = {}
 
-    def find_paths(self, date):
-        """Find a file(s) containing information related to date"""
-        if date in self._date_to_path:
-            return [self._date_to_path[date]]
-        else:
-            return []
-
-    def variables(self):
-        """Available variables"""
-        return list(sorted(self.long_name_to_variable.keys()))
-
-    def valid_times(self):
-        """Available validity times"""
-        return list(sorted(self._date_to_path.keys()))
-
-    @timeout_cache(dt.timedelta(minutes=10))
-    def sync(self):
-        """Synchronize with file system"""
-        self._paths = self._find(self.pattern)
-        self._date_to_path = {self._parse_date(path): path for path in self._paths}
-        if len(self.long_name_to_variable) == 0:
-            # Get variable names and keys (performed once)
-            for path in self._paths[-1:]:
-                with netCDF4.Dataset(path) as nc:
-                    for variable, var in nc.variables.items():
-                        # Only display variables with lon/lat coords
-                        if('coordinates' in var.ncattrs() and var.coordinates == "lon lat"):
-                            self.long_name_to_variable[var.long_name] = variable
+    def glob(self):
+        """List file system"""
+        return self._glob(self.pattern)
 
     @staticmethod
-    def _find(pattern):
+    @timeout_cache(dt.timedelta(minutes=10))
+    def _glob(pattern):
         return sorted(glob.glob(pattern))
+
+    def find_paths(self, paths, date):
+        """Find a file(s) containing information related to date"""
+        for path in paths:
+            if self._parse_date(path) == date:
+                yield path
+
+    def variables(self, paths):
+        """Available variables"""
+        return list(sorted(self.long_name_to_variable(paths).keys()))
+
+    def valid_times(self, paths):
+        """Available validity times"""
+        for path in paths:
+            yield self._parse_date(path)
 
     @staticmethod
     def _parse_date(path):
@@ -135,6 +126,24 @@ class Locator:
         groups = re.search("[0-9]{8}T[0-9]{6}Z", os.path.basename(path))
         if groups is not None:
             return dt.datetime.strptime(groups[0].replace('Z','UTC'), "%Y%m%dT%H%M%S%Z") # always UTC
+
+    def long_name_to_variable(self, paths):
+        """Map long_name attrs to variables"""
+        mapping = {}
+        for path in paths[-1:]:
+            mapping.update(self._read_long_name_to_variable(path))
+        return mapping
+
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _read_long_name_to_variable(path):
+        mapping = {}
+        with netCDF4.Dataset(path) as nc:
+            for variable, var in nc.variables.items():
+                # Only display variables with lon/lat coords
+                if('coordinates' in var.ncattrs() and var.coordinates == "lon lat"):
+                    mapping[var.long_name] = variable
+        return mapping
 
 
 class Navigator:
@@ -155,8 +164,7 @@ class Navigator:
          :param pattern: glob pattern of filepaths
          :returns: list of strings of variable names
         '''
-        self.locator.sync()
-        return self.locator.variables()
+        return self.locator.variables(self.locator.glob())
 
     def valid_times(self, pattern, variable, initial_time):
         '''Gets valid times from input files
@@ -165,8 +173,7 @@ class Navigator:
         :param variable: String of variable name
         :return: List of Date strings
         '''
-        self.locator.sync()
-        return self.locator.valid_times()
+        return list(sorted(self.locator.valid_times(self.locator.glob())))
 
     def pressures(self, path, variable, initial_time):
         '''There's no pressure levels in SAF data.
