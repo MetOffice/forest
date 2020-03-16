@@ -151,18 +151,6 @@ def test_FileSystemNavigator_from_file_type__rdt(coordinates_cls):
     assert navigator.coordinates == sentinel.coordinates
 
 
-@patch('forest.eida50.Coordinates')
-def test_FileSystemNavigator_from_file_type__eida50(coordinates_cls):
-    coordinates_cls.return_value = sentinel.coordinates
-
-    navigator = navigate.FileSystemNavigator.from_file_type(sentinel.paths,
-                                                            'EiDa50')
-
-    coordinates_cls.assert_called_once_with()
-    assert navigator.paths == sentinel.paths
-    assert navigator.coordinates == sentinel.coordinates
-
-
 @patch('forest.gridded_forecast.Navigator')
 def test_FileSystemNavigator_from_file_type__griddedforecast(navigator_cls):
     navigator_cls.return_value = sentinel.navigator
