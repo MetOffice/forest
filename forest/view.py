@@ -7,16 +7,18 @@ from forest.exceptions import FileNotFound, IndexNotFound
 
 
 class UMView(object):
-    def __init__(self, loader, color_mapper):
+    def __init__(self, loader, color_mapper, use_hover_tool=True):
         self.loader = loader
         self.color_mapper = color_mapper
         self.color_mapper.nan_color = bokeh.colors.RGB(0, 0, 0, a=0)
+        self.use_hover_tool = use_hover_tool
         self.source = bokeh.models.ColumnDataSource({
                 "x": [],
                 "y": [],
                 "dw": [],
                 "dh": [],
                 "image": []})
+        self.image_sources = [self.source]
 
         self.tooltips = [
             ("Name", "@name"),
@@ -49,11 +51,12 @@ class UMView(object):
                 image="image",
                 source=self.source,
                 color_mapper=self.color_mapper)
-        tool = bokeh.models.HoverTool(
-                renderers=[renderer],
-                tooltips=self.tooltips,
-                formatters=self.formatters)
-        figure.add_tools(tool)
+        if self.use_hover_tool:
+            tool = bokeh.models.HoverTool(
+                    renderers=[renderer],
+                    tooltips=self.tooltips,
+                    formatters=self.formatters)
+            figure.add_tools(tool)
         return renderer
 
 
@@ -78,6 +81,7 @@ class GPMView(object):
                 "dh": [],
                 "image": []}
         self.source = bokeh.models.ColumnDataSource(self.empty)
+        self.image_sources = [self.source]
 
     @old_state
     @unique
@@ -109,6 +113,7 @@ class NearCast(object):
                 "dw": [],
                 "dh": [],
                 "image": []})
+        self.image_sources = [self.source]
 
     @old_state
     @unique

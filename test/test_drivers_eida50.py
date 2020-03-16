@@ -1,5 +1,6 @@
 import pytest
 import datetime as dt
+import bokeh.models
 import netCDF4
 import numpy as np
 import forest.drivers
@@ -59,11 +60,12 @@ def test_dataset_navigator():
 
 def test_dataset_map_view():
     settings = {
-        "pattern": ""
+        "pattern": "",
+        "color_mapper": bokeh.models.ColorMapper()
     }
     dataset = forest.drivers.get_dataset("eida50", settings)
     view = dataset.map_view()
-    view.image(None)
+    view.render({})
 
 
 def test_navigator_pressures():
@@ -174,7 +176,7 @@ def test_loader_image(tmpdir):
         _eida50(dataset, TIMES, LONS, LATS)
     time = dt.datetime(2019, 4, 17, 12)
     loader = eida50.Loader(eida50.Locator(path))
-    image = loader.image(time)
+    image = loader._image(time)
     result = set(image.keys())
     expect = set(["x", "y", "dw", "dh", "image"])
     assert expect == result

@@ -9,9 +9,11 @@ from functools import lru_cache
 from forest.exceptions import FileNotFound, IndexNotFound
 from forest.old_state import old_state, unique
 from forest.util import coarsify
+from forest.gridded_forecast import _to_datetime
 from forest import (
         geo,
-        locate)
+        locate,
+        view)
 
 
 MIN_DATETIME64 = np.datetime64('0001-01-01T00:00:00.000000')
@@ -48,58 +50,7 @@ class Dataset:
 
     def map_view(self):
         loader = Loader(self.locator)
-        return View(loader, self.color_mapper)
-
-
-class View:
-    def __init__(self, loader, color_mapper):
-        self.loader = loader
-        self.color_mapper = color_mapper
-        self.empty = {
-                "x": [],
-                "y": [],
-                "dw": [],
-                "dh": [],
-                "image": []}
-        self.source = bokeh.models.ColumnDataSource(
-                self.empty)
-        self.image_sources = [self.source]
-
-    @old_state
-    @unique
-    def render(self, state):
-        if state.valid_time is not None:
-            self.image(self.to_datetime(state.valid_time))
-
-    @staticmethod
-    def to_datetime(d):
-        if isinstance(d, dt.datetime):
-            return d
-        elif isinstance(d, str):
-            try:
-                return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
-        elif isinstance(d, np.datetime64):
-            return d.astype(dt.datetime)
-        else:
-            raise Exception("Unknown value: {}".format(d))
-
-    def image(self, time):
-        try:
-            self.source.data = self.loader.image(time)
-        except (FileNotFound, IndexNotFound):
-            self.source.data = self.empty
-
-    def add_figure(self, figure):
-        return figure.image(
-                x="x",
-                y="y",
-                dw="dw",
-                dh="dh",
-                image="image",
-                source=self.source,
-                color_mapper=self.color_mapper)
+        return view.UMView(loader, self.color_mapper, use_hover_tool=False)
 
 
 class Locator:
@@ -172,6 +123,13 @@ class Locator:
 class Loader:
     def __init__(self, locator):
         self.locator = locator
+        self.empty_image = {
+            "x": [],
+            "y": [],
+            "dw": [],
+            "dh": [],
+            "image": []
+        }
         self.cache = {}
         paths = self.locator.paths()
         if len(paths) > 0:
@@ -187,7 +145,17 @@ class Loader:
     def latitudes(self):
         return self.cache["latitude"]
 
-    def image(self, valid_time):
+    def image(self, state):
+        if state.valid_time is None:
+            data = self.empty_image
+        else:
+            try:
+                data = self._image(_to_datetime(state.valid_time))
+            except (FileNotFound, IndexNotFound):
+                data = self.empty_image
+        return data
+
+    def _image(self, valid_time):
         path, itime = self.locator.find(valid_time)
         return self.load_image(path, itime)
 
