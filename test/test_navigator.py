@@ -128,17 +128,6 @@ def test_FileSystemNavigator_init():
     assert navigator.coordinates == sentinel.coords
 
 
-@patch('forest.unified_model.Coordinates')
-def test_FileSystemNavigator_init__no_coords(coordinates_cls):
-    coordinates_cls.return_value = sentinel.coordinates
-
-    navigator = navigate.FileSystemNavigator(sentinel.paths)
-
-    coordinates_cls.assert_called_once_with()
-    assert navigator.paths == sentinel.paths
-    assert navigator.coordinates == sentinel.coordinates
-
-
 @patch('forest.rdt.Coordinates')
 def test_FileSystemNavigator_from_file_type__rdt(coordinates_cls):
     coordinates_cls.return_value = sentinel.coordinates
@@ -160,18 +149,6 @@ def test_FileSystemNavigator_from_file_type__griddedforecast(navigator_cls):
 
     navigator_cls.assert_called_once_with(sentinel.paths)
     assert navigator == sentinel.navigator
-
-
-@patch('forest.unified_model.Coordinates')
-def test_FileSystemNavigator_from_file_type__unified_model(coordinates_cls):
-    coordinates_cls.return_value = sentinel.coordinates
-
-    navigator = navigate.FileSystemNavigator.from_file_type(sentinel.paths,
-                                                            'UNIFIED_model')
-
-    coordinates_cls.assert_called_once_with()
-    assert navigator.paths == sentinel.paths
-    assert navigator.coordinates == sentinel.coordinates
 
 
 def test_FileSystemNavigator_from_file_type__unrecognised():

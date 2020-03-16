@@ -6,12 +6,12 @@ from .exceptions import (
         InitialTimeNotFound,
         ValidTimesNotFound,
         PressuresNotFound)
+from forest.drivers import unified_model
 from forest import (
         exceptions,
         drivers,
         db,
         gridded_forecast,
-        unified_model,
         rdt,
         intake_loader,
         nearcast)

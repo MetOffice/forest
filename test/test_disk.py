@@ -5,10 +5,11 @@ import netCDF4
 import os
 import fnmatch
 import pytest
+import forest.drivers
+from forest.drivers import unified_model
 from forest import (
         disk,
         navigate,
-        unified_model,
         tutorial)
 from forest.exceptions import SearchFail
 
@@ -236,8 +237,9 @@ class TestNavigator(unittest.TestCase):
         pattern = "*.nc"
         with netCDF4.Dataset(self.path, "w") as dataset:
             pass
-        navigator = navigate.FileSystemNavigator.from_file_type(
-            [self.path], "unified_model")
+        settings = {"pattern": self.path}
+        dataset = forest.drivers.get_dataset("unified_model", settings)
+        navigator = dataset.navigator()
         result = navigator.variables(pattern)
         expect = []
         self.assertEqual(expect, result)

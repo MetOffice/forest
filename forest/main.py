@@ -25,7 +25,6 @@ from forest import (
         presets,
         redux,
         rx,
-        unified_model,
         intake_loader,
         navigate,
         parse_args)

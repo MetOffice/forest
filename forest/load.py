@@ -21,12 +21,12 @@ testing.
 """
 import os
 from forest.export import export
+from forest.drivers import unified_model
 from forest import (
         exceptions,
         data,
         db,
         gridded_forecast,
-        unified_model,
         rdt,
         intake_loader,
         nearcast)

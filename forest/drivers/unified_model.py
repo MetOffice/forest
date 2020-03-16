@@ -18,6 +18,25 @@ class NotFound(Exception):
     pass
 
 
+class Dataset:
+    def __init__(self, **kwargs):
+        pass
+
+    def navigator(self):
+        return Navigator()
+
+
+class Navigator:
+    def initial_times(self, pattern):
+        locator = InitialTimeLocator()
+        return list(sorted(set(locator(path)
+                               for path in glob.glob(pattern))))
+
+    def variables(self, pattern):
+        cubes = iris.load(pattern)
+        return [cube.name() for cube in cubes]
+
+
 class Coordinates(object):
     """Coordinate system for unified model diagnostics"""
     def initial_time(self, path):
