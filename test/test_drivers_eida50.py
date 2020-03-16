@@ -4,7 +4,7 @@ import netCDF4
 import numpy as np
 import forest.drivers
 from forest.drivers import eida50
-from forest import (satellite, navigate)
+from forest import navigate
 from forest.exceptions import FileNotFound, IndexNotFound
 
 
@@ -48,19 +48,32 @@ def _eida50(dataset, times, lons=[0], lats=[0]):
     var[:] = 0
 
 
-def test_navigator():
+def test_dataset_navigator():
     settings = {
         "pattern": ""
     }
     dataset = forest.drivers.get_dataset("eida50", settings)
     navigator = dataset.navigator()
     assert navigator.variables(None) == ["EIDA50"]
+
+
+def test_dataset_map_view():
+    settings = {
+        "pattern": ""
+    }
+    dataset = forest.drivers.get_dataset("eida50", settings)
+    view = dataset.map_view()
+    view.image(None)
+
+
+def test_navigator_pressures():
+    navigator = eida50.Navigator(None)
     assert navigator.pressures(None, None, None) == []
 
 
 def test_locator_parse_date():
     path = "/some/file-20190101.nc"
-    result = satellite.Locator.parse_date(path)
+    result = eida50.Locator.parse_date(path)
     expect = dt.datetime(2019, 1, 1)
     assert expect == result
 
@@ -68,7 +81,7 @@ def test_locator_parse_date():
 def test_locator_find_given_no_files_raises_notfound(tmpdir):
     any_date = dt.datetime.now()
     pattern = str(tmpdir / "nofile.nc")
-    locator = satellite.Locator(pattern)
+    locator = eida50.Locator(pattern)
     with pytest.raises(FileNotFound):
         locator.find(any_date)
 
@@ -82,7 +95,7 @@ def test_locator_find_given_a_single_file(tmpdir):
     with netCDF4.Dataset(path, "w") as dataset:
         set_times(dataset, times)
 
-    locator = satellite.Locator(pattern)
+    locator = eida50.Locator(pattern)
     found_path, index = locator.find(valid_date)
     assert found_path == path
     assert index == 0
@@ -99,7 +112,7 @@ def test_find_given_multiple_files(tmpdir):
         with netCDF4.Dataset(path, "w") as dataset:
             set_times(dataset, [date])
     valid_date = dt.datetime(2019, 1, 2, 0, 14)
-    locator = satellite.Locator(pattern)
+    locator = eida50.Locator(pattern)
     found_path, index = locator.find(valid_date)
     expect = str(tmpdir / "test-eida50-20190102.nc")
     assert found_path == expect
@@ -124,7 +137,7 @@ def test_locator_find_index_given_valid_time():
         dt.datetime(2019, 1, 1, 4, 0),
     ]
     freq = dt.timedelta(minutes=15)
-    result = satellite.Locator.find_index(times, time, freq)
+    result = eida50.Locator.find_index(times, time, freq)
     expect = 2
     assert expect == result
 
@@ -140,7 +153,7 @@ def test_locator_find_index_outside_range_raises_exception():
     ]
     freq = dt.timedelta(minutes=15)
     with pytest.raises(IndexNotFound):
-        satellite.Locator.find_index(times, time, freq)
+        eida50.Locator.find_index(times, time, freq)
 
 
 def test_navigator_valid_times_given_toa_brightness_temperature(tmpdir):
@@ -160,7 +173,7 @@ def test_loader_image(tmpdir):
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES, LONS, LATS)
     time = dt.datetime(2019, 4, 17, 12)
-    loader = satellite.EIDA50(path)
+    loader = eida50.Loader(eida50.Locator(path))
     image = loader.image(time)
     result = set(image.keys())
     expect = set(["x", "y", "dw", "dh", "image"])
@@ -169,7 +182,7 @@ def test_loader_image(tmpdir):
 
 def test_locator_parse_date():
     path = "/some/EIDA50_takm4p4_20190417.nc"
-    result = satellite.Locator.parse_date(path)
+    result = eida50.Locator.parse_date(path)
     expect = dt.datetime(2019, 4, 17)
     assert expect == result
 
@@ -178,7 +191,7 @@ def test_loader_longitudes(tmpdir):
     path = str(tmpdir / "eida50_20190417.nc")
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES, LONS, LATS)
-    loader = satellite.EIDA50(path)
+    loader = eida50.Loader(eida50.Locator(path))
     result = loader.longitudes
     with netCDF4.Dataset(path) as dataset:
         expect = dataset.variables["longitude"][:]
@@ -188,7 +201,7 @@ def test_loader_latitudes(tmpdir):
     path = str(tmpdir / "eida50_20190417.nc")
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES, LONS, LATS)
-    loader = satellite.EIDA50(path)
+    loader = eida50.Loader(eida50.Locator(path))
     result = loader.latitudes
     with netCDF4.Dataset(path) as dataset:
         expect = dataset.variables["latitude"][:]
@@ -199,7 +212,7 @@ def test_locator_times(tmpdir):
     path = str(tmpdir / "eida50_20190417.nc")
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES, LONS, LATS)
-    result = satellite.Locator.load_time_axis(path)
+    result = eida50.Locator.load_time_axis(path)
     with netCDF4.Dataset(path) as dataset:
         var = dataset.variables["time"]
         expect = netCDF4.num2date(var[:], units=var.units)
@@ -227,15 +240,4 @@ def test_navigator_valid_times(tmpdir):
     variable = "toa_brightness_temperature"
     result = navigator.valid_times(path, variable, TIMES[0])
     expect = TIMES
-    np.testing.assert_array_equal(expect, result)
-
-
-def test_navigator_pressures(tmpdir):
-    path = str(tmpdir / "test-navigate-eida50.nc")
-    navigator = navigate.FileSystemNavigator.from_file_type([path], 'eida50')
-    with netCDF4.Dataset(path, "w") as dataset:
-        _eida50(dataset, TIMES)
-    variable = "toa_brightness_temperature"
-    result = navigator.pressures(path, variable, TIMES[0])
-    expect = []
     np.testing.assert_array_equal(expect, result)

@@ -66,15 +66,6 @@ def test_build_loader_given_config_file_pattern(tmpdir):
     assert loader.locator.paths == [path]
 
 
-def test_build_loader_given_eida50_file_type():
-    label = "EIDA50"
-    pattern = "eida50*.nc"
-    file_type = "eida50"
-    loader = forest.Loader.from_pattern(label, pattern, file_type)
-    assert isinstance(loader, forest.satellite.EIDA50)
-    assert isinstance(loader.locator, forest.satellite.Locator)
-
-
 def test_build_loader_given_rdt_file_type():
     loader = forest.Loader.from_pattern(
             "Label", "*.json", "rdt")

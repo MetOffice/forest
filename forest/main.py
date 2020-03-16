@@ -9,7 +9,6 @@ from forest import _profile as profile
 from forest import (
         drivers,
         exceptions,
-        satellite,
         screen,
         tools,
         series,
@@ -113,8 +112,6 @@ def main(argv=None):
                 viewer = rdt.View(loader)
             elif isinstance(loader, data.GPM):
                 viewer = view.GPMView(loader, color_mapper)
-            elif isinstance(loader, satellite.EIDA50):
-                viewer = view.EIDA50(loader, color_mapper)
             elif isinstance(loader, nearcast.NearCast):
                 viewer = view.NearCast(loader, color_mapper)
                 viewer.set_hover_properties(nearcast.NEARCAST_TOOLTIPS)
@@ -140,9 +137,11 @@ def main(argv=None):
 
     image_sources = []
     for name, viewer in viewers.items():
-        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50,
+        if isinstance(viewer, (view.UMView, view.GPMView,
                                view.NearCast)):
             image_sources.append(viewer.source)
+        for source in getattr(viewer, "image_sources", []):
+            image_sources.append(source)
 
     # Lakes
     for figure in figures:

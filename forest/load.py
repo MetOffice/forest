@@ -28,7 +28,6 @@ from forest import (
         gridded_forecast,
         unified_model,
         rdt,
-        satellite,
         intake_loader,
         nearcast)
 
@@ -132,8 +131,6 @@ class Loader(object):
             return rdt.Loader(pattern)
         elif file_type == 'gpm':
             return data.GPM(pattern)
-        elif file_type == 'eida50':
-            return satellite.EIDA50(pattern)
         elif file_type == 'griddedforecast':
             return gridded_forecast.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
