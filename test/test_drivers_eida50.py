@@ -2,7 +2,9 @@ import pytest
 import datetime as dt
 import netCDF4
 import numpy as np
-from forest import (eida50, satellite, navigate)
+import forest.drivers
+from forest.drivers import eida50
+from forest import (satellite, navigate)
 from forest.exceptions import FileNotFound, IndexNotFound
 
 
@@ -44,6 +46,16 @@ def _eida50(dataset, times, lons=[0], lats=[0]):
     var.long_name = "toa_brightness_temperature"
     var.units = "K"
     var[:] = 0
+
+
+def test_navigator():
+    settings = {
+        "pattern": ""
+    }
+    dataset = forest.drivers.get_dataset("eida50", settings)
+    navigator = dataset.navigator()
+    assert navigator.variables(None) == ["EIDA50"]
+    assert navigator.pressures(None, None, None) == []
 
 
 def test_locator_parse_date():
@@ -131,14 +143,14 @@ def test_locator_find_index_outside_range_raises_exception():
         satellite.Locator.find_index(times, time, freq)
 
 
-def test_coordinates_valid_times_given_toa_brightness_temperature(tmpdir):
+def test_navigator_valid_times_given_toa_brightness_temperature(tmpdir):
     path = str(tmpdir / "test-navigate-eida50.nc")
     times = [dt.datetime(2019, 1, 1)]
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, times)
 
-    coord = eida50.Coordinates()
-    result = coord.valid_times(path, "toa_brightness_temperature")
+    navigator = eida50.Navigator(path)
+    result = navigator._valid_times(path, "toa_brightness_temperature")
     expect = times
     assert expect == result
 
@@ -196,10 +208,13 @@ def test_locator_times(tmpdir):
 
 def test_navigator_initial_times(tmpdir):
     path = str(tmpdir / "test-navigate-eida50.nc")
-    navigator = navigate.FileSystemNavigator.from_file_type([path], 'eida50')
+    settings = {"pattern": path}
+    variable = None
+    dataset = forest.drivers.get_dataset("eida50", settings)
+    navigator = dataset.navigator()
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES)
-    result = navigator.initial_times(path)
+    result = navigator.initial_times(path, variable)
     expect = [dt.datetime(1970, 1, 1)]
     assert expect == result
 

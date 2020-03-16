@@ -12,7 +12,6 @@ from forest import (
         db,
         gridded_forecast,
         unified_model,
-        eida50,
         rdt,
         intake_loader,
         nearcast)
@@ -89,8 +88,6 @@ class FileSystemNavigator:
 
         if file_type.lower() == "rdt":
             coordinates = rdt.Coordinates()
-        elif file_type.lower() == "eida50":
-            coordinates = eida50.Coordinates()
         elif file_type.lower() == 'griddedforecast':
             # XXX This needs a "Group" object ... not "paths"
             return gridded_forecast.Navigator(paths)
