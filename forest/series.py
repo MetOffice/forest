@@ -248,10 +248,10 @@ class SeriesLoader(object):
                 if len(var.dimensions) == 3:
                     pts = self.search(pressures, pressure)
                     values = values[pts]
-                    if isinstance(times, dt.datetime):
-                        times = [times]
-                    else:
+                    try:
                         times = times[pts]
+                    except TypeError:
+                        times = [times]
                 else:
                     mask = self.search(pressures, pressure)
                     values = values[:, mask][:, 0]
