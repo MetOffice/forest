@@ -1,11 +1,11 @@
 import yaml
 import forest
-from forest import main
+from forest import main, rdt
 
 
-def test_earth_networks_loader_given_pattern():
-    loader = forest.Loader.from_pattern("Label", "EarthNetworks*.txt", "earth_networks")
-    assert isinstance(loader, forest.earth_networks.Loader)
+def test_rdt_loader_given_pattern():
+    loader = forest.Loader.from_pattern("Label", "RDT*.json", "rdt")
+    assert isinstance(loader, rdt.Loader)
 
 
 def test_build_loader_given_files():
@@ -64,15 +64,6 @@ def test_build_loader_given_config_file_pattern(tmpdir):
             locator="file_system")
     loader = forest.Loader.group_args(group, args)
     assert loader.locator.paths == [path]
-
-
-def test_build_loader_given_eida50_file_type():
-    label = "EIDA50"
-    pattern = "eida50*.nc"
-    file_type = "eida50"
-    loader = forest.Loader.from_pattern(label, pattern, file_type)
-    assert isinstance(loader, forest.satellite.EIDA50)
-    assert isinstance(loader.locator, forest.satellite.Locator)
 
 
 def test_build_loader_given_rdt_file_type():

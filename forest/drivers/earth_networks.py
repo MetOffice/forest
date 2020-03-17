@@ -11,13 +11,30 @@ import bokeh.palettes
 import numpy as np
 
 
+class Dataset:
+    """High-level class to relate navigators, loaders and views"""
+    def __init__(self, pattern=None, **kwargs):
+        self.pattern = pattern
+        if pattern is not None:
+            self._paths = glob.glob(pattern)
+        else:
+            self._paths = []
+
+    def navigator(self):
+        """Construct navigator"""
+        return Navigator(self._paths)
+
+    def map_view(self):
+        """Construct view"""
+        return View(Loader(self._paths))
+
 
 class View(object):
     def __init__(self, loader):
         self.loader = loader
         palette = bokeh.palettes.all_palettes['Spectral'][11][::-1]
         self.color_mapper = bokeh.models.LinearColorMapper(low=-1000, high=0, palette=palette)
-        self.source = bokeh.models.ColumnDataSource({
+        self.empty_image = {
             "x": [],
             "y": [],
             "date": [],
@@ -25,13 +42,19 @@ class View(object):
             "latitude": [],
             "flash_type": [],
             "time_since_flash": []
-        })
+        }
+        self.source = bokeh.models.ColumnDataSource(self.empty_image)
 
     @old_state
     @unique
     def render(self, state):
+        if state.valid_time is None:
+            return
+
         valid_time = _to_datetime(state.valid_time)
         frame = self.loader.load_date(valid_time)
+        if len(frame) == 0:
+            return self.empty_image
         x, y = geo.web_mercator(
                 frame.longitude,
                 frame.latitude)

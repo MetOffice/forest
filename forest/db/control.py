@@ -301,13 +301,23 @@ class Controls(object):
         yield set_value(key, value)
 
     def _pattern(self, store, action):
-        value = action["payload"]["value"]
-        variables = self.navigator.variables(pattern=value)
-        initial_times = self.navigator.initial_times(pattern=value)
+        pattern = action["payload"]["value"]
+        variables = self.navigator.variables(pattern=pattern)
+        initial_times = self.navigator.initial_times(pattern=pattern)
         initial_times = list(reversed(initial_times))
         yield action
         yield set_value("variables", variables)
         yield set_value("initial_times", initial_times)
+
+        # Set valid_times if pattern, variable and initial_time present
+        kwargs = {
+            "pattern": pattern,
+            "variable": store.state.get("variable"),
+            "initial_time": store.state.get("initial_time"),
+        }
+        if all(kwargs[k] is not None for k in ["variable", "initial_time"]):
+            valid_times = self.navigator.valid_times(**kwargs)
+            yield set_value("valid_times", valid_times)
 
     def _variable(self, store, action):
         for attr in ["pattern", "initial_time"]:

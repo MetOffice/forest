@@ -1,7 +1,8 @@
 import datetime as dt
 import numpy as np
 import glob
-from forest import earth_networks
+import forest.drivers
+from forest.drivers import earth_networks
 
 
 LINES = [
@@ -28,3 +29,18 @@ def test_earth_networks(tmpdir):
     assert result["flash_type"] == "IC"
     assert abs(result["latitude"] - 2.75144) < atol
     assert abs(result["longitude"] - 31.92064) < atol
+
+
+def test_dataset():
+    dataset = forest.drivers.get_dataset("earth_networks")
+    assert isinstance(dataset, forest.drivers.earth_networks.Dataset)
+
+
+def test_dataset_navigator():
+    settings = {
+        "pattern": "*.txt"
+    }
+    dataset = forest.drivers.get_dataset("earth_networks", settings)
+    navigator = dataset.navigator()
+    assert isinstance(navigator,
+                      forest.drivers.earth_networks.Navigator)

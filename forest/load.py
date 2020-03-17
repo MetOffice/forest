@@ -22,17 +22,14 @@ testing.
 import os
 from forest.export import export
 from forest import (
+        exceptions,
         data,
         db,
-        earth_networks,
         gridded_forecast,
         unified_model,
         rdt,
-        satellite,
         intake_loader,
-        saf,
         nearcast)
-from forest.drivers import ghrsstl4
 
 
 __all__ = []
@@ -134,21 +131,13 @@ class Loader(object):
             return rdt.Loader(pattern)
         elif file_type == 'gpm':
             return data.GPM(pattern)
-        elif file_type == 'earthnetworks':
-            return earth_networks.Loader.pattern(pattern)
-        elif file_type == 'eida50':
-            return satellite.EIDA50(pattern)
         elif file_type == 'griddedforecast':
             return gridded_forecast.ImageLoader(label, pattern)
-        elif file_type == 'ghrsstl4':
-            return ghrsstl4.ImageLoader(label, pattern)
         elif file_type == 'unifiedmodel':
             return data.DBLoader(label, pattern, locator)
         elif file_type == 'intake':
             return intake_loader.IntakeLoader(pattern)
-        elif file_type == 'saf':
-            return saf.saf(pattern, label, locator)
         elif file_type == 'nearcast':
             return nearcast.NearCast(pattern)
         else:
-            raise Exception("unrecognised file_type: {}".format(file_type))
+            raise exceptions.UnknownFileType("unrecognised file_type: {}".format(file_type))
