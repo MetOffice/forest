@@ -35,6 +35,8 @@ def _to_datetime(d):
         return d
     if isinstance(d, cftime.DatetimeNoLeap):
         return datetime(d.year, d.month, d.day, d.hour, d.minute, d.second)
+    elif isinstance(d, cftime.DatetimeGregorian):
+        return datetime(d.year, d.month, d.day, d.hour, d.minute, d.second)
     elif isinstance(d, str):
         try:
             return datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
