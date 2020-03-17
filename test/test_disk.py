@@ -242,6 +242,7 @@ class TestNavigator(unittest.TestCase):
         expect = []
         self.assertEqual(expect, result)
 
+    @unittest.skip("migrate to driver design")
     def test_initial_times_given_forecast_reference_time(self):
         pattern = "*.nc"
         with netCDF4.Dataset(self.path, "w") as dataset:

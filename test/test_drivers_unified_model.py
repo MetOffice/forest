@@ -2,4 +2,7 @@ import forest.drivers
 
 
 def test_dataset():
-    dataset = forest.drivers.get_dataset("unified_model")
+    settings = {
+        "pattern": "*.nc"
+    }
+    dataset = forest.drivers.get_dataset("unified_model", settings)

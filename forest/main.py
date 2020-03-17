@@ -91,12 +91,9 @@ def main(argv=None):
     # Database/File system loader(s)
     for group in config.file_groups:
         if group.label not in data.LOADERS:
-            database = None
-            if group.locator == "database":
-                database = db.get_database(group.database_path)
             try:
                 loader = load.Loader.group_args(
-                        group, args, database=database)
+                        group, args)
             except exceptions.UnknownFileType:
                 # TODO: Deprecate load.Loader.group_args()
                 continue
@@ -125,7 +122,9 @@ def main(argv=None):
             settings = {
                 "label": group.label,
                 "pattern": group.pattern,
-                "color_mapper": color_mapper
+                "locator": group.locator,
+                "database_path": group.database_path,
+                "color_mapper": color_mapper,
             }
             dataset = drivers.get_dataset(group.file_type, settings)
             viewer = dataset.map_view()

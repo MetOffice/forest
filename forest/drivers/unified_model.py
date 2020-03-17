@@ -5,7 +5,7 @@ import fnmatch
 import datetime as dt
 import numpy as np
 import netCDF4
-from forest import disk
+from forest import data, db, disk, view
 from forest.exceptions import SearchFail, PressuresNotFound
 try:
     import iris
@@ -19,11 +19,31 @@ class NotFound(Exception):
 
 
 class Dataset:
-    def __init__(self, pattern=None, **kwargs):
+    def __init__(self,
+                 label=None,
+                 pattern=None,
+                 color_mapper=None,
+                 locator="file_system",
+                 directory=None,
+                 database_path=None,
+                 **kwargs):
+        self.label = label
         self.pattern = pattern
+        self.color_mapper = color_mapper
+        if locator == "database":
+            database = db.get_database(database_path)
+            self.locator = db.Locator(database.connection,
+                                      directory=directory)
+        else:
+            self.locator = Locator.pattern(self.pattern)
 
     def navigator(self):
         return Navigator(self.pattern)
+
+    def map_view(self):
+        return view.UMView(data.DBLoader(self.label,
+                                         self.pattern,
+                                         self.locator), self.color_mapper)
 
 
 class Navigator:
