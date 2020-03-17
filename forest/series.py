@@ -335,5 +335,9 @@ class SeriesLocator(object):
 
     __getitem__ = locate
 
-    def key(self, time):
-        return "{:%Y-%m-%d %H:%M:%S}".format(time)
+    @staticmethod
+    def key(time):
+        try:
+            return "{:%Y-%m-%d %H:%M:%S}".format(time)
+        except TypeError:
+            return time.strftime("%Y-%m-%d %H:%M:%S")
