@@ -1,3 +1,6 @@
+"""
+   FOREST - Forecast and Observation Research and Evaluation Survey Tool
+"""
 import os
 import re
 import setuptools
