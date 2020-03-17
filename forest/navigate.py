@@ -6,7 +6,6 @@ from .exceptions import (
         InitialTimeNotFound,
         ValidTimesNotFound,
         PressuresNotFound)
-from forest.drivers import unified_model
 from forest import (
         exceptions,
         drivers,
@@ -69,10 +68,8 @@ class FileSystemNavigator:
     .. note:: This is a naive implementation designed
               to support basic command line file usage
     """
-    def __init__(self, paths, coordinates=None):
+    def __init__(self, paths, coordinates):
         self.paths = paths
-        if coordinates is None:
-            coordinates = unified_model.Coordinates()
         self.coordinates = coordinates
 
     @classmethod
@@ -88,18 +85,16 @@ class FileSystemNavigator:
 
         if file_type.lower() == "rdt":
             coordinates = rdt.Coordinates()
+            return cls(paths, coordinates)
         elif file_type.lower() == 'griddedforecast':
             # XXX This needs a "Group" object ... not "paths"
             return gridded_forecast.Navigator(paths)
         elif file_type.lower() == 'intake':
             return intake_loader.Navigator()
-        elif file_type.lower() == "unified_model":
-            coordinates = unified_model.Coordinates()
         elif file_type.lower() == "nearcast":
             return nearcast.Navigator(pattern)
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
-        return cls(paths, coordinates)
 
     def variables(self, pattern):
         paths = fnmatch.filter(self.paths, pattern)

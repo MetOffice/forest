@@ -148,8 +148,7 @@ class TestLocator(unittest.TestCase):
         with netCDF4.Dataset(self.path, "w") as dataset:
             um = tutorial.UM(dataset)
             um.forecast_reference_time(time)
-        coords = unified_model.Coordinates()
-        result = coords.initial_time(self.path)
+        result = unified_model.read_initial_time(self.path)
         expect = time
         np.testing.assert_array_equal(expect, result)
 
@@ -173,8 +172,7 @@ class TestLocator(unittest.TestCase):
             var = um.relative_humidity(dims)
             var[:] = 100.
         variable = "relative_humidity"
-        coord = unified_model.Coordinates()
-        result = coord.valid_times(self.path, variable)
+        result = unified_model.read_valid_times(self.path, variable)
         expect = times["time_1"]
         np.testing.assert_array_equal(expect, result)
 
@@ -252,7 +250,8 @@ class TestNavigator(unittest.TestCase):
             var[:] = 0
         navigator = navigate.FileSystemNavigator.from_file_type(
             [self.path], "unified_model")
-        result = navigator.initial_times(pattern)
+        variable = None
+        result = navigator.initial_times(pattern, variable)
         expect = [dt.datetime(1970, 1, 1)]
         self.assertEqual(expect, result)
 
@@ -297,7 +296,11 @@ class TestNavigator(unittest.TestCase):
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        navigator = navigate.FileSystemNavigator([self.path])
+        file_type = "unified_model"
+        navigator = navigate.FileSystemNavigator.from_file_type(
+            [self.path],
+            file_type,
+            pattern=self.path)
         result = navigator.valid_times(pattern, variable, initial_time)
         expect = valid_times
         np.testing.assert_array_equal(expect, result)
@@ -343,7 +346,11 @@ class TestNavigator(unittest.TestCase):
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        navigator = navigate.FileSystemNavigator([self.path])
+        file_type = "unified_model"
+        navigator = navigate.FileSystemNavigator.from_file_type(
+            [self.path],
+            file_type,
+            pattern=self.path)
         result = navigator.pressures(pattern, variable, initial_time)
         expect = [1000.]
         np.testing.assert_array_equal(expect, result)

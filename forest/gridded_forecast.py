@@ -45,7 +45,7 @@ def _to_datetime(d):
     elif isinstance(d, np.datetime64):
         return d.astype(datetime)
     else:
-        raise Exception("Unknown value: {}".format(d))
+        raise Exception("Unknown value: {} type: {}".format(d, type(d)))
 
 
 def coordinates(valid_time, initial_time, pressures, pressure):

@@ -19,38 +19,45 @@ class NotFound(Exception):
 
 
 class Dataset:
-    def __init__(self, **kwargs):
-        pass
+    def __init__(self, pattern=None, **kwargs):
+        self.pattern = pattern
 
     def navigator(self):
-        return Navigator()
+        return Navigator(self.pattern)
 
 
 class Navigator:
-    def initial_times(self, pattern):
-        locator = InitialTimeLocator()
-        return list(sorted(set(locator(path)
-                               for path in glob.glob(pattern))))
+    def __init__(self, pattern):
+        self.pattern = pattern
+        self._locators = {
+            "initial": read_initial_time,
+            "valid": read_valid_times,
+            "pressure": PressuresLocator(),
+        }
 
     def variables(self, pattern):
         cubes = iris.load(pattern)
         return [cube.name() for cube in cubes]
 
+    def initial_times(self, pattern, variable):
+        locator = self._locators["initial"]
+        return list(sorted(set(locator(path)
+                               for path in glob.glob(pattern))))
 
-class Coordinates(object):
-    """Coordinate system for unified model diagnostics"""
-    def initial_time(self, path):
-        return InitialTimeLocator()(path)
+    def valid_times(self, pattern, variable, initial_time):
+        return self._dimension("valid", pattern, variable, initial_time)
 
-    def variables(self, path):
-        cubes = iris.load(path)
-        return [cube.name() for cube in cubes]
+    def pressures(self, pattern, variable, initial_time):
+        return self._dimension("pressure", pattern, variable, initial_time)
 
-    def valid_times(self, path, variable):
-        return ValidTimesLocator()(path, variable)
-
-    def pressures(self, path, variable):
-        return PressuresLocator()(path, variable)
+    def _dimension(self, keyword, pattern, variable, initial_time):
+        arrays = []
+        locator = self._locators[keyword]
+        for path in glob.glob(self.pattern):
+            arrays.append(locator(path, variable))
+        if len(arrays) == 0:
+            return []
+        return np.unique(np.concatenate(arrays))
 
 
 class Locator(object):
@@ -169,7 +176,11 @@ class Locator(object):
         return result
 
 
-class InitialTimeLocator(object):
+def read_initial_time(path):
+    return InitialTimeLocator()(path)
+
+
+class InitialTimeLocator:
     def __call__(self, path):
         try:
             return self.netcdf4_strategy(path)
@@ -190,6 +201,10 @@ class InitialTimeLocator(object):
             cube = cubes[0]
             return cube.coord('time').cells().next().point
         raise InitialTimeNotFound("No initial time: '{}'".format(path))
+
+
+def read_valid_times(path, variable):
+    return ValidTimesLocator()(path, variable)
 
 
 class ValidTimesLocator(object):
