@@ -242,15 +242,15 @@ class TestNavigator(unittest.TestCase):
         expect = []
         self.assertEqual(expect, result)
 
-    @unittest.skip("migrate to driver design")
     def test_initial_times_given_forecast_reference_time(self):
         pattern = "*.nc"
         with netCDF4.Dataset(self.path, "w") as dataset:
             var = dataset.createVariable("forecast_reference_time", "d", ())
             var.units = "hours since 1970-01-01 00:00:00"
             var[:] = 0
-        navigator = navigate.FileSystemNavigator.from_file_type(
-            [self.path], "unified_model")
+        settings = {"pattern": self.path}
+        dataset = forest.drivers.get_dataset("unified_model", settings)
+        navigator = dataset.navigator()
         variable = None
         result = navigator.initial_times(pattern, variable)
         expect = [dt.datetime(1970, 1, 1)]
