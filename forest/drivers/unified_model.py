@@ -5,7 +5,12 @@ import fnmatch
 import datetime as dt
 import numpy as np
 import netCDF4
-from forest import data, db, disk, view
+from forest import (
+    db,
+    disk,
+    gridded_forecast,
+    view)
+from forest.data import load_image_pts
 from forest.exceptions import SearchFail, PressuresNotFound
 try:
     import iris
@@ -45,9 +50,9 @@ class Dataset:
             return Navigator(self.pattern)
 
     def map_view(self):
-        return view.UMView(data.DBLoader(self.label,
-                                         self.pattern,
-                                         self.locator), self.color_mapper)
+        return view.UMView(Loader(self.label,
+                                  self.pattern,
+                                  self.locator), self.color_mapper)
 
 
 class Navigator:
@@ -82,6 +87,77 @@ class Navigator:
         if len(arrays) == 0:
             return []
         return np.unique(np.concatenate(arrays))
+
+
+class Loader:
+    """Unified model formatted loader"""
+    def __init__(self, name, pattern, locator):
+        self.name = name
+        self.pattern = pattern
+        self.locator = locator
+
+    def image(self, state):
+        if not self.valid(state):
+            return gridded_forecast.empty_image()
+
+        try:
+            path, pts = self.locator.locate(
+                self.pattern,
+                state.variable,
+                state.initial_time,
+                state.valid_time,
+                state.pressure)
+        except SearchFail:
+            return gridded_forecast.empty_image()
+
+        units = self.read_units(path, state.variable)
+        data = load_image_pts(
+                path,
+                state.variable,
+                pts,
+                pts)
+        if (len(state.pressures) > 0) and (state.pressure is not None):
+            level = "{} hPa".format(int(state.pressure))
+        else:
+            level = "Surface"
+        data.update(gridded_forecast.coordinates(state.valid_time,
+                                                 state.initial_time,
+                                                 state.pressures,
+                                                 state.pressure))
+        data["name"] = [self.name]
+        data["units"] = [units]
+        return data
+
+    @staticmethod
+    def read_units(filename,parameter):
+        dataset = netCDF4.Dataset(filename)
+        veep = dataset.variables[parameter]
+        # read the units and assign a blank value if there aren't any:
+        units = getattr(veep, 'units', '')
+        dataset.close()
+        return units
+
+
+    def valid(self, state):
+        if state.variable is None:
+            return False
+        if state.initial_time is None:
+            return False
+        if state.valid_time is None:
+            return False
+        if state.pressures is None:
+            return False
+        if len(state.pressures) > 0:
+            if state.pressure is None:
+                return False
+            if not self.has_pressure(state.pressures, state.pressure):
+                return False
+        return True
+
+    def has_pressure(self, pressures, pressure, tolerance=0.01):
+        if isinstance(pressures, list):
+            pressures = np.array(pressures)
+        return any(np.abs(pressures - pressure) < tolerance)
 
 
 class Locator(object):

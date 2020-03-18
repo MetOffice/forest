@@ -1,4 +1,5 @@
 import unittest
+import forest.drivers.unified_model
 from forest import (
         data,
         db)
@@ -14,7 +15,7 @@ def test_cut():
 
 
 
-class TestDBLoader(unittest.TestCase):
+class TestUnifiedModelLoader(unittest.TestCase):
     def setUp(self):
         self.empty_image = {
             "x": [],
@@ -35,7 +36,7 @@ class TestDBLoader(unittest.TestCase):
         pattern = None
         locator = None
         state = db.State()
-        loader = data.DBLoader(name, pattern, locator)
+        loader = forest.drivers.unified_model.Loader(name, pattern, locator)
         result = loader.image(state)
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
@@ -50,7 +51,7 @@ class TestDBLoader(unittest.TestCase):
             initial_time="2019-01-01 00:00:00",
             valid_time="2019-01-01 00:00:00",
             pressure=1000.)
-        loader = data.DBLoader(name, pattern, locator)
+        loader = forest.drivers.unified_model.Loader(name, pattern, locator)
         result = loader.image(state)
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
@@ -72,7 +73,7 @@ class TestDBLoader(unittest.TestCase):
             valid_time=valid_time,
             pressure=pressure,
             pressures=[925.])
-        loader = data.DBLoader(None, "*.nc", locator)
+        loader = forest.drivers.unified_model.Loader(None, "*.nc", locator)
         result = loader.image(state)
         expect = self.empty_image
         self.assert_dict_equal(expect, result)
