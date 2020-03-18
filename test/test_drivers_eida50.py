@@ -5,7 +5,6 @@ import netCDF4
 import numpy as np
 import forest.drivers
 from forest.drivers import eida50
-from forest import navigate
 from forest.exceptions import FileNotFound, IndexNotFound
 
 
@@ -236,7 +235,9 @@ def test_navigator_initial_times(tmpdir):
 
 def test_navigator_valid_times(tmpdir):
     path = str(tmpdir / "test-navigate-eida50.nc")
-    navigator = navigate.FileSystemNavigator.from_file_type([path], 'eida50')
+    settings = {"pattern": path}
+    dataset = forest.drivers.get_dataset("eida50", settings)
+    navigator = dataset.navigator()
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES)
     variable = "toa_brightness_temperature"

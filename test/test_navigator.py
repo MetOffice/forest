@@ -24,20 +24,11 @@ def test_Navigator_init(from_group):
 
     navigator = navigate.Navigator(config)
 
-    assert from_group.mock_calls == [call(group1), call(group2)]
+    color_mapper = None
+    assert from_group.mock_calls == [call(group1, color_mapper),
+                                     call(group2, color_mapper)]
     assert navigator._navigators == {'pattern1': sentinel.nav1,
                                      'pattern2': sentinel.nav2}
-
-
-@patch('forest.db.get_database')
-def test_Navigator_from_group__use_database(get_database):
-    get_database.return_value = sentinel.database
-    group = Mock(locator='database', database_path=sentinel.database_path)
-
-    navigator = navigate.Navigator._from_group(group)
-
-    get_database.assert_called_once_with(sentinel.database_path)
-    assert navigator == sentinel.database
 
 
 @patch('forest.navigate.FileSystemNavigator.from_file_type')

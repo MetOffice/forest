@@ -218,7 +218,7 @@ def main(argv=None):
         bokeh.layouts.column(dropdown))
 
 
-    navigator = navigate.Navigator(config)
+    navigator = navigate.Navigator(config, color_mapper=color_mapper)
 
     # Pre-select menu choices (if any)
     initial_state = {}

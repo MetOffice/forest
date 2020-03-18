@@ -9,7 +9,6 @@ import forest.drivers
 from forest.drivers import unified_model
 from forest import (
         disk,
-        navigate,
         tutorial)
 from forest.exceptions import SearchFail
 
@@ -297,11 +296,11 @@ class TestNavigator(unittest.TestCase):
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        file_type = "unified_model"
-        navigator = navigate.FileSystemNavigator.from_file_type(
-            [self.path],
-            file_type,
-            pattern=self.path)
+        settings = {
+            "pattern": self.path
+        }
+        dataset = forest.drivers.get_dataset("unified_model", settings)
+        navigator = dataset.navigator()
         result = navigator.valid_times(pattern, variable, initial_time)
         expect = valid_times
         np.testing.assert_array_equal(expect, result)
@@ -347,11 +346,11 @@ class TestNavigator(unittest.TestCase):
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        file_type = "unified_model"
-        navigator = navigate.FileSystemNavigator.from_file_type(
-            [self.path],
-            file_type,
-            pattern=self.path)
+        settings = {
+            "pattern": self.path
+        }
+        dataset = forest.drivers.get_dataset("unified_model", settings)
+        navigator = dataset.navigator()
         result = navigator.pressures(pattern, variable, initial_time)
         expect = [1000.]
         np.testing.assert_array_equal(expect, result)
