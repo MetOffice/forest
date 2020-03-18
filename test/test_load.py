@@ -1,6 +1,8 @@
 import pytest
 import yaml
+import bokeh.models
 import forest
+import forest.drivers
 from forest import main, rdt
 
 
@@ -9,16 +11,13 @@ def test_rdt_loader_given_pattern():
     assert isinstance(loader, rdt.Loader)
 
 
-@pytest.mark.skip()
 def test_build_loader_given_files():
-    """replicate main.py as close as possible"""
-    files = ["file_20190101T0000Z.nc"]
-    args = main.parse_args.parse_args(files)
-    config = forest.config.from_files(args.files, args.file_type)
-    group = config.file_groups[0]
-    loader = forest.Loader.group_args(group, args)
-    assert isinstance(loader, forest.data.DBLoader)
-    assert loader.locator.paths == files
+    settings = {"pattern": "file_20190101T0000Z.nc",
+                "color_mapper": bokeh.models.ColorMapper()}
+    dataset = forest.drivers.get_dataset("unified_model", settings)
+    view = dataset.map_view()
+    assert isinstance(view.loader, forest.data.DBLoader)
+    assert isinstance(view.loader.locator, forest.drivers.unified_model.Locator)
 
 
 @pytest.mark.skip()
