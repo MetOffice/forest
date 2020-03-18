@@ -30,15 +30,19 @@ class Dataset:
         self.label = label
         self.pattern = pattern
         self.color_mapper = color_mapper
-        if locator == "database":
-            database = db.get_database(database_path)
-            self.locator = db.Locator(database.connection,
+        self.use_database = locator == "database"
+        if self.use_database:
+            self.database = db.get_database(database_path)
+            self.locator = db.Locator(self.database.connection,
                                       directory=directory)
         else:
             self.locator = Locator.pattern(self.pattern)
 
     def navigator(self):
-        return Navigator(self.pattern)
+        if self.use_database:
+            return self.database
+        else:
+            return Navigator(self.pattern)
 
     def map_view(self):
         return view.UMView(data.DBLoader(self.label,
