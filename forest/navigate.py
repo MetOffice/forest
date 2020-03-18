@@ -11,14 +11,13 @@ from forest import (
         drivers,
         db,
         gridded_forecast,
-        unified_model,
         rdt,
         intake_loader,
         nearcast)
 
 
 class Navigator:
-    def __init__(self, config):
+    def __init__(self, config, color_mapper=None):
         # TODO: Once the idea of a "Group" exists we can avoid using the
         # config and defer the sub-navigator creation to each of the
         # groups. This will remove the need for the `_from_group` helper
@@ -28,18 +27,29 @@ class Navigator:
         # group would have a `pattern`.
         # e.g.
         # self._navigators = {group.label: group.navigator for group in ...}
-        self._navigators = {group.pattern: self._from_group(group)
+        self._navigators = {group.pattern: self._from_group(group, color_mapper)
                            for group in config.file_groups}
 
     @classmethod
-    def _from_group(cls, group):
-        if group.locator == 'database':
-            navigator = db.get_database(group.database_path)
-        else:
-            paths = cls._expand_paths(group.pattern)
-            navigator = FileSystemNavigator.from_file_type(paths,
-                                                           group.file_type,
-                                                           group.pattern)
+    def _from_group(cls, group, color_mapper=None):
+        try:
+            settings = {
+                "label": group.label,
+                "pattern": group.pattern,
+                "locator": group.locator,
+                "database_path": group.database_path,
+                "color_mapper": color_mapper,
+            }
+            dataset = drivers.get_dataset(group.file_type, settings)
+            return dataset.navigator()
+        except exceptions.DriverNotFound:
+            # TODO: Migrate all file types to forest.drivers
+            pass
+
+        paths = cls._expand_paths(group.pattern)
+        navigator = FileSystemNavigator.from_file_type(paths,
+                                                       group.file_type,
+                                                       group.pattern)
         return navigator
 
     @classmethod
@@ -69,37 +79,24 @@ class FileSystemNavigator:
     .. note:: This is a naive implementation designed
               to support basic command line file usage
     """
-    def __init__(self, paths, coordinates=None):
+    def __init__(self, paths, coordinates):
         self.paths = paths
-        if coordinates is None:
-            coordinates = unified_model.Coordinates()
         self.coordinates = coordinates
 
     @classmethod
     def from_file_type(cls, paths, file_type, pattern=None):
-        try:
-            settings = {
-                "pattern": pattern}
-            dataset = drivers.get_dataset(file_type, settings)
-            return dataset.navigator()
-        except exceptions.DriverNotFound:
-            # TODO: Migrate all file types to forest.drivers
-            pass
-
         if file_type.lower() == "rdt":
             coordinates = rdt.Coordinates()
+            return cls(paths, coordinates)
         elif file_type.lower() == 'griddedforecast':
             # XXX This needs a "Group" object ... not "paths"
             return gridded_forecast.Navigator(paths)
         elif file_type.lower() == 'intake':
             return intake_loader.Navigator()
-        elif file_type.lower() == "unified_model":
-            coordinates = unified_model.Coordinates()
         elif file_type.lower() == "nearcast":
             return nearcast.Navigator(pattern)
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
-        return cls(paths, coordinates)
 
     def variables(self, pattern):
         paths = fnmatch.filter(self.paths, pattern)

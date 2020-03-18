@@ -24,20 +24,11 @@ def test_Navigator_init(from_group):
 
     navigator = navigate.Navigator(config)
 
-    assert from_group.mock_calls == [call(group1), call(group2)]
+    color_mapper = None
+    assert from_group.mock_calls == [call(group1, color_mapper),
+                                     call(group2, color_mapper)]
     assert navigator._navigators == {'pattern1': sentinel.nav1,
                                      'pattern2': sentinel.nav2}
-
-
-@patch('forest.db.get_database')
-def test_Navigator_from_group__use_database(get_database):
-    get_database.return_value = sentinel.database
-    group = Mock(locator='database', database_path=sentinel.database_path)
-
-    navigator = navigate.Navigator._from_group(group)
-
-    get_database.assert_called_once_with(sentinel.database_path)
-    assert navigator == sentinel.database
 
 
 @patch('forest.navigate.FileSystemNavigator.from_file_type')
@@ -128,17 +119,6 @@ def test_FileSystemNavigator_init():
     assert navigator.coordinates == sentinel.coords
 
 
-@patch('forest.unified_model.Coordinates')
-def test_FileSystemNavigator_init__no_coords(coordinates_cls):
-    coordinates_cls.return_value = sentinel.coordinates
-
-    navigator = navigate.FileSystemNavigator(sentinel.paths)
-
-    coordinates_cls.assert_called_once_with()
-    assert navigator.paths == sentinel.paths
-    assert navigator.coordinates == sentinel.coordinates
-
-
 @patch('forest.rdt.Coordinates')
 def test_FileSystemNavigator_from_file_type__rdt(coordinates_cls):
     coordinates_cls.return_value = sentinel.coordinates
@@ -160,18 +140,6 @@ def test_FileSystemNavigator_from_file_type__griddedforecast(navigator_cls):
 
     navigator_cls.assert_called_once_with(sentinel.paths)
     assert navigator == sentinel.navigator
-
-
-@patch('forest.unified_model.Coordinates')
-def test_FileSystemNavigator_from_file_type__unified_model(coordinates_cls):
-    coordinates_cls.return_value = sentinel.coordinates
-
-    navigator = navigate.FileSystemNavigator.from_file_type(sentinel.paths,
-                                                            'UNIFIED_model')
-
-    coordinates_cls.assert_called_once_with()
-    assert navigator.paths == sentinel.paths
-    assert navigator.coordinates == sentinel.coordinates
 
 
 def test_FileSystemNavigator_from_file_type__unrecognised():

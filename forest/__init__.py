@@ -30,7 +30,6 @@ __version__ = '0.13.1'
 from .config import *
 from . import (
         navigate,
-        unified_model,
         redux,
         tutorial)
 from .db import Database

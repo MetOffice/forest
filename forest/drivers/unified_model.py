@@ -5,7 +5,12 @@ import fnmatch
 import datetime as dt
 import numpy as np
 import netCDF4
-from forest import disk
+from forest import (
+    db,
+    disk,
+    gridded_forecast,
+    view)
+from forest.data import load_image_pts
 from forest.exceptions import SearchFail, PressuresNotFound
 try:
     import iris
@@ -18,20 +23,141 @@ class NotFound(Exception):
     pass
 
 
-class Coordinates(object):
-    """Coordinate system for unified model diagnostics"""
-    def initial_time(self, path):
-        return InitialTimeLocator()(path)
+class Dataset:
+    def __init__(self,
+                 label=None,
+                 pattern=None,
+                 color_mapper=None,
+                 locator="file_system",
+                 directory=None,
+                 database_path=None,
+                 **kwargs):
+        self.label = label
+        self.pattern = pattern
+        self.color_mapper = color_mapper
+        self.use_database = locator == "database"
+        if self.use_database:
+            self.database = db.get_database(database_path)
+            self.locator = db.Locator(self.database.connection,
+                                      directory=directory)
+        else:
+            self.locator = Locator.pattern(self.pattern)
 
-    def variables(self, path):
-        cubes = iris.load(path)
+    def navigator(self):
+        if self.use_database:
+            return self.database
+        else:
+            return Navigator(self.pattern)
+
+    def map_view(self):
+        return view.UMView(Loader(self.label,
+                                  self.pattern,
+                                  self.locator), self.color_mapper)
+
+
+class Navigator:
+    def __init__(self, pattern):
+        self.pattern = pattern
+        self._locators = {
+            "initial": read_initial_time,
+            "valid": read_valid_times,
+            "pressure": PressuresLocator(),
+        }
+
+    def variables(self, pattern):
+        cubes = iris.load(pattern)
         return [cube.name() for cube in cubes]
 
-    def valid_times(self, path, variable):
-        return ValidTimesLocator()(path, variable)
+    def initial_times(self, pattern, variable):
+        locator = self._locators["initial"]
+        return list(sorted(set(locator(path)
+                               for path in glob.glob(pattern))))
 
-    def pressures(self, path, variable):
-        return PressuresLocator()(path, variable)
+    def valid_times(self, pattern, variable, initial_time):
+        return self._dimension("valid", pattern, variable, initial_time)
+
+    def pressures(self, pattern, variable, initial_time):
+        return self._dimension("pressure", pattern, variable, initial_time)
+
+    def _dimension(self, keyword, pattern, variable, initial_time):
+        arrays = []
+        locator = self._locators[keyword]
+        for path in glob.glob(self.pattern):
+            arrays.append(locator(path, variable))
+        if len(arrays) == 0:
+            return []
+        return np.unique(np.concatenate(arrays))
+
+
+class Loader:
+    """Unified model formatted loader"""
+    def __init__(self, name, pattern, locator):
+        self.name = name
+        self.pattern = pattern
+        self.locator = locator
+
+    def image(self, state):
+        if not self.valid(state):
+            return gridded_forecast.empty_image()
+
+        try:
+            path, pts = self.locator.locate(
+                self.pattern,
+                state.variable,
+                state.initial_time,
+                state.valid_time,
+                state.pressure)
+        except SearchFail:
+            return gridded_forecast.empty_image()
+
+        units = self.read_units(path, state.variable)
+        data = load_image_pts(
+                path,
+                state.variable,
+                pts,
+                pts)
+        if (len(state.pressures) > 0) and (state.pressure is not None):
+            level = "{} hPa".format(int(state.pressure))
+        else:
+            level = "Surface"
+        data.update(gridded_forecast.coordinates(state.valid_time,
+                                                 state.initial_time,
+                                                 state.pressures,
+                                                 state.pressure))
+        data["name"] = [self.name]
+        data["units"] = [units]
+        return data
+
+    @staticmethod
+    def read_units(filename,parameter):
+        dataset = netCDF4.Dataset(filename)
+        veep = dataset.variables[parameter]
+        # read the units and assign a blank value if there aren't any:
+        units = getattr(veep, 'units', '')
+        dataset.close()
+        return units
+
+
+    def valid(self, state):
+        if state.variable is None:
+            return False
+        if state.initial_time is None:
+            return False
+        if state.valid_time is None:
+            return False
+        if state.pressures is None:
+            return False
+        if len(state.pressures) > 0:
+            if state.pressure is None:
+                return False
+            if not self.has_pressure(state.pressures, state.pressure):
+                return False
+        return True
+
+    def has_pressure(self, pressures, pressure, tolerance=0.01):
+        if isinstance(pressures, list):
+            pressures = np.array(pressures)
+        return any(np.abs(pressures - pressure) < tolerance)
 
 
 class Locator(object):
@@ -150,7 +276,11 @@ class Locator(object):
         return result
 
 
-class InitialTimeLocator(object):
+def read_initial_time(path):
+    return InitialTimeLocator()(path)
+
+
+class InitialTimeLocator:
     def __call__(self, path):
         try:
             return self.netcdf4_strategy(path)
@@ -171,6 +301,10 @@ class InitialTimeLocator(object):
             cube = cubes[0]
             return cube.coord('time').cells().next().point
         raise InitialTimeNotFound("No initial time: '{}'".format(path))
+
+
+def read_valid_times(path, variable):
+    return ValidTimesLocator()(path, variable)
 
 
 class ValidTimesLocator(object):
