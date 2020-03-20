@@ -28,8 +28,6 @@ from forest import (
         intake_loader,
         nearcast)
 
-from forest.drivers import gridded_forecast
-
 
 __all__ = []
 
@@ -86,8 +84,6 @@ class Loader(object):
             return rdt.Loader(pattern)
         elif file_type == 'gpm':
             return data.GPM(pattern)
-        elif file_type == 'griddedforecast':
-            return gridded_forecast.ImageLoader(label, pattern)
         elif file_type == 'intake':
             return intake_loader.IntakeLoader(pattern)
         elif file_type == 'nearcast':

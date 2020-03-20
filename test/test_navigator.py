@@ -136,7 +136,7 @@ def test_FileSystemNavigator_from_file_type__griddedforecast(navigator_cls):
     navigator_cls.return_value = sentinel.navigator
 
     navigator = navigate.FileSystemNavigator.from_file_type(sentinel.paths,
-                                                            'grIDdeDforeCAST')
+                                                            'gridded_forecast')
 
     navigator_cls.assert_called_once_with(sentinel.paths)
     assert navigator == sentinel.navigator
