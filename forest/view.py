@@ -68,40 +68,6 @@ class Barbs(object):
     pass
 
 
-class GPMView(object):
-    def __init__(self, loader, color_mapper):
-        self.loader = loader
-        self.color_mapper = color_mapper
-        self.empty = {
-                "lons": [],
-                "lats": [],
-                "x": [],
-                "y": [],
-                "dw": [],
-                "dh": [],
-                "image": []}
-        self.source = bokeh.models.ColumnDataSource(self.empty)
-        self.image_sources = [self.source]
-
-    @old_state
-    @unique
-    def render(self, variable, pressure, itime):
-        if variable != "precipitation_flux":
-            self.source.data = self.empty
-        else:
-            self.source.data = self.loader.image(itime)
-
-    def add_figure(self, figure):
-        return figure.image(
-                x="x",
-                y="y",
-                dw="dw",
-                dh="dh",
-                image="image",
-                source=self.source,
-                color_mapper=self.color_mapper)
-
-
 class NearCast(object):
     def __init__(self, loader, color_mapper):
         self.loader = loader

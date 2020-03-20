@@ -14,13 +14,14 @@ Loads data from NWCSAF satellite NetCDF files.
     :members:
 
 """
+from functools import partial
 import datetime as dt
 import glob
 import re
 import os
 import netCDF4
 from forest.drivers.gridded_forecast import empty_image, coordinates
-from forest.util import timeout_cache
+import forest.util
 from forest import geo, view
 from functools import lru_cache
 
@@ -86,25 +87,39 @@ class Loader:
         return data
 
 
+@forest.util.timeout_cache(dt.timedelta(minutes=10))
+def cached_glob(pattern):
+    """Glob file system at most once every 10 minutes for a pattern"""
+    return sorted(glob.glob(pattern))
+
+
+class FileNameLocator:
+    """Find files with date information encoded in name"""
+    def __init__(self, regex, fmt):
+        self.parse_date = partial(forest.util.parse_date, regex, fmt)
+
+    def find_paths(self, paths, date):
+        """Find a file(s) by date"""
+        for path in paths:
+            if self.parse_date(path) == date:
+                yield path
+
+
 class Locator:
     """Locate SAF files"""
     def __init__(self, pattern):
         self.pattern = pattern
+        self._locators = {
+            "file_name": FileNameLocator("[0-9]{8}T[0-9]{6}Z", "%Y%m%dT%H%M%S%Z")
+        }
 
     def glob(self):
         """List file system"""
-        return self._glob(self.pattern)
-
-    @staticmethod
-    @timeout_cache(dt.timedelta(minutes=10))
-    def _glob(pattern):
-        return sorted(glob.glob(pattern))
+        return cached_glob(self.pattern)
 
     def find_paths(self, paths, date):
         """Find a file(s) containing information related to date"""
-        for path in paths:
-            if self._parse_date(path) == date:
-                yield path
+        return self._locators["file_name"].find_paths(paths, date)
 
     def variables(self, paths):
         """Available variables"""
@@ -113,19 +128,7 @@ class Locator:
     def valid_times(self, paths):
         """Available validity times"""
         for path in paths:
-            yield self._parse_date(path)
-
-    @staticmethod
-    def _parse_date(path):
-        '''Parses a date from a pathname
-
-        :param path: string representation of a path
-        :returns: python Datetime object
-        '''
-        # filename of form S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc
-        groups = re.search("[0-9]{8}T[0-9]{6}Z", os.path.basename(path))
-        if groups is not None:
-            return dt.datetime.strptime(groups[0].replace('Z','UTC'), "%Y%m%dT%H%M%S%Z") # always UTC
+            yield self._locators["file_name"].parse_date(path)
 
     def long_name_to_variable(self, paths):
         """Map long_name attrs to variables"""

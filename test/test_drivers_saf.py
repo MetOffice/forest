@@ -56,3 +56,38 @@ def test_loader():
     pressure = None
     loader = saf.Loader(saf.Locator("saf.nc"))
     loader._image(variable, initial_time, valid_time, pressures, pressure)
+
+
+@pytest.mark.parametrize("regex,fmt,paths,date,expect", [
+    pytest.param(
+        "[0-9]{8}", "%Y%m%d", ["some_20200101.nc"],
+        dt.datetime(2020, 1, 1), ["some_20200101.nc"]
+    ),
+    pytest.param(
+        "[0-9]{8}", "%Y%m%d", ["some_20200101.nc"],
+        dt.datetime(2020, 1, 2), []
+    ),
+])
+def test_file_name_locator(regex, fmt, paths, date, expect):
+    locator = saf.FileNameLocator(regex, fmt)
+    assert list(locator.find_paths(paths, date)) == expect
+
+
+@pytest.mark.parametrize("regex,fmt,path,expect", [
+    pytest.param(
+        "[0-9]{8}", "%Y%m%d", "some_20200101.nc", dt.datetime(2020, 1, 1)
+    ),
+    pytest.param(
+        "[0-9]{8}", "%Y%m%d", "file.nc", None,
+        id="No match"
+    ),
+    pytest.param(
+        "[0-9]{8}T[0-9]{6}Z", "%Y%m%dT%H%M%S%Z",
+        "S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc",
+        dt.datetime(2019, 10, 21, 13, 45),
+        id="SAF format"
+    ),
+])
+def test_file_name_locator_parse_date(regex, fmt, path, expect):
+    locator = saf.FileNameLocator(regex, fmt)
+    assert locator.parse_date(path) == expect

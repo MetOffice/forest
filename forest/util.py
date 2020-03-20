@@ -65,3 +65,13 @@ def to_datetime(d):
         raise Exception("Unknown value: {} type: {}".format(d, type(d)))
 
 
+def parse_date(regex, fmt, path):
+    '''Parses a date from a pathname
+
+    :param path: string representation of a path
+    :returns: python Datetime object
+    '''
+    groups = re.search(regex, os.path.basename(path))
+    if groups is not None:
+        return dt.datetime.strptime(groups[0].replace('Z','UTC'),
+                                    fmt) # always UTC

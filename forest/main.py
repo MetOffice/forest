@@ -24,7 +24,6 @@ from forest import (
         presets,
         redux,
         rx,
-        intake_loader,
         navigate,
         parse_args)
 import forest.components
@@ -105,12 +104,6 @@ def main(argv=None):
             loader = data.LOADERS[group.label]
             if isinstance(loader, rdt.Loader):
                 viewer = rdt.View(loader)
-            elif isinstance(loader, data.GPM):
-                viewer = view.GPMView(loader, color_mapper)
-            elif isinstance(loader, intake_loader.IntakeLoader):
-                viewer = view.UMView(loader, color_mapper)
-                viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
-                                            intake_loader.INTAKE_FORMATTERS)
             else:
                 viewer = view.UMView(loader, color_mapper)
         else:

@@ -29,7 +29,6 @@ __version__ = '0.13.2'
 
 from .config import *
 from . import (
-        navigate,
         redux,
         tutorial)
 from .db import Database

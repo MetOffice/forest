@@ -10,8 +10,7 @@ from forest import (
         exceptions,
         drivers,
         db,
-        rdt,
-        intake_loader)
+        rdt)
 
 
 class Navigator:
@@ -86,8 +85,6 @@ class FileSystemNavigator:
         if file_type.lower() == "rdt":
             coordinates = rdt.Coordinates()
             return cls(paths, coordinates)
-        elif file_type.lower() == 'intake':
-            return intake_loader.Navigator()
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
 
