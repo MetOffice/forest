@@ -1,7 +1,6 @@
 import pytest
 import cftime
 from datetime import datetime
-from unittest.mock import Mock, call, patch, sentinel
 import unittest
 
 import iris
