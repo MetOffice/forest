@@ -49,7 +49,9 @@ def stretch_image(lons, lats, values):
     elif (lons.ndim == 2) and (lats.ndim == 2):
         gx, gy = web_mercator(lons, lats)
         gx = gx.reshape(lons.shape)
+        gx = np.ma.masked_invalid(gx)
         gy = gy.reshape(lats.shape)
+        gy = np.ma.masked_invalid(gy)
     else:
         raise Exception("Either 1D or 2D lons/lats")
 
