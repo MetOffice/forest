@@ -9,7 +9,7 @@ from functools import lru_cache
 from forest.exceptions import FileNotFound, IndexNotFound
 from forest.old_state import old_state, unique
 from forest.util import coarsify
-from forest.gridded_forecast import _to_datetime
+from forest.drivers.gridded_forecast import _to_datetime
 from forest import (
         geo,
         locate,

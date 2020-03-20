@@ -10,10 +10,10 @@ from forest import (
         exceptions,
         drivers,
         db,
-        gridded_forecast,
         rdt,
         intake_loader,
         nearcast)
+from forest.drivers import gridded_forecast
 
 
 class Navigator:

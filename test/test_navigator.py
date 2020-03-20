@@ -131,7 +131,7 @@ def test_FileSystemNavigator_from_file_type__rdt(coordinates_cls):
     assert navigator.coordinates == sentinel.coordinates
 
 
-@patch('forest.gridded_forecast.Navigator')
+@patch('forest.drivers.gridded_forecast.Navigator')
 def test_FileSystemNavigator_from_file_type__griddedforecast(navigator_cls):
     navigator_cls.return_value = sentinel.navigator
 
