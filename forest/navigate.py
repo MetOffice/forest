@@ -11,7 +11,6 @@ from forest import (
         drivers,
         db,
         rdt,
-        intake_loader,
         nearcast)
 from forest.drivers import gridded_forecast
 
@@ -91,8 +90,6 @@ class FileSystemNavigator:
         elif file_type.lower() == 'griddedforecast':
             # XXX This needs a "Group" object ... not "paths"
             return gridded_forecast.Navigator(paths)
-        elif file_type.lower() == 'intake':
-            return intake_loader.Navigator()
         elif file_type.lower() == "nearcast":
             return nearcast.Navigator(pattern)
         else:
