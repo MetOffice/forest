@@ -24,8 +24,7 @@ from forest.export import export
 from forest import (
         exceptions,
         data,
-        rdt,
-        intake_loader)
+        rdt)
 
 
 __all__ = []
@@ -83,7 +82,5 @@ class Loader(object):
             return rdt.Loader(pattern)
         elif file_type == 'gpm':
             return data.GPM(pattern)
-        elif file_type == 'intake':
-            return intake_loader.IntakeLoader(pattern)
         else:
             raise exceptions.UnknownFileType("unrecognised file_type: {}".format(file_type))

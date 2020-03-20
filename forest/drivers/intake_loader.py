@@ -18,11 +18,28 @@ try:
 except ModuleNotFoundError:
     intake = None
 
+import forest.view
 from forest import geo, util
 from forest.drivers import gridded_forecast
 
 # Location of the Pangeo-CMIP6 intake catalogue file.
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
+
+
+class Dataset:
+    def __init__(self, pattern=None, color_mapper=None, **kwargs):
+        self.pattern = pattern
+        self.color_mapper = color_mapper
+
+    def navigator(self):
+        return Navigator()
+
+    def map_view(self):
+        loader = IntakeLoader(self.pattern)
+        view = forest.view.UMView(loader, self.color_mapper)
+        view.set_hover_properties(INTAKE_TOOLTIPS, INTAKE_FORMATTERS)
+        return view
+
 
 @functools.lru_cache(maxsize=64)
 def _get_intake_vars(
