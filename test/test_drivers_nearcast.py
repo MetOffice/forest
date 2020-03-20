@@ -1,7 +1,24 @@
 import pytest
 import unittest.mock
+import bokeh.models
 import pygrib
-from forest import nearcast
+import forest.drivers
+import forest.view
+from forest.drivers import nearcast
+
+
+def test_dataset_navigator():
+    dataset = forest.drivers.get_dataset("nearcast")
+    navigator = dataset.navigator()
+    assert isinstance(navigator, forest.drivers.nearcast.Navigator)
+
+
+def test_dataset_map_view():
+    settings = {"color_mapper": bokeh.models.ColorMapper()}
+    dataset = forest.drivers.get_dataset("nearcast", settings)
+    map_view = dataset.map_view()
+    assert isinstance(map_view, forest.view.NearCast)
+    assert map_view.tooltips == forest.drivers.nearcast.NEARCAST_TOOLTIPS
 
 
 def make_open(names):

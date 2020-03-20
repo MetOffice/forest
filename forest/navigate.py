@@ -10,8 +10,7 @@ from forest import (
         exceptions,
         drivers,
         db,
-        rdt,
-        nearcast)
+        rdt)
 from forest.drivers import gridded_forecast
 
 
@@ -90,8 +89,6 @@ class FileSystemNavigator:
         elif file_type.lower() == 'griddedforecast':
             # XXX This needs a "Group" object ... not "paths"
             return gridded_forecast.Navigator(paths)
-        elif file_type.lower() == "nearcast":
-            return nearcast.Navigator(pattern)
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
 

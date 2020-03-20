@@ -24,8 +24,7 @@ from forest.export import export
 from forest import (
         exceptions,
         data,
-        rdt,
-        nearcast)
+        rdt)
 
 from forest.drivers import gridded_forecast
 
@@ -87,7 +86,5 @@ class Loader(object):
             return data.GPM(pattern)
         elif file_type == 'griddedforecast':
             return gridded_forecast.ImageLoader(label, pattern)
-        elif file_type == 'nearcast':
-            return nearcast.NearCast(pattern)
         else:
             raise exceptions.UnknownFileType("unrecognised file_type: {}".format(file_type))
