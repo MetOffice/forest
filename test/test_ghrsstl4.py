@@ -18,30 +18,6 @@ class Test_empty_image(unittest.TestCase):
             self.assertEqual(value, [])
 
 
-class Test_to_datetime(unittest.TestCase):
-    def test_datetime(self):
-        dt = datetime.now()
-        result = ghrsstl4._to_datetime(dt)
-        self.assertEqual(result, dt)
-
-    def test_str_with_space(self):
-        result = ghrsstl4._to_datetime('2019-10-10 01:02:34')
-        self.assertEqual(result, datetime(2019, 10, 10, 1, 2, 34))
-
-    def test_str_iso8601(self):
-        result = ghrsstl4._to_datetime('2019-10-10T01:02:34')
-        self.assertEqual(result, datetime(2019, 10, 10, 1, 2, 34))
-
-    def test_datetime64(self):
-        dt = np.datetime64('2019-10-10T11:22:33')
-        result = ghrsstl4._to_datetime(dt)
-        self.assertEqual(result, datetime(2019, 10, 10, 11, 22, 33))
-
-    def test_unsupported(self):
-        with self.assertRaisesRegex(Exception, 'Unknown value'):
-            ghrsstl4._to_datetime(12)
-
-
 @patch('forest.drivers.ghrsstl4._to_datetime')
 class Test_coordinates(unittest.TestCase):
     def test_surface_and_times(self, to_datetime):

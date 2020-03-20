@@ -20,6 +20,7 @@ except ModuleNotFoundError:
 import glob
 from forest import geo
 from forest.view import UMView
+from forest.util import to_datetime as _to_datetime
 
 
 def empty_image():
@@ -36,20 +37,6 @@ def empty_image():
         "length": [],
         "level": []
     }
-
-
-def _to_datetime(d):
-    if isinstance(d, datetime):
-        return d
-    elif isinstance(d, str):
-        try:
-            return datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            return datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
-    elif isinstance(d, np.datetime64):
-        return d.astype(datetime)
-    else:
-        raise Exception("Unknown value: {}".format(d))
 
 
 def coordinates(valid_time, initial_time, pressures, pressure):

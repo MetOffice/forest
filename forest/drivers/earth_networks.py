@@ -4,7 +4,7 @@ import glob
 import datetime as dt
 import pandas as pd
 from forest import geo
-from forest.drivers.gridded_forecast import _to_datetime
+from forest.util import to_datetime as _to_datetime
 from forest.old_state import old_state, unique
 import bokeh.models
 import bokeh.palettes
