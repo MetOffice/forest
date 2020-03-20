@@ -12,7 +12,6 @@ from forest import (
         db,
         rdt,
         intake_loader)
-from forest.drivers import gridded_forecast
 
 
 class Navigator:
@@ -87,9 +86,6 @@ class FileSystemNavigator:
         if file_type.lower() == "rdt":
             coordinates = rdt.Coordinates()
             return cls(paths, coordinates)
-        elif file_type.lower() == 'griddedforecast':
-            # XXX This needs a "Group" object ... not "paths"
-            return gridded_forecast.Navigator(paths)
         elif file_type.lower() == 'intake':
             return intake_loader.Navigator()
         else:

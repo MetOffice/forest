@@ -20,35 +20,6 @@ class Test_empty_image(unittest.TestCase):
             self.assertEqual(value, [])
 
 
-@pytest.mark.parametrize("given,expect", [
-    pytest.param('2019-10-10 01:02:34',
-                 datetime(2019, 10, 10, 1, 2, 34),
-                 id="str with space"),
-    pytest.param('2019-10-10T01:02:34',
-                 datetime(2019, 10, 10, 1, 2, 34),
-                 id="iso8601"),
-    pytest.param(np.datetime64('2019-10-10T11:22:33'),
-                 datetime(2019, 10, 10, 11, 22, 33),
-                 id="datetime64"),
-    pytest.param(cftime.DatetimeGregorian(2019, 10, 10, 11, 22, 33),
-                 datetime(2019, 10, 10, 11, 22, 33),
-                 id="cftime.DatetimeGregorian"),
-])
-def test__to_datetime(given, expect):
-    assert gridded_forecast._to_datetime(given) == expect
-
-
-class Test_to_datetime(unittest.TestCase):
-    def test_datetime(self):
-        dt = datetime.now()
-        result = gridded_forecast._to_datetime(dt)
-        self.assertEqual(result, dt)
-
-    def test_unsupported(self):
-        with self.assertRaisesRegex(Exception, 'Unknown value'):
-            gridded_forecast._to_datetime(12)
-
-
 @patch('forest.drivers.gridded_forecast._to_datetime')
 class Test_coordinates(unittest.TestCase):
     def test_surface_and_times(self, to_datetime):
