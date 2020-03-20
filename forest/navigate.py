@@ -11,8 +11,7 @@ from forest import (
         drivers,
         db,
         rdt,
-        intake_loader,
-        nearcast)
+        intake_loader)
 
 
 class Navigator:
@@ -89,8 +88,6 @@ class FileSystemNavigator:
             return cls(paths, coordinates)
         elif file_type.lower() == 'intake':
             return intake_loader.Navigator()
-        elif file_type.lower() == "nearcast":
-            return nearcast.Navigator(pattern)
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
 

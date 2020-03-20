@@ -25,8 +25,7 @@ from forest import (
         exceptions,
         data,
         rdt,
-        intake_loader,
-        nearcast)
+        intake_loader)
 
 
 __all__ = []
@@ -86,7 +85,5 @@ class Loader(object):
             return data.GPM(pattern)
         elif file_type == 'intake':
             return intake_loader.IntakeLoader(pattern)
-        elif file_type == 'nearcast':
-            return nearcast.NearCast(pattern)
         else:
             raise exceptions.UnknownFileType("unrecognised file_type: {}".format(file_type))
