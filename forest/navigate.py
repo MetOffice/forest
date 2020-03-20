@@ -11,8 +11,7 @@ from forest import (
         drivers,
         db,
         rdt,
-        intake_loader,
-        nearcast)
+        intake_loader)
 from forest.drivers import gridded_forecast
 
 
@@ -93,8 +92,6 @@ class FileSystemNavigator:
             return gridded_forecast.Navigator(paths)
         elif file_type.lower() == 'intake':
             return intake_loader.Navigator()
-        elif file_type.lower() == "nearcast":
-            return nearcast.Navigator(pattern)
         else:
             raise Exception("Unrecognised file type: '{}'".format(file_type))
 
