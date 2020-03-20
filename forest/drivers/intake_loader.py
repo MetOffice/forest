@@ -19,8 +19,8 @@ except ModuleNotFoundError:
     intake = None
 
 import forest.view
-from forest import geo
-from forest.drivers.gridded_forecast import _to_datetime
+from forest import geo, util
+from forest.drivers import gridded_forecast
 
 # Location of the Pangeo-CMIP6 intake catalogue file.
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
@@ -132,7 +132,7 @@ def _get_bokeh_image(cube,
     """
 
     def time_comp(select_time, time_cell):  #
-        data_time = _to_datetime(time_cell.point)
+        data_time = util.to_datetime(time_cell.point)
         if abs((select_time - data_time).days) < 2:
             return True
         return False
@@ -226,7 +226,7 @@ class IntakeLoader:
         valid_time = state.valid_time
         pressure = state.pressure
 
-        selected_time = gridded_forecast._to_datetime(valid_time)
+        selected_time = util.to_datetime(valid_time)
 
         # the guts of creating the bokeh object has been put into a separate
         # function so that it can be cached, so if image is called multiple
@@ -331,7 +331,7 @@ class Navigator:
         self._parse_pattern(pattern)
         cube = self.cube
         for cell in cube.coord('time').cells():
-            init_time = gridded_forecast._to_datetime(cell.point)
+            init_time = util.to_datetime(cell.point)
             return [init_time]
 
     def valid_times(self, pattern, variable, initial_time):
@@ -340,7 +340,7 @@ class Navigator:
             self._cube = None
         self._parse_pattern(pattern)
         cube = self.cube
-        valid_times = [gridded_forecast._to_datetime(cell.point) for cell in
+        valid_times = [util.to_datetime(cell.point) for cell in
                        cube.coord('time').cells()]
         return valid_times
 

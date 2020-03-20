@@ -132,11 +132,13 @@ def test_FileSystemNavigator_from_file_type__rdt(coordinates_cls):
 
 
 @patch('forest.drivers.gridded_forecast.Navigator')
-def test_FileSystemNavigator_from_file_type__griddedforecast(navigator_cls):
+@patch('forest.drivers.gridded_forecast.glob.glob')
+def test_drivers__get_dataset_from__griddedforecast(glob, navigator_cls):
     navigator_cls.return_value = sentinel.navigator
+    glob.return_value = sentinel.paths
 
-    navigator = navigate.FileSystemNavigator.from_file_type(sentinel.paths,
-                                                            'grIDdeDforeCAST')
+    dataset = forest.drivers.gridded_forecast.Dataset("gridded_forecast", sentinel.settings)
+    navigator = dataset.navigator()
 
     navigator_cls.assert_called_once_with(sentinel.paths)
     assert navigator == sentinel.navigator

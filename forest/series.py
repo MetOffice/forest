@@ -39,7 +39,7 @@ from forest import geo
 from forest.observe import Observable
 from forest.redux import Action
 from forest.util import initial_time as _initial_time
-from forest.drivers.gridded_forecast import _to_datetime
+from forest.util import to_datetime as _to_datetime
 from forest.screen import SET_POSITION
 
 try:

@@ -26,8 +26,6 @@ from forest import (
         data,
         rdt)
 
-from forest.drivers import gridded_forecast
-
 
 __all__ = []
 
@@ -84,7 +82,5 @@ class Loader(object):
             return rdt.Loader(pattern)
         elif file_type == 'gpm':
             return data.GPM(pattern)
-        elif file_type == 'griddedforecast':
-            return gridded_forecast.ImageLoader(label, pattern)
         else:
             raise exceptions.UnknownFileType("unrecognised file_type: {}".format(file_type))
