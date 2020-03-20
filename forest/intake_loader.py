@@ -18,7 +18,8 @@ try:
 except ModuleNotFoundError:
     intake = None
 
-from forest import geo, gridded_forecast
+from forest import geo
+from forest.drivers import gridded_forecast
 
 # Location of the Pangeo-CMIP6 intake catalogue file.
 URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'

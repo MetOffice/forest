@@ -8,10 +8,10 @@ import netCDF4
 from forest import (
     db,
     disk,
-    gridded_forecast,
     view)
 from forest.data import load_image_pts
 from forest.exceptions import SearchFail, PressuresNotFound
+from forest.drivers import gridded_forecast 
 try:
     import iris
 except ImportError:

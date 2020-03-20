@@ -24,10 +24,11 @@ from forest.export import export
 from forest import (
         exceptions,
         data,
-        gridded_forecast,
         rdt,
         intake_loader,
         nearcast)
+
+from forest.drivers import gridded_forecast
 
 
 __all__ = []

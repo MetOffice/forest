@@ -19,7 +19,7 @@ import glob
 import re
 import os
 import netCDF4
-from forest.gridded_forecast import empty_image, coordinates
+from forest.drivers.gridded_forecast import empty_image, coordinates
 from forest.util import timeout_cache
 from forest import geo, view
 from functools import lru_cache
