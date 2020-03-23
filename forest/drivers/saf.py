@@ -20,7 +20,7 @@ import re
 import os
 import xarray
 import numpy as np
-from forest.gridded_forecast import empty_image, coordinates
+from forest.drivers.gridded_forecast import empty_image, coordinates
 from forest.util import timeout_cache
 from forest import geo, view
 from functools import lru_cache
@@ -31,6 +31,8 @@ class Dataset:
     def __init__(self,
                  label=None,
                  pattern=None,
+                 locator=None,
+                 database_path=None,
                  color_mapper=None):
         self.label = label
         self.pattern = pattern
@@ -79,7 +81,7 @@ class Loader:
                 y = np.ma.masked_invalid(nc['lat'])[:]
                 var = nc[long_name_to_variable[long_name]]
                 z = np.ma.masked_invalid(var)[:]
-                z = np.ma.masked_outside(z, var.valid_range[0], var.valid_range[1], copy=False)
+                #z = np.ma.masked_outside(z, var.valid_range[0], var.valid_range[1], copy=False)
                 data = geo.stretch_image(x, y, z)
                 data.update(coordinates(valid_time, initial_time, pressures, pressure))
                 data['name'] = [str(var.long_name)]

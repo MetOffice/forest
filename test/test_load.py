@@ -1,5 +1,8 @@
+import pytest
 import yaml
+import bokeh.models
 import forest
+import forest.drivers
 from forest import main, rdt
 
 
@@ -9,61 +12,12 @@ def test_rdt_loader_given_pattern():
 
 
 def test_build_loader_given_files():
-    """replicate main.py as close as possible"""
-    files = ["file_20190101T0000Z.nc"]
-    args = main.parse_args.parse_args(files)
-    config = forest.config.from_files(args.files, args.file_type)
-    group = config.file_groups[0]
-    loader = forest.Loader.group_args(group, args)
-    assert isinstance(loader, forest.data.DBLoader)
-    assert loader.locator.paths == files
-
-
-def test_build_loader_given_database(tmpdir):
-    """replicate main.py as close as possible"""
-    database_file = str(tmpdir / "database.db")
-
-    config_file = str(tmpdir / "config.yml")
-    settings = {
-        "files": [
-            {
-                "label": "UM",
-                "pattern": "*.nc",
-                "directory": "/replace",
-                "locator": "database",
-                "database_path": database_file
-            }
-        ]
-    }
-    with open(config_file, "w") as stream:
-        yaml.dump(settings, stream)
-
-    args = main.parse_args.parse_args([
-        "--config-file", config_file])
-    config = forest.config.load_config(args.config_file)
-    group = config.file_groups[0]
-    database = forest.db.Database.connect(database_file)
-    loader = forest.Loader.group_args(group, args, database=database)
-    database.close()
-    assert hasattr(loader.locator, "connection")
-    assert loader.locator.directory == "/replace"
-
-
-def test_build_loader_given_config_file_pattern(tmpdir):
-    config_file = str(tmpdir / "config.yml")
-    path = str(tmpdir / "file_20190101T0000Z.nc")
-    with open(path, "w"):
-        pass
-    args = main.parse_args.parse_args([
-        "--config-file", config_file])
-    label = "UM"
-    pattern = str(tmpdir/ "file_*.nc")
-    group = forest.config.FileGroup(
-            label,
-            pattern,
-            locator="file_system")
-    loader = forest.Loader.group_args(group, args)
-    assert loader.locator.paths == [path]
+    settings = {"pattern": "file_20190101T0000Z.nc",
+                "color_mapper": bokeh.models.ColorMapper()}
+    dataset = forest.drivers.get_dataset("unified_model", settings)
+    view = dataset.map_view()
+    assert isinstance(view.loader, forest.drivers.unified_model.Loader)
+    assert isinstance(view.loader.locator, forest.drivers.unified_model.Locator)
 
 
 def test_build_loader_given_rdt_file_type():
