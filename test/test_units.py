@@ -1,6 +1,6 @@
 import netCDF4
 import os
-from forest.data import DBLoader
+from forest.drivers.unified_model import Loader
 
 # example where there are units in the file
 def test_readunits():
@@ -10,7 +10,7 @@ def test_readunits():
     v = dataset.createVariable('mslp','f',())
     v.units = 'hPa'
     dataset.close()
-    result = DBLoader.read_units(filename,parameter)
+    result = Loader.read_units(filename,parameter)
     expect = 'hPa'
     assert result == expect
     os.remove(filename)
@@ -22,7 +22,7 @@ def test_read_no_units():
     dataset = netCDF4.Dataset(filename,'w')
     NNN = dataset.createVariable('nonsense','f',())
     dataset.close()
-    result = DBLoader.read_units(filename,parameter)
+    result = Loader.read_units(filename,parameter)
     expect = ''
     assert result == expect
     os.remove(filename)

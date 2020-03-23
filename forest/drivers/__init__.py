@@ -19,7 +19,14 @@ def _cache(f):
 def _uid(driver_name, settings):
     if settings is None:
         return (driver_name,)
-    return (driver_name,) + tuple(settings[k] for k in sorted(settings.keys()))
+    return (driver_name,) + tuple(_maybe_hashable(settings[k])
+                                  for k in sorted(settings.keys()))
+
+
+def _maybe_hashable(value):
+    if isinstance(value, list):
+        return tuple(value)
+    return value
 
 
 @_cache

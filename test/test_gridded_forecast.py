@@ -1,3 +1,5 @@
+import pytest
+import cftime
 from datetime import datetime
 from unittest.mock import Mock, call, patch, sentinel
 import unittest
@@ -5,7 +7,7 @@ import unittest
 import iris
 import numpy as np
 
-from forest import gridded_forecast
+from forest.drivers import gridded_forecast
 
 
 class Test_empty_image(unittest.TestCase):
@@ -18,31 +20,36 @@ class Test_empty_image(unittest.TestCase):
             self.assertEqual(value, [])
 
 
+@pytest.mark.parametrize("given,expect", [
+    pytest.param('2019-10-10 01:02:34',
+                 datetime(2019, 10, 10, 1, 2, 34),
+                 id="str with space"),
+    pytest.param('2019-10-10T01:02:34',
+                 datetime(2019, 10, 10, 1, 2, 34),
+                 id="iso8601"),
+    pytest.param(np.datetime64('2019-10-10T11:22:33'),
+                 datetime(2019, 10, 10, 11, 22, 33),
+                 id="datetime64"),
+    pytest.param(cftime.DatetimeGregorian(2019, 10, 10, 11, 22, 33),
+                 datetime(2019, 10, 10, 11, 22, 33),
+                 id="cftime.DatetimeGregorian"),
+])
+def test__to_datetime(given, expect):
+    assert gridded_forecast._to_datetime(given) == expect
+
+
 class Test_to_datetime(unittest.TestCase):
     def test_datetime(self):
         dt = datetime.now()
         result = gridded_forecast._to_datetime(dt)
         self.assertEqual(result, dt)
 
-    def test_str_with_space(self):
-        result = gridded_forecast._to_datetime('2019-10-10 01:02:34')
-        self.assertEqual(result, datetime(2019, 10, 10, 1, 2, 34))
-
-    def test_str_iso8601(self):
-        result = gridded_forecast._to_datetime('2019-10-10T01:02:34')
-        self.assertEqual(result, datetime(2019, 10, 10, 1, 2, 34))
-
-    def test_datetime64(self):
-        dt = np.datetime64('2019-10-10T11:22:33')
-        result = gridded_forecast._to_datetime(dt)
-        self.assertEqual(result, datetime(2019, 10, 10, 11, 22, 33))
-
     def test_unsupported(self):
         with self.assertRaisesRegex(Exception, 'Unknown value'):
             gridded_forecast._to_datetime(12)
 
 
-@patch('forest.gridded_forecast._to_datetime')
+@patch('forest.drivers.gridded_forecast._to_datetime')
 class Test_coordinates(unittest.TestCase):
     def test_surface_and_times(self, to_datetime):
         valid = datetime(2019, 10, 10, 9)
@@ -125,7 +132,7 @@ class Test_is_valid_cube(unittest.TestCase):
 
 
 class Test_load(unittest.TestCase):
-    @patch('forest.gridded_forecast._is_valid_cube')
+    @patch('forest.drivers.gridded_forecast._is_valid_cube')
     @patch('iris.load')
     def test_all_unique(self, load, is_valid_cube):
         cube1 = Mock(**{'name.return_value': 'foo'})
@@ -139,7 +146,7 @@ class Test_load(unittest.TestCase):
         self.assertEqual(is_valid_cube.mock_calls, [call(cube1), call(cube2)])
         self.assertEqual(result, {'foo': cube1, 'bar': cube2})
 
-    @patch('forest.gridded_forecast._is_valid_cube')
+    @patch('forest.drivers.gridded_forecast._is_valid_cube')
     @patch('iris.load')
     def test_duplicate_name(self, load, is_valid_cube):
         cube1 = Mock(**{'name.return_value': 'foo'})
@@ -153,7 +160,7 @@ class Test_load(unittest.TestCase):
         self.assertEqual(is_valid_cube.mock_calls, [call(cube1), call(cube2)])
         self.assertEqual(result, {'foo (1)': cube1, 'foo (2)': cube2})
 
-    @patch('forest.gridded_forecast._is_valid_cube')
+    @patch('forest.drivers.gridded_forecast._is_valid_cube')
     @patch('iris.load')
     def test_none_valid(self, load, is_valid_cube):
         load.return_value = ['foo', 'bar']
@@ -164,7 +171,7 @@ class Test_load(unittest.TestCase):
 
 
 class Test_ImageLoader(unittest.TestCase):
-    @patch('forest.gridded_forecast._load')
+    @patch('forest.drivers.gridded_forecast._load')
     def test_init(self, load):
         load.return_value = sentinel.cubes
         result = gridded_forecast.ImageLoader(sentinel.label, sentinel.pattern)
@@ -172,9 +179,9 @@ class Test_ImageLoader(unittest.TestCase):
         self.assertEqual(result._label, sentinel.label)
         self.assertEqual(result._cubes, sentinel.cubes)
 
-    @patch('forest.gridded_forecast.empty_image')
+    @patch('forest.drivers.gridded_forecast.empty_image')
     @patch('iris.Constraint')
-    @patch('forest.gridded_forecast._to_datetime')
+    @patch('forest.drivers.gridded_forecast._to_datetime')
     def test_empty(self, to_datetime, constraint, empty_image):
         # To avoid re-testing the constructor, just make a fake ImageLoader
         # instance.
@@ -194,10 +201,10 @@ class Test_ImageLoader(unittest.TestCase):
         original_cube.extract.assert_called_once_with(sentinel.constraint)
         self.assertEqual(result, sentinel.empty_image)
 
-    @patch('forest.gridded_forecast.coordinates')
+    @patch('forest.drivers.gridded_forecast.coordinates')
     @patch('forest.geo.stretch_image')
     @patch('iris.Constraint')
-    @patch('forest.gridded_forecast._to_datetime')
+    @patch('forest.drivers.gridded_forecast._to_datetime')
     def test_image(self, to_datetime, constraint, stretch_image, coordinates):
         # To avoid re-testing the constructor, just make a fake ImageLoader
         # instance.
@@ -232,7 +239,7 @@ class Test_ImageLoader(unittest.TestCase):
 
 
 class Test_Navigator(unittest.TestCase):
-    @patch('forest.gridded_forecast._load')
+    @patch('forest.drivers.gridded_forecast._load')
     def test_init(self, load):
         load.return_value = sentinel.cubes
         result = gridded_forecast.Navigator(sentinel.paths)

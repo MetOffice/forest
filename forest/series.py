@@ -39,7 +39,7 @@ from forest import geo
 from forest.observe import Observable
 from forest.redux import Action
 from forest.util import initial_time as _initial_time
-from forest.gridded_forecast import _to_datetime
+from forest.drivers.gridded_forecast import _to_datetime
 from forest.screen import SET_POSITION
 
 try:
@@ -335,5 +335,9 @@ class SeriesLocator(object):
 
     __getitem__ = locate
 
-    def key(self, time):
-        return "{:%Y-%m-%d %H:%M:%S}".format(time)
+    @staticmethod
+    def key(time):
+        try:
+            return "{:%Y-%m-%d %H:%M:%S}".format(time)
+        except TypeError:
+            return time.strftime("%Y-%m-%d %H:%M:%S")
