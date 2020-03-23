@@ -342,8 +342,13 @@ class Loader(object):
     @staticmethod
     def load_centre_points(path):
         """Holds a centre point, future point and future movement line"""
-        with open(path) as stream:
-            rdt = json.load(stream)
+        if os.path.splitext(path)[1] == '.json':
+            with open(path) as stream:
+                rdt = json.load(stream)
+        elif os.path.splitext(path)[1] == '.nc':
+            getRDT(path, 0, 'Point')
+        else:
+            return 'Can\'t read this file type'
 
         # Create an empty dictionary
         mydict = dict(
@@ -397,6 +402,111 @@ class Loader(object):
             mydict['Arrowxs'].append([x2[0], x3, x4])
             mydict['Arrowys'].append([y2[0], y3, y4])
         return mydict
+
+
+def getRDT(path, lev, type):
+
+    '''
+    Gets RDT data from the netcdf output of the NWCSAF software
+    :param path: Full path and filename of the netcdf file
+    :param lev: [0,1] Level number. 0 = bottom of the cloud, 1 = top of the cloud (heights vary between clouds)
+    :param type: ['Point', 'Polygon', 'Traj_Point', 'Traj_Line]
+    :return: geojson feature collection object for plotting
+    '''
+
+    # Load the netcdf data
+    ncds = nc.Dataset(path)
+
+    # Get variable names that have either 'nlevel' or 'recNUM' dimensions
+    varlev = [] # 'nlevel' dimension
+    varrec = [] # 'recNUM' dimension
+    vartraj = [] # 'nbpttraj' Trajectory points for each object
+    for ncv in ncds.variables.keys():
+        var_dim = ncds.variables[ncv].dimensions
+        if 'nlevel' in var_dim:
+            varlev.append(ncv)
+        if ('recNUM' in var_dim) and (ncds.dimensions['recNUM'].size == ncds.variables[ncv].size):
+            varrec.append(ncv)
+        if 'nbpttraj' in var_dim:
+            vartraj.append(ncv)
+    allvars = varlev.copy()
+    allvars.extend(varrec)
+
+    # How many cloud levels have we got? It should only be 2 (cloud top and bottom)
+    dimsize = len(ma.getdata(ncds.variables[varlev[0]][0,:]))
+
+    # Check the lev is within the dimsize
+    if not lev in np.arange(dimsize):
+        return 'Please enter a valid level number (0 or 1)'
+
+    # Create list of features to populate
+    features = []
+
+    for i in np.arange(ncds.dimensions['recNUM'].size):
+
+        if type == 'Point':
+
+            # Get the Point features
+            lat_pt = ncds.variables['LatG'][i, lev]
+            lon_pt = ncds.variables['LonG'][i, lev]
+            this_pt = Point((float(lon_pt), float(lat_pt)))
+
+            # Get the properties for this point
+            pt_props = {}
+            for var in allvars:
+                if var in varlev:
+                    thisdata = ncds.variables[var][i, lev]
+                else:
+                    thisdata = ncds.variables[var][i]
+                datatype = ncds.variables[var].datatype
+                update_json(pt_props, var, thisdata, datatype)
+
+            features.append(Feature(geometry=this_pt, properties=pt_props))
+
+        if type == 'Polygons':
+            # do something
+            ypolcoords = getDataOnly(ncds.variables['LatContour'][i, lev, :])
+            xpolcoords = getDataOnly(ncds.variables['LonContour'][i, lev, :])
+
+            this_poly = Polygon([[(float(coord[0]), float(coord[1])) for coord in zip(xpolcoords, ypolcoords)]])
+
+            # Get the properties for this polygon
+            pol_props = {}
+            for var in allvars:
+                if var in varlev:
+                    thisdata = ncds.variables[var][i, lev]
+                else:
+                    thisdata = ncds.variables[var][i]
+                datatype = ncds.variables[var].datatype
+                update_json(pol_props, var, thisdata, datatype)
+
+            features.append(Feature(geometry=this_poly, properties=pol_props))
+
+        if type == 'Traj_Point':
+            # do something
+
+            lat_pts = getDataOnly(ncds.variables['LatTrajCellCG'][i, :])
+            lon_pts = getDataOnly(ncds.variables['LonTrajCellCG'][i, :])
+
+            for j, coords in enumerate(zip(lon_pts, lat_pts)):
+                this_trajpt = Point((float(coords[0]), float(coords[1])))
+                trajpt_props = {}
+                for var in vartraj:
+                    thisdata = ncds.variables[var][i, j]
+                    datatype = ncds.variables[var].datatype
+                    update_json(trajpt_props, var, thisdata, datatype)
+
+                features.append(Feature(geometry=this_trajpt, properties=trajpt_props))
+
+        if type == 'Traj_Line':
+            # do something
+            lat_linepts = getDataOnly(ncds.variables['LatTrajCellCG'][i, :])
+            lon_linepts = getDataOnly(ncds.variables['LonTrajCellCG'][i, :])
+
+
+
+    feature_collection = FeatureCollection(features)
+    return feature_collection
 
 
 def calc_dst_point(x1d, y1d, speed, angle):
