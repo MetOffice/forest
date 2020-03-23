@@ -5,16 +5,13 @@ import bokeh.colors
 import numpy as np
 import os
 import glob
-from forest.drivers import rdt
 from forest import _profile as profile
 from forest import (
         drivers,
-        exceptions,
         screen,
         tools,
         series,
         data,
-        view,
         geo,
         colors,
         layers,

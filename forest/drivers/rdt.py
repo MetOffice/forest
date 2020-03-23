@@ -13,12 +13,11 @@ from forest import (
         geo,
         locate)
 from forest.old_state import old_state, unique
-from forest.util import timeout_cache
+import forest.util
 from forest.exceptions import FileNotFound
 from bokeh.palettes import GnBu3, OrRd3
 import itertools
 import math
-from forest.drivers.gridded_forecast import _to_datetime
 
 
 class Dataset:
@@ -157,7 +156,7 @@ class View(object):
     def render(self, state):
         """Gets called when a menu button is clicked (or when application state changes)"""
         if state.valid_time is not None:
-            date = _to_datetime(state.valid_time)
+            date = forest.util.to_datetime(state.valid_time)
             try:
                 (self.source.geojson,
                  self.tail_line_source.data,
@@ -867,7 +866,7 @@ class Locator(object):
         return self.find(self.pattern)
 
     @staticmethod
-    @timeout_cache(dt.timedelta(minutes=10))
+    @forest.util.timeout_cache(dt.timedelta(minutes=10))
     def find(pattern):
         return sorted(glob.glob(pattern))
 
