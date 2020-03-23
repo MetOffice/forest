@@ -5,11 +5,6 @@ import forest.drivers
 from forest.drivers import rdt
 
 
-def test_rdt_loader_given_pattern():
-    loader = forest.Loader.from_pattern("Label", "RDT*.json", "rdt")
-    assert isinstance(loader, rdt.Loader)
-
-
 def test_build_loader_given_files():
     settings = {"pattern": "file_20190101T0000Z.nc",
                 "color_mapper": bokeh.models.ColorMapper()}
