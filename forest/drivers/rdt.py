@@ -23,29 +23,34 @@ import math
 class Dataset:
     def __init__(self, pattern=None, **kwargs):
         self.pattern = pattern
+        self.locator = Locator(pattern)
 
     def navigator(self):
-        return Navigator()
+        return Navigator(self.locator)
 
     def map_view(self):
         return View(Loader(self.pattern))
 
 
 class Navigator:
+    """Navigator API facade"""
+    def __init__(self, locator):
+        self.locator = locator
+
     def variables(self, *args, **kwargs):
         return ["RDT"]
 
     def initial_times(self, *args, **kwargs):
-        return []
+        return [dt.datetime(1970, 1, 1)]
 
     def valid_times(self, *args, **kwargs):
-        return []
+        return self.locator.valid_times()
 
     def pressures(self, *args, **kwargs):
         return []
 
 
-class RenderGroup(object):
+class RenderGroup:
     """Collection of renderers that act as one"""
     def __init__(self, renderers, visible=False):
         self.renderers = renderers
@@ -61,7 +66,7 @@ class RenderGroup(object):
             r.visible = value
 
 
-class View(object):
+class View:
     """Rapidly Developing Thunderstorms (RDT) visualisation"""
     def __init__(self, loader):
         self.loader = loader
@@ -211,7 +216,7 @@ class View(object):
         return RenderGroup([renderer, lines, circles, cntr_circles, future_lines, arrows])
 
 
-class Loader(object):
+class Loader:
     """High-level RDT loader"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
@@ -845,9 +850,13 @@ def fieldValueLUT(fn, uid):
         return "-"
 
 
-class Locator(object):
+class Locator:
     def __init__(self, pattern):
         self.pattern = pattern
+
+    def valid_times(self):
+        """Parse file names to an array of dates"""
+        return np.unique(self.dates(self.paths))
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
@@ -882,7 +891,7 @@ class Locator(object):
             return dt.datetime.strptime(groups[0], "%Y%m%d%H%M")
 
 
-class _Coordinates(object):
+class _Coordinates:
     """Menu system interface"""
     def initial_time(self, path):
         times = self.valid_times(path, None)

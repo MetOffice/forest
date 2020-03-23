@@ -35,7 +35,6 @@ from forest.exceptions import SearchFail
 
 
 # Application data shared across documents
-LOADERS = {}
 IMAGES = OrderedDict()
 VECTORS = OrderedDict()
 COASTLINES = {
@@ -79,12 +78,6 @@ def on_server_loaded():
             'cultural',
             'admin_0_boundary_lines_land',
             '50m').geometries()))
-
-
-def add_loader(name, loader):
-    global LOADERS
-    if name not in LOADERS:
-        LOADERS[name] = loader
 
 
 def load_coastlines():

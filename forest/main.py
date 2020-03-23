@@ -85,7 +85,6 @@ def main(argv=None):
     renderers = {}
     viewers = {}
     for group in config.file_groups:
-        # Use dataset interface
         settings = {
             "label": group.label,
             "pattern": group.pattern,

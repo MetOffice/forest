@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 import datetime as dt
 import os
 import glob
@@ -10,9 +11,31 @@ from forest import (
         locate)
 
 
-def test_dataset():
+def test_dataset_navigator_standard_dimensions():
     settings = {}
     dataset = forest.drivers.get_dataset("rdt", settings)
+    navigator = dataset.navigator()
+    assert navigator.variables() == ["RDT"]
+    assert navigator.initial_times() == [dt.datetime(1970, 1, 1)]
+    assert navigator.pressures() == []
+
+
+def test_dataset_navigator_valid_times():
+    pattern = "*.json"
+    settings = {"pattern": pattern}
+    dataset = forest.drivers.get_dataset("rdt", settings)
+    navigator = dataset.navigator()
+    with patch("forest.drivers.rdt.glob") as glob:
+        glob.glob.return_value = ["rdt_202001010000.json"]
+        glob.glob.assert_called_once_with(pattern)
+        assert navigator.valid_times() == [dt.datetime(2020, 1, 1)]
+
+
+def test_dataset_map_view():
+    settings = {"pattern": ""}
+    dataset = forest.drivers.get_dataset("rdt", settings)
+    map_view = dataset.map_view()
+    map_view.render({})
 
 
 class TestLocator(unittest.TestCase):
@@ -38,26 +61,29 @@ class TestLocator(unittest.TestCase):
         expect = dt.datetime(2019, 3, 15, 12, 15)
         self.assertEqual(expect, result)
 
-    def test_time_bounds(self):
-        dates = [dt.datetime(2019, 8, 1)]
-        length = dt.timedelta(minutes=15)
-        result = locate.bounds(dates, length)
-        expect = np.array([
-            ['2019-08-01 00:00:00', '2019-08-01 00:15:00']],
-            dtype='datetime64[s]')
-        np.testing.assert_array_equal(expect, result)
 
-    def test_in_bounds(self):
-        time = '2019-08-01 00:14:59'
-        bounds = locate.bounds(['2019-08-01 00:00:00'], dt.timedelta(minutes=15))
-        result = locate.in_bounds(bounds, time)
-        expect = [True]
-        np.testing.assert_array_equal(expect, result)
+def test_time_bounds():
+    dates = [dt.datetime(2019, 8, 1)]
+    length = dt.timedelta(minutes=15)
+    result = locate.bounds(dates, length)
+    expect = np.array([
+        ['2019-08-01 00:00:00', '2019-08-01 00:15:00']],
+        dtype='datetime64[s]')
+    np.testing.assert_array_equal(expect, result)
 
-    def test_in_bounds_given_point_outside_bounds(self):
-        time = '2019-08-01 00:15:00'
-        bounds = locate.bounds(['2019-08-01 00:00:00'],
-                dt.timedelta(minutes=15))
-        result = locate.in_bounds(bounds, time)
-        expect = [False]
-        np.testing.assert_array_equal(expect, result)
+
+def test_in_bounds():
+    time = '2019-08-01 00:14:59'
+    bounds = locate.bounds(['2019-08-01 00:00:00'], dt.timedelta(minutes=15))
+    result = locate.in_bounds(bounds, time)
+    expect = [True]
+    np.testing.assert_array_equal(expect, result)
+
+
+def test_in_bounds_given_point_outside_bounds():
+    time = '2019-08-01 00:15:00'
+    bounds = locate.bounds(['2019-08-01 00:00:00'],
+            dt.timedelta(minutes=15))
+    result = locate.in_bounds(bounds, time)
+    expect = [False]
+    np.testing.assert_array_equal(expect, result)
