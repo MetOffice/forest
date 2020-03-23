@@ -13,15 +13,44 @@ from forest import (
         geo,
         locate)
 from forest.old_state import old_state, unique
-from forest.util import timeout_cache
+import forest.util
 from forest.exceptions import FileNotFound
 from bokeh.palettes import GnBu3, OrRd3
 import itertools
 import math
-from forest.drivers.gridded_forecast import _to_datetime
 
 
-class RenderGroup(object):
+class Dataset:
+    def __init__(self, pattern=None, **kwargs):
+        self.pattern = pattern
+        self.locator = Locator(pattern)
+
+    def navigator(self):
+        return Navigator(self.locator)
+
+    def map_view(self):
+        return View(Loader(self.pattern))
+
+
+class Navigator:
+    """Navigator API facade"""
+    def __init__(self, locator):
+        self.locator = locator
+
+    def variables(self, *args, **kwargs):
+        return ["RDT"]
+
+    def initial_times(self, *args, **kwargs):
+        return [dt.datetime(1970, 1, 1)]
+
+    def valid_times(self, *args, **kwargs):
+        return self.locator.valid_times()
+
+    def pressures(self, *args, **kwargs):
+        return []
+
+
+class RenderGroup:
     """Collection of renderers that act as one"""
     def __init__(self, renderers, visible=False):
         self.renderers = renderers
@@ -37,7 +66,7 @@ class RenderGroup(object):
             r.visible = value
 
 
-class View(object):
+class View:
     """Rapidly Developing Thunderstorms (RDT) visualisation"""
     def __init__(self, loader):
         self.loader = loader
@@ -132,7 +161,7 @@ class View(object):
     def render(self, state):
         """Gets called when a menu button is clicked (or when application state changes)"""
         if state.valid_time is not None:
-            date = _to_datetime(state.valid_time)
+            date = forest.util.to_datetime(state.valid_time)
             try:
                 (self.source.geojson,
                  self.tail_line_source.data,
@@ -187,7 +216,7 @@ class View(object):
         return RenderGroup([renderer, lines, circles, cntr_circles, future_lines, arrows])
 
 
-class Loader(object):
+class Loader:
     """High-level RDT loader"""
     def __init__(self, pattern):
         self.locator = Locator(pattern)
@@ -821,9 +850,15 @@ def fieldValueLUT(fn, uid):
         return "-"
 
 
-class Locator(object):
+class Locator:
     def __init__(self, pattern):
         self.pattern = pattern
+
+    def valid_times(self):
+        """Parse file names to an array of dates"""
+        paths = self.find(self.pattern)
+        parsed_times = [self.parse_date(p) for p in paths]
+        return sorted(set(t for t in parsed_times if t is not None))
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
@@ -842,7 +877,7 @@ class Locator(object):
         return self.find(self.pattern)
 
     @staticmethod
-    @timeout_cache(dt.timedelta(minutes=10))
+    @forest.util.timeout_cache(dt.timedelta(minutes=10))
     def find(pattern):
         return sorted(glob.glob(pattern))
 
@@ -856,24 +891,3 @@ class Locator(object):
         groups = re.search(r"[0-9]{12}", os.path.basename(path))
         if groups is not None:
             return dt.datetime.strptime(groups[0], "%Y%m%d%H%M")
-
-
-class Coordinates(object):
-    """Menu system interface"""
-    def initial_time(self, path):
-        times = self.valid_times(path, None)
-        if len(times) > 0:
-            return times[0]
-        return None
-
-    def variables(self, path):
-        return ["RDT"]
-
-    def valid_times(self, path, variable):
-        date = Locator.parse_date(path)
-        if date is None:
-            return []
-        return [str(date)]
-
-    def pressures(self, path, variable):
-        return None

@@ -8,14 +8,10 @@ import glob
 from forest import _profile as profile
 from forest import (
         drivers,
-        exceptions,
         screen,
         tools,
         series,
         data,
-        load,
-        view,
-        rdt,
         geo,
         colors,
         layers,
@@ -86,37 +82,18 @@ def main(argv=None):
     # Colorbar user interface
     colorbar_ui = forest.components.ColorbarUI(color_mapper)
 
-    # Database/File system loader(s)
-    for group in config.file_groups:
-        if group.label not in data.LOADERS:
-            try:
-                loader = load.Loader.group_args(
-                        group, args)
-            except exceptions.UnknownFileType:
-                # TODO: Deprecate load.Loader.group_args()
-                continue
-            data.add_loader(group.label, loader)
-
     renderers = {}
     viewers = {}
     for group in config.file_groups:
-        if group.label in data.LOADERS:
-            loader = data.LOADERS[group.label]
-            if isinstance(loader, rdt.Loader):
-                viewer = rdt.View(loader)
-            else:
-                viewer = view.UMView(loader, color_mapper)
-        else:
-            # Use dataset interface
-            settings = {
-                "label": group.label,
-                "pattern": group.pattern,
-                "locator": group.locator,
-                "database_path": group.database_path,
-                "color_mapper": color_mapper,
-            }
-            dataset = drivers.get_dataset(group.file_type, settings)
-            viewer = dataset.map_view()
+        settings = {
+            "label": group.label,
+            "pattern": group.pattern,
+            "locator": group.locator,
+            "database_path": group.database_path,
+            "color_mapper": color_mapper,
+        }
+        dataset = drivers.get_dataset(group.file_type, settings)
+        viewer = dataset.map_view()
         viewers[group.label] = viewer
         renderers[group.label] = [
                 viewer.add_figure(f)

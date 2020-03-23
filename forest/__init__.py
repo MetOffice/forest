@@ -18,8 +18,6 @@ forecasts alongside observations.
 
 .. automodule:: forest.config
 
-.. automodule:: forest.load
-
 .. automodule:: forest.geo
 
 .. automodule:: forest.presets
@@ -33,4 +31,3 @@ from . import (
         tutorial)
 from .db import Database
 from .keys import *
-from .load import *

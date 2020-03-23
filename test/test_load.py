@@ -1,14 +1,8 @@
 import pytest
 import yaml
 import bokeh.models
-import forest
 import forest.drivers
-from forest import main, rdt
-
-
-def test_rdt_loader_given_pattern():
-    loader = forest.Loader.from_pattern("Label", "RDT*.json", "rdt")
-    assert isinstance(loader, rdt.Loader)
+from forest.drivers import rdt
 
 
 def test_build_loader_given_files():
@@ -21,7 +15,8 @@ def test_build_loader_given_files():
 
 
 def test_build_loader_given_rdt_file_type():
-    loader = forest.Loader.from_pattern(
-            "Label", "*.json", "rdt")
-    assert isinstance(loader, forest.rdt.Loader)
-    assert isinstance(loader.locator, forest.rdt.Locator)
+    dataset = forest.drivers.get_dataset("rdt", {"label": "Label",
+                                                 "pattern": "*.json"})
+    map_view = dataset.map_view()
+    assert isinstance(map_view.loader, rdt.Loader)
+    assert isinstance(map_view.loader.locator, rdt.Locator)
