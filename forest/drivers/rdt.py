@@ -21,6 +21,31 @@ import math
 from forest.drivers.gridded_forecast import _to_datetime
 
 
+class Dataset:
+    def __init__(self, pattern=None, **kwargs):
+        self.pattern = pattern
+
+    def navigator(self):
+        return Navigator()
+
+    def map_view(self):
+        return View(Loader(self.pattern))
+
+
+class Navigator:
+    def variables(self, *args, **kwargs):
+        return ["RDT"]
+
+    def initial_times(self, *args, **kwargs):
+        return []
+
+    def valid_times(self, *args, **kwargs):
+        return []
+
+    def pressures(self, *args, **kwargs):
+        return []
+
+
 class RenderGroup(object):
     """Collection of renderers that act as one"""
     def __init__(self, renderers, visible=False):
@@ -858,7 +883,7 @@ class Locator(object):
             return dt.datetime.strptime(groups[0], "%Y%m%d%H%M")
 
 
-class Coordinates(object):
+class _Coordinates(object):
     """Menu system interface"""
     def initial_time(self, path):
         times = self.valid_times(path, None)

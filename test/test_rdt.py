@@ -4,9 +4,15 @@ import os
 import glob
 import json
 import numpy as np
+import forest.drivers
+from forest.drivers import rdt
 from forest import (
-        rdt,
         locate)
+
+
+def test_dataset():
+    settings = {}
+    dataset = forest.drivers.get_dataset("rdt", settings)
 
 
 class TestLocator(unittest.TestCase):

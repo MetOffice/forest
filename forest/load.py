@@ -21,10 +21,10 @@ testing.
 """
 import os
 from forest.export import export
+from forest.drivers import rdt
 from forest import (
         exceptions,
-        data,
-        rdt)
+        data)
 
 
 __all__ = []
