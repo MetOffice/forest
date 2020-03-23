@@ -80,7 +80,5 @@ class Loader(object):
         file_type = file_type.lower().replace("_", "")
         if file_type == 'rdt':
             return rdt.Loader(pattern)
-        elif file_type == 'gpm':
-            return data.GPM(pattern)
         else:
             raise exceptions.UnknownFileType("unrecognised file_type: {}".format(file_type))

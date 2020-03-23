@@ -56,3 +56,30 @@ def test_loader():
     pressure = None
     loader = saf.Loader(saf.Locator("saf.nc"))
     loader._image(variable, initial_time, valid_time, pressures, pressure)
+
+
+@pytest.mark.parametrize("paths,date,expect", [
+    pytest.param(
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
+        dt.datetime(2019, 10, 21, 13, 45),
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
+        id="File name matches date"
+    ),
+    pytest.param(
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
+        dt.datetime(2019, 10, 21, 14, 0),
+        [],
+        id="File name earlier than date"
+    ),
+    pytest.param(
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
+        dt.datetime(2019, 10, 21, 13, 55),
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
+        id="Time inside window"
+    ),
+])
+def test_file_name_locator(paths, date, expect):
+    pattern = ""
+    locator = saf.Locator(pattern, )
+    frequency = dt.timedelta(minutes=15)
+    assert list(locator.find_paths(paths, date, frequency)) == expect

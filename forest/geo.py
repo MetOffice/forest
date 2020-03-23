@@ -28,7 +28,9 @@ try:
 except ModuleNotFoundError:
     datashader = None
 
-def stretch_image(lons, lats, values):
+def stretch_image(lons, lats, values,
+                  plot_height=None,
+                  plot_width=None):
     """
     Do the mapping from image data to the format required by bokeh
     for plotting.
@@ -56,9 +58,14 @@ def stretch_image(lons, lats, values):
     if datashader:
         x_range = (gx.min(), gx.max())
         y_range = (gy.min(), gy.max())
-        image = datashader_stretch(values, gx, gy, x_range, y_range)
+        image = datashader_stretch(values, gx, gy, x_range, y_range,
+                                   plot_height=plot_height,
+                                   plot_width=plot_width)
     else:
+        # TODO: Deprecate this method
         image = custom_stretch(values, gx, gy)
+
+    # Image location
     x = gx.min()
     y = gy.min()
     if gx.ndim == 1:
@@ -78,7 +85,9 @@ def stretch_image(lons, lats, values):
     }
 
 
-def datashader_stretch(values, gx, gy, x_range, y_range):
+def datashader_stretch(values, gx, gy, x_range, y_range,
+                       plot_height=None,
+                       plot_width=None):
     """
     Use datashader to sample the data mesh in on a regular grid for use in
     image display.
@@ -90,8 +99,12 @@ def datashader_stretch(values, gx, gy, x_range, y_range):
     :param y_range: The range of the mesh in projection space.
     :return: An xarray of image data representing pixels.
     """
-    canvas = datashader.Canvas(plot_height=values.shape[0],
-                               plot_width=values.shape[1],
+    if plot_height is None:
+        plot_height = values.shape[0]
+    if plot_width is None:
+        plot_width = values.shape[1]
+    canvas = datashader.Canvas(plot_height=plot_height,
+                               plot_width=plot_width,
                                x_range=x_range,
                                y_range=y_range)
     if gx.ndim == 1:

@@ -29,7 +29,6 @@ except ImportError:
     # ReadTheDocs unable to pip install shapely
     pass
 from forest.util import (
-        timeout_cache,
         initial_time,
         coarsify)
 from forest.exceptions import SearchFail
@@ -132,26 +131,6 @@ def iterlines(geometries):
                 yield xy(g)
         except TypeError:
             yield xy(geometry)
-
-
-class FileLocator(object):
-    """Base class for file system locators"""
-    @timeout_cache(dt.timedelta(minutes=10))
-    def find(self, pattern):
-        return sorted(glob.glob(pattern))
-
-
-class GPM(FileLocator):
-    def __init__(self, pattern):
-        self.pattern = pattern
-        super().__init__()
-
-    def image(self, itime):
-        return load_image(
-                self.paths[0],
-                "precipitation_flux",
-                0,
-                itime)
 
 
 def cache(name):

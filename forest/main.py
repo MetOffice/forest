@@ -104,8 +104,6 @@ def main(argv=None):
             loader = data.LOADERS[group.label]
             if isinstance(loader, rdt.Loader):
                 viewer = rdt.View(loader)
-            elif isinstance(loader, data.GPM):
-                viewer = view.GPMView(loader, color_mapper)
             else:
                 viewer = view.UMView(loader, color_mapper)
         else:
