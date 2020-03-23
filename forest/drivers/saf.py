@@ -19,7 +19,8 @@ import datetime as dt
 import glob
 import re
 import os
-import netCDF4
+import xarray
+import numpy as np
 from forest.drivers.gridded_forecast import empty_image, coordinates
 import forest.util
 from forest import geo, view
@@ -31,6 +32,8 @@ class Dataset:
     def __init__(self,
                  label=None,
                  pattern=None,
+                 locator=None,
+                 database_path=None,
                  color_mapper=None):
         self.label = label
         self.pattern = pattern
@@ -71,19 +74,19 @@ class Loader:
         data = empty_image()
         paths = self.locator.glob()
         long_name_to_variable = self.locator.long_name_to_variable(paths)
-        frequency = dt.timedelta(minutes=15)
+        frequency = dt.timedelta(minutes=15)  # TODO: Support arbitrary frequencies
         for path in self.locator.find_paths(paths, valid_time, frequency):
-            with netCDF4.Dataset(path) as nc:
+            with xarray.open_dataset(path) as nc:
                 if long_name not in long_name_to_variable:
                     continue
-                x = nc['lon'][:]
-                y = nc['lat'][:]
+                x = np.ma.masked_invalid(nc['lon'])[:]
+                y = np.ma.masked_invalid(nc['lat'])[:]
                 var = nc[long_name_to_variable[long_name]]
-                z = var[:]
+                z = np.ma.masked_invalid(var)[:]
                 data = geo.stretch_image(x, y, z)
                 data.update(coordinates(valid_time, initial_time, pressures, pressure))
                 data['name'] = [str(var.long_name)]
-                if 'units' in var.ncattrs():
+                if 'units' in var.attrs:
                     data['units'] = [str(var.units)]
         return data
 
@@ -120,7 +123,7 @@ class Locator:
     def valid_times(self, paths):
         """Available validity times"""
         for path in paths:
-            yield self._locators["file_name"].parse_date(path)
+            yield self.parse_date(path)
 
     def long_name_to_variable(self, paths):
         """Map long_name attrs to variables"""
@@ -133,11 +136,11 @@ class Locator:
     @lru_cache(maxsize=1)
     def _read_long_name_to_variable(path):
         mapping = {}
-        with netCDF4.Dataset(path) as nc:
-            for variable, var in nc.variables.items():
+        with xarray.open_dataset(path) as nc:
+            for variable in nc.data_vars:
                 # Only display variables with lon/lat coords
-                if('coordinates' in var.ncattrs() and var.coordinates == "lon lat"):
-                    mapping[var.long_name] = variable
+                if('lon' in nc.data_vars[variable].coords):
+                    mapping[nc.data_vars[variable].long_name] = variable
         return mapping
 
 
