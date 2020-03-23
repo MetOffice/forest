@@ -7,7 +7,6 @@ import numpy as np
 import forest.view
 import forest.geo
 import forest.util
-from forest.gridded_forecast import _to_datetime
 
 
 @lru_cache(maxsize=16)
@@ -16,7 +15,7 @@ def read_times(path):
     with netCDF4.Dataset(path) as dataset:
         var = dataset.variables["time"]
         times = netCDF4.num2date(var[:], units=var.units)
-    return np.array([_to_datetime(t) for t in times], dtype=object)
+    return np.array([forest.util.to_datetime(t) for t in times], dtype=object)
 
 
 class Dataset:

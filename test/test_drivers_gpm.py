@@ -2,6 +2,7 @@ import pytest
 import datetime as dt
 import bokeh.models
 import forest.drivers
+import forest.drivers.gpm
 
 
 def test_gpm_dataset():
