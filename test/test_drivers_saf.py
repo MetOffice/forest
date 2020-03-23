@@ -58,36 +58,28 @@ def test_loader():
     loader._image(variable, initial_time, valid_time, pressures, pressure)
 
 
-@pytest.mark.parametrize("regex,fmt,paths,date,expect", [
+@pytest.mark.parametrize("paths,date,expect", [
     pytest.param(
-        "[0-9]{8}", "%Y%m%d", ["some_20200101.nc"],
-        dt.datetime(2020, 1, 1), ["some_20200101.nc"]
-    ),
-    pytest.param(
-        "[0-9]{8}", "%Y%m%d", ["some_20200101.nc"],
-        dt.datetime(2020, 1, 2), []
-    ),
-])
-def test_file_name_locator(regex, fmt, paths, date, expect):
-    locator = saf.FileNameLocator(regex, fmt)
-    assert list(locator.find_paths(paths, date)) == expect
-
-
-@pytest.mark.parametrize("regex,fmt,path,expect", [
-    pytest.param(
-        "[0-9]{8}", "%Y%m%d", "some_20200101.nc", dt.datetime(2020, 1, 1)
-    ),
-    pytest.param(
-        "[0-9]{8}", "%Y%m%d", "file.nc", None,
-        id="No match"
-    ),
-    pytest.param(
-        "[0-9]{8}T[0-9]{6}Z", "%Y%m%dT%H%M%S%Z",
-        "S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc",
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
         dt.datetime(2019, 10, 21, 13, 45),
-        id="SAF format"
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
+        id="File name matches date"
+    ),
+    pytest.param(
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
+        dt.datetime(2019, 10, 21, 14, 0),
+        [],
+        id="File name earlier than date"
+    ),
+    pytest.param(
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
+        dt.datetime(2019, 10, 21, 13, 55),
+        ["S_NWC_CTTH_MSG4_GuineaCoast-VISIR_20191021T134500Z.nc"],
+        id="Time inside window"
     ),
 ])
-def test_file_name_locator_parse_date(regex, fmt, path, expect):
-    locator = saf.FileNameLocator(regex, fmt)
-    assert locator.parse_date(path) == expect
+def test_file_name_locator(paths, date, expect):
+    pattern = ""
+    locator = saf.Locator(pattern, )
+    frequency = dt.timedelta(minutes=15)
+    assert list(locator.find_paths(paths, date, frequency)) == expect

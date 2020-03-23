@@ -71,7 +71,8 @@ class Loader:
         data = empty_image()
         paths = self.locator.glob()
         long_name_to_variable = self.locator.long_name_to_variable(paths)
-        for path in self.locator.find_paths(paths, valid_time):
+        frequency = dt.timedelta(minutes=15)
+        for path in self.locator.find_paths(paths, valid_time, frequency):
             with netCDF4.Dataset(path) as nc:
                 if long_name not in long_name_to_variable:
                     continue
@@ -93,33 +94,24 @@ def cached_glob(pattern):
     return sorted(glob.glob(pattern))
 
 
-class FileNameLocator:
-    """Find files with date information encoded in name"""
-    def __init__(self, regex, fmt):
-        self.parse_date = partial(forest.util.parse_date, regex, fmt)
-
-    def find_paths(self, paths, date):
-        """Find a file(s) by date"""
-        for path in paths:
-            if self.parse_date(path) == date:
-                yield path
-
-
 class Locator:
     """Locate SAF files"""
     def __init__(self, pattern):
         self.pattern = pattern
-        self._locators = {
-            "file_name": FileNameLocator("[0-9]{8}T[0-9]{6}Z", "%Y%m%dT%H%M%S%Z")
-        }
+        regex = "[0-9]{8}T[0-9]{6}Z"
+        fmt = "%Y%m%dT%H%M%S%Z"
+        self.parse_date = partial(forest.util.parse_date, regex, fmt)
 
     def glob(self):
         """List file system"""
         return cached_glob(self.pattern)
 
-    def find_paths(self, paths, date):
+    def find_paths(self, paths, date, frequency):
         """Find a file(s) containing information related to date"""
-        return self._locators["file_name"].find_paths(paths, date)
+        for path in paths:
+            file_date = self.parse_date(path)
+            if (file_date <= date) and (date < (file_date + frequency)):
+                yield path
 
     def variables(self, paths):
         """Available variables"""
