@@ -856,7 +856,9 @@ class Locator:
 
     def valid_times(self):
         """Parse file names to an array of dates"""
-        return np.unique(self.dates(self.paths))
+        paths = self.find(self.pattern)
+        parsed_times = [self.parse_date(p) for p in paths]
+        return sorted(set(t for t in parsed_times if t is not None))
 
     def find_file(self, valid_date):
         paths = np.array(self.paths)  # Note: timeout cache in use
@@ -889,24 +891,3 @@ class Locator:
         groups = re.search(r"[0-9]{12}", os.path.basename(path))
         if groups is not None:
             return dt.datetime.strptime(groups[0], "%Y%m%d%H%M")
-
-
-class _Coordinates:
-    """Menu system interface"""
-    def initial_time(self, path):
-        times = self.valid_times(path, None)
-        if len(times) > 0:
-            return times[0]
-        return None
-
-    def variables(self, path):
-        return ["RDT"]
-
-    def valid_times(self, path, variable):
-        date = Locator.parse_date(path)
-        if date is None:
-            return []
-        return [str(date)]
-
-    def pressures(self, path, variable):
-        return None
