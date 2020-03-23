@@ -27,7 +27,6 @@ def test_dataset_navigator_valid_times():
     navigator = dataset.navigator()
     with patch("forest.drivers.rdt.glob") as glob:
         glob.glob.return_value = ["rdt_202001010000.json"]
-        glob.glob.assert_called_once_with(pattern)
         assert navigator.valid_times() == [dt.datetime(2020, 1, 1)]
 
 
