@@ -1,3 +1,4 @@
+import pytest
 import unittest
 from unittest.mock import patch
 import datetime as dt
@@ -30,11 +31,32 @@ def test_dataset_navigator_valid_times():
         assert navigator.valid_times() == [dt.datetime(2020, 1, 1)]
 
 
-def test_dataset_map_view():
+def test_loader(tmpdir):
+    path = str(tmpdir / "rdt_202001010000.json")
+    content = """
+{
+    "features": [
+    ]
+}
+"""
+    with open(path, "w") as stream:
+        stream.write(content)
+    loader = rdt.Loader(path)
+    json_texts = loader.load_date(dt.datetime(2020, 1, 1))
+    polygons = json_texts[0]
+    result = json.loads(polygons)
+    assert result == {"features": []}
+
+
+@pytest.mark.parametrize("state", [
+    {},
+    {"valid_time": dt.datetime(2020, 1, 1)},
+])
+def test_dataset_map_view(state):
     settings = {"pattern": ""}
     dataset = forest.drivers.get_dataset("rdt", settings)
     map_view = dataset.map_view()
-    map_view.render({})
+    map_view.render(state)
 
 
 class TestLocator(unittest.TestCase):
