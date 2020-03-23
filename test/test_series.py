@@ -2,6 +2,7 @@ import pytest
 import unittest
 import os
 import netCDF4
+import cftime
 import numpy as np
 import numpy.testing as npt
 import datetime as dt
@@ -318,6 +319,14 @@ def test_4d_variable(tmpdir):
     }
     npt.assert_array_equal(expect["x"], result["x"])
     npt.assert_array_equal(expect["y"], result["y"])
+
+
+@pytest.mark.parametrize("value,expect", [
+    (dt.datetime(2020, 1, 1), "2020-01-01 00:00:00"),
+    (cftime.DatetimeGregorian(2020, 1, 1), "2020-01-01 00:00:00")
+])
+def test_series_locator_key(value, expect):
+    assert series.SeriesLocator.key(value) == expect
 
 
 class TestSeries(unittest.TestCase):

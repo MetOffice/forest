@@ -17,7 +17,6 @@ except ImportError:
     # ReadTheDocs unable to pip install cf-units
     pass
 from forest import (
-        gridded_forecast,
         geo,
         disk)
 import bokeh.models
@@ -30,7 +29,6 @@ except ImportError:
     # ReadTheDocs unable to pip install shapely
     pass
 from forest.util import (
-        timeout_cache,
         initial_time,
         coarsify)
 from forest.exceptions import SearchFail
@@ -133,26 +131,6 @@ def iterlines(geometries):
                 yield xy(g)
         except TypeError:
             yield xy(geometry)
-
-
-class FileLocator(object):
-    """Base class for file system locators"""
-    @timeout_cache(dt.timedelta(minutes=10))
-    def find(self, pattern):
-        return sorted(glob.glob(pattern))
-
-
-class GPM(FileLocator):
-    def __init__(self, pattern):
-        self.pattern = pattern
-        super().__init__()
-
-    def image(self, itime):
-        return load_image(
-                self.paths[0],
-                "precipitation_flux",
-                0,
-                itime)
 
 
 def cache(name):
@@ -273,76 +251,6 @@ class WindBarbs(ActiveViewer):
             "u": u.flatten(),
             "v": v.flatten()
         }
-
-
-class DBLoader(object):
-    def __init__(self, name, pattern, locator):
-        self.name = name
-        self.pattern = pattern
-        self.locator = locator
-
-    def image(self, state):
-        if not self.valid(state):
-            return gridded_forecast.empty_image()
-
-        try:
-            path, pts = self.locator.locate(
-                self.pattern,
-                state.variable,
-                state.initial_time,
-                state.valid_time,
-                state.pressure)
-        except SearchFail:
-            return gridded_forecast.empty_image()
-
-        units = self.read_units(path, state.variable)
-        data = load_image_pts(
-                path,
-                state.variable,
-                pts,
-                pts)
-        if (len(state.pressures) > 0) and (state.pressure is not None):
-            level = "{} hPa".format(int(state.pressure))
-        else:
-            level = "Surface"
-        data.update(gridded_forecast.coordinates(state.valid_time,
-                                                 state.initial_time,
-                                                 state.pressures,
-                                                 state.pressure))
-        data["name"] = [self.name]
-        data["units"] = [units]
-        return data
-
-    @staticmethod
-    def read_units(filename,parameter):
-        dataset = netCDF4.Dataset(filename)
-        veep = dataset.variables[parameter]
-        # read the units and assign a blank value if there aren't any:
-        units = getattr(veep, 'units', '')
-        dataset.close()
-        return units
-
-
-    def valid(self, state):
-        if state.variable is None:
-            return False
-        if state.initial_time is None:
-            return False
-        if state.valid_time is None:
-            return False
-        if state.pressures is None:
-            return False
-        if len(state.pressures) > 0:
-            if state.pressure is None:
-                return False
-            if not self.has_pressure(state.pressures, state.pressure):
-                return False
-        return True
-
-    def has_pressure(self, pressures, pressure, tolerance=0.01):
-        if isinstance(pressures, list):
-            pressures = np.array(pressures)
-        return any(np.abs(pressures - pressure) < tolerance)
 
 
 class Finder(object):

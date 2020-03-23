@@ -1,7 +1,7 @@
 """Time navigation component"""
 from forest import rx
 from forest.observe import Observable
-from forest.gridded_forecast import _to_datetime
+from forest.util import to_datetime as _to_datetime
 import forest.db.control
 import bokeh.plotting
 import numpy as np

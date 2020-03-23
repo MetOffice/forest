@@ -402,7 +402,10 @@ def test_controls_middleware(database):
 
 def test_controls_middleware_given_set_variable():
     """Should set pressure level"""
-    navigator = unittest.mock.Mock()
+    navigator = unittest.mock.Mock(spec=[
+        "valid_times",
+        "pressures"
+    ])
     middleware = forest.db.Controls(navigator)
     # Configure Store.state
     store = forest.redux.Store(forest.db.control.reducer)
@@ -426,7 +429,10 @@ def test_controls_middleware_given_set_variable():
 
 
 def test_controls_middleware_given_set_variable_no_pressures():
-    navigator = unittest.mock.Mock()
+    navigator = unittest.mock.Mock(spec=[
+        "valid_times",
+        "pressures"
+    ])
     middleware = forest.db.Controls(navigator)
     # Configure Store.state
     store = forest.redux.Store(forest.db.control.reducer)

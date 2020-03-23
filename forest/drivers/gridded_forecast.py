@@ -10,7 +10,10 @@ except ModuleNotFoundError:
 
 import cftime
 
+import glob
 from forest import geo
+from forest.view import UMView
+from forest.util import to_datetime as _to_datetime
 
 
 def empty_image():
@@ -27,23 +30,6 @@ def empty_image():
         "length": [],
         "level": []
     }
-
-
-def _to_datetime(d):
-
-    if isinstance(d, datetime):
-        return d
-    if isinstance(d, cftime.DatetimeNoLeap):
-        return datetime(d.year, d.month, d.day, d.hour, d.minute, d.second)
-    elif isinstance(d, str):
-        try:
-            return datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            return datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
-    elif isinstance(d, np.datetime64):
-        return d.astype(datetime)
-    else:
-        raise Exception("Unknown value: {}".format(d))
 
 
 def coordinates(valid_time, initial_time, pressures, pressure):
@@ -102,6 +88,25 @@ def _load(pattern):
         cube_mapping[name] = cube
     return cube_mapping
 
+
+class Dataset:
+    """High-level class to relate navigators, loaders and views"""
+    def __init__(self, label=None, pattern=None, color_mapper=None, **kwargs):
+        self._label = label
+        self.pattern = pattern
+        self.color_mapper = color_mapper
+        if pattern is not None:
+            self._paths = glob.glob(pattern)
+        else:
+            self._paths = []
+
+    def navigator(self):
+        """Construct navigator"""
+        return Navigator(self._paths)
+
+    def map_view(self):
+        """Construct view"""
+        return UMView(ImageLoader(self._label, self._paths), self.color_mapper)
 
 class ImageLoader:
     def __init__(self, label, pattern):

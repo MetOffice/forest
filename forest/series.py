@@ -39,7 +39,7 @@ from forest import geo
 from forest.observe import Observable
 from forest.redux import Action
 from forest.util import initial_time as _initial_time
-from forest.gridded_forecast import _to_datetime
+from forest.util import to_datetime as _to_datetime
 from forest.screen import SET_POSITION
 
 try:
@@ -248,10 +248,10 @@ class SeriesLoader(object):
                 if len(var.dimensions) == 3:
                     pts = self.search(pressures, pressure)
                     values = values[pts]
-                    if isinstance(times, dt.datetime):
-                        times = [times]
-                    else:
+                    try:
                         times = times[pts]
+                    except TypeError:
+                        times = [times]
                 else:
                     mask = self.search(pressures, pressure)
                     values = values[:, mask][:, 0]
@@ -335,5 +335,9 @@ class SeriesLocator(object):
 
     __getitem__ = locate
 
-    def key(self, time):
-        return "{:%Y-%m-%d %H:%M:%S}".format(time)
+    @staticmethod
+    def key(time):
+        try:
+            return "{:%Y-%m-%d %H:%M:%S}".format(time)
+        except TypeError:
+            return time.strftime("%Y-%m-%d %H:%M:%S")

@@ -7,16 +7,18 @@ from forest.exceptions import FileNotFound, IndexNotFound
 
 
 class UMView(object):
-    def __init__(self, loader, color_mapper):
+    def __init__(self, loader, color_mapper, use_hover_tool=True):
         self.loader = loader
         self.color_mapper = color_mapper
         self.color_mapper.nan_color = bokeh.colors.RGB(0, 0, 0, a=0)
+        self.use_hover_tool = use_hover_tool
         self.source = bokeh.models.ColumnDataSource({
                 "x": [],
                 "y": [],
                 "dw": [],
                 "dh": [],
                 "image": []})
+        self.image_sources = [self.source]
 
         self.tooltips = [
             ("Name", "@name"),
@@ -49,11 +51,12 @@ class UMView(object):
                 image="image",
                 source=self.source,
                 color_mapper=self.color_mapper)
-        tool = bokeh.models.HoverTool(
-                renderers=[renderer],
-                tooltips=self.tooltips,
-                formatters=self.formatters)
-        figure.add_tools(tool)
+        if self.use_hover_tool:
+            tool = bokeh.models.HoverTool(
+                    renderers=[renderer],
+                    tooltips=self.tooltips,
+                    formatters=self.formatters)
+            figure.add_tools(tool)
         return renderer
 
 
@@ -63,88 +66,6 @@ class Image(object):
 
 class Barbs(object):
     pass
-
-
-class GPMView(object):
-    def __init__(self, loader, color_mapper):
-        self.loader = loader
-        self.color_mapper = color_mapper
-        self.empty = {
-                "lons": [],
-                "lats": [],
-                "x": [],
-                "y": [],
-                "dw": [],
-                "dh": [],
-                "image": []}
-        self.source = bokeh.models.ColumnDataSource(self.empty)
-
-    @old_state
-    @unique
-    def render(self, variable, pressure, itime):
-        if variable != "precipitation_flux":
-            self.source.data = self.empty
-        else:
-            self.source.data = self.loader.image(itime)
-
-    def add_figure(self, figure):
-        return figure.image(
-                x="x",
-                y="y",
-                dw="dw",
-                dh="dh",
-                image="image",
-                source=self.source,
-                color_mapper=self.color_mapper)
-
-class EIDA50(object):
-    def __init__(self, loader, color_mapper):
-        self.loader = loader
-        self.color_mapper = color_mapper
-        self.empty = {
-                "x": [],
-                "y": [],
-                "dw": [],
-                "dh": [],
-                "image": []}
-        self.source = bokeh.models.ColumnDataSource(
-                self.empty)
-
-    @old_state
-    @unique
-    def render(self, state):
-        if state.valid_time is not None:
-            self.image(self.to_datetime(state.valid_time))
-
-    @staticmethod
-    def to_datetime(d):
-        if isinstance(d, dt.datetime):
-            return d
-        elif isinstance(d, str):
-            try:
-                return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
-        elif isinstance(d, np.datetime64):
-            return d.astype(dt.datetime)
-        else:
-            raise Exception("Unknown value: {}".format(d))
-
-    def image(self, time):
-        try:
-            self.source.data = self.loader.image(time)
-        except (FileNotFound, IndexNotFound):
-            self.source.data = self.empty
-
-    def add_figure(self, figure):
-        return figure.image(
-                x="x",
-                y="y",
-                dw="dw",
-                dh="dh",
-                image="image",
-                source=self.source,
-                color_mapper=self.color_mapper)
 
 
 class NearCast(object):
@@ -158,6 +79,7 @@ class NearCast(object):
                 "dw": [],
                 "dh": [],
                 "image": []})
+        self.image_sources = [self.source]
 
     @old_state
     @unique

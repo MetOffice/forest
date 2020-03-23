@@ -4,7 +4,7 @@ import glob
 import datetime as dt
 import pandas as pd
 from forest import geo
-from forest.gridded_forecast import _to_datetime
+from forest.util import to_datetime as _to_datetime
 from forest.old_state import old_state, unique
 import bokeh.models
 import bokeh.palettes
@@ -13,7 +13,7 @@ import numpy as np
 
 class Dataset:
     """High-level class to relate navigators, loaders and views"""
-    def __init__(self, pattern=None):
+    def __init__(self, pattern=None, **kwargs):
         self.pattern = pattern
         if pattern is not None:
             self._paths = glob.glob(pattern)

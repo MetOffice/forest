@@ -9,7 +9,6 @@ from forest import _profile as profile
 from forest import (
         drivers,
         exceptions,
-        satellite,
         screen,
         tools,
         series,
@@ -17,7 +16,6 @@ from forest import (
         load,
         view,
         rdt,
-        nearcast,
         geo,
         colors,
         layers,
@@ -26,8 +24,6 @@ from forest import (
         presets,
         redux,
         rx,
-        unified_model,
-        intake_loader,
         navigate,
         parse_args)
 import forest.components
@@ -93,12 +89,9 @@ def main(argv=None):
     # Database/File system loader(s)
     for group in config.file_groups:
         if group.label not in data.LOADERS:
-            database = None
-            if group.locator == "database":
-                database = db.get_database(group.database_path)
             try:
                 loader = load.Loader.group_args(
-                        group, args, database=database)
+                        group, args)
             except exceptions.UnknownFileType:
                 # TODO: Deprecate load.Loader.group_args()
                 continue
@@ -111,23 +104,16 @@ def main(argv=None):
             loader = data.LOADERS[group.label]
             if isinstance(loader, rdt.Loader):
                 viewer = rdt.View(loader)
-            elif isinstance(loader, data.GPM):
-                viewer = view.GPMView(loader, color_mapper)
-            elif isinstance(loader, satellite.EIDA50):
-                viewer = view.EIDA50(loader, color_mapper)
-            elif isinstance(loader, nearcast.NearCast):
-                viewer = view.NearCast(loader, color_mapper)
-                viewer.set_hover_properties(nearcast.NEARCAST_TOOLTIPS)
-            elif isinstance(loader, intake_loader.IntakeLoader):
-                viewer = view.UMView(loader, color_mapper)
-                viewer.set_hover_properties(intake_loader.INTAKE_TOOLTIPS,
-                                            intake_loader.INTAKE_FORMATTERS)
             else:
                 viewer = view.UMView(loader, color_mapper)
         else:
             # Use dataset interface
             settings = {
-                "pattern": group.pattern
+                "label": group.label,
+                "pattern": group.pattern,
+                "locator": group.locator,
+                "database_path": group.database_path,
+                "color_mapper": color_mapper,
             }
             dataset = drivers.get_dataset(group.file_type, settings)
             viewer = dataset.map_view()
@@ -138,9 +124,8 @@ def main(argv=None):
 
     image_sources = []
     for name, viewer in viewers.items():
-        if isinstance(viewer, (view.UMView, view.GPMView, view.EIDA50,
-                               view.NearCast)):
-            image_sources.append(viewer.source)
+        for source in getattr(viewer, "image_sources", []):
+            image_sources.append(source)
 
     # Lakes
     for figure in figures:
@@ -222,7 +207,7 @@ def main(argv=None):
         bokeh.layouts.column(dropdown))
 
 
-    navigator = navigate.Navigator(config)
+    navigator = navigate.Navigator(config, color_mapper=color_mapper)
 
     # Pre-select menu choices (if any)
     initial_state = {}

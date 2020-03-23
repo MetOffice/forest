@@ -25,12 +25,10 @@ forecasts alongside observations.
 .. automodule:: forest.presets
 
 """
-__version__ = '0.12.7'
+__version__ = '0.13.2'
 
 from .config import *
 from . import (
-        navigate,
-        unified_model,
         redux,
         tutorial)
 from .db import Database

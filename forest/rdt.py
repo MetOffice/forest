@@ -18,7 +18,7 @@ from forest.exceptions import FileNotFound
 from bokeh.palettes import GnBu3, OrRd3
 import itertools
 import math
-from forest.gridded_forecast import _to_datetime
+from forest.drivers.gridded_forecast import _to_datetime
 
 
 class RenderGroup(object):

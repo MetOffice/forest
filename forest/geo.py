@@ -28,7 +28,9 @@ try:
 except ModuleNotFoundError:
     datashader = None
 
-def stretch_image(lons, lats, values):
+def stretch_image(lons, lats, values,
+                  plot_height=None,
+                  plot_width=None):
     """
     Do the mapping from image data to the format required by bokeh
     for plotting.
@@ -39,22 +41,41 @@ def stretch_image(lons, lats, values):
                    size of latitude and longitude arrays.
     :return: A dictionary that can be used with the bokeh image glyph.
     """
-    gx, _ = web_mercator(
-        lons,
-        np.zeros(len(lons), dtype="d"))
-    _, gy = web_mercator(
-        np.zeros(len(lats), dtype="d"),
-        lats)
+    if (lons.ndim == 1):
+        gx, _ = web_mercator(
+            lons,
+            np.zeros(len(lons), dtype="d"))
+        _, gy = web_mercator(
+            np.zeros(len(lats), dtype="d"),
+            lats)
+    elif (lons.ndim == 2) and (lats.ndim == 2):
+        gx, gy = web_mercator(lons, lats)
+        gx = gx.reshape(lons.shape)
+        gy = gy.reshape(lats.shape)
+    else:
+        raise Exception("Either 1D or 2D lons/lats")
+
     if datashader:
         x_range = (gx.min(), gx.max())
         y_range = (gy.min(), gy.max())
-        image = datashader_stretch(values, gx, gy, x_range, y_range)
+        image = datashader_stretch(values, gx, gy, x_range, y_range,
+                                   plot_height=plot_height,
+                                   plot_width=plot_width)
     else:
+        # TODO: Deprecate this method
         image = custom_stretch(values, gx, gy)
+
+    # Image location
     x = gx.min()
     y = gy.min()
-    dw = gx[-1] - gx[0]
-    dh = gy[-1] - gy[0]
+    if gx.ndim == 1:
+        # 1D image extent
+        dw = gx[-1] - gx[0]
+        dh = gy[-1] - gy[0]
+    else:
+        # 2D image extent
+        dw = gx.max() - gx.min()
+        dh = gy.max() - gy.min()
     return {
         "x": [x],
         "y": [y],
@@ -64,7 +85,9 @@ def stretch_image(lons, lats, values):
     }
 
 
-def datashader_stretch(values, gx, gy, x_range, y_range):
+def datashader_stretch(values, gx, gy, x_range, y_range,
+                       plot_height=None,
+                       plot_width=None):
     """
     Use datashader to sample the data mesh in on a regular grid for use in
     image display.
@@ -76,12 +99,28 @@ def datashader_stretch(values, gx, gy, x_range, y_range):
     :param y_range: The range of the mesh in projection space.
     :return: An xarray of image data representing pixels.
     """
-    canvas = datashader.Canvas(plot_height=values.shape[0],
-                               plot_width=values.shape[1],
+    if plot_height is None:
+        plot_height = values.shape[0]
+    if plot_width is None:
+        plot_width = values.shape[1]
+    canvas = datashader.Canvas(plot_height=plot_height,
+                               plot_width=plot_width,
                                x_range=x_range,
                                y_range=y_range)
-    xarr = xarray.DataArray(values, coords=[('y', gy), ('x', gx)], name='Z')
-    image = canvas.quadmesh(xarr)
+    if gx.ndim == 1:
+        # 1D Quadmesh
+        xarr = xarray.DataArray(values, coords=[('y', gy), ('x', gx)], name='Z')
+        image = canvas.quadmesh(xarr)
+    else:
+        # 2D Quadmesh
+        xarr = xarray.DataArray(values,
+                                dims=['Y', 'X'],
+                                coords={
+                                    'Qx': (['Y', 'X'], gx),
+                                    'Qy': (['Y', 'X'], gy)
+                                },
+                                name='Z')
+        image = canvas.quadmesh(xarr, x='Qx', y='Qy')
     return np.ma.masked_array(image.values,
                           mask=np.isnan(
                               image.values))
