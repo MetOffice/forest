@@ -2,15 +2,16 @@
 Write a driver
 --------------
 
-In a nutshell a driver is just a collection of code that loads and visualises
-a particular data type, e.g. observation, model run, user feedback etc. To
+In a nutshell a driver is a collection of code that loads and visualises
+a particular data type, e.g. observation, model forecasts, user feedback etc. To
 play nicely with other components a driver must implement certain
-interfaces, a class with specifically named methods. This guide
+interfaces, a.k.a classes with specifically named methods. This guide
 walks through the interfaces and provides a rough guide on how best to
 structure your code.
 
-At present all drivers are modules placed in ``forest/drivers`` directory and
-must at least implement a ``Dataset`` class.
+At present drivers are Python modules placed in ``forest/drivers`` directory
+that implement a ``Dataset`` class. We'll see later how a ``Dataset`` can
+be used to navigate and visualise its data.
 
 A minimal driver would be the following;
 
@@ -22,9 +23,8 @@ A minimal driver would be the following;
        def __init__(self, **kwargs):
            pass
 
-To invoke this hypothetical driver from the command line a user would
-either specify it as ``--file-type minimal`` or place it in a config
-file.
+To invoke this driver a user would either specify it as ``--file-type minimal``
+on the command line or place it in a config file.
 
 .. code-block:: yaml
 
@@ -32,13 +32,16 @@ file.
      - label: Minimal driver
        file_type: minimal
 
-But this driver is not very useful, it doesn't speak to data, allow a user
-to navigate or represent anything on the map.
+But this driver is not very useful, it doesn't speak to data, support
+navigation or add anything to the map. Let's fix it.
 
-To allow a user to navigate a dataset a ``dataset.navigator()``
-method that returns a ``Navigator`` instance. A Navigator has four methods
-``valid_times``, ``initial_times``, ``variables`` and ``pressures``, each
-of which provides data for the menu system.
+To allow a user to navigate a dataset we need a ``navigator()``
+method that returns a ``Navigator`` instance. You may be wondering what
+the Navigator interface is, any class that has four methods
+``valid_times()``, ``initial_times()``, ``variables()`` and ``pressures()``
+is a navigator. At the moment these are the four basic dimensions, in
+future a navigator may be able to define the dimensionality of its underlying
+data or even custom user interfaces to explore it.
 
 .. code-block:: python
 
@@ -62,11 +65,10 @@ of which provides data for the menu system.
        def pressures(self, *args, **kwargs):
            return [1000, 750, ...]
 
-This interface is a little clunky and likely to change in the near future, but
-for now it provides all of the information needed to populate the dropdown
-navigation menus.
+This interface is a little clunky, but for now it provides enough information
+to populate dropdown menus.
 
-To add a visualisation to the map the ``map_view()`` must return an instance
+To add a visualisation to the map the ``map_view()`` is used to return an instance
 that implements the ``MapView`` interface.
 
 .. code-block:: python
@@ -76,7 +78,7 @@ that implements the ``MapView`` interface.
        def map_view(self):
            return MapView()
 
-Where a typical map view must support adding itself to a figure and
+Again, a map view is an interface that supports adding glyphs to a figure and
 updating when the application state changes. It does this by implementing
 ``add_figure(figure)`` and ``render(state)`` methods. For example to
 plot circles on a map.
@@ -99,6 +101,9 @@ plot circles on a map.
                 "y": [1, 2, 3],
            }
 
+While it is nice to plot circles on a map, having access to general purpose
+scripting and a full application state is the real benefit of defining
+a MapView. The possibilites at this point are endless.
 
 Thus concludes our walk through implementing a driver. It's not a perfect
 design but hopefully it is enough to get started.
