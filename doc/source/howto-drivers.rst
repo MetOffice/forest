@@ -62,3 +62,12 @@ like this;
        def pressures(self, *args, **kwargs):
            return []
 
+This interface is a little clunky and likely to change in the near future, but
+for now it provides all of the information needed to populate the dropdown
+navigation menus.
+
+To add a visualisation to the map ``dataset.map_view()`` must be implemented.
+This method returns an object that implements the ``MapView`` interface. Namely,
+``render(state)`` and ``add_figure(figure)`` methods so that the visualisation
+can update in response to application state changes and it can be registered
+to each of the figures.
