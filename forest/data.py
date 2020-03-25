@@ -5,11 +5,6 @@ except ImportError:
     pass
 import numpy as np
 import netCDF4
-try:
-    import cf_units
-except ImportError:
-    # ReadTheDocs unable to pip install cf-units
-    pass
 from forest import geo
 import bokeh.models
 from collections import OrderedDict
@@ -19,8 +14,7 @@ try:
 except ImportError:
     # ReadTheDocs unable to pip install shapely
     pass
-from forest.util import (
-        initial_time)
+import forest.util
 
 
 # Application data shared across documents
@@ -226,8 +220,8 @@ class WindBarbs(ActiveViewer):
             np.zeros(len(lats), dtype="d"),
             lats)
         x, y = np.meshgrid(gx, gy)
-        u = convert_units(u, 'm s-1', 'knots')
-        v = convert_units(v, 'm s-1', 'knots')
+        u = forest.util.convert_units(u, 'm s-1', 'knots')
+        v = forest.util.convert_units(v, 'm s-1', 'knots')
         return {
             "x": x.flatten(),
             "y": y.flatten(),
@@ -241,9 +235,9 @@ class Finder(object):
     def __init__(self, paths):
         self.paths = paths
         self.table = {
-                initial_time(p): p for p in paths}
+                forest.util.initial_time(p): p for p in paths}
         self.initial_times = np.array(
-                [initial_time(p) for p in paths],
+                [forest.util.initial_time(p) for p in paths],
                 dtype='datetime64[s]')
         with netCDF4.Dataset(self.paths[0]) as dataset:
             if "pressure" in dataset.variables:
@@ -286,9 +280,3 @@ class Finder(object):
                     np.abs(
                         self.initial_times - initial_time))
             return self.paths[i]
-
-
-def convert_units(values, old_unit, new_unit):
-    if isinstance(values, list):
-        values = np.asarray(values)
-    return cf_units.Unit(old_unit).convert(values, new_unit)

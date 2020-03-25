@@ -12,7 +12,6 @@ from forest import (
     disk,
     geo,
     view)
-from forest.data import convert_units
 from forest.exceptions import SearchFail, PressuresNotFound
 from forest.drivers import gridded_forecast
 try:
@@ -212,9 +211,9 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
         if units == "mm h-1":
             values = values
         else:
-            values = convert_units(values, units, "kg m-2 hour-1")
+            values = forest.util.convert_units(values, units, "kg m-2 hour-1")
     elif units == "K":
-        values = convert_units(values, "K", "Celsius")
+        values = forest.util.convert_units(values, "K", "Celsius")
 
     # Coarsify images
     threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199

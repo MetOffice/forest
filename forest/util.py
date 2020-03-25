@@ -5,6 +5,11 @@ import cftime
 from functools import partial
 import scipy.ndimage
 import numpy as np
+try:
+    import cf_units
+except ImportError:
+    # ReadTheDocs unable to pip install cf-units
+    pass
 
 
 def timeout_cache(interval):
@@ -76,3 +81,10 @@ def parse_date(regex, fmt, path):
     if groups is not None:
         return dt.datetime.strptime(groups[0].replace('Z','UTC'),
                                     fmt) # always UTC
+
+
+def convert_units(values, old_unit, new_unit):
+    """Helper to convert units"""
+    if isinstance(values, list):
+        values = np.asarray(values)
+    return cf_units.Unit(old_unit).convert(values, new_unit)
