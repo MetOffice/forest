@@ -39,6 +39,7 @@ def coarsify(lons, lats, values, fraction):
     return lons, lats, data
 
 
+# TODO: Delete this function in a future PR
 def initial_time(path):
     name = os.path.basename(path)
     groups = re.search(r"[0-9]{8}T[0-9]{4}Z", path)

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import glob
 import re
@@ -5,18 +6,23 @@ import fnmatch
 import datetime as dt
 import numpy as np
 import netCDF4
+import forest.util
 from forest import (
     db,
     disk,
+    geo,
     view)
-from forest.data import load_image_pts
+from forest.data import convert_units
 from forest.exceptions import SearchFail, PressuresNotFound
-from forest.drivers import gridded_forecast 
+from forest.drivers import gridded_forecast
 try:
     import iris
 except ImportError:
     # ReadTheDocs can't install iris
     pass
+
+
+IMAGES = OrderedDict()
 
 
 class NotFound(Exception):
@@ -89,6 +95,40 @@ class Navigator:
         return np.unique(np.concatenate(arrays))
 
 
+def _image_cache(hash_func):
+    """Simple wrapper to cache images per-server"""
+    def inner(load_func):
+        def innermost(*args):
+            key = hash_func(*args)
+            if key not in IMAGES:
+                # TODO: Replace this infinite cache
+                IMAGES[key] = load_func(*args)
+            total_bytes = 0
+            for data in IMAGES.values():
+                total_bytes +=  _image_size(data)
+            print("Total bytes", total_bytes)
+            return IMAGES[key]
+        return innermost
+    return inner
+
+
+def _image_hash(path, variable, pts_3d, pts_4d):
+    """Convert arguments to hashable type"""
+    return (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
+
+
+def pts_hash(pts):
+    if isinstance(pts, np.ndarray):
+        return pts.tostring()
+    else:
+        return pts
+
+
+def _image_size(data):
+    # Approx. image payload size
+    return sum(arr.nbytes for arr in data["image"])
+
+
 class Loader:
     """Unified model formatted loader"""
     def __init__(self, name, pattern, locator):
@@ -137,7 +177,6 @@ class Loader:
         dataset.close()
         return units
 
-
     def valid(self, state):
         if state.variable is None:
             return False
@@ -158,6 +197,81 @@ class Loader:
         if isinstance(pressures, list):
             pressures = np.array(pressures)
         return any(np.abs(pressures - pressure) < tolerance)
+
+
+@_image_cache(_image_hash)
+def load_image_pts(path, variable, pts_3d, pts_4d):
+    """Load bokeh image glyph data from file using slices"""
+    try:
+        lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
+    except:
+        lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
+
+    # Units
+    if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
+        if units == "mm h-1":
+            values = values
+        else:
+            values = convert_units(values, units, "kg m-2 hour-1")
+    elif units == "K":
+        values = convert_units(values, "K", "Celsius")
+
+    # Coarsify images
+    threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199
+    if values.size > threshold:
+        fraction = 0.25
+    else:
+        fraction = 1.
+    lons, lats, values = forest.util.coarsify(
+        lons, lats, values, fraction)
+
+    # Roll input data into [-180, 180] range
+    if np.any(lons > 180.0):
+        shift_by = np.sum(lons > 180.0)
+        lons[lons > 180.0] -= 360.
+        lons = np.roll(lons, shift_by)
+        values = np.roll(values, shift_by, axis=1)
+
+    return geo.stretch_image(lons, lats, values)
+
+
+def _load_cube(path, variable, pts_3d, pts_4d):
+    import iris
+    cube = iris.load_cube(path, iris.Constraint(variable))
+    units = cube.units
+    lons = cube.coord('longitude').points
+    if lons.ndim == 2:
+        lons = lons[0, :]
+    lats = cube.coord('latitude').points
+    if lons.ndim == 2:
+        lats = lats[:, 0]
+    if cube.data.ndim == 4:
+        values = cube.data[pts_4d]
+    else:
+        values = cube.data[pts_3d]
+    return lons, lats, values, units
+
+
+def _load_netcdf4(path, variable, pts_3d, pts_4d):
+    with netCDF4.Dataset(path) as dataset:
+        try:
+            var = dataset.variables[variable]
+        except KeyError as e:
+            if variable == "precipitation_flux":
+                var = dataset.variables["stratiform_rainfall_rate"]
+            else:
+                raise e
+        for d in var.dimensions:
+            if "longitude" in d:
+                lons = dataset.variables[d][:]
+            if "latitude" in d:
+                lats = dataset.variables[d][:]
+        if len(var.dimensions) == 4:
+            values = var[pts_4d]
+        else:
+            values = var[pts_3d]
+        units = var.units
+    return lons, lats, values, units
 
 
 class Locator(object):
