@@ -119,6 +119,7 @@ def cache(name):
         return wrapped
     return decorator
 
+
 # TODO: Delete this class in a future PR
 class ActiveViewer(object):
     def __init__(self):

@@ -23,9 +23,6 @@ except ImportError:
     pass
 
 
-IMAGES = OrderedDict()
-
-
 class NotFound(Exception):
     pass
 
@@ -96,40 +93,6 @@ class Navigator:
         return np.unique(np.concatenate(arrays))
 
 
-def _image_cache(hash_func):
-    """Simple wrapper to cache images per-server"""
-    def inner(load_func):
-        def innermost(*args):
-            key = hash_func(*args)
-            if key not in IMAGES:
-                # TODO: Replace this infinite cache
-                IMAGES[key] = load_func(*args)
-            total_bytes = 0
-            for data in IMAGES.values():
-                total_bytes +=  _image_size(data)
-            print("Total bytes", total_bytes)
-            return IMAGES[key]
-        return innermost
-    return inner
-
-
-def _image_hash(path, variable, pts_3d, pts_4d):
-    """Convert arguments to hashable type"""
-    return (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
-
-
-def pts_hash(pts):
-    if isinstance(pts, np.ndarray):
-        return pts.tostring()
-    else:
-        return pts
-
-
-def _image_size(data):
-    # Approx. image payload size
-    return sum(arr.nbytes for arr in data["image"])
-
-
 class Loader:
     """Unified model formatted loader"""
     def __init__(self, name, pattern, locator):
@@ -166,25 +129,9 @@ class Loader:
         except SearchFail:
             return gridded_forecast.empty_image()
 
-        # units = self.read_units(path, variable)
-        units = ""
-        data = load_image_pts(
-                path,
-                variable,
-                pts,
-                pts)
+        data = self.load_image(path, variable, pts)
         data["name"] = [self.name]
-        data["units"] = [units]
         return data
-
-    @staticmethod
-    def read_units(filename,parameter):
-        dataset = netCDF4.Dataset(filename)
-        veep = dataset.variables[parameter]
-        # read the units and assign a blank value if there aren't any:
-        units = getattr(veep, 'units', '')
-        dataset.close()
-        return units
 
     def valid(self, state):
         if state.variable is None:
@@ -207,72 +154,68 @@ class Loader:
             pressures = np.array(pressures)
         return any(np.abs(pressures - pressure) < tolerance)
 
+    def load_image(self, path, variable, pts):
+        """Load bokeh image glyph data from file using slices"""
+        try:
+            lons, lats, values, units = self._load_xarray(path, variable, pts)
+        except:
+            lons, lats, values, units = self._load_cube(path, variable, pts)
 
-# @_image_cache(_image_hash)
-def load_image_pts(path, variable, pts_3d, pts_4d):
-    """Load bokeh image glyph data from file using slices"""
-    try:
-        lons, lats, values, units = _load_xarray(path, variable, pts_3d, pts_4d)
-    except:
-        lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
+        # Units
+        if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
+            if units == "mm h-1":
+                values = values
+            else:
+                values = forest.util.convert_units(values, units, "kg m-2 hour-1")
+                units = "kg m-2 hour-1"
+        elif units == "K":
+            values = forest.util.convert_units(values, "K", "Celsius")
+            units = "C"
 
-    # Units
-    if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
-        if units == "mm h-1":
-            values = values
+        # Coarsify images
+        threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199
+        if values.size > threshold:
+            fraction = 0.25
         else:
-            values = forest.util.convert_units(values, units, "kg m-2 hour-1")
-    elif units == "K":
-        values = forest.util.convert_units(values, "K", "Celsius")
+            fraction = 1.
+        lons, lats, values = forest.util.coarsify(
+            lons, lats, values, fraction)
 
-    # Coarsify images
-    threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199
-    if values.size > threshold:
-        fraction = 0.25
-    else:
-        fraction = 1.
-    lons, lats, values = forest.util.coarsify(
-        lons, lats, values, fraction)
+        # Roll input data into [-180, 180] range
+        if np.any(lons > 180.0):
+            shift_by = np.sum(lons > 180.0)
+            lons[lons > 180.0] -= 360.
+            lons = np.roll(lons, shift_by)
+            values = np.roll(values, shift_by, axis=1)
 
-    # Roll input data into [-180, 180] range
-    if np.any(lons > 180.0):
-        shift_by = np.sum(lons > 180.0)
-        lons[lons > 180.0] -= 360.
-        lons = np.roll(lons, shift_by)
-        values = np.roll(values, shift_by, axis=1)
+        data = geo.stretch_image(lons, lats, values)
+        data["units"] = [units]
+        return data
 
-    return geo.stretch_image(lons, lats, values)
+    @staticmethod
+    def _load_xarray(path, variable, pts):
+        with xarray.open_dataset(path, engine="h5netcdf") as nc:
+            big = nc[variable]
+            small = big[pts]
+            lons = np.ma.masked_invalid(small.longitude)
+            lats = np.ma.masked_invalid(small.latitude)
+            values = np.ma.masked_invalid(small)
+            units = small.units
+        return lons, lats, values, units
 
-
-def _load_xarray(path, variable, pts_3d, pts_4d):
-    with xarray.open_dataset(path, engine="h5netcdf") as nc:
-        big = nc[variable]
-        if big.ndim == 3:
-            small = big[pts_3d]
-        else:
-            small = big[pts_4d]
-        lons = np.ma.masked_invalid(small.longitude)
-        lats = np.ma.masked_invalid(small.latitude)
-        values = np.ma.masked_invalid(small)
-        units = small.units
-    return lons, lats, values, units
-
-
-def _load_cube(path, variable, pts_3d, pts_4d):
-    import iris
-    cube = iris.load_cube(path, iris.Constraint(variable))
-    units = cube.units
-    lons = cube.coord('longitude').points
-    if lons.ndim == 2:
-        lons = lons[0, :]
-    lats = cube.coord('latitude').points
-    if lons.ndim == 2:
-        lats = lats[:, 0]
-    if cube.data.ndim == 4:
-        values = cube.data[pts_4d]
-    else:
-        values = cube.data[pts_3d]
-    return lons, lats, values, units
+    @staticmethod
+    def _load_cube(path, variable, pts):
+        import iris
+        cube = iris.load_cube(path, iris.Constraint(variable))
+        units = cube.units
+        lons = cube.coord('longitude').points
+        if lons.ndim == 2:
+            lons = lons[0, :]
+        lats = cube.coord('latitude').points
+        if lons.ndim == 2:
+            lats = lats[:, 0]
+        values = cube.data[pts]
+        return lons, lats, values, units
 
 
 class Locator(object):
