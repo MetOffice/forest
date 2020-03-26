@@ -1,5 +1,4 @@
 import xarray
-from collections import OrderedDict
 from functools import lru_cache
 import os
 import glob
@@ -206,7 +205,6 @@ class Loader:
     @staticmethod
     def _load_cube(path, variable, pts):
         # TODO: Is this method still needed?
-        import iris
         cube = iris.load_cube(path, iris.Constraint(variable))
         units = cube.units
         lons = cube.coord('longitude').points
