@@ -286,13 +286,12 @@ def main(argv=None):
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
 
-    if False:
-        # Pre-select first layer
-        for name, _ in config.patterns:
-            row_index = 0
-            store.dispatch(layers.set_label(row_index, name))
-            store.dispatch(layers.set_active(row_index, [0]))
-            break
+    # Pre-select first layer
+    for name, _ in config.patterns:
+        row_index = 0
+        store.dispatch(layers.set_label(row_index, name))
+        store.dispatch(layers.set_active(row_index, [0]))
+        break
 
     # Select web map tiling
     if config.use_web_map_tiles:
