@@ -152,7 +152,7 @@ class Loader:
                                                  state.pressure))
         return data
 
-    @lru_cache(maxsize=4)
+    @lru_cache(maxsize=100)
     def _input_output(self, pattern, variable, initial_time, valid_time,
                       pressure):
         """I/O needed to load an image and its metadata"""
@@ -211,11 +211,10 @@ class Loader:
 # @_image_cache(_image_hash)
 def load_image_pts(path, variable, pts_3d, pts_4d):
     """Load bokeh image glyph data from file using slices"""
-    lons, lats, values, units = _load_xarray(path, variable, pts_3d, pts_4d)
-    # try:
-    #     lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
-    # except:
-    #     lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
+    try:
+        lons, lats, values, units = _load_xarray(path, variable, pts_3d, pts_4d)
+    except:
+        lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
 
     # Units
     if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
@@ -245,6 +244,20 @@ def load_image_pts(path, variable, pts_3d, pts_4d):
     return geo.stretch_image(lons, lats, values)
 
 
+def _load_xarray(path, variable, pts_3d, pts_4d):
+    with xarray.open_dataset(path, engine="h5netcdf") as nc:
+        big = nc[variable]
+        if big.ndim == 3:
+            small = big[pts_3d]
+        else:
+            small = big[pts_4d]
+        lons = np.ma.masked_invalid(small.longitude)
+        lats = np.ma.masked_invalid(small.latitude)
+        values = np.ma.masked_invalid(small)
+        units = small.units
+    return lons, lats, values, units
+
+
 def _load_cube(path, variable, pts_3d, pts_4d):
     import iris
     cube = iris.load_cube(path, iris.Constraint(variable))
@@ -259,40 +272,6 @@ def _load_cube(path, variable, pts_3d, pts_4d):
         values = cube.data[pts_4d]
     else:
         values = cube.data[pts_3d]
-    return lons, lats, values, units
-
-def _load_xarray(path, variable, pts_3d, pts_4d):
-    with xarray.open_dataset(path) as nc:
-        big = nc[variable]
-        if big.ndim == 3:
-            small = big[pts_3d]
-        else:
-            small = big[pts_4d]
-        lons = np.ma.masked_invalid(small.longitude)
-        lats = np.ma.masked_invalid(small.latitude)
-        values = np.ma.masked_invalid(small)
-    return lons, lats, values, ""
-
-def _load_netcdf4(path, variable, pts_3d, pts_4d):
-    # Is this the leak?
-    with netCDF4.Dataset(path) as dataset:
-        try:
-            var = dataset.variables[variable]
-        except KeyError as e:
-            if variable == "precipitation_flux":
-                var = dataset.variables["stratiform_rainfall_rate"]
-            else:
-                raise e
-        for d in var.dimensions:
-            if "longitude" in d:
-                lons = dataset.variables[d][:]
-            if "latitude" in d:
-                lats = dataset.variables[d][:]
-        if len(var.dimensions) == 4:
-            values = var[pts_4d]
-        else:
-            values = var[pts_3d]
-        units = var.units
     return lons, lats, values, units
 
 
