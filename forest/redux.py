@@ -53,7 +53,6 @@ def combine_reducers(*reducers):
         state = copy.deepcopy(state)
         for reducer in reducers:
             state = reducer(state, action)
-        print(state)
         return state
     return wrapped
 
