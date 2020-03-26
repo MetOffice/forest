@@ -1,4 +1,5 @@
 import pytest
+import datetime as dt
 import bokeh.models
 import forest.drivers
 from forest.drivers import unified_model
@@ -50,11 +51,37 @@ def test_loader_use_database(tmpdir):
     assert view.loader.locator.directory == "/replace"
 
 
+def test_view_render_state(tmpdir):
+    path = str(tmpdir / "file_20200101.nc")
+    variable = "air_temperature"
+    times = [dt.datetime(2020, 1, 1)]
+    with netCDF4.Dataset(path, "w") as dataset:
+        insert_lonlat(dataset, [0, 1], [0, 1])
+        insert_times(dataset, times)
+        var = dataset.createVariable(variable, "f", ("time", "longitude", "latitude"))
+        var.coords = "time"  # Needed by Locator
+    settings = {
+        "pattern": path,
+        "color_mapper": bokeh.models.ColorMapper()
+    }
+    dataset = forest.drivers.get_dataset("unified_model", settings)
+    view = dataset.map_view()
+    view.render({
+        "initial_time": dt.datetime(2020, 1, 1),
+        "valid_time": dt.datetime(2020, 1, 1),
+        "variable": variable,
+        "pressure": None,
+        "pressures": []  # Needed by Loader.valid(state)
+    })
+    assert len(view.image_sources[0].data["image"]) == 1
+
+
 def test_load_image_pts(tmpdir):
     path = str(tmpdir / "file.nc")
     variable = "air_temperature"
     with netCDF4.Dataset(path, "w") as dataset:
-        make_file(dataset, variable)
+        insert_lonlat(dataset, [0, 1], [0, 1])
+        var = dataset.createVariable(variable, "f", ("longitude", "latitude"))
     data = unified_model.load_image_pts(path, variable, (), ())
     assert data["image"][0].shape == (2, 2)
 
@@ -63,22 +90,30 @@ def test_iris_load(tmpdir):
     path = str(tmpdir / "file.nc")
     variable = "air_temperature"
     with netCDF4.Dataset(path, "w") as dataset:
-        make_file(dataset, variable)
+        insert_lonlat(dataset, [0, 1], [0, 1])
+        var = dataset.createVariable(variable, "f", ("longitude", "latitude"))
     cubes = iris.load(path)
     names = [c.name() for c in cubes]
     assert names == [variable]
 
 
-def make_file(dataset, variable):
+def insert_times(dataset, times):
+    if "time" not in dataset.dimensions:
+        dataset.createDimension("time", len(times))
+    units = "seconds since 1970-01-01 00:00:00 utc"
+    var = dataset.createVariable("time", "f", ("time",))
+    var.units = units
+    var[:] = netCDF4.date2num(times, units=units)
+
+
+def insert_lonlat(dataset, lons, lats):
     dimensions = [
-        ("time", 1),
-        ("longitude", 2),
-        ("latitude", 2)
+        ("longitude", len(lons)),
+        ("latitude", len(lats))
     ]
     for name, length in dimensions:
         dataset.createDimension(name, length)
     var = dataset.createVariable("longitude", "f", ("longitude",))
-    var[:] = [0, 1]
+    var[:] = lons
     var = dataset.createVariable("latitude", "f", ("latitude",))
-    var[:] = [0, 1]
-    var = dataset.createVariable(variable, "f", ("longitude", "latitude"))
+    var[:] = lats

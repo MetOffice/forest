@@ -148,6 +148,13 @@ def set_source_limits(low, high):
             "payload": {"low": low, "high": high},
             "meta": {"origin": "column_data_source"}}
 
+
+def set_limits(low, high):
+    """Action to set colorbar limits"""
+    return {"kind": SET_LIMITS,
+            "payload": {"low": low, "high": high}}
+
+
 def is_source_origin(action):
     """Detect origin of set_limits action"""
     origin = action.get("meta", {}).get("origin", "")
@@ -281,6 +288,21 @@ def palettes(store, action):
         settings = store.state.get("colorbar", {})
         if not complete(settings):
             yield set_colorbar({**defaults(), **settings})
+
+
+def middleware():
+    previous = None
+    seen = False
+    def call(store, action):
+        nonlocal previous, seen
+        if not seen:
+            seen = True
+            previous = action
+            yield action
+        elif previous != action:
+            previous = action
+            yield action
+    return call
 
 
 def is_fixed(state):

@@ -195,6 +195,7 @@ def main(argv=None):
         db.next_previous,
         db.Controls(navigator),
         colors.palettes,
+        colors.middleware(),
         presets.Middleware(presets.proxy_storage(config.presets_file)),
         presets.middleware,
         layers.middleware,

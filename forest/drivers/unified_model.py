@@ -1,4 +1,6 @@
+import xarray
 from collections import OrderedDict
+from functools import lru_cache
 import os
 import glob
 import re
@@ -138,31 +140,39 @@ class Loader:
     def image(self, state):
         if not self.valid(state):
             return gridded_forecast.empty_image()
-
-        try:
-            path, pts = self.locator.locate(
-                self.pattern,
-                state.variable,
-                state.initial_time,
-                state.valid_time,
-                state.pressure)
-        except SearchFail:
-            return gridded_forecast.empty_image()
-
-        units = self.read_units(path, state.variable)
-        data = load_image_pts(
-                path,
-                state.variable,
-                pts,
-                pts)
-        if (len(state.pressures) > 0) and (state.pressure is not None):
-            level = "{} hPa".format(int(state.pressure))
-        else:
-            level = "Surface"
+        data = self._input_output(
+            self.pattern,
+            state.variable,
+            state.initial_time,
+            state.valid_time,
+            state.pressure)
         data.update(gridded_forecast.coordinates(state.valid_time,
                                                  state.initial_time,
                                                  state.pressures,
                                                  state.pressure))
+        return data
+
+    @lru_cache(maxsize=4)
+    def _input_output(self, pattern, variable, initial_time, valid_time,
+                      pressure):
+        """I/O needed to load an image and its metadata"""
+        try:
+            path, pts = self.locator.locate(
+                pattern,
+                variable,
+                initial_time,
+                valid_time,
+                pressure)
+        except SearchFail:
+            return gridded_forecast.empty_image()
+
+        # units = self.read_units(path, variable)
+        units = ""
+        data = load_image_pts(
+                path,
+                variable,
+                pts,
+                pts)
         data["name"] = [self.name]
         data["units"] = [units]
         return data
@@ -198,13 +208,14 @@ class Loader:
         return any(np.abs(pressures - pressure) < tolerance)
 
 
-@_image_cache(_image_hash)
+# @_image_cache(_image_hash)
 def load_image_pts(path, variable, pts_3d, pts_4d):
     """Load bokeh image glyph data from file using slices"""
-    try:
-        lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
-    except:
-        lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
+    lons, lats, values, units = _load_xarray(path, variable, pts_3d, pts_4d)
+    # try:
+    #     lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
+    # except:
+    #     lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
 
     # Units
     if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
@@ -250,8 +261,20 @@ def _load_cube(path, variable, pts_3d, pts_4d):
         values = cube.data[pts_3d]
     return lons, lats, values, units
 
+def _load_xarray(path, variable, pts_3d, pts_4d):
+    with xarray.open_dataset(path) as nc:
+        big = nc[variable]
+        if big.ndim == 3:
+            small = big[pts_3d]
+        else:
+            small = big[pts_4d]
+        lons = np.ma.masked_invalid(small.longitude)
+        lats = np.ma.masked_invalid(small.latitude)
+        values = np.ma.masked_invalid(small)
+    return lons, lats, values, ""
 
 def _load_netcdf4(path, variable, pts_3d, pts_4d):
+    # Is this the leak?
     with netCDF4.Dataset(path) as dataset:
         try:
             var = dataset.variables[variable]

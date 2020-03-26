@@ -50,8 +50,10 @@ def combine_reducers(*reducers):
     :returns: reducer function
     """
     def wrapped(state, action):
+        state = copy.deepcopy(state)
         for reducer in reducers:
             state = reducer(state, action)
+        print(state)
         return state
     return wrapped
 
