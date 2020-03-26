@@ -154,12 +154,13 @@ class Loader:
             pressures = np.array(pressures)
         return any(np.abs(pressures - pressure) < tolerance)
 
-    def load_image(self, path, variable, pts):
+    @classmethod
+    def load_image(cls, path, variable, pts):
         """Load bokeh image glyph data from file using slices"""
         try:
-            lons, lats, values, units = self._load_xarray(path, variable, pts)
+            lons, lats, values, units = cls._load_xarray(path, variable, pts)
         except:
-            lons, lats, values, units = self._load_cube(path, variable, pts)
+            lons, lats, values, units = cls._load_cube(path, variable, pts)
 
         # Units
         if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
@@ -195,16 +196,16 @@ class Loader:
     @staticmethod
     def _load_xarray(path, variable, pts):
         with xarray.open_dataset(path, engine="h5netcdf") as nc:
-            big = nc[variable]
-            small = big[pts]
-            lons = np.ma.masked_invalid(small.longitude)
-            lats = np.ma.masked_invalid(small.latitude)
-            values = np.ma.masked_invalid(small)
-            units = small.units
+            data_array = nc[variable][pts]
+            lons = np.ma.masked_invalid(data_array.longitude)
+            lats = np.ma.masked_invalid(data_array.latitude)
+            values = np.ma.masked_invalid(data_array)
+            units = getattr(data_array, 'units', '')
         return lons, lats, values, units
 
     @staticmethod
     def _load_cube(path, variable, pts):
+        # TODO: Is this method still needed?
         import iris
         cube = iris.load_cube(path, iris.Constraint(variable))
         units = cube.units

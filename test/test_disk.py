@@ -222,6 +222,35 @@ class TestLocator(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
+def test_given_empty_unified_model_file(tmpdir):
+    path = str(tmpdir / "file.nc")
+    pattern = path
+    with netCDF4.Dataset(path, "w") as dataset:
+        pass
+    settings = {"pattern": path}
+    dataset = forest.drivers.get_dataset("unified_model", settings)
+    navigator = dataset.navigator()
+    result = navigator.variables(pattern)
+    expect = []
+    assert expect == result
+
+
+def test_initial_times_given_forecast_reference_time(tmpdir):
+    path = str(tmpdir / "file.nc")
+    pattern = path
+    with netCDF4.Dataset(path, "w") as dataset:
+        var = dataset.createVariable("forecast_reference_time", "d", ())
+        var.units = "hours since 1970-01-01 00:00:00"
+        var[:] = 0
+    settings = {"pattern": path}
+    dataset = forest.drivers.get_dataset("unified_model", settings)
+    navigator = dataset.navigator()
+    variable = None
+    result = navigator.initial_times(pattern, variable)
+    expect = [dt.datetime(1970, 1, 1)]
+    assert expect == result
+
+
 class TestNavigator(unittest.TestCase):
     def setUp(self):
         self.path = "test-navigator.nc"
@@ -229,31 +258,6 @@ class TestNavigator(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(self.path):
             os.remove(self.path)
-
-    def test_given_empty_unified_model_file(self):
-        pattern = "*.nc"
-        with netCDF4.Dataset(self.path, "w") as dataset:
-            pass
-        settings = {"pattern": self.path}
-        dataset = forest.drivers.get_dataset("unified_model", settings)
-        navigator = dataset.navigator()
-        result = navigator.variables(pattern)
-        expect = []
-        self.assertEqual(expect, result)
-
-    def test_initial_times_given_forecast_reference_time(self):
-        pattern = "*.nc"
-        with netCDF4.Dataset(self.path, "w") as dataset:
-            var = dataset.createVariable("forecast_reference_time", "d", ())
-            var.units = "hours since 1970-01-01 00:00:00"
-            var[:] = 0
-        settings = {"pattern": self.path}
-        dataset = forest.drivers.get_dataset("unified_model", settings)
-        navigator = dataset.navigator()
-        variable = None
-        result = navigator.initial_times(pattern, variable)
-        expect = [dt.datetime(1970, 1, 1)]
-        self.assertEqual(expect, result)
 
     def test_valid_times_given_relative_humidity(self):
         pattern = "*.nc"

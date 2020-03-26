@@ -76,13 +76,13 @@ def test_view_render_state(tmpdir):
     assert len(view.image_sources[0].data["image"]) == 1
 
 
-def test_load_image_pts(tmpdir):
+def test_load_image(tmpdir):
     path = str(tmpdir / "file.nc")
     variable = "air_temperature"
     with netCDF4.Dataset(path, "w") as dataset:
         insert_lonlat(dataset, [0, 1], [0, 1])
         var = dataset.createVariable(variable, "f", ("longitude", "latitude"))
-    data = unified_model.load_image_pts(path, variable, (), ())
+    data = unified_model.Loader.load_image(path, variable, ())
     assert data["image"][0].shape == (2, 2)
 
 
