@@ -175,11 +175,8 @@ def main(argv=None):
 
     # Layer dropdowns from map_views
     menu = []
-    label_to_pattern = {group.label: group.pattern
-                        for group in config.file_groups}
     for label in map_views:
-        pattern = label_to_pattern[label]
-        menu.append((pattern, pattern))
+        menu.append((label, label))
 
     layers_ui = layers.LayersUI(menu)
 
