@@ -6,6 +6,11 @@ class Navigator:
     :param navigators: dict of sub-navigators distinguished by pattern
     """
     def __init__(self, _navigators):
+        # TODO: It'd be good to switch the identification of navigators from
+        # using the `pattern` to using the `label`. In general, not every
+        # group would have a `pattern`.
+        # e.g.
+        # self._navigators = {label: navigator for label, navigator in ...}
         self._navigators = _navigators
 
     def variables(self, pattern):
