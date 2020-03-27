@@ -40,9 +40,20 @@ class MapView:
             "x": [],
             "y": [],
         })
+        self.source.on_event("tap", self.callback)
+        self.source.selected.on_change("indices", self.selected)
+
+    def callback(self, event):
+        print(event)
+
+    def selected(self, a, o, n):
+        print(a, o, n)
 
     def add_figure(self, figure):
-        return figure.circle(x="x", y="y", source=self.source)
+        # Tap event listener
+        renderer = figure.circle(x="x", y="y", source=self.source)
+        figure.add_tools(bokeh.models.TapTool(renderers=[renderer]))
+        return renderer
 
     def render(self, *args, **kwargs):
         x, y = forest.geo.web_mercator(self.lons, self.lats)

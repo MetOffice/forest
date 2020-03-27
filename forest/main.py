@@ -372,7 +372,7 @@ def main(argv=None):
     tool_layout.connect(store)
 
     for f in figures:
-        f.on_event(bokeh.events.Tap, tap_listener.update_xy)
+        # f.on_event(bokeh.events.Tap, tap_listener.update_xy)
         marker = screen.MarkDraw(f).connect(store)
 
     control_root = bokeh.layouts.column(
