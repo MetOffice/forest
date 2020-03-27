@@ -22,6 +22,7 @@ class Navigator:
             "pattern": group.pattern,
             "locator": group.locator,
             "database_path": group.database_path,
+            "directory": group.directory,
             "color_mapper": color_mapper,
         }
         dataset = drivers.get_dataset(group.file_type, settings)
