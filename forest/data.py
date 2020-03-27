@@ -1,41 +1,23 @@
-import os
-import datetime as dt
-import re
 try:
     import cartopy
 except ImportError:
     # ReadTheDocs unable to pip install cartopy
     pass
-import glob
-import json
-import pandas as pd
 import numpy as np
 import netCDF4
-try:
-    import cf_units
-except ImportError:
-    # ReadTheDocs unable to pip install cf-units
-    pass
-from forest import (
-        geo,
-        disk)
+from forest import geo
 import bokeh.models
 from collections import OrderedDict
 from functools import partial
-import scipy.ndimage
 try:
     import shapely.geometry
 except ImportError:
     # ReadTheDocs unable to pip install shapely
     pass
-from forest.util import (
-        initial_time,
-        coarsify)
-from forest.exceptions import SearchFail
+import forest.util
 
 
 # Application data shared across documents
-IMAGES = OrderedDict()
 VECTORS = OrderedDict()
 COASTLINES = {
     "xs": [],
@@ -126,6 +108,7 @@ def iterlines(geometries):
             yield xy(geometry)
 
 
+# TODO: Delete this decorator in a future PR
 def cache(name):
     store = globals()[name]
     def decorator(f):
@@ -137,6 +120,7 @@ def cache(name):
     return decorator
 
 
+# TODO: Delete this class in a future PR
 class ActiveViewer(object):
     def __init__(self):
         self.active = False
@@ -167,6 +151,7 @@ class ActiveViewer(object):
             self.pending_state = state
 
 
+# TODO: Delete this class in a future PR
 class WindBarbs(ActiveViewer):
     def __init__(self, paths):
         self.paths = paths
@@ -236,8 +221,8 @@ class WindBarbs(ActiveViewer):
             np.zeros(len(lats), dtype="d"),
             lats)
         x, y = np.meshgrid(gx, gy)
-        u = convert_units(u, 'm s-1', 'knots')
-        v = convert_units(v, 'm s-1', 'knots')
+        u = forest.util.convert_units(u, 'm s-1', 'knots')
+        v = forest.util.convert_units(v, 'm s-1', 'knots')
         return {
             "x": x.flatten(),
             "y": y.flatten(),
@@ -246,13 +231,14 @@ class WindBarbs(ActiveViewer):
         }
 
 
+# TODO: Delete this class in a future PR
 class Finder(object):
     def __init__(self, paths):
         self.paths = paths
         self.table = {
-                initial_time(p): p for p in paths}
+                forest.util.initial_time(p): p for p in paths}
         self.initial_times = np.array(
-                [initial_time(p) for p in paths],
+                [forest.util.initial_time(p) for p in paths],
                 dtype='datetime64[s]')
         with netCDF4.Dataset(self.paths[0]) as dataset:
             if "pressure" in dataset.variables:
@@ -295,99 +281,3 @@ class Finder(object):
                     np.abs(
                         self.initial_times - initial_time))
             return self.paths[i]
-
-
-def pts_hash(pts):
-    if isinstance(pts, np.ndarray):
-        return pts.tostring()
-    else:
-        return pts
-
-
-def load_image(path, variable, itime, ipressure):
-    return load_image_pts(path, variable, (itime,), (itime, ipressure))
-
-
-def load_image_pts(path, variable, pts_3d, pts_4d):
-    key = (path, variable, pts_hash(pts_3d), pts_hash(pts_4d))
-    if key in IMAGES:
-        return IMAGES[key]
-    else:
-        try:
-            lons, lats, values, units = _load_netcdf4(path, variable, pts_3d, pts_4d)
-        except:
-            lons, lats, values, units = _load_cube(path, variable, pts_3d, pts_4d)
-
-    # Units
-    if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
-        if units == "mm h-1":
-            values = values
-        else:
-            values = convert_units(values, units, "kg m-2 hour-1")
-    elif units == "K":
-        values = convert_units(values, "K", "Celsius")
-
-    # Coarsify images
-    threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199
-    if values.size > threshold:
-        fraction = 0.25
-    else:
-        fraction = 1.
-    lons, lats, values = coarsify(
-        lons, lats, values, fraction)
-
-    # Roll input data into [-180, 180] range
-    if np.any(lons > 180.0):
-        shift_by = np.sum(lons > 180.0)
-        lons[lons > 180.0] -= 360.
-        lons = np.roll(lons, shift_by)
-        values = np.roll(values, shift_by, axis=1)
-
-    image = geo.stretch_image(lons, lats, values)
-    IMAGES[key] = image
-    return image
-
-
-def _load_cube(path, variable, pts_3d, pts_4d):
-    import iris
-    cube = iris.load_cube(path, iris.Constraint(variable))
-    units = cube.units
-    lons = cube.coord('longitude').points
-    if lons.ndim == 2:
-        lons = lons[0, :]
-    lats = cube.coord('latitude').points
-    if lons.ndim == 2:
-        lats = lats[:, 0]
-    if cube.data.ndim == 4:
-        values = cube.data[pts_4d]
-    else:
-        values = cube.data[pts_3d]
-    return lons, lats, values, units
-
-
-def _load_netcdf4(path, variable, pts_3d, pts_4d):
-    with netCDF4.Dataset(path) as dataset:
-        try:
-            var = dataset.variables[variable]
-        except KeyError as e:
-            if variable == "precipitation_flux":
-                var = dataset.variables["stratiform_rainfall_rate"]
-            else:
-                raise e
-        for d in var.dimensions:
-            if "longitude" in d:
-                lons = dataset.variables[d][:]
-            if "latitude" in d:
-                lats = dataset.variables[d][:]
-        if len(var.dimensions) == 4:
-            values = var[pts_4d]
-        else:
-            values = var[pts_3d]
-        units = var.units
-    return lons, lats, values, units
-
-
-def convert_units(values, old_unit, new_unit):
-    if isinstance(values, list):
-        values = np.asarray(values)
-    return cf_units.Unit(old_unit).convert(values, new_unit)

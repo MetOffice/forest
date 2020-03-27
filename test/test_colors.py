@@ -112,6 +112,7 @@ def test_middleware_given_fixed_swallows_source_limit_actions():
     assert store.state == {"colorbar": {"fixed": True}}
 
 
+@pytest.mark.skip()
 def test_middleware_given_fixed_allows_source_limit_actions():
     store = redux.Store(colors.reducer)
     action = colors.set_source_limits(0, 100)
@@ -273,3 +274,15 @@ def test_render_called_once_with_non_relevant_settings():
         store.dispatch(action)
     controls.render.assert_called_once()
 
+
+def test_limits_middleware():
+    # Swallow actions that don't change state
+    middleware = colors.middleware()
+    store = None
+    result = []
+    actions =[
+        colors.set_user_low(0.0000001),
+        colors.set_user_low(0.0000001)]
+    for action in actions:
+        result += list(middleware(store, action))
+    assert result == [actions[0]]
