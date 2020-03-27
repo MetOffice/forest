@@ -80,7 +80,7 @@ def main(argv=None):
 
     datasets = {}
     renderers = {}
-    viewers = {}
+    map_views = {}
     for group in config.file_groups:
         settings = {
             "label": group.label,
@@ -92,15 +92,18 @@ def main(argv=None):
         }
         dataset = drivers.get_dataset(group.file_type, settings)
         datasets[group.pattern] = dataset
-        viewer = dataset.map_view()
-        viewers[group.label] = viewer
-        renderers[group.label] = [
-                viewer.add_figure(f)
-                for f in figures]
+
+        # Add optional map view
+        if hasattr(dataset, "map_view"):
+            map_view = dataset.map_view()
+            map_views[group.label] = map_view
+            renderers[group.label] = [
+                    map_view.add_figure(f)
+                    for f in figures]
 
     image_sources = []
-    for name, viewer in viewers.items():
-        for source in getattr(viewer, "image_sources", []):
+    for name, map_view in map_views.items():
+        for source in getattr(map_view, "image_sources", []):
             image_sources.append(source)
 
     # Lakes
@@ -170,9 +173,10 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
+    # Layer dropdowns from map_views
     menu = []
-    for k, _ in config.patterns:
-        menu.append((k, k))
+    for label in map_views:
+        menu.append((label, label))
 
     layers_ui = layers.LayersUI(menu)
 
@@ -183,12 +187,16 @@ def main(argv=None):
         bokeh.layouts.column(dropdown))
 
 
-    navigator = navigate.Navigator({key: dataset.navigator()
-                                    for key, dataset in datasets.items()})
+    # Add optional sub-navigators
+    sub_navigators = {
+        key: dataset.navigator() for key, dataset in datasets.items()
+        if hasattr(dataset, "navigator")
+    }
+    navigator = navigate.Navigator(sub_navigators)
 
     # Pre-select menu choices (if any)
     initial_state = {}
-    for _, pattern in config.patterns:
+    for pattern, _ in sub_navigators.items():
         initial_state = db.initial_state(navigator, pattern=pattern)
         break
 
@@ -278,8 +286,8 @@ def main(argv=None):
 
     # Connect views to state changes
     connector = layers.ViewerConnector().connect(store)
-    for label, viewer in viewers.items():
-        connector.add_label_subscriber(label, viewer.render)
+    for label, map_view in map_views.items():
+        connector.add_label_subscriber(label, map_view.render)
 
     # Set default time series visibility
     store.dispatch(tools.on_toggle_tool("time_series", False))
@@ -290,10 +298,10 @@ def main(argv=None):
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
 
-    # Pre-select first layer
-    for name, _ in config.patterns:
+    # Pre-select first map_view layer
+    for label in map_views:
         row_index = 0
-        store.dispatch(layers.set_label(row_index, name))
+        store.dispatch(layers.set_label(row_index, label))
         store.dispatch(layers.set_active(row_index, [0]))
         break
 
