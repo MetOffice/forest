@@ -78,6 +78,7 @@ def main(argv=None):
     # Colorbar user interface
     colorbar_ui = forest.components.ColorbarUI(color_mapper)
 
+    datasets = {}
     renderers = {}
     viewers = {}
     for group in config.file_groups:
@@ -90,6 +91,7 @@ def main(argv=None):
             "color_mapper": color_mapper,
         }
         dataset = drivers.get_dataset(group.file_type, settings)
+        datasets[group.pattern] = dataset
         viewer = dataset.map_view()
         viewers[group.label] = viewer
         renderers[group.label] = [
@@ -181,7 +183,8 @@ def main(argv=None):
         bokeh.layouts.column(dropdown))
 
 
-    navigator = navigate.Navigator(config, color_mapper=color_mapper)
+    navigator = navigate.Navigator({key: dataset.navigator()
+                                    for key, dataset in datasets.items()})
 
     # Pre-select menu choices (if any)
     initial_state = {}
