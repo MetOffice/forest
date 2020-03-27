@@ -48,6 +48,10 @@ class MapView:
 
     def selected(self, a, o, n):
         print(a, o, n)
+        with netCDF4.Dataset(self.path) as dataset:
+            for i in n:
+                data = dataset.variables["PLATFORM_NUMBER"][i]
+                print(netCDF4.chartostring(data))
 
     def add_figure(self, figure):
         # Tap event listener
