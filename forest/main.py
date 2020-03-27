@@ -361,7 +361,7 @@ def main(argv=None):
         profile_figure.toolbar.logo = None
         profile_figure.y_range.flipped = True
 
-        for dataset in datasets:
+        for dataset in datasets.values():
             if hasattr(dataset, "profile_view"):
                 view = dataset.profile_view(profile_figure)
                 view.connect(store)
