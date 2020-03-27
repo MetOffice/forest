@@ -15,22 +15,6 @@ def test_get_database_with_real_dependencies(tmpdir):
         forest.db.get_database(database_path)
 
 
-@patch('forest.navigate.Navigator._from_group')
-def test_Navigator_init(from_group):
-    from_group.side_effect = [sentinel.nav1, sentinel.nav2]
-    group1 = Mock(pattern='pattern1')
-    group2 = Mock(pattern='pattern2')
-    config = Mock(file_groups=[group1, group2])
-
-    navigator = navigate.Navigator(config)
-
-    color_mapper = None
-    assert from_group.mock_calls == [call(group1, color_mapper),
-                                     call(group2, color_mapper)]
-    assert navigator._navigators == {'pattern1': sentinel.nav1,
-                                     'pattern2': sentinel.nav2}
-
-
 def test_Navigator_variables():
     sub_navigator = Mock()
     sub_navigator.variables.return_value = sentinel.variables
