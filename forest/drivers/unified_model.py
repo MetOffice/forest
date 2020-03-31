@@ -99,6 +99,41 @@ class Loader:
         self.pattern = pattern
         self.locator = locator
 
+    def contour(self, state):
+        from skimage import measure
+        variable = state.variable
+        path, pts = self.locator.locate(
+            self.pattern,
+            state.variable,
+            state.initial_time,
+            state.valid_time,
+            state.pressure)
+        print("contour", path, variable, pts)
+
+        xs, ys = [], []
+        lons, lats, field, units = self._load_xarray(path, variable, pts)
+
+        # Smooth contour inputs
+        if True:
+            from scipy.ndimage import gaussian_filter
+            field = gaussian_filter(field, sigma=1)
+        else:
+            n = 4
+            lons, lats, field = lons[::n], lats[::n], field[::n, ::n]
+
+        levels = np.linspace(field.min(), field.max(), 6)
+        for level in levels:
+            contours = measure.find_contours(field, level)
+            for contour in contours:
+                j, i = contour.astype(int).T
+                xc, yc = geo.web_mercator(lons[i], lats[j])
+                xs.append(xc)
+                ys.append(yc)
+        return {
+            "xs": xs,
+            "ys": ys,
+        }
+
     def image(self, state):
         if not self.valid(state):
             return gridded_forecast.empty_image()

@@ -4,6 +4,7 @@ import bokeh.models
 from forest import geo
 from forest.old_state import old_state, unique
 from forest.exceptions import FileNotFound, IndexNotFound
+from skimage import measure
 
 
 class UMView(object):
@@ -18,6 +19,11 @@ class UMView(object):
                 "dw": [],
                 "dh": [],
                 "image": []})
+        self.sources = {}
+        self.sources["contour"] = bokeh.models.ColumnDataSource({
+            "xs": [],
+            "ys": [],
+        })
         self.image_sources = [self.source]
 
         self.tooltips = [
@@ -38,6 +44,8 @@ class UMView(object):
     def render(self, state):
         self.source.data = self.loader.image(state)
 
+        self.sources["contour"].data = self.loader.contour(state)
+
     def set_hover_properties(self, tooltips, formatters):
         self.tooltips = tooltips
         self.formatters = formatters
@@ -57,6 +65,13 @@ class UMView(object):
                     tooltips=self.tooltips,
                     formatters=self.formatters)
             figure.add_tools(tool)
+
+        # Add Contours
+        figure.multi_line(xs="xs",
+                          ys="ys",
+                          line_color="red",
+                          source=self.sources["contour"])
+
         return renderer
 
 
