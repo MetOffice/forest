@@ -3,6 +3,7 @@
 {% block postamble %}
 <link rel="stylesheet" href="forest/static/style.css" type="text/css" media="all">
 <script src="forest/static/script.js" charset="utf-8"></script>
+<script src="forest/static/marchingsquares-isolines.min.js" charset="utf-8"></script>
 {% endblock %}
 {% block contents %}
     <div id="sidenav" class="sidenav">
@@ -129,14 +130,14 @@ let triggerHiddenButton = function() {
 oldLog = console.log;
 console.log = function(message) {
     if (typeof message.localeCompare === "undefined") {
-        oldLog(message);
+        oldLog.apply(null, arguments);
     }
     if (message.localeCompare('Bokeh items were rendered successfully') == 0) {
         console.log = oldLog;
         reattachRoots();
         triggerHiddenButton();
     } else {
-        oldLog(message)
+        oldLog.apply(null, arguments);
     }
 }
     </script>

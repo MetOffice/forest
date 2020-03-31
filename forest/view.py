@@ -78,17 +78,87 @@ class UMView(object):
             args=dict(source=self.source),
             v_func="""
             // Mapping to x components of contours
+            if (source.data.length === 0) {
+                return [];
+            }
+
+            // Reshape image
+            let ni = 100;
+            let nj = 100;
+            let image = []
+            for (let i=0; i<ni; i++) {
+                let row = []
+                for (let j=0; j<nj; j++) {
+                    let k = (nj * i) + j;
+                    row.push(source.data["image"][0][k])
+                }
+                image.push(row)
+            }
+
+            // Marching squares algorithm
+            let level = 30;
             let x = source.data["x"][0]
             let dw = source.data["dw"][0]
-            return [[x, x + dw, x + dw, x, x]];
+            let result = [] // Note: redeclaration of formal parameter xs forbidden
+            let options = {
+                noFrame: true,
+                linearRing: false,
+            }
+            try {
+                let contours = MarchingSquaresJS.isoLines(image, level, options)
+                for (let c=0; c<contours.length; c++) {
+                    for (let p=0; p<contours[c].length; p++) {
+                        let xp = contours[c][p][0]
+                        result.push(x + xp * (dw / ni))
+                    }
+                }
+            } catch {
+                console.log("Woops")
+            }
+            return [result]
         """)
         to_ys = bokeh.models.CustomJSTransform(
             args=dict(source=self.source),
             v_func="""
             // Mapping to y components of contours
+            if (source.data.length === 0) {
+                return [];
+            }
+
+            // Reshape image
+            let ni = 100;
+            let nj = 100;
+            let image = []
+            for (let i=0; i<ni; i++) {
+                let row = []
+                for (let j=0; j<nj; j++) {
+                    let k = (nj * i) + j;
+                    row.push(source.data["image"][0][k])
+                }
+                image.push(row)
+            }
+
+            // Marching squares algorithm
+            let level = 30;
             let y = source.data["y"][0]
             let dh = source.data["dh"][0]
-            return [[y, y, y + dh, y + dh, y]];
+            let result = []
+            let options = {
+                noFrame: true,
+                linearRing: false,
+            }
+            try {
+                let contours = MarchingSquaresJS.isoLines(image, level, options)
+                for (let c=0; c<contours.length; c++) {
+                    for (let p=0; p<contours[c].length; p++) {
+                        let yp = contours[c][p][1]
+                        result.push(y + yp * (dh / nj))
+                    }
+                }
+            } catch {
+                console.log("Woops")
+            }
+            return [result]
         """)
         figure.multi_line(
             xs=transform("image", to_xs),
