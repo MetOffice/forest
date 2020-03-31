@@ -66,11 +66,35 @@ class UMView(object):
                     formatters=self.formatters)
             figure.add_tools(tool)
 
-        # Add Contours
+        # Add Contours server-side
         figure.multi_line(xs="xs",
                           ys="ys",
                           line_color="red",
                           source=self.sources["contour"])
+
+        # Add Contours client-side
+        from bokeh.transform import transform
+        to_xs = bokeh.models.CustomJSTransform(
+            args=dict(source=self.source),
+            v_func="""
+            // Mapping to x components of contours
+            let x = source.data["x"][0]
+            let dw = source.data["dw"][0]
+            return [[x, x + dw, x + dw, x, x]];
+        """)
+        to_ys = bokeh.models.CustomJSTransform(
+            args=dict(source=self.source),
+            v_func="""
+            // Mapping to y components of contours
+            let y = source.data["y"][0]
+            let dh = source.data["dh"][0]
+            return [[y, y, y + dh, y + dh, y]];
+        """)
+        figure.multi_line(
+            xs=transform("image", to_xs),
+            ys=transform("image", to_ys),
+            line_color="green",
+            source=self.source)
 
         return renderer
 
