@@ -8,8 +8,7 @@ import numpy as np
 from functools import lru_cache
 from forest.exceptions import FileNotFound, IndexNotFound
 from forest.old_state import old_state, unique
-from forest.util import coarsify
-from forest.util import to_datetime as _to_datetime
+import forest.util
 from forest import (
         geo,
         locate,
@@ -44,6 +43,7 @@ class Locator:
     """Locate EIDA50 satellite images"""
     def __init__(self, pattern):
         self.pattern = pattern
+        self._glob = forest.util.cached_glob(dt.timedelta(minutes=15))
 
     def find(self, date):
         if isinstance(date, (dt.datetime, str)):
@@ -59,7 +59,7 @@ class Locator:
         return path, index
 
     def glob(self):
-        return sorted(glob.glob(os.path.expanduser(self.pattern)))
+        return self._glob(self.pattern)
 
     @staticmethod
     @lru_cache()
@@ -136,7 +136,7 @@ class Loader:
             data = self.empty_image
         else:
             try:
-                data = self._image(_to_datetime(state.valid_time))
+                data = self._image(forest.util.to_datetime(state.valid_time))
             except (FileNotFound, IndexNotFound):
                 data = self.empty_image
         return data

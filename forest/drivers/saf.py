@@ -91,12 +91,6 @@ class Loader:
         return data
 
 
-@forest.util.timeout_cache(dt.timedelta(minutes=10))
-def cached_glob(pattern):
-    """Glob file system at most once every 10 minutes for a pattern"""
-    return sorted(glob.glob(pattern))
-
-
 class Locator:
     """Locate SAF files"""
     def __init__(self, pattern):
@@ -104,10 +98,11 @@ class Locator:
         regex = "[0-9]{8}T[0-9]{6}Z"
         fmt = "%Y%m%dT%H%M%S%Z"
         self.parse_date = partial(forest.util.parse_date, regex, fmt)
+        self._glob = forest.util.cached_glob(dt.timedelta(minutes=10))
 
     def glob(self):
         """List file system"""
-        return cached_glob(self.pattern)
+        return self._glob(self.pattern)
 
     def find_paths(self, paths, date, frequency):
         """Find a file(s) containing information related to date"""
