@@ -32,9 +32,9 @@ def infinite_cache(f):
               or file to reduce round-trips to disk
     """
     cache = {}
-    def wrapped(self, path, variable):
+    def wrapped(self, path):
         if path not in cache:
-            cache[path] = f(self, path, variable)
+            cache[path] = f(self, path)
         return cache[path]
     return wrapped
 
@@ -46,7 +46,7 @@ class Dataset:
         self.locator = Locator(self.pattern)
 
     def navigator(self):
-        return Navigator(self.pattern)
+        return Navigator(self.locator)
 
     def map_view(self):
         loader = Loader(self.locator)
@@ -61,7 +61,7 @@ class Locator:
     def find(self, date):
         if isinstance(date, (dt.datetime, str)):
             date = np.datetime64(date, 's')
-        paths = self.paths()
+        paths = self.glob()
         ipath = self.find_file_index(paths, date)
         path = paths[ipath]
         time_axis = self.load_time_axis(path)
@@ -71,7 +71,7 @@ class Locator:
                 dt.timedelta(minutes=15))
         return path, index
 
-    def paths(self):
+    def glob(self):
         return sorted(glob.glob(os.path.expanduser(self.pattern)))
 
     @staticmethod
@@ -110,14 +110,15 @@ class Locator:
 
     @staticmethod
     def parse_date(path):
-        # reg-ex to support file names like *20191211.nc
-        groups = re.search(r"([0-9]{8})\.nc", path)
-        if groups is None:
-            # reg-ex to support file names like *20191211T0000Z.nc
-            groups = re.search(r"([0-9]{8}T[0-9]{4}Z)\.nc", path)
-            return dt.datetime.strptime(groups[1], "%Y%m%dT%H%MZ")
-        else:
-            return dt.datetime.strptime(groups[1], "%Y%m%d")
+        """Parse timestamp into datetime or None"""
+        for regex, fmt in [
+                (r"([0-9]{8})\.nc", "%Y%m%d"),
+                (r"([0-9]{8}T[0-9]{4}Z)\.nc", "%Y%m%dT%H%MZ")]:
+            groups = re.search(regex, path)
+            if groups is None:
+                continue
+            else:
+                return dt.datetime.strptime(groups[1], fmt)
 
 
 class Loader:
@@ -131,7 +132,7 @@ class Loader:
             "image": []
         }
         self.cache = {}
-        paths = self.locator.paths()
+        paths = self.locator.glob()
         if len(paths) > 0:
             with netCDF4.Dataset(paths[-1]) as dataset:
                 self.cache["longitude"] = dataset.variables["longitude"][:]
@@ -172,8 +173,8 @@ class Loader:
 
 
 class Navigator:
-    def __init__(self, pattern):
-        self.pattern = pattern
+    def __init__(self, locator):
+        self.locator = locator
 
     def variables(self, pattern):
         return ["EIDA50"]
@@ -182,15 +183,27 @@ class Navigator:
         return [dt.datetime(1970, 1, 1)]
 
     def valid_times(self, pattern, variable, initial_time):
+        """Get available times given application state"""
+        paths = self.locator.glob()
+        return self.valid_times_from_paths(paths)
+
+    def valid_times_from_paths(self, paths):
+        """Get available times by reading files"""
         arrays = []
-        for path in sorted(glob.glob(pattern)):
-            arrays.append(self._valid_times(path, variable))
+        for path in sorted(paths):
+            timestamp = self.locator.parse_date(path)
+            if timestamp is None:
+                # Time(s) from file contents
+                arrays.append(self._valid_times(path))
+            else:
+                # Time(s) from file name
+                arrays.append(np.array([timestamp], dtype='datetime64[s]'))
         if len(arrays) == 0:
             return []
         return np.unique(np.concatenate(arrays))
 
     @infinite_cache
-    def _valid_times(self, path, variable):
+    def _valid_times(self, path):
         with netCDF4.Dataset(path) as dataset:
             var = dataset.variables["time"]
             values = netCDF4.num2date(var[:], units=var.units)
