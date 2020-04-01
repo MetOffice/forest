@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock
 import datetime as dt
 import bokeh.models
 import netCDF4
@@ -72,10 +73,19 @@ def test_navigator_pressures():
     assert navigator.pressures(None, None, None) == []
 
 
-def test_locator_parse_date():
-    path = "/some/file-20190101.nc"
+@pytest.mark.parametrize("path,expect", [
+    pytest.param("/some/file-20190101.nc",
+                 dt.datetime(2019, 1, 1),
+                 id="yyyymmdd format"),
+    pytest.param("/some/file-20190101T1245Z.nc",
+                 dt.datetime(2019, 1, 1, 12, 45),
+                 id="yyyymmdd hm format"),
+    pytest.param("eida50.nc",
+                 None,
+                 id="no timestamp"),
+])
+def test_locator_parse_date(path, expect):
     result = eida50.Locator.parse_date(path)
-    expect = dt.datetime(2019, 1, 1)
     assert expect == result
 
 
@@ -157,18 +167,6 @@ def test_locator_find_index_outside_range_raises_exception():
         eida50.Locator.find_index(times, time, freq)
 
 
-def test_navigator_valid_times_given_toa_brightness_temperature(tmpdir):
-    path = str(tmpdir / "test-navigate-eida50.nc")
-    times = [dt.datetime(2019, 1, 1)]
-    with netCDF4.Dataset(path, "w") as dataset:
-        _eida50(dataset, times)
-
-    navigator = eida50.Navigator(path)
-    result = navigator._valid_times(path, "toa_brightness_temperature")
-    expect = times
-    assert expect == result
-
-
 def test_loader_image(tmpdir):
     path = str(tmpdir / "file_20190417.nc")
     with netCDF4.Dataset(path, "w") as dataset:
@@ -178,13 +176,6 @@ def test_loader_image(tmpdir):
     image = loader._image(time)
     result = set(image.keys())
     expect = set(["x", "y", "dw", "dh", "image"])
-    assert expect == result
-
-
-def test_locator_parse_date():
-    path = "/some/EIDA50_takm4p4_20190417.nc"
-    result = eida50.Locator.parse_date(path)
-    expect = dt.datetime(2019, 4, 17)
     assert expect == result
 
 
@@ -244,3 +235,12 @@ def test_navigator_valid_times(tmpdir):
     result = navigator.valid_times(path, variable, TIMES[0])
     expect = TIMES
     np.testing.assert_array_equal(expect, result)
+
+
+def test_navigator_given_valid_time_none_returns_parsed_times():
+    paths = ["eida50_20200101.nc"]
+    dataset = forest.drivers.get_dataset("eida50")
+    navigator = dataset.navigator()
+    result = navigator.valid_times_from_paths(paths)
+    assert result == [dt.datetime(2020, 1, 1)]
+

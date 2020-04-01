@@ -1,3 +1,4 @@
+import glob
 import os
 import re
 import datetime as dt
@@ -33,6 +34,21 @@ def timeout_cache(interval):
                     return cache[x]
         return wrapped
     return decorator
+
+
+_timeout_globs = {}
+
+
+def cached_glob(interval):
+    """Glob file system at most once every interval"""
+    global _timeout_globs
+    if interval not in _timeout_globs:
+        _timeout_globs[interval] = timeout_cache(interval)(_glob)
+    return _timeout_globs[interval]
+
+
+def _glob(pattern):
+    return sorted(glob.glob(os.path.expanduser(pattern)))
 
 
 def coarsify(lons, lats, values, fraction):
