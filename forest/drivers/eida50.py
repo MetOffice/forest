@@ -150,11 +150,13 @@ class Loader:
         lats = self.latitudes
         with xarray.open_dataset(path, engine=ENGINE) as nc:
             values = nc["data"][itime].values
-        fraction = 0.25
-        lons, lats, values = coarsify(
-                lons, lats, values, fraction)
+
+        # Use datashader to coarsify images from 4.4km to 8.8km grid
+        scale = 2
         return geo.stretch_image(
-                lons, lats, values)
+                lons, lats, values,
+                plot_width=int(values.shape[1] / scale),
+                plot_height=int(values.shape[0] / scale))
 
 
 class Navigator:
