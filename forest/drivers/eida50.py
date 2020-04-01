@@ -3,7 +3,7 @@ import os
 import glob
 import datetime as dt
 import bokeh.models
-import netCDF4
+import xarray
 import numpy as np
 from functools import lru_cache
 from forest.exceptions import FileNotFound, IndexNotFound
@@ -16,6 +16,7 @@ from forest import (
         view)
 
 
+ENGINE = "h5netcdf"
 MIN_DATETIME64 = np.datetime64('0001-01-01T00:00:00.000000')
 
 
@@ -77,10 +78,8 @@ class Locator:
     @staticmethod
     @lru_cache()
     def load_time_axis(path):
-        with netCDF4.Dataset(path) as dataset:
-            var = dataset.variables["time"]
-            values = netCDF4.num2date(
-                    var[:], units=var.units)
+        with xarray.open_dataset(path, engine=ENGINE) as nc:
+            values = nc["time"]
         return np.array(values, dtype='datetime64[s]')
 
     def find_file_index(self, paths, user_date):
@@ -134,9 +133,9 @@ class Loader:
         self.cache = {}
         paths = self.locator.glob()
         if len(paths) > 0:
-            with netCDF4.Dataset(paths[-1]) as dataset:
-                self.cache["longitude"] = dataset.variables["longitude"][:]
-                self.cache["latitude"] = dataset.variables["latitude"][:]
+            with xarray.open_dataset(paths[-1], engine=ENGINE) as nc:
+                self.cache["longitude"] = nc["longitude"].values
+                self.cache["latitude"] = nc["latitude"].values
 
     @property
     def longitudes(self):
@@ -163,8 +162,8 @@ class Loader:
     def load_image(self, path, itime):
         lons = self.longitudes
         lats = self.latitudes
-        with netCDF4.Dataset(path) as dataset:
-            values = dataset.variables["data"][itime]
+        with xarray.open_dataset(path, engine=ENGINE) as nc:
+            values = nc["data"][itime].values
         fraction = 0.25
         lons, lats, values = coarsify(
                 lons, lats, values, fraction)
@@ -194,20 +193,13 @@ class Navigator:
             timestamp = self.locator.parse_date(path)
             if timestamp is None:
                 # Time(s) from file contents
-                arrays.append(self._valid_times(path))
+                arrays.append(self.locator.load_time_axis(path))
             else:
                 # Time(s) from file name
                 arrays.append(np.array([timestamp], dtype='datetime64[s]'))
         if len(arrays) == 0:
             return []
         return np.unique(np.concatenate(arrays))
-
-    @infinite_cache
-    def _valid_times(self, path):
-        with netCDF4.Dataset(path) as dataset:
-            var = dataset.variables["time"]
-            values = netCDF4.num2date(var[:], units=var.units)
-        return np.array(values, dtype='datetime64[s]')
 
     def pressures(self, pattern, variable, initial_time):
         return []

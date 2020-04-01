@@ -167,18 +167,6 @@ def test_locator_find_index_outside_range_raises_exception():
         eida50.Locator.find_index(times, time, freq)
 
 
-def test_navigator_valid_times_given_toa_brightness_temperature(tmpdir):
-    path = str(tmpdir / "test-navigate-eida50.nc")
-    times = [dt.datetime(2019, 1, 1)]
-    with netCDF4.Dataset(path, "w") as dataset:
-        _eida50(dataset, times)
-
-    navigator = eida50.Navigator(path)
-    result = navigator._valid_times(path)
-    expect = times
-    assert expect == result
-
-
 def test_loader_image(tmpdir):
     path = str(tmpdir / "file_20190417.nc")
     with netCDF4.Dataset(path, "w") as dataset:
