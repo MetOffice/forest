@@ -26,20 +26,6 @@ def _natargmax(arr):
     return np.argmax(no_nats)
 
 
-def infinite_cache(f):
-    """Unbounded cache to reduce navigation I/O
-
-    .. note:: This information would be better saved in a database
-              or file to reduce round-trips to disk
-    """
-    cache = {}
-    def wrapped(self, path):
-        if path not in cache:
-            cache[path] = f(self, path)
-        return cache[path]
-    return wrapped
-
-
 class Dataset:
     def __init__(self, pattern=None, color_mapper=None, **kwargs):
         self.pattern = pattern
