@@ -1,4 +1,5 @@
 import re
+import sqlite3
 import os
 import glob
 import datetime as dt
@@ -42,7 +43,6 @@ class Dataset:
         return view.UMView(loader, color_mapper, use_hover_tool=False)
 
 
-import sqlite3
 class Database:
     """Meta-data store for EIDA50 dataset"""
     def __init__(self, path=":memory:"):
@@ -312,12 +312,19 @@ class Navigator:
             key, time = (action["payload"]["key"],
                          action["payload"]["value"])
             if key == "valid_time":
+                # Detect missing file
                 paths = self.locator.glob()
                 path = self.locator.find_file(paths, time)
                 if path not in self.database.fetch_paths():
                     times = self.locator.load_time_axis(path)  # datetime64[s]
                     self.database.insert_times(times.astype(dt.datetime), path)
-                    yield forest.db.control.set_value("valid_times", self._times())
+
+                # Update stale state
+                store_times = store.state.get("valid_times", [])
+                database_times = self._times()
+                if len(store_times) != len(database_times):
+                    yield forest.db.control.set_value(
+                        "valid_times", database_times)
         yield action
 
     def variables(self, pattern):
