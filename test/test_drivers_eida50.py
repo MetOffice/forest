@@ -95,7 +95,7 @@ def test_locator_find_given_no_files_raises_notfound(tmpdir):
     pattern = str(tmpdir / "nofile.nc")
     locator = eida50.Locator(pattern, eida50.Database())
     with pytest.raises(FileNotFound):
-        locator.find(any_date)
+        locator.find([], any_date)
 
 
 def test_locator_find_given_a_single_file(tmpdir):
@@ -108,7 +108,8 @@ def test_locator_find_given_a_single_file(tmpdir):
         set_times(dataset, times)
 
     locator = eida50.Locator(pattern, eida50.Database())
-    found_path, index = locator.find(valid_date)
+    paths = locator.glob()
+    found_path, index = locator.find(paths, valid_date)
     assert found_path == path
     assert index == 0
 
@@ -125,7 +126,8 @@ def test_find_given_multiple_files(tmpdir):
             set_times(dataset, [date])
     valid_date = dt.datetime(2019, 1, 2, 0, 14)
     locator = eida50.Locator(pattern, eida50.Database())
-    found_path, index = locator.find(valid_date)
+    paths = locator.glob()
+    found_path, index = locator.find(paths, valid_date)
     expect = str(tmpdir / "test-eida50-20190102.nc")
     assert found_path == expect
     assert index == 0

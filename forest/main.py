@@ -87,15 +87,17 @@ def main(argv=None):
             "pattern": group.pattern,
             "locator": group.locator,
             "database_path": group.database_path,
-            "directory": group.directory,
-            "color_mapper": color_mapper,
+            "directory": group.directory
         }
         dataset = drivers.get_dataset(group.file_type, settings)
         datasets[group.pattern] = dataset
 
         # Add optional map view
         if hasattr(dataset, "map_view"):
-            map_view = dataset.map_view()
+            try:
+                map_view = dataset.map_view(color_mapper)
+            except TypeError:
+                map_view = dataset.map_view()
             map_views[group.label] = map_view
             renderers[group.label] = [
                     map_view.add_figure(f)

@@ -26,9 +26,9 @@ def _natargmax(arr):
 
 
 class Dataset:
-    def __init__(self, pattern=None, color_mapper=None, database_path=None, **kwargs):
+    def __init__(self, pattern=None, database_path=None, **kwargs):
+        print("NEW EIDA50 DATASET")
         self.pattern = pattern
-        self.color_mapper = color_mapper
         if database_path is None:
             database_path = ":memory:"
         self.database = Database(database_path)
@@ -37,9 +37,9 @@ class Dataset:
     def navigator(self):
         return Navigator(self.locator, self.database)
 
-    def map_view(self):
+    def map_view(self, color_mapper):
         loader = Loader(self.locator)
-        return view.UMView(loader, self.color_mapper, use_hover_tool=False)
+        return view.UMView(loader, color_mapper, use_hover_tool=False)
 
 
 import sqlite3
@@ -166,23 +166,20 @@ class Locator:
             np.array(filename_times, dtype='datetime64[s]')]
         return np.unique(np.concatenate(arrays))
 
-    def find(self, date):
-        """Find file and index related to date"""
+    def find(self, paths, date):
+        """Find file and index related to date
+
+        .. note:: Find should not write to disk
+        """
         # Search file system
-        if isinstance(date, (dt.datetime, str)):
-            date = np.datetime64(date, 's')
-        paths = self.glob()
-        ipath = self.find_file_index(paths, date)
-        path = paths[ipath]
+        path = self.find_file(paths, date)
 
         # Load times from database
         if path in self.database.fetch_paths():
             times = self.database.fetch_times(path)
             times = np.array(times, dtype='datetime64[s]')
         else:
-            print("saving: {}".format(path))
             times = self.load_time_axis(path)  # datetime64[s]
-            # self.database.insert_times(times.astype(dt.datetime), path)
 
         index = self.find_index(times, date, dt.timedelta(minutes=15))
         return path, index
@@ -197,7 +194,15 @@ class Locator:
             values = nc["time"]
         return np.array(values, dtype='datetime64[s]')
 
-    def find_file_index(self, paths, user_date):
+    def find_file(self, paths, user_date):
+        """"Find file likely to contain user supplied date
+
+        .. note:: Search based on timestamp only
+
+        .. warning:: Not suitable for searching unparsable file names
+        """
+        if isinstance(user_date, (dt.datetime, str)):
+            user_date = np.datetime64(user_date, 's')
         dates = np.array([
             self.parse_date(path) for path in paths],
             dtype='datetime64[s]')
@@ -207,13 +212,17 @@ class Locator:
             raise FileNotFound(msg)
         before_dates = np.ma.array(
                 dates, mask=mask, dtype='datetime64[s]')
-        return _natargmax(before_dates.filled())
+        i =  _natargmax(before_dates.filled())
+        return paths[i]
 
     @staticmethod
     def find_index(times, time, length):
+        """Search for index inside array of datetime64[s] values"""
         dtype = 'datetime64[s]'
         if isinstance(times, list):
             times = np.asarray(times, dtype=dtype)
+        if isinstance(time, (dt.datetime, str)):
+            time = np.datetime64(time, 's')
         bounds = locate.bounds(times, length)
         inside = locate.in_bounds(bounds, time)
         valid_times = np.ma.array(times, mask=~inside)
@@ -271,7 +280,8 @@ class Loader:
         return data
 
     def _image(self, valid_time):
-        path, itime = self.locator.find(valid_time)
+        paths = self.locator.glob()
+        path, itime = self.locator.find(paths, valid_time)
         return self.load_image(path, itime)
 
     def load_image(self, path, itime):
@@ -302,7 +312,8 @@ class Navigator:
             key, time = (action["payload"]["key"],
                          action["payload"]["value"])
             if key == "valid_time":
-                path, _ = self.locator.find(time)
+                paths = self.locator.glob()
+                path = self.locator.find_file(paths, time)
                 if path not in self.database.fetch_paths():
                     times = self.locator.load_time_axis(path)  # datetime64[s]
                     self.database.insert_times(times.astype(dt.datetime), path)
