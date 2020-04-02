@@ -203,13 +203,14 @@ class Loader(object):
         file_name = self.locator.find_file(date)
         print(file_name)
         if os.path.splitext(file_name)[1] == '.nc':
-            # print(self.load_tail_lines_netcdf(file_name))
-            return(
-                self.load_polygon_netcdf(file_name),
-                self.load_tail_lines_netcdf(file_name),
-                self.load_tail_points_netcdf(file_name),
-                self.load_centre_points_netcdf(file_name)
-            )
+            # print(type(self.load_all_netcdf(file_name)))
+            return self.load_all_netcdf(file_name)
+            # return(
+            #     self.load_polygon_netcdf(file_name),
+            #     self.load_tail_lines_netcdf(file_name),
+            #     self.load_tail_points_netcdf(file_name),
+            #     self.load_centre_points_netcdf(file_name)
+            # )
         elif os.path.splitext(file_name)[1] == '.json':
             # print(self.load_polygon_json(file_name))
             return (
@@ -220,6 +221,16 @@ class Loader(object):
             )
         else:
             return 'File extension not recognised: ' + file_name
+
+    @staticmethod
+    def load_all_netcdf(path):
+        """
+        Loads polygons from netcdf
+        :param path: absolute path and filename
+        :return: geojson object for plotting in bokeh
+        """
+
+        return getRDT(path, 0, 'All')
 
     @staticmethod
     def load_polygon_json(path):
@@ -530,48 +541,6 @@ def getRDT(path, lev, type):
     else:
         list_to_return = []
 
-    # Do specific things for each feature type
-    if type in ['Centre_Point', 'All']:
-
-        # Create an empty dictionary
-        mydict_cp = get_empty_feature_dict('Centre_Point')
-
-        for i in np.arange(ncds.dimensions['recNUM'].size):
-
-            # Get the Point features
-            lat = ncds.variables['LatG'][i, lev]
-            lon = ncds.variables['LonG'][i, lev]
-            x1, y1 = geo.web_mercator(lon, lat)
-            mydict_cp['x1'].extend(x1)
-            mydict_cp['y1'].extend(y1)
-
-            mykeys = [k for k in mydict_cp.keys() if not (('x' in k) or ('y' in k))]
-            for k in mykeys:
-                try:
-                    if k in varlev:
-                        thisdata = ncds.variables[k][i, lev]
-                    else:
-                        thisdata = ncds.variables[k][i]
-
-                    thisdata, units = descale_rdt(k, thisdata) # May not need to do this
-                    mydict_cp[k].append(thisdata)
-                except:
-                    mydict_cp[k].append(None)
-
-            # Now calculate future point and line
-            try:
-                speed = float(ncds.variables['MvtSpeed'][i])
-            except ValueError:
-                speed = 0
-            try:
-                direction = float(ncds.variables['MvtDirection'][i])
-            except ValueError:
-                direction = 0
-
-            mydict_cp = make_arrow(mydict_cp, lon, lat, speed, direction)
-
-        list_to_return.append(mydict_cp)
-
     if type in ['Polygon', 'All']:
 
         # Create list of features to populate
@@ -613,7 +582,37 @@ def getRDT(path, lev, type):
         feature_collection = FeatureCollection(features)
         
         list_to_return.append(json.dumps(feature_collection))
-        
+
+
+    if type in ['Tail_Lines', 'All']:
+
+        # Create an empty dictionary
+        mydict_tl = get_empty_feature_dict('Tail_Lines')
+
+        # Loop through features
+        for i in np.arange(ncds.dimensions['recNUM'].size):
+
+            # Loop through all items in mydict_tl
+            for k in mydict_tl.keys():
+                try:
+                    thisdata, units = descale_rdt(k, getDataOnly(ncds.variables[k][:]))
+                    mydict_tl[k].append(thisdata)
+                except:
+                    # Do nothing at the moment with the xs and ys
+                    if not k in ['xs', 'ys']:
+                        mydict_tl[k].append(None)
+                    else:
+                        continue
+
+            lats = getDataOnly(ncds.variables['LatTrajCellCG'][i, :])
+            lons = getDataOnly(ncds.variables['LonTrajCellCG'][i, :])
+
+            xs, ys = geo.web_mercator(lons, lats)
+            mydict_tl['xs'].append(xs)
+            mydict_tl['ys'].append(ys)
+
+        list_to_return.append(mydict_tl)
+
 
     if type in ['Tail_Points', 'All']:
 
@@ -661,40 +660,53 @@ def getRDT(path, lev, type):
 
         list_to_return.append(mydict_tp)
 
-
-    if type in ['Tail_Lines', 'All']:
+    # Do specific things for each feature type
+    if type in ['Centre_Point', 'All']:
 
         # Create an empty dictionary
-        mydict_tl = get_empty_feature_dict('Tail_Lines')
+        mydict_cp = get_empty_feature_dict('Centre_Point')
 
-        # Loop through features
         for i in np.arange(ncds.dimensions['recNUM'].size):
 
-            # Loop through all items in mydict_tl
-            for k in mydict_tl.keys():
+            # Get the Point features
+            lat = ncds.variables['LatG'][i, lev]
+            lon = ncds.variables['LonG'][i, lev]
+            x1, y1 = geo.web_mercator(lon, lat)
+            mydict_cp['x1'].extend(x1)
+            mydict_cp['y1'].extend(y1)
+
+            mykeys = [k for k in mydict_cp.keys() if not (('x' in k) or ('y' in k))]
+            for k in mykeys:
                 try:
-                    thisdata, units = descale_rdt(k, getDataOnly(ncds.variables[k][:]))
-                    mydict_tl[k].append(thisdata)
-                except:
-                    # Do nothing at the moment with the xs and ys
-                    if not k in ['xs', 'ys']:
-                        mydict_tl[k].append(None)
+                    if k in varlev:
+                        thisdata = ncds.variables[k][i, lev]
                     else:
-                        continue
+                        thisdata = ncds.variables[k][i]
 
-            lats = getDataOnly(ncds.variables['LatTrajCellCG'][i, :])
-            lons = getDataOnly(ncds.variables['LonTrajCellCG'][i, :])
+                    thisdata, units = descale_rdt(k, thisdata) # May not need to do this
+                    mydict_cp[k].append(thisdata)
+                except:
+                    mydict_cp[k].append(None)
 
-            xs, ys = geo.web_mercator(lons, lats)
-            mydict_tl['xs'].append(xs)
-            mydict_tl['ys'].append(ys)
+            # Now calculate future point and line
+            try:
+                speed = float(ncds.variables['MvtSpeed'][i])
+            except ValueError:
+                speed = 0
+            try:
+                direction = float(ncds.variables['MvtDirection'][i])
+            except ValueError:
+                direction = 0
 
-        list_to_return.append(mydict_tl)
+            mydict_cp = make_arrow(mydict_cp, lon, lat, speed, direction)
+
+        list_to_return.append(mydict_cp)
+
 
     if len(list_to_return) == 1:
         return list_to_return[0]
     elif len(list_to_return) > 1:
-        return list_to_return
+        return tuple(list_to_return)
     else:
         return 'Nothing to return'
 
