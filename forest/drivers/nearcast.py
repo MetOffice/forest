@@ -24,15 +24,14 @@ NEARCAST_TOOLTIPS = [("Name", "@name"),
 
 
 class Dataset:
-    def __init__(self, pattern=None, color_mapper=None, **kwargs):
+    def __init__(self, pattern=None, **kwargs):
         self.pattern = pattern
-        self.color_mapper = color_mapper
 
     def navigator(self):
         return Navigator(self.pattern)
 
-    def map_view(self):
-        view = forest.view.NearCast(NearCast(self.pattern), self.color_mapper)
+    def map_view(self, color_mapper):
+        view = forest.view.NearCast(NearCast(self.pattern), color_mapper)
         view.set_hover_properties(NEARCAST_TOOLTIPS)
         return view
 

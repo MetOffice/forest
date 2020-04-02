@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import Mock
+import cftime
 import datetime as dt
 import bokeh.models
 import netCDF4
@@ -61,15 +62,15 @@ def test_dataset_navigator():
 def test_dataset_map_view():
     settings = {
         "pattern": "",
-        "color_mapper": bokeh.models.ColorMapper()
     }
+    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("eida50", settings)
-    view = dataset.map_view()
+    view = dataset.map_view(color_mapper)
     view.render({})
 
 
 def test_navigator_pressures():
-    navigator = eida50.Navigator(None)
+    navigator = eida50.Navigator(None, None)
     assert navigator.pressures(None, None, None) == []
 
 
@@ -92,9 +93,9 @@ def test_locator_parse_date(path, expect):
 def test_locator_find_given_no_files_raises_notfound(tmpdir):
     any_date = dt.datetime.now()
     pattern = str(tmpdir / "nofile.nc")
-    locator = eida50.Locator(pattern)
+    locator = eida50.Locator(pattern, eida50.Database())
     with pytest.raises(FileNotFound):
-        locator.find(any_date)
+        locator.find([], any_date)
 
 
 def test_locator_find_given_a_single_file(tmpdir):
@@ -106,8 +107,9 @@ def test_locator_find_given_a_single_file(tmpdir):
     with netCDF4.Dataset(path, "w") as dataset:
         set_times(dataset, times)
 
-    locator = eida50.Locator(pattern)
-    found_path, index = locator.find(valid_date)
+    locator = eida50.Locator(pattern, eida50.Database())
+    paths = locator.glob()
+    found_path, index = locator.find(paths, valid_date)
     assert found_path == path
     assert index == 0
 
@@ -123,8 +125,9 @@ def test_find_given_multiple_files(tmpdir):
         with netCDF4.Dataset(path, "w") as dataset:
             set_times(dataset, [date])
     valid_date = dt.datetime(2019, 1, 2, 0, 14)
-    locator = eida50.Locator(pattern)
-    found_path, index = locator.find(valid_date)
+    locator = eida50.Locator(pattern, eida50.Database())
+    paths = locator.glob()
+    found_path, index = locator.find(paths, valid_date)
     expect = str(tmpdir / "test-eida50-20190102.nc")
     assert found_path == expect
     assert index == 0
@@ -172,7 +175,7 @@ def test_loader_image(tmpdir):
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES, LONS, LATS)
     time = dt.datetime(2019, 4, 17, 12)
-    loader = eida50.Loader(eida50.Locator(path))
+    loader = eida50.Loader(eida50.Locator(path, eida50.Database()))
     image = loader._image(time)
     result = set(image.keys())
     expect = set(["x", "y", "dw", "dh", "image"])
@@ -183,7 +186,7 @@ def test_loader_longitudes(tmpdir):
     path = str(tmpdir / "eida50_20190417.nc")
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES, LONS, LATS)
-    loader = eida50.Loader(eida50.Locator(path))
+    loader = eida50.Loader(eida50.Locator(path, eida50.Database()))
     result = loader.longitudes
     with netCDF4.Dataset(path) as dataset:
         expect = dataset.variables["longitude"][:]
@@ -193,7 +196,7 @@ def test_loader_latitudes(tmpdir):
     path = str(tmpdir / "eida50_20190417.nc")
     with netCDF4.Dataset(path, "w") as dataset:
         _eida50(dataset, TIMES, LONS, LATS)
-    loader = eida50.Loader(eida50.Locator(path))
+    loader = eida50.Loader(eida50.Locator(path, eida50.Database()))
     result = loader.latitudes
     with netCDF4.Dataset(path) as dataset:
         expect = dataset.variables["latitude"][:]
@@ -237,10 +240,64 @@ def test_navigator_valid_times(tmpdir):
     np.testing.assert_array_equal(expect, result)
 
 
-def test_navigator_given_valid_time_none_returns_parsed_times():
+def test_navigator_parse_times_from_file_names():
     paths = ["eida50_20200101.nc"]
     dataset = forest.drivers.get_dataset("eida50")
     navigator = dataset.navigator()
-    result = navigator.valid_times_from_paths(paths)
+    result = [navigator.locator.parse_date(path) for path in paths]
     assert result == [dt.datetime(2020, 1, 1)]
 
+
+def test_database():
+    """Basic API for storing/retrieving meta-data"""
+    path = "file.nc"
+    times = [dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 2)]
+    database = forest.drivers.eida50.Database()
+    database.insert_times(times[:1], path)
+    database.insert_times(times[1:], path)
+    assert database.fetch_times() == times
+    assert database.fetch_paths() == [path]
+
+
+def test_fetch_times_given_path():
+    paths = ["file-a.nc", "file-b.nc"]
+    times = [
+        [dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 2)],
+        [dt.datetime(2020, 1, 3), dt.datetime(2020, 1, 4)],
+    ]
+    database = forest.drivers.eida50.Database()
+    database.insert_times(times[0], paths[0])
+    database.insert_times(times[1], paths[1])
+    assert database.fetch_times(paths[0]) == times[0]
+    assert database.fetch_times(paths[1]) == times[1]
+
+
+def test_database_open_twice(tmpdir):
+    """sqlite3.OperationalError if table not robust to redefinition"""
+    path = str(tmpdir / "file.db")
+    with forest.drivers.eida50.Database(path):
+        pass
+    with forest.drivers.eida50.Database(path):
+        pass
+
+
+@pytest.mark.parametrize("value", [
+    None,
+    "2020-01-01 00:00:00",
+    np.datetime64("2020-01-01 00:00:00", "s")
+])
+def test_database_insert_times_invalid_types(value):
+    """Anything that doesn't support object.strftime(fmt)"""
+    database = forest.drivers.eida50.Database()
+    with pytest.raises(Exception):
+        database.insert_times([value], "file.nc")
+
+
+@pytest.mark.parametrize("value,expect", [
+    pytest.param(dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 1)),
+    pytest.param(cftime.DatetimeGregorian(2020, 1, 1), dt.datetime(2020, 1, 1))
+])
+def test_database_insert_times_supported_types(value, expect):
+    database = forest.drivers.eida50.Database()
+    database.insert_times([value], "file.nc")
+    assert database.fetch_times() == [expect]

@@ -33,21 +33,19 @@ class Dataset:
                  label=None,
                  pattern=None,
                  locator=None,
-                 database_path=None,
-                 color_mapper=None):
+                 database_path=None):
         self.label = label
         self.pattern = pattern
-        self.color_mapper = color_mapper
         self.locator = Locator(self.pattern)
 
     def navigator(self):
         """Construct navigator"""
         return Navigator(self.locator)
 
-    def map_view(self):
+    def map_view(self, color_mapper):
         """Construct view"""
         loader = Loader(self.locator, self.label)
-        return view.UMView(loader, self.color_mapper)
+        return view.UMView(loader, color_mapper)
 
 
 class Loader:

@@ -6,10 +6,10 @@ from forest.drivers import rdt
 
 
 def test_build_loader_given_files():
-    settings = {"pattern": "file_20190101T0000Z.nc",
-                "color_mapper": bokeh.models.ColorMapper()}
+    settings = {"pattern": "file_20190101T0000Z.nc"}
+    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("unified_model", settings)
-    view = dataset.map_view()
+    view = dataset.map_view(color_mapper)
     assert isinstance(view.loader, forest.drivers.unified_model.Loader)
     assert isinstance(view.loader.locator, forest.drivers.unified_model.Locator)
 

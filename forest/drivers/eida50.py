@@ -1,4 +1,5 @@
 import re
+import sqlite3
 import os
 import glob
 import datetime as dt
@@ -26,36 +27,161 @@ def _natargmax(arr):
 
 
 class Dataset:
-    def __init__(self, pattern=None, color_mapper=None, **kwargs):
+    def __init__(self, pattern=None, database_path=None, **kwargs):
+        print("NEW EIDA50 DATASET")
         self.pattern = pattern
-        self.color_mapper = color_mapper
-        self.locator = Locator(self.pattern)
+        if database_path is None:
+            database_path = ":memory:"
+        self.database = Database(database_path)
+        self.locator = Locator(self.pattern, self.database)
 
     def navigator(self):
-        return Navigator(self.locator)
+        return Navigator(self.locator, self.database)
 
-    def map_view(self):
+    def map_view(self, color_mapper):
         loader = Loader(self.locator)
-        return view.UMView(loader, self.color_mapper, use_hover_tool=False)
+        return view.UMView(loader, color_mapper, use_hover_tool=False)
+
+
+class Database:
+    """Meta-data store for EIDA50 dataset"""
+    def __init__(self, path=":memory:"):
+        self.fmt = "%Y-%m-%d %H:%M:%S"
+        self.path = path
+        self.connection = sqlite3.connect(self.path)
+        self.cursor = self.connection.cursor()
+
+        # Schema
+        query = """
+            CREATE TABLE IF NOT EXISTS file (
+                      id INTEGER PRIMARY KEY,
+                    path TEXT,
+                         UNIQUE(path));
+        """
+        self.cursor.execute(query)
+        query = """
+            CREATE TABLE IF NOT EXISTS time (
+                      id INTEGER PRIMARY KEY,
+                    time TEXT,
+                 file_id INTEGER,
+                 FOREIGN KEY(file_id) REFERENCES file(id));
+        """
+        self.cursor.execute(query)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    def close(self):
+        """Close connection gracefully"""
+        self.connection.commit()
+        self.connection.close()
+
+    def insert_times(self, times, path):
+        """Store times"""
+        # Update file table
+        query = """
+            INSERT OR IGNORE INTO file (path) VALUES (:path);
+        """
+        self.cursor.execute(query, {"path": path})
+        self.connection.commit()
+
+        # Update time table
+        query = """
+            INSERT INTO time (time, file_id)
+                 VALUES (:time, (SELECT id FROM file WHERE path = :path));
+        """
+        texts = [time.strftime(self.fmt) for time in times]
+        args = [{"path": path, "time": text} for text in texts]
+        self.cursor.executemany(query, args)
+        self.connection.commit()
+
+    def fetch_times(self, path=None):
+        """Retrieve times"""
+        if path is None:
+            query = """
+                SELECT time
+                  FROM time;
+            """
+            rows = self.cursor.execute(query)
+        else:
+            query = """
+                SELECT time.time
+                  FROM time
+                  JOIN file
+                    ON file.id = time.file_id
+                 WHERE file.path = :path;
+            """
+            rows = self.cursor.execute(query, {"path": path})
+        rows = self.cursor.fetchall()
+        texts = [text for text, in rows]
+        times = [dt.datetime.strptime(text, self.fmt) for text in texts]
+        return list(sorted(times))
+
+    def fetch_paths(self):
+        """Retrieve paths"""
+        query = """
+            SELECT path FROM file;
+        """
+        rows = self.cursor.execute(query).fetchall()
+        texts = [text for text, in rows]
+        return list(sorted(texts))
 
 
 class Locator:
     """Locate EIDA50 satellite images"""
-    def __init__(self, pattern):
+    def __init__(self, pattern, database):
         self.pattern = pattern
         self._glob = forest.util.cached_glob(dt.timedelta(minutes=15))
+        self.database = database
 
-    def find(self, date):
-        if isinstance(date, (dt.datetime, str)):
-            date = np.datetime64(date, 's')
-        paths = self.glob()
-        ipath = self.find_file_index(paths, date)
-        path = paths[ipath]
-        time_axis = self.load_time_axis(path)
-        index = self.find_index(
-                time_axis,
-                date,
-                dt.timedelta(minutes=15))
+    def all_times(self, paths):
+        """All available times"""
+        # Parse times from file names not in database
+        unparsed_paths = []
+        filename_times = []
+        database_paths = set(self.database.fetch_paths())
+        for path in paths:
+            if path in database_paths:
+                continue
+            time = self.parse_date(path)
+            if time is None:
+                unparsed_paths.append(path)
+                continue
+            filename_times.append(time)
+
+        # Store unparsed files in database
+        for path in unparsed_paths:
+            times = self.load_time_axis(path)  # datetime64[s]
+            self.database.insert_times(times.astype(dt.datetime), path)
+
+        # All recorded times
+        database_times = self.database.fetch_times()
+
+        # Combine database/timestamp information
+        arrays = [
+            np.array(database_times, dtype='datetime64[s]'),
+            np.array(filename_times, dtype='datetime64[s]')]
+        return np.unique(np.concatenate(arrays))
+
+    def find(self, paths, date):
+        """Find file and index related to date
+
+        .. note:: Find should not write to disk
+        """
+        # Search file system
+        path = self.find_file(paths, date)
+
+        # Load times from database
+        if path in self.database.fetch_paths():
+            times = self.database.fetch_times(path)
+            times = np.array(times, dtype='datetime64[s]')
+        else:
+            times = self.load_time_axis(path)  # datetime64[s]
+
+        index = self.find_index(times, date, dt.timedelta(minutes=15))
         return path, index
 
     def glob(self):
@@ -68,7 +194,15 @@ class Locator:
             values = nc["time"]
         return np.array(values, dtype='datetime64[s]')
 
-    def find_file_index(self, paths, user_date):
+    def find_file(self, paths, user_date):
+        """"Find file likely to contain user supplied date
+
+        .. note:: Search based on timestamp only
+
+        .. warning:: Not suitable for searching unparsable file names
+        """
+        if isinstance(user_date, (dt.datetime, str)):
+            user_date = np.datetime64(user_date, 's')
         dates = np.array([
             self.parse_date(path) for path in paths],
             dtype='datetime64[s]')
@@ -78,13 +212,17 @@ class Locator:
             raise FileNotFound(msg)
         before_dates = np.ma.array(
                 dates, mask=mask, dtype='datetime64[s]')
-        return _natargmax(before_dates.filled())
+        i =  _natargmax(before_dates.filled())
+        return paths[i]
 
     @staticmethod
     def find_index(times, time, length):
+        """Search for index inside array of datetime64[s] values"""
         dtype = 'datetime64[s]'
         if isinstance(times, list):
             times = np.asarray(times, dtype=dtype)
+        if isinstance(time, (dt.datetime, str)):
+            time = np.datetime64(time, 's')
         bounds = locate.bounds(times, length)
         inside = locate.in_bounds(bounds, time)
         valid_times = np.ma.array(times, mask=~inside)
@@ -142,7 +280,8 @@ class Loader:
         return data
 
     def _image(self, valid_time):
-        path, itime = self.locator.find(valid_time)
+        paths = self.locator.glob()
+        path, itime = self.locator.find(paths, valid_time)
         return self.load_image(path, itime)
 
     def load_image(self, path, itime):
@@ -160,8 +299,33 @@ class Loader:
 
 
 class Navigator:
-    def __init__(self, locator):
+    """Facade to map Navigator API to Locator"""
+    def __init__(self, locator, database):
         self.locator = locator
+        self.database = database
+
+    def __call__(self, store, action):
+        """Middleware interface"""
+        import forest.db.control
+        kind = action["kind"]
+        if kind == forest.db.control.SET_VALUE:
+            key, time = (action["payload"]["key"],
+                         action["payload"]["value"])
+            if key == "valid_time":
+                # Detect missing file
+                paths = self.locator.glob()
+                path = self.locator.find_file(paths, time)
+                if path not in self.database.fetch_paths():
+                    times = self.locator.load_time_axis(path)  # datetime64[s]
+                    self.database.insert_times(times.astype(dt.datetime), path)
+
+                # Update stale state
+                store_times = store.state.get("valid_times", [])
+                database_times = self._times()
+                if len(store_times) != len(database_times):
+                    yield forest.db.control.set_value(
+                        "valid_times", database_times)
+        yield action
 
     def variables(self, pattern):
         return ["EIDA50"]
@@ -171,23 +335,16 @@ class Navigator:
 
     def valid_times(self, pattern, variable, initial_time):
         """Get available times given application state"""
-        paths = self.locator.glob()
-        return self.valid_times_from_paths(paths)
+        return self._times()
 
-    def valid_times_from_paths(self, paths):
-        """Get available times by reading files"""
-        arrays = []
-        for path in sorted(paths):
-            timestamp = self.locator.parse_date(path)
-            if timestamp is None:
-                # Time(s) from file contents
-                arrays.append(self.locator.load_time_axis(path))
-            else:
-                # Time(s) from file name
-                arrays.append(np.array([timestamp], dtype='datetime64[s]'))
-        if len(arrays) == 0:
-            return []
-        return np.unique(np.concatenate(arrays))
+    def _times(self):
+        """Get available times given user selected valid_time
+
+        :param valid_time: application state valid time
+        """
+        paths = self.locator.glob()
+        datetimes = self.locator.all_times(paths)
+        return np.array(datetimes, dtype='datetime64[s]')
 
     def pressures(self, pattern, variable, initial_time):
         return []

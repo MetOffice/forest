@@ -27,16 +27,15 @@ URL = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalo
 
 
 class Dataset:
-    def __init__(self, pattern=None, color_mapper=None, **kwargs):
+    def __init__(self, pattern=None, **kwargs):
         self.pattern = pattern
-        self.color_mapper = color_mapper
 
     def navigator(self):
         return Navigator()
 
-    def map_view(self):
+    def map_view(self, color_mapper):
         loader = IntakeLoader(self.pattern)
-        view = forest.view.UMView(loader, self.color_mapper)
+        view = forest.view.UMView(loader, color_mapper)
         view.set_hover_properties(INTAKE_TOOLTIPS, INTAKE_FORMATTERS)
         return view
 
