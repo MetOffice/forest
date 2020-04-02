@@ -62,10 +62,10 @@ def test_dataset_navigator():
 def test_dataset_map_view():
     settings = {
         "pattern": "",
-        "color_mapper": bokeh.models.ColorMapper()
     }
+    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("eida50", settings)
-    view = dataset.map_view()
+    view = dataset.map_view(color_mapper)
     view.render({})
 
 

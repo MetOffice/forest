@@ -91,10 +91,9 @@ def _load(pattern):
 
 class Dataset:
     """High-level class to relate navigators, loaders and views"""
-    def __init__(self, label=None, pattern=None, color_mapper=None, **kwargs):
+    def __init__(self, label=None, pattern=None, **kwargs):
         self._label = label
         self.pattern = pattern
-        self.color_mapper = color_mapper
         if pattern is not None:
             self._paths = glob.glob(pattern)
         else:
@@ -104,9 +103,9 @@ class Dataset:
         """Construct navigator"""
         return Navigator(self._paths)
 
-    def map_view(self):
+    def map_view(self, color_mapper):
         """Construct view"""
-        return UMView(ImageLoader(self._label, self._paths), self.color_mapper)
+        return UMView(ImageLoader(self._label, self._paths), color_mapper)
 
 class ImageLoader:
     def __init__(self, label, pattern):

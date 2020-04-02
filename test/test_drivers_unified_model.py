@@ -12,10 +12,10 @@ import iris
 def test_dataset_loader_pattern():
     settings = {
         "pattern": "*.nc",
-        "color_mapper": bokeh.models.ColorMapper()
     }
+    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("unified_model", settings)
-    view = dataset.map_view()
+    view = dataset.map_view(color_mapper)
     assert isinstance(view.loader, forest.drivers.unified_model.Loader)
 
 
@@ -43,10 +43,10 @@ def test_loader_use_database(tmpdir):
         "directory": "/replace",
         "locator": "database",
         "database_path": database_path,
-        "color_mapper": bokeh.models.ColorMapper()
     }
+    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("unified_model", settings)
-    view = dataset.map_view()
+    view = dataset.map_view(color_mapper)
     assert hasattr(view.loader.locator, "connection")
     assert view.loader.locator.directory == "/replace"
 
@@ -62,10 +62,10 @@ def test_view_render_state(tmpdir):
         var.coords = "time"  # Needed by Locator
     settings = {
         "pattern": path,
-        "color_mapper": bokeh.models.ColorMapper()
     }
+    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("unified_model", settings)
-    view = dataset.map_view()
+    view = dataset.map_view(color_mapper)
     view.render({
         "initial_time": dt.datetime(2020, 1, 1),
         "valid_time": dt.datetime(2020, 1, 1),

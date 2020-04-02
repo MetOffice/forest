@@ -30,14 +30,12 @@ class Dataset:
     def __init__(self,
                  label=None,
                  pattern=None,
-                 color_mapper=None,
                  locator="file_system",
                  directory=None,
                  database_path=None,
                  **kwargs):
         self.label = label
         self.pattern = pattern
-        self.color_mapper = color_mapper
         self.use_database = locator == "database"
         if self.use_database:
             self.database = db.get_database(database_path)
@@ -52,10 +50,10 @@ class Dataset:
         else:
             return Navigator(self.pattern)
 
-    def map_view(self):
+    def map_view(self, color_mapper):
         return view.UMView(Loader(self.label,
                                   self.pattern,
-                                  self.locator), self.color_mapper)
+                                  self.locator), color_mapper)
 
 
 class Navigator:

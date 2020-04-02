@@ -14,9 +14,9 @@ def test_dataset_navigator():
 
 
 def test_dataset_map_view():
-    settings = {"color_mapper": bokeh.models.ColorMapper()}
-    dataset = forest.drivers.get_dataset("nearcast", settings)
-    map_view = dataset.map_view()
+    color_mapper = bokeh.models.ColorMapper()
+    dataset = forest.drivers.get_dataset("nearcast")
+    map_view = dataset.map_view(color_mapper)
     assert isinstance(map_view, forest.view.NearCast)
     assert map_view.tooltips == forest.drivers.nearcast.NEARCAST_TOOLTIPS
 
