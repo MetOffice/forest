@@ -20,8 +20,11 @@ class Navigator:
             try:
                 yield from self._navigators[pattern](store, action)
             except TypeError:
-                # Sub-navigator not callable
-                pass
+                # Sub-navigator not middleware pass on action
+                yield action
+        else:
+            # Pattern not yet set
+            yield action
 
     def variables(self, pattern):
         navigator = self._navigators[pattern]
