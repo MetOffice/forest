@@ -205,12 +205,13 @@ def main(argv=None):
         keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,
-        db.Controls(navigator),
+        db.Controls(navigator),  # TODO: Deprecate this middleware
         colors.palettes,
         colors.middleware(),
         presets.Middleware(presets.proxy_storage(config.presets_file)),
         presets.middleware,
         layers.middleware,
+        navigator,
     ]
     store = redux.Store(
         redux.combine_reducers(

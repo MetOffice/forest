@@ -70,7 +70,7 @@ def test_dataset_map_view():
 
 
 def test_navigator_pressures():
-    navigator = eida50.Navigator(None)
+    navigator = eida50.Navigator(None, None)
     assert navigator.pressures(None, None, None) == []
 
 

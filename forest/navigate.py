@@ -13,6 +13,16 @@ class Navigator:
         # self._navigators = {label: navigator for label, navigator in ...}
         self._navigators = _navigators
 
+    def __call__(self, store, action):
+        """Pass through to appropriate sub-navigator"""
+        pattern = store.state.get("pattern")
+        if pattern is not None:
+            try:
+                yield from self._navigators[pattern](store, action)
+            except TypeError:
+                # Sub-navigator not callable
+                pass
+
     def variables(self, pattern):
         navigator = self._navigators[pattern]
         return navigator.variables(pattern)

@@ -35,7 +35,7 @@ class Dataset:
         self.locator = Locator(self.pattern, self.database)
 
     def navigator(self):
-        return Navigator(self.locator)
+        return Navigator(self.locator, self.database)
 
     def map_view(self):
         loader = Loader(self.locator)
@@ -182,7 +182,7 @@ class Locator:
         else:
             print("saving: {}".format(path))
             times = self.load_time_axis(path)  # datetime64[s]
-            self.database.insert_times(times.astype(dt.datetime), path)
+            # self.database.insert_times(times.astype(dt.datetime), path)
 
         index = self.find_index(times, date, dt.timedelta(minutes=15))
         return path, index
@@ -290,8 +290,24 @@ class Loader:
 
 class Navigator:
     """Facade to map Navigator API to Locator"""
-    def __init__(self, locator):
+    def __init__(self, locator, database):
         self.locator = locator
+        self.database = database
+
+    def __call__(self, store, action):
+        """Middleware interface"""
+        import forest.db.control
+        kind = action["kind"]
+        if kind == forest.db.control.SET_VALUE:
+            key, time = (action["payload"]["key"],
+                         action["payload"]["value"])
+            if key == "valid_time":
+                path, _ = self.locator.find(time)
+                if path not in self.database.fetch_paths():
+                    times = self.locator.load_time_axis(path)  # datetime64[s]
+                    self.database.insert_times(times.astype(dt.datetime), path)
+                    yield forest.db.control.set_value("valid_times", self._times())
+        yield action
 
     def variables(self, pattern):
         return ["EIDA50"]
@@ -300,7 +316,11 @@ class Navigator:
         return [dt.datetime(1970, 1, 1)]
 
     def valid_times(self, pattern, variable, initial_time):
-        """Get available times given application state
+        """Get available times given application state"""
+        return self._times()
+
+    def _times(self):
+        """Get available times given user selected valid_time
 
         :param valid_time: application state valid time
         """
