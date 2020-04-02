@@ -237,10 +237,28 @@ def test_navigator_valid_times(tmpdir):
     np.testing.assert_array_equal(expect, result)
 
 
-def test_navigator_given_valid_time_none_returns_parsed_times():
+def test_navigator_parse_times_from_file_names():
     paths = ["eida50_20200101.nc"]
     dataset = forest.drivers.get_dataset("eida50")
     navigator = dataset.navigator()
-    result = navigator.valid_times_from_paths(paths)
+    result = navigator.locator.valid_times_from_paths(paths)
     assert result == [dt.datetime(2020, 1, 1)]
 
+
+def test_database():
+    path = "file.nc"
+    times = [dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 2)]
+    database = forest.drivers.eida50.Database()
+    database.insert_times(times[:1], path)
+    database.insert_times(times[1:], path)
+    assert database.fetch_times() == times
+    assert database.fetch_paths() == [path]
+
+
+def test_database_open_twice(tmpdir):
+    """sqlite3.OperationalError if table not robust to redefinition"""
+    path = str(tmpdir / "file.db")
+    with forest.drivers.eida50.Database(path):
+        pass
+    with forest.drivers.eida50.Database(path):
+        pass

@@ -39,11 +39,108 @@ class Dataset:
         return view.UMView(loader, self.color_mapper, use_hover_tool=False)
 
 
+import sqlite3
+class Database:
+    """Meta-data store for EIDA50 dataset"""
+    def __init__(self, path=":memory:"):
+        self.fmt = "%Y-%m-%d %H:%M:%S"
+        self.path = path
+        self.connection = sqlite3.connect(self.path)
+        self.cursor = self.connection.cursor()
+
+        # Schema
+        query = """
+            CREATE TABLE IF NOT EXISTS file (
+                      id INTEGER PRIMARY KEY,
+                    path TEXT,
+                         UNIQUE(path));
+        """
+        self.cursor.execute(query)
+        query = """
+            CREATE TABLE IF NOT EXISTS time (
+                      id INTEGER PRIMARY KEY,
+                    time TEXT,
+                 file_id INTEGER,
+                 FOREIGN KEY(file_id) REFERENCES file(id));
+        """
+        self.cursor.execute(query)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    def close(self):
+        """Close connection gracefully"""
+        self.connection.commit()
+        self.connection.close()
+
+    def insert_times(self, times, path):
+        """Store times"""
+        # Update file table
+        query = """
+            INSERT OR IGNORE INTO file (path) VALUES (:path);
+        """
+        self.cursor.execute(query, {"path": path})
+
+        # Update time table
+        query = """
+            INSERT INTO time (time, file_id)
+                 VALUES (:time, (SELECT id FROM file WHERE path = :path));
+        """
+        texts = [time.strftime(self.fmt) for time in times]
+        args = [{"path": path, "time": text} for text in texts]
+        self.cursor.executemany(query, args)
+
+    def fetch_times(self):
+        """Retrieve times"""
+        query = """
+            SELECT time FROM time;
+        """
+        rows = self.cursor.execute(query).fetchall()
+        texts = [text for text, in rows]
+        times = [dt.datetime.strptime(text, self.fmt) for text in texts]
+        return list(sorted(times))
+
+    def fetch_paths(self):
+        """Retrieve paths"""
+        query = """
+            SELECT path FROM file;
+        """
+        rows = self.cursor.execute(query).fetchall()
+        texts = [text for text, in rows]
+        return list(sorted(texts))
+
+
 class Locator:
     """Locate EIDA50 satellite images"""
     def __init__(self, pattern):
         self.pattern = pattern
         self._glob = forest.util.cached_glob(dt.timedelta(minutes=15))
+
+    def times(self, paths, valid_time=None):
+        """Get available times by lazily accessing files"""
+        timestamps = self.valid_times_from_paths(paths)
+        if valid_time is None:
+            return timestamps
+        else:
+            return self.load_time_axis(paths[0])
+
+    def valid_times_from_paths(self, paths):
+        """Get available times by reading files"""
+        arrays = []
+        for path in sorted(paths):
+            timestamp = self.parse_date(path)
+            if timestamp is None:
+                # Time(s) from file contents
+                arrays.append(self.load_time_axis(path))
+            else:
+                # Time(s) from file name
+                arrays.append(np.array([timestamp], dtype='datetime64[s]'))
+        if len(arrays) == 0:
+            return []
+        return np.unique(np.concatenate(arrays))
 
     def find(self, date):
         if isinstance(date, (dt.datetime, str)):
@@ -51,7 +148,11 @@ class Locator:
         paths = self.glob()
         ipath = self.find_file_index(paths, date)
         path = paths[ipath]
+
+        # TODO: Load times from database if already saved
         time_axis = self.load_time_axis(path)
+
+        # TODO: Save time_axis to database for future queries
         index = self.find_index(
                 time_axis,
                 date,
@@ -160,6 +261,7 @@ class Loader:
 
 
 class Navigator:
+    """Facade to map Navigator API to Locator"""
     def __init__(self, locator):
         self.locator = locator
 
@@ -169,25 +271,13 @@ class Navigator:
     def initial_times(self, pattern, variable):
         return [dt.datetime(1970, 1, 1)]
 
-    def valid_times(self, pattern, variable, initial_time):
-        """Get available times given application state"""
-        paths = self.locator.glob()
-        return self.valid_times_from_paths(paths)
+    def valid_times(self, pattern, variable, initial_time, valid_time=None):
+        """Get available times given application state
 
-    def valid_times_from_paths(self, paths):
-        """Get available times by reading files"""
-        arrays = []
-        for path in sorted(paths):
-            timestamp = self.locator.parse_date(path)
-            if timestamp is None:
-                # Time(s) from file contents
-                arrays.append(self.locator.load_time_axis(path))
-            else:
-                # Time(s) from file name
-                arrays.append(np.array([timestamp], dtype='datetime64[s]'))
-        if len(arrays) == 0:
-            return []
-        return np.unique(np.concatenate(arrays))
+        :param valid_time: application state valid time
+        """
+        paths = self.locator.glob()
+        return self.locator.times(paths, valid_time)
 
     def pressures(self, pattern, variable, initial_time):
         return []
