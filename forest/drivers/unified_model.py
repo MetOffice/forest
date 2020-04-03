@@ -1,3 +1,5 @@
+import xarray
+from functools import lru_cache
 import os
 import glob
 import re
@@ -5,13 +7,14 @@ import fnmatch
 import datetime as dt
 import numpy as np
 import netCDF4
+import forest.util
 from forest import (
     db,
     disk,
+    geo,
     view)
-from forest.data import load_image_pts
 from forest.exceptions import SearchFail, PressuresNotFound
-from forest.drivers import gridded_forecast 
+from forest.drivers import gridded_forecast
 try:
     import iris
 except ImportError:
@@ -27,14 +30,12 @@ class Dataset:
     def __init__(self,
                  label=None,
                  pattern=None,
-                 color_mapper=None,
                  locator="file_system",
                  directory=None,
                  database_path=None,
                  **kwargs):
         self.label = label
         self.pattern = pattern
-        self.color_mapper = color_mapper
         self.use_database = locator == "database"
         if self.use_database:
             self.database = db.get_database(database_path)
@@ -49,10 +50,10 @@ class Dataset:
         else:
             return Navigator(self.pattern)
 
-    def map_view(self):
+    def map_view(self, color_mapper):
         return view.UMView(Loader(self.label,
                                   self.pattern,
-                                  self.locator), self.color_mapper)
+                                  self.locator), color_mapper)
 
 
 class Navigator:
@@ -99,44 +100,35 @@ class Loader:
     def image(self, state):
         if not self.valid(state):
             return gridded_forecast.empty_image()
-
-        try:
-            path, pts = self.locator.locate(
-                self.pattern,
-                state.variable,
-                state.initial_time,
-                state.valid_time,
-                state.pressure)
-        except SearchFail:
-            return gridded_forecast.empty_image()
-
-        units = self.read_units(path, state.variable)
-        data = load_image_pts(
-                path,
-                state.variable,
-                pts,
-                pts)
-        if (len(state.pressures) > 0) and (state.pressure is not None):
-            level = "{} hPa".format(int(state.pressure))
-        else:
-            level = "Surface"
+        data = self._input_output(
+            self.pattern,
+            state.variable,
+            state.initial_time,
+            state.valid_time,
+            state.pressure)
         data.update(gridded_forecast.coordinates(state.valid_time,
                                                  state.initial_time,
                                                  state.pressures,
                                                  state.pressure))
-        data["name"] = [self.name]
-        data["units"] = [units]
         return data
 
-    @staticmethod
-    def read_units(filename,parameter):
-        dataset = netCDF4.Dataset(filename)
-        veep = dataset.variables[parameter]
-        # read the units and assign a blank value if there aren't any:
-        units = getattr(veep, 'units', '')
-        dataset.close()
-        return units
+    @lru_cache(maxsize=100)
+    def _input_output(self, pattern, variable, initial_time, valid_time,
+                      pressure):
+        """I/O needed to load an image and its metadata"""
+        try:
+            path, pts = self.locator.locate(
+                pattern,
+                variable,
+                initial_time,
+                valid_time,
+                pressure)
+        except SearchFail:
+            return gridded_forecast.empty_image()
 
+        data = self.load_image(path, variable, pts)
+        data["name"] = [self.name]
+        return data
 
     def valid(self, state):
         if state.variable is None:
@@ -158,6 +150,69 @@ class Loader:
         if isinstance(pressures, list):
             pressures = np.array(pressures)
         return any(np.abs(pressures - pressure) < tolerance)
+
+    @classmethod
+    def load_image(cls, path, variable, pts):
+        """Load bokeh image glyph data from file using slices"""
+        try:
+            lons, lats, values, units = cls._load_xarray(path, variable, pts)
+        except:
+            lons, lats, values, units = cls._load_cube(path, variable, pts)
+
+        # Units
+        if variable in ["precipitation_flux", "stratiform_rainfall_rate"]:
+            if units == "mm h-1":
+                values = values
+            else:
+                values = forest.util.convert_units(values, units, "kg m-2 hour-1")
+                units = "kg m-2 hour-1"
+        elif units == "K":
+            values = forest.util.convert_units(values, "K", "Celsius")
+            units = "C"
+
+        # Coarsify images
+        threshold = 200 * 200  # Chosen since TMA WRF is 199 x 199
+        if values.size > threshold:
+            fraction = 0.25
+        else:
+            fraction = 1.
+        lons, lats, values = forest.util.coarsify(
+            lons, lats, values, fraction)
+
+        # Roll input data into [-180, 180] range
+        if np.any(lons > 180.0):
+            shift_by = np.sum(lons > 180.0)
+            lons[lons > 180.0] -= 360.
+            lons = np.roll(lons, shift_by)
+            values = np.roll(values, shift_by, axis=1)
+
+        data = geo.stretch_image(lons, lats, values)
+        data["units"] = [units]
+        return data
+
+    @staticmethod
+    def _load_xarray(path, variable, pts):
+        with xarray.open_dataset(path, engine="h5netcdf") as nc:
+            data_array = nc[variable][pts]
+            lons = np.ma.masked_invalid(data_array.longitude)
+            lats = np.ma.masked_invalid(data_array.latitude)
+            values = np.ma.masked_invalid(data_array)
+            units = getattr(data_array, 'units', '')
+        return lons, lats, values, units
+
+    @staticmethod
+    def _load_cube(path, variable, pts):
+        # TODO: Is this method still needed?
+        cube = iris.load_cube(path, iris.Constraint(variable))
+        units = cube.units
+        lons = cube.coord('longitude').points
+        if lons.ndim == 2:
+            lons = lons[0, :]
+        lats = cube.coord('latitude').points
+        if lons.ndim == 2:
+            lats = lats[:, 0]
+        values = cube.data[pts]
+        return lons, lats, values, units
 
 
 class Locator(object):

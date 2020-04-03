@@ -2,20 +2,14 @@ import bokeh.plotting
 import bokeh.models
 import bokeh.events
 import bokeh.colors
-import numpy as np
 import os
-import glob
 from forest import _profile as profile
 from forest import (
         drivers,
-        exceptions,
         screen,
         tools,
         series,
         data,
-        load,
-        view,
-        rdt,
         geo,
         colors,
         layers,
@@ -30,9 +24,7 @@ import forest.components
 from forest.components import tiles
 import forest.config as cfg
 import forest.middlewares as mws
-from forest.observe import Observable
 from forest.db.util import autolabel
-import datetime as dt
 
 
 def main(argv=None):
@@ -86,45 +78,34 @@ def main(argv=None):
     # Colorbar user interface
     colorbar_ui = forest.components.ColorbarUI(color_mapper)
 
-    # Database/File system loader(s)
-    for group in config.file_groups:
-        if group.label not in data.LOADERS:
-            try:
-                loader = load.Loader.group_args(
-                        group, args)
-            except exceptions.UnknownFileType:
-                # TODO: Deprecate load.Loader.group_args()
-                continue
-            data.add_loader(group.label, loader)
-
+    datasets = {}
     renderers = {}
-    viewers = {}
+    map_views = {}
     for group in config.file_groups:
-        if group.label in data.LOADERS:
-            loader = data.LOADERS[group.label]
-            if isinstance(loader, rdt.Loader):
-                viewer = rdt.View(loader)
-            else:
-                viewer = view.UMView(loader, color_mapper)
-        else:
-            # Use dataset interface
-            settings = {
-                "label": group.label,
-                "pattern": group.pattern,
-                "locator": group.locator,
-                "database_path": group.database_path,
-                "color_mapper": color_mapper,
-            }
-            dataset = drivers.get_dataset(group.file_type, settings)
-            viewer = dataset.map_view()
-        viewers[group.label] = viewer
-        renderers[group.label] = [
-                viewer.add_figure(f)
-                for f in figures]
+        settings = {
+            "label": group.label,
+            "pattern": group.pattern,
+            "locator": group.locator,
+            "database_path": group.database_path,
+            "directory": group.directory
+        }
+        dataset = drivers.get_dataset(group.file_type, settings)
+        datasets[group.pattern] = dataset
+
+        # Add optional map view
+        if hasattr(dataset, "map_view"):
+            try:
+                map_view = dataset.map_view(color_mapper)
+            except TypeError:
+                map_view = dataset.map_view()
+            map_views[group.label] = map_view
+            renderers[group.label] = [
+                    map_view.add_figure(f)
+                    for f in figures]
 
     image_sources = []
-    for name, viewer in viewers.items():
-        for source in getattr(viewer, "image_sources", []):
+    for name, map_view in map_views.items():
+        for source in getattr(map_view, "image_sources", []):
             image_sources.append(source)
 
     # Lakes
@@ -194,9 +175,10 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
+    # Layer dropdowns from map_views
     menu = []
-    for k, _ in config.patterns:
-        menu.append((k, k))
+    for label in map_views:
+        menu.append((label, label))
 
     layers_ui = layers.LayersUI(menu)
 
@@ -207,11 +189,16 @@ def main(argv=None):
         bokeh.layouts.column(dropdown))
 
 
-    navigator = navigate.Navigator(config, color_mapper=color_mapper)
+    # Add optional sub-navigators
+    sub_navigators = {
+        key: dataset.navigator() for key, dataset in datasets.items()
+        if hasattr(dataset, "navigator")
+    }
+    navigator = navigate.Navigator(sub_navigators)
 
     # Pre-select menu choices (if any)
     initial_state = {}
-    for _, pattern in config.patterns:
+    for pattern, _ in sub_navigators.items():
         initial_state = db.initial_state(navigator, pattern=pattern)
         break
 
@@ -220,11 +207,13 @@ def main(argv=None):
         keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,
-        db.Controls(navigator),
+        db.Controls(navigator),  # TODO: Deprecate this middleware
         colors.palettes,
+        colors.middleware(),
         presets.Middleware(presets.proxy_storage(config.presets_file)),
         presets.middleware,
         layers.middleware,
+        navigator,
     ]
     store = redux.Store(
         redux.combine_reducers(
@@ -300,8 +289,8 @@ def main(argv=None):
 
     # Connect views to state changes
     connector = layers.ViewerConnector().connect(store)
-    for label, viewer in viewers.items():
-        connector.add_label_subscriber(label, viewer.render)
+    for label, map_view in map_views.items():
+        connector.add_label_subscriber(label, map_view.render)
 
     # Set default time series visibility
     store.dispatch(tools.on_toggle_tool("time_series", False))
@@ -312,10 +301,10 @@ def main(argv=None):
     # Set top-level navigation
     store.dispatch(db.set_value("patterns", config.patterns))
 
-    # Pre-select first layer
-    for name, _ in config.patterns:
+    # Pre-select first map_view layer
+    for label in map_views:
         row_index = 0
-        store.dispatch(layers.set_label(row_index, name))
+        store.dispatch(layers.set_label(row_index, label))
         store.dispatch(layers.set_active(row_index, [0]))
         break
 

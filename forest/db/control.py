@@ -163,7 +163,7 @@ def initial_state(navigator, pattern=None):
 
 @export
 def reducer(state, action):
-    state = copy.copy(state)
+    state = copy.deepcopy(state)
     kind = action["kind"]
     if kind == SET_VALUE:
         payload = action["payload"]

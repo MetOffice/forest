@@ -8,10 +8,11 @@ from forest import db, redux, rx
 
 
 def test_reducer_immutable_state():
-    state = {"pressure": 1000}
-    next_state = db.reducer(state, db.set_value("pressure", 950))
-    assert state["pressure"] == 1000
-    assert next_state["pressure"] == 950
+    """Ensure copy.deepcopy is used to create a new state"""
+    previous_state = {"key": ["value"]}
+    next_state = db.reducer(previous_state, {"kind": "ANY"})
+    previous_state["key"].append("extra")
+    assert next_state["key"] == ["value"]
 
 
 class TestDatabaseMiddleware(unittest.TestCase):
