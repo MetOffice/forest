@@ -368,6 +368,15 @@ def main(argv=None):
 
         tool_figures["profile_figure"] = profile_figure
 
+    # possibly abusive way to connect argo map tap tool to the state
+    # perhaps the taptool thingy can be merged into screen.py so we can manage
+    # that kind of state in one place?
+    for map_view in map_views.values():
+        try:
+            map_view.connect(store)
+        except AttributeError:
+            continue
+
     tool_layout = tools.ToolLayout(**tool_figures)
     tool_layout.connect(store)
 

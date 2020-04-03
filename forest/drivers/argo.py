@@ -1,6 +1,30 @@
+import copy
 import bokeh.models
+import numpy as np
 import netCDF4
 import forest.geo
+from forest.redux import Action
+from forest.observe import Observable
+from screen import SET_PROFILE_IDS
+
+def set_profile_ids(i, profile_ids) -> Action:
+    """Action that stores selected profile_ids
+
+    .. code-block:: python
+
+        {
+            "kind": "SET_PROFILE_IDS",
+            "payload": {
+                "indices": i,
+                "profile_ids": profile_ids
+            }
+        }
+
+    :returns: data representing action
+    :rtype: dict
+    """
+    return {"kind": SET_PROFILE_IDS,
+            "payload": {"indices": i, "ids": profile_ids}}
 
 class Dataset:
     def __init__(self, pattern=None, **kwargs):
@@ -13,7 +37,7 @@ class Dataset:
         return MapView(self.pattern)
 
     def profile_view(self, figure):
-        return ProfileView(figure)
+        return ProfileView(self.pattern, figure)
 
 
 class Navigator:
@@ -30,7 +54,7 @@ class Navigator:
         return []
 
 
-class MapView:
+class MapView(Observable):
     def __init__(self, path):
         self.path = path
         with netCDF4.Dataset(self.path) as dataset:
@@ -40,18 +64,24 @@ class MapView:
             "x": [],
             "y": [],
         })
+        # tap events never happen for some reason...
         self.source.on_event("tap", self.callback)
-        self.source.selected.on_change("indices", self.selected)
+        # however selected.indices does change on the data source on a tap
+        self.source.selected.on_change("indices", self.update_profile_ids)
+        super().__init__()
 
     def callback(self, event):
-        print(event)
+        print("hit argo.MapView.callback: ", event)
 
-    def selected(self, a, o, n):
+    def update_profile_ids(self, a, o, n):
         print(a, o, n)
         with netCDF4.Dataset(self.path) as dataset:
+            plat_ids = []
             for i in n:
-                data = dataset.variables["PLATFORM_NUMBER"][i]
-                print(netCDF4.chartostring(data))
+                plat_id = dataset.variables["PLATFORM_NUMBER"][i,:]
+                plat_ids.append(str(netCDF4.chartostring(plat_id)))
+
+        self.notify(set_profile_ids(n, plat_ids))
 
     def add_figure(self, figure):
         # Tap event listener
@@ -61,15 +91,18 @@ class MapView:
 
     def render(self, *args, **kwargs):
         x, y = forest.geo.web_mercator(self.lons, self.lats)
-        print(x, y)
         self.source.data = {
             "x": x,
             "y": y,
         }
 
+    def connect(self, store):
+        self.add_subscriber(store.dispatch)
+
 
 class ProfileView:
-    def __init__(self, figure):
+    def __init__(self, path, figure):
+        self.path = path
         self.figure = figure
         self.source = bokeh.models.ColumnDataSource({
             "x": [],
@@ -81,13 +114,18 @@ class ProfileView:
         store.add_subscriber(self.render)
 
     def render(self, state):
-        if "position" in state:
-            x = state["position"]["x"]
-            y = state["position"]["y"]
-            lons, lats = forest.geo.plate_carree([x], [y])
+        if "profile_ids" in state:
+            profile_index = state["profile_ids"]["indices"][0]
+            print("render profile for platform ", state["profile_ids"]["ids"][0])
 
-            # Read data from file??
-            self.source.stream({
-                "x": lons,
-                "y": lats,
-            })
+            # Read data from file, here for now, but might be better off
+            # somewhere else.
+            with netCDF4.Dataset(self.path) as dataset:
+               temp  = dataset.variables["TEMP"][profile_index, :].data
+               #pressure = dataset.variables["PRES"][profile_index, :].data
+               pressure = np.r_[0:len(temp):1]
+
+            self.source.data = {
+                    "x": temp,
+                    "y": pressure,
+                }
