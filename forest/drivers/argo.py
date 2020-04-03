@@ -5,7 +5,7 @@ import netCDF4
 import forest.geo
 from forest.redux import Action
 from forest.observe import Observable
-from screen import SET_PROFILE_IDS
+from forest.screen import SET_PROFILE_IDS
 
 def set_profile_ids(i, profile_ids) -> Action:
     """Action that stores selected profile_ids
@@ -85,7 +85,8 @@ class MapView(Observable):
 
     def add_figure(self, figure):
         # Tap event listener
-        renderer = figure.circle(x="x", y="y", source=self.source)
+        renderer = figure.circle(x="x", y="y", size=10,
+                                 source=self.source)
         figure.add_tools(bokeh.models.TapTool(renderers=[renderer]))
         return renderer
 
@@ -115,17 +116,21 @@ class ProfileView:
 
     def render(self, state):
         if "profile_ids" in state:
-            profile_index = state["profile_ids"]["indices"][0]
-            print("render profile for platform ", state["profile_ids"]["ids"][0])
+            if len(state["profile_ids"]["indices"]) != 0:
+                profile_index = state["profile_ids"]["indices"][0]
+                print("render profile for platform ",
+                      state["profile_ids"]["ids"][0])
 
-            # Read data from file, here for now, but might be better off
-            # somewhere else.
-            with netCDF4.Dataset(self.path) as dataset:
-               temp  = dataset.variables["TEMP"][profile_index, :].data
-               #pressure = dataset.variables["PRES"][profile_index, :].data
-               pressure = np.r_[0:len(temp):1]
+                # Read data from file, here for now, but might be better off
+                # somewhere else.
+                with netCDF4.Dataset(self.path) as dataset:
+                   temp = dataset.variables["TEMP"][profile_index, :]
+                   pressure = dataset.variables["PRES_ADJUSTED"][profile_index, :]
+                   if np.ma.is_masked(pressure):
+                        temp = temp.data[~pressure.mask]
+                        pressure = pressure.data[~pressure.mask]
 
-            self.source.data = {
-                    "x": temp,
-                    "y": pressure,
-                }
+                self.source.data = {
+                        "x": temp,
+                        "y": pressure,
+                    }
