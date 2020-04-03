@@ -10,45 +10,11 @@ from functools import lru_cache
 from forest.exceptions import FileNotFound, IndexNotFound
 from forest.old_state import old_state, unique
 import forest.util
+import forest.colors
 from forest import (
         geo,
         locate,
         view)
-from dataclasses import dataclass
-
-
-@dataclass
-class ColorSpec:
-    """Specifies color mapper settings"""
-    name: str = "Greys"
-    number: int = 256
-    reverse: bool = False
-    low: float = 0.
-    low_visible: bool = True
-    high: float = 1.
-    high_visible: bool = True
-
-    @property
-    def palette(self):
-        if self.reverse:
-            step = -1
-        else:
-            step = 1
-        return bokeh.palettes.all_palettes[self.name][self.number][::step]
-
-    @property
-    def high_color(self):
-        if self.high_visible:
-            return None
-        else:
-            return bokeh.colors.RGB(0, 0, 0, a=0)
-
-    @property
-    def low_color(self):
-        if self.low_visible:
-            return None
-        else:
-            return bokeh.colors.RGB(0, 0, 0, a=0)
 
 
 ENGINE = "h5netcdf"

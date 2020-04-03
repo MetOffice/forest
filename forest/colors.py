@@ -99,6 +99,49 @@ import numpy as np
 from forest.observe import Observable
 from forest.rx import Stream
 from forest.db.util import autolabel
+from dataclasses import dataclass
+
+
+@dataclass
+class ColorSpec:
+    """Specifies color mapper settings"""
+    name: str = "Greys"
+    number: int = 256
+    reverse: bool = False
+    low: float = 0.
+    low_visible: bool = True
+    high: float = 1.
+    high_visible: bool = True
+
+    @property
+    def palette(self):
+        if self.reverse:
+            step = -1
+        else:
+            step = 1
+        return bokeh.palettes.all_palettes[self.name][self.number][::step]
+
+    @property
+    def high_color(self):
+        if self.high_visible:
+            return None
+        else:
+            return bokeh.colors.RGB(0, 0, 0, a=0)
+
+    @property
+    def low_color(self):
+        if self.low_visible:
+            return None
+        else:
+            return bokeh.colors.RGB(0, 0, 0, a=0)
+
+    def apply(self, color_mapper):
+        """Helper to apply settings to color_mapper"""
+        color_mapper.palette = self.palette
+        color_mapper.low = self.low
+        color_mapper.low_color = self.low_color
+        color_mapper.high = self.high
+        color_mapper.high_color = self.high_color
 
 
 SET_INVISIBLE = "SET_INVISIBLE"
