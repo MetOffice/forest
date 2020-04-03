@@ -13,10 +13,10 @@ def test_dataset_loader_pattern():
     settings = {
         "pattern": "*.nc",
     }
-    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("unified_model", settings)
-    view = dataset.map_view(color_mapper)
-    assert isinstance(view.loader, forest.drivers.unified_model.Loader)
+    view = dataset.map_view()
+    # Law of demeter violation
+    assert isinstance(view.image_view.loader, forest.drivers.unified_model.Loader)
 
 
 def test_navigator_use_database(tmpdir):
@@ -44,11 +44,11 @@ def test_loader_use_database(tmpdir):
         "locator": "database",
         "database_path": database_path,
     }
-    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("unified_model", settings)
-    view = dataset.map_view(color_mapper)
-    assert hasattr(view.loader.locator, "connection")
-    assert view.loader.locator.directory == "/replace"
+    view = dataset.map_view()
+    # Law of demeter violation
+    assert hasattr(view.image_view.loader.locator, "connection")
+    assert view.image_view.loader.locator.directory == "/replace"
 
 
 def test_view_render_state(tmpdir):
@@ -63,17 +63,18 @@ def test_view_render_state(tmpdir):
     settings = {
         "pattern": path,
     }
-    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("unified_model", settings)
-    view = dataset.map_view(color_mapper)
-    view.render({
+    view = dataset.map_view()
+    # Law of demeter violation
+    view.image_view.render({
         "initial_time": dt.datetime(2020, 1, 1),
         "valid_time": dt.datetime(2020, 1, 1),
         "variable": variable,
         "pressure": None,
         "pressures": []  # Needed by Loader.valid(state)
     })
-    assert len(view.image_sources[0].data["image"]) == 1
+    # Law of demeter violation
+    assert len(view.image_view.image_sources[0].data["image"]) == 1
 
 
 def test_load_image(tmpdir):

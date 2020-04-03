@@ -8,11 +8,11 @@ import datetime as dt
 import numpy as np
 import netCDF4
 import forest.util
+import forest.view
 from forest import (
     db,
     disk,
-    geo,
-    view)
+    geo)
 from forest.exceptions import SearchFail, PressuresNotFound
 from forest.drivers import gridded_forecast
 try:
@@ -50,10 +50,9 @@ class Dataset:
         else:
             return Navigator(self.pattern)
 
-    def map_view(self, color_mapper):
-        return view.UMView(Loader(self.label,
-                                  self.pattern,
-                                  self.locator), color_mapper)
+    def map_view(self):
+        loader = Loader(self.label, self.pattern, self.locator)
+        return forest.view.color_image(self.label, loader)
 
 
 class Navigator:

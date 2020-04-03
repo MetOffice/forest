@@ -8,12 +8,13 @@ import xarray
 import numpy as np
 from functools import lru_cache
 from forest.exceptions import FileNotFound, IndexNotFound
-from forest.old_state import old_state, unique
 import forest.util
+import forest.colors
+import forest.view
 from forest import (
         geo,
-        locate,
-        view)
+        locate)
+
 
 
 ENGINE = "h5netcdf"
@@ -27,8 +28,8 @@ def _natargmax(arr):
 
 
 class Dataset:
-    def __init__(self, pattern=None, database_path=None, **kwargs):
-        print("NEW EIDA50 DATASET")
+    def __init__(self, label=None, pattern=None, database_path=None, **kwargs):
+        self.label = label
         self.pattern = pattern
         if database_path is None:
             database_path = ":memory:"
@@ -38,9 +39,11 @@ class Dataset:
     def navigator(self):
         return Navigator(self.locator, self.database)
 
-    def map_view(self, color_mapper):
+    def map_view(self):
+        """Create a representation to add to a map"""
         loader = Loader(self.locator)
-        return view.UMView(loader, color_mapper, use_hover_tool=False)
+        return forest.view.color_image(self.label, loader,
+                                       use_hover_tool=False)
 
 
 class Database:

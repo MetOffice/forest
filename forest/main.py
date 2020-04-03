@@ -74,13 +74,9 @@ def main(argv=None):
 
     figure_row = layers.FigureRow(figures)
 
-    color_mapper = bokeh.models.LinearColorMapper(
-            low=0,
-            high=1,
-            palette=bokeh.palettes.Plasma[256])
-
-    # Colorbar user interface
-    colorbar_ui = forest.components.ColorbarUI(color_mapper)
+    # TODO: Move this to colorbars.connect() statement when all layers
+    #       make their own ColorMappers
+    colorbars = forest.components.Colorbars()
 
     # Convert config to datasets
     datasets = {}
@@ -189,8 +185,7 @@ def main(argv=None):
     # Connect MapView orchestration to store
     opacity_slider = forest.layers.OpacitySlider()
     source_limits = colors.SourceLimits().connect(store)
-    factory_class = forest.layers.factory(color_mapper,
-                                          figures,
+    factory_class = forest.layers.factory(figures,
                                           source_limits,
                                           opacity_slider)
     gallery = forest.layers.Gallery.from_datasets(datasets, factory_class)
@@ -232,8 +227,11 @@ def main(argv=None):
             tile_picker.add_figure(figure)
         tile_picker.connect(store)
 
-    # Connect color palette controls
-    color_palette = colors.ColorPalette(color_mapper).connect(store)
+    # Connect colorbar legends to the store
+    colorbars.connect(store)
+
+    # Connect colorbar controls
+    colorbar_controls = colors.ColorbarControls().connect(store)
 
     # Connect limit controllers to store
     user_limits = colors.UserLimits().connect(store)
@@ -295,7 +293,7 @@ def main(argv=None):
         border_row,
         opacity_slider.layout,
         preset_ui.layout,
-        color_palette.layout,
+        colorbar_controls.layout,
         user_limits.layout,
         bokeh.models.Div(text="Tiles:"),
     ]
@@ -391,7 +389,7 @@ def main(argv=None):
     for root in navbar.roots:
         document.add_root(root)
     document.add_root(
-        bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
+        bokeh.layouts.row(colorbars.layout, name="colorbar"))
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
     document.add_root(modal.layout)

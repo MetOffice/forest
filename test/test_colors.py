@@ -1,6 +1,7 @@
 import unittest.mock
 from unittest.mock import Mock, sentinel
 import pytest
+import forest.components
 from forest import colors, main, redux, db
 import bokeh.models
 import numpy as np
@@ -20,8 +21,9 @@ def listener():
     ({}, colors.set_source_limits(0, 100), {}),
     ({}, colors.set_colorbar({"key": "value"}), {"colorbar": {"key": "value"}}),
     ({}, colors.set_palette_names(["example"]), {"colorbar": {"names": ["example"]}}),
+    ({}, colors.set_edit_layer("Foo"), {"colorbar": {"edit": "Foo"}}),
 ])
-def test_reducer(state, action, expect):
+def test_reducer_sets_colorbar_namespace(state, action, expect):
     result = colors.reducer(state, action)
     assert expect == result
 
@@ -58,10 +60,77 @@ def test_limits_reducer_source():
     assert state["colorbar"]["limits"][origin]["high"] == high
 
 
+@pytest.mark.parametrize("actions,expect", [
+    pytest.param([
+        colors.set_edit_layer("Foo"),
+        colors.set_palette_name("Accent"),
+        colors.set_edit_layer("Bar"),
+        colors.set_palette_name("Blues"),
+    ], {
+        "edit": "Bar",
+        "layers": {
+            "Foo": {
+                "colorbar": {"name": "Accent"}
+            },
+            "Bar": {
+                "colorbar": {"name": "Blues"}
+            }
+        }
+    })
+])
+def test_reducer_multiple_actions(actions, expect):
+    state = {}
+    for action in actions:
+        state = colors.reducer(state, action)
+    assert expect == state["colorbar"]
+
+
 def test_reducer_immutable_state():
     state = {"colorbar": {"number": 1}}
     colors.reducer(state, colors.set_palette_number(3))
     assert state["colorbar"]["number"] == 1
+
+
+@pytest.mark.parametrize("state,expect", [
+    pytest.param(
+        {}, forest.colors.ColorSpec()),
+    pytest.param(
+        {"colorbar": {"name": "Accent"}},
+        forest.colors.ColorSpec(name="Accent")),
+    pytest.param(
+        {"colorbar": {"name": "Accent", "numbers": [1, 2, 3]}},
+        forest.colors.ColorSpec(name="Accent")),
+    pytest.param(
+        {
+            "colorbar": {
+                "layers": {
+                    "label": {"colorbar": {"name": "Blues"}}
+                },
+                "name": "Accent", "numbers": [1, 2, 3]}
+        },
+        forest.colors.ColorSpec(name="Blues")),
+])
+def test_spec_parser(state, expect):
+    spec_parser = forest.colors.SpecParser("label")
+    assert spec_parser(state) == expect
+
+
+@pytest.fixture
+def color_view():
+    color_mapper = bokeh.models.LinearColorMapper()
+    spec_parser = forest.colors.SpecParser("label")
+    return forest.colors.ColorView(color_mapper, spec_parser)
+
+
+def test_color_view_render(color_view):
+    color_view.render({"colorbar": {"low": 42}})
+    assert color_view.color_mapper.low == 42
+
+
+def test_color_view_connect(color_view):
+    store = unittest.mock.Mock()
+    color_view.connect(store)
+    store.add_subscriber.assert_called_once_with(color_view.render)
 
 
 def test_defaults():
@@ -79,16 +148,26 @@ def test_defaults():
     assert colors.defaults() == expected
 
 
-def test_color_controls():
+def test_colorbar_spec():
+    colorbar_spec = colors.ColorSpec()
+    assert colorbar_spec.nan_color.to_css() == "rgba(0, 0, 0, 0)"
+
+
+def test_colorbar_spec_apply():
     color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.ColorPalette(color_mapper)
-    controls.render({"name": "Accent", "number": 3})
-    assert color_mapper.palette == ['#7fc97f', '#beaed4', '#fdc086']
+    colorbar_spec = colors.ColorSpec()
+    colorbar_spec.apply(color_mapper)
+    assert color_mapper.nan_color.to_css() == "rgba(0, 0, 0, 0)"
+
+
+def test_colorbars_palette():
+    colorbars = forest.components.Colorbars()
+    colorbars.render({"name": "Accent", "number": 3})
+    assert colorbars.color_mapper.palette == ['#7fc97f', '#beaed4', '#fdc086']
 
 
 def test_controls_on_name(listener):
-    color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.ColorPalette(color_mapper)
+    controls = colors.ColorbarControls()
     controls.add_subscriber(listener)
     controls.on_number(None, None, 5)
     listener.assert_called_once_with(colors.set_palette_number(5))
@@ -143,16 +222,14 @@ def test_palette_numbers(name, expect):
 
 
 def test_controls_on_number(listener):
-    color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.ColorPalette(color_mapper)
+    controls = colors.ColorbarControls()
     controls.add_subscriber(listener)
     controls.on_number(None, None, 5)
     listener.assert_called_once_with(colors.set_palette_number(5))
 
 
 def test_controls_on_reverse(listener):
-    color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.ColorPalette(color_mapper)
+    controls = colors.ColorbarControls()
     controls.add_subscriber(listener)
     controls.on_reverse(None, None, [0])
     listener.assert_called_once_with(colors.set_reverse(True))
@@ -165,15 +242,13 @@ def test_controls_on_reverse(listener):
     ("names", {"name": "Blues", "number": 5}, "Blues")
 ])
 def test_controls_render_label(key, props, label):
-    color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.ColorPalette(color_mapper)
+    controls = colors.ColorbarControls()
     controls.render(props)
     assert controls.dropdowns[key].label == label
 
 
 def test_controls_render_sets_menu():
-    color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.ColorPalette(color_mapper)
+    controls = colors.ColorbarControls()
     names = ["A", "B"]
     numbers = [1, 2]
     props = {"names": names, "numbers": numbers}
@@ -185,17 +260,15 @@ def test_controls_render_sets_menu():
 
 
 @pytest.mark.parametrize("props,palette", [
-        ({}, None),
         ({"name": "Accent", "number": 3},
             ["#7fc97f", "#beaed4", "#fdc086"]),
         ({"name": "Accent", "number": 3, "reverse": True},
             ["#fdc086", "#beaed4", "#7fc97f"])
     ])
 def test_controls_render_palette(props, palette):
-    color_mapper = bokeh.models.LinearColorMapper()
-    controls = colors.ColorPalette(color_mapper)
+    controls = forest.components.Colorbars()
     controls.render(props)
-    assert color_mapper.palette == palette
+    assert controls.color_mapper.palette == palette
 
 
 @pytest.mark.parametrize("props,active", [
@@ -204,8 +277,7 @@ def test_controls_render_palette(props, palette):
     ({"reverse": True}, [0]),
 ])
 def test_color_palette_render_checkbox(props, active):
-    color_mapper = bokeh.models.LinearColorMapper()
-    color_palette = colors.ColorPalette(color_mapper)
+    color_palette = colors.ColorbarControls()
     color_palette.render(props)
     assert color_palette.checkbox.active == active
 
@@ -257,9 +329,8 @@ def test_remove_source():
 
 
 def test_render_called_once_with_two_identical_settings():
-    color_mapper = bokeh.models.LinearColorMapper()
     store = redux.Store(colors.reducer)
-    controls = colors.ColorPalette(color_mapper)
+    controls = colors.ColorbarControls()
     controls.render = unittest.mock.Mock()
     controls.connect(store)
     for action in [
@@ -271,12 +342,11 @@ def test_render_called_once_with_two_identical_settings():
 
 def test_render_called_once_with_non_relevant_settings():
     """Render should only happen when relevant state changes"""
-    color_mapper = bokeh.models.LinearColorMapper()
     store = redux.Store(
             redux.combine_reducers(
                 db.reducer,
                 colors.reducer))
-    controls = colors.ColorPalette(color_mapper)
+    controls = colors.ColorbarControls()
     controls.render = unittest.mock.Mock()
     controls.connect(store)
     for action in [

@@ -1,17 +1,16 @@
 import pytest
 import yaml
-import bokeh.models
 import forest.drivers
 from forest.drivers import rdt
 
 
 def test_build_loader_given_files():
     settings = {"pattern": "file_20190101T0000Z.nc"}
-    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("unified_model", settings)
-    view = dataset.map_view(color_mapper)
-    assert isinstance(view.loader, forest.drivers.unified_model.Loader)
-    assert isinstance(view.loader.locator, forest.drivers.unified_model.Locator)
+    view = dataset.map_view()
+    # Law of demeter violation
+    assert isinstance(view.image_view.loader, forest.drivers.unified_model.Loader)
+    assert isinstance(view.image_view.loader.locator, forest.drivers.unified_model.Locator)
 
 
 def test_build_loader_given_rdt_file_type():

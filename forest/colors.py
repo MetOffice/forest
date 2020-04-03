@@ -15,7 +15,7 @@ following manner.
 >>> component = Component().connect(store)
 >>> bokeh.layouts.column(component.layout)
 
-.. autoclass:: ColorPalette
+.. autoclass:: ColorbarControls
     :members:
 
 .. autoclass:: UserLimits
@@ -88,7 +88,7 @@ and either update state or generate new actions
 
 .. autofunction:: set_invisible_min
 
-.. autofunction:: set_invisible_max
+.. autofunction:: set_high_visible
 
 """
 import copy
@@ -99,7 +99,7 @@ import numpy as np
 from forest.observe import Observable
 from forest.rx import Stream
 from forest.db.util import autolabel
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 
 @dataclass
@@ -112,6 +112,7 @@ class ColorSpec:
     low_visible: bool = True
     high: float = 1.
     high_visible: bool = True
+    nan_color = bokeh.colors.RGB(0, 0, 0, a=0)
 
     @property
     def palette(self):
@@ -142,12 +143,18 @@ class ColorSpec:
         color_mapper.low_color = self.low_color
         color_mapper.high = self.high
         color_mapper.high_color = self.high_color
+        color_mapper.nan_color = self.nan_color
 
 
 SET_INVISIBLE = "SET_INVISIBLE"
 SET_PALETTE = "SET_PALETTE"
 SET_LIMITS = "SET_LIMITS"
 SET_LIMITS_ORIGIN = "SET_LIMITS_ORIGIN"
+SET_EDIT_LAYER = "COLORS_SET_EDIT_LAYER"
+
+
+def set_edit_layer(text):
+    return {"kind": SET_EDIT_LAYER, "payload": text}
 
 
 def set_colorbar(options):
@@ -206,13 +213,14 @@ def set_limits_origin(text):
     return {"kind": SET_LIMITS_ORIGIN, "payload": text}
 
 
-def set_invisible_min(flag):
-    """Action to mask out data below colour bar limits"""
-    return {"kind": SET_INVISIBLE, "payload": {"invisible_min": flag}}
+def set_low_visible(flag):
+    """Action to mask outside limits"""
+    return {"kind": SET_LIMITS, "payload": {"low_visible": flag}}
 
-def set_invisible_max(flag):
-    """Action to mask out data below colour bar limits"""
-    return {"kind": SET_INVISIBLE, "payload": {"invisible_max": flag}}
+
+def set_high_visible(flag):
+    """Action to mask outside limits"""
+    return {"kind": SET_LIMITS, "payload": {"high_visible": flag}}
 
 
 def reducer(state, action):
@@ -226,7 +234,29 @@ def reducer(state, action):
     """
     state = copy.deepcopy(state)
     kind = action["kind"]
-    if kind in [SET_PALETTE, SET_INVISIBLE]:
+    if kind in [SET_PALETTE]:
+        if "edit" in state.get("colorbar", {}):
+            # Manage editable layer
+            label = state["colorbar"]["edit"]
+            state["colorbar"]["layers"] = state["colorbar"].get("layers", {})
+            sub_state = state["colorbar"]["layers"].get(label, {})
+            sub_state = colorbar_reducer(sub_state, action)
+            state["colorbar"]["layers"][label] = sub_state
+        else:
+            # Manage universal layer
+            state = colorbar_reducer(state, action)
+    elif kind == SET_EDIT_LAYER:
+        # Select editable layer
+        settings = state.get("colorbar", {})
+        settings["edit"] = action["payload"]
+        state["colorbar"] = settings
+    return state
+
+
+def colorbar_reducer(state, action):
+    """Sub-reducer to encode colorbar state"""
+    kind = action["kind"]
+    if kind in [SET_PALETTE, SET_LIMITS]:
         state["colorbar"] = state.get("colorbar", {})
         state["colorbar"].update(action["payload"])
     return state
@@ -368,6 +398,47 @@ def palette_numbers(name):
     return list(sorted(bokeh.palettes.all_palettes[name].keys()))
 
 
+class ColorView:
+    """Apply updates to color_mapper"""
+    def __init__(self, color_mapper, spec_parser):
+        self.color_mapper = color_mapper
+        self.spec_parser = spec_parser
+
+    def connect(self, store):
+        """Subscribe to store"""
+        store.add_subscriber(self.render)
+        return self
+
+    def render(self, state):
+        """Apply state representation to color_mapper"""
+        spec = self.spec_parser(state)
+        print(spec)
+        spec.apply(self.color_mapper)
+
+
+class SpecParser:
+    """Parse a color_mapper specification from state"""
+    def __init__(self, label):
+        self.label = label
+
+    def __call__(self, state):
+        if "colorbar" not in state:
+            return ColorSpec()
+        # Parse colorbar section of state
+        if self.label in state["colorbar"].get("layers", {}):
+            settings = state["colorbar"]["layers"][self.label]["colorbar"]
+        else:
+            settings = state["colorbar"]
+        return self._color_spec(settings)
+
+    def _color_spec(self, settings):
+        # Note: This method throws away args not valid for ColorSpec
+        allowed_keys = asdict(ColorSpec()).keys()
+        kwargs = {key: value for key, value in settings.items()
+                  if key in allowed_keys}
+        return ColorSpec(**kwargs)
+
+
 class SourceLimits(Observable):
     """Event stream listening to collection of ColumnDataSources
 
@@ -500,7 +571,7 @@ class UserLimits(Observable):
         :param store: instance to dispatch actions and listen to state changes
         :type store: :class:`forest.redux.Store`
         """
-        connect(self, store)
+        two_way_connect(self, store, state_to_props=self.render_kwargs)
         return self
 
     def on_input_low(self, attr, old, new):
@@ -513,15 +584,28 @@ class UserLimits(Observable):
 
     def on_invisible_min(self, attr, old, new):
         """Event-handler when invisible_min toggle is changed"""
-        self.notify(set_invisible_min(len(new) == 1))
+        self.notify(set_low_visible(len(new) == 0))
 
     def on_invisible_max(self, attr, old, new):
         """Event-handler when invisible_max toggle is changed"""
-        self.notify(set_invisible_max(len(new) == 1))
+        self.notify(set_high_visible(len(new) == 0))
 
     def on_origin(self, attr, old, new):
         origin = {1: "user"}.get(new, "column_data_source")
         self.notify(set_limits_origin(origin))
+
+    def render_kwargs(self, state):
+        """Convert application state to keyword arguments"""
+        if "colorbar" in state:
+            props = ("fixed", "invisible_min", "invisible_max", "high", "low")
+            sub_state = state["colorbar"]
+            if "edit" in sub_state:
+                label = sub_state["edit"]
+                settings = sub_state["layers"].get(label, {}).get("colorbar", {})
+            else:
+                settings = sub_state
+            return {key: value for key, value in settings.items()
+                    if key in props}
 
     def render(self, props):
         """Update user-defined limits inputs"""
@@ -557,7 +641,12 @@ def state_to_props(state):
     return state.get("colorbar", None)
 
 
-def connect(view, store):
+def two_way_connect(view, store, state_to_props=state_to_props):
+    view.add_subscriber(store.dispatch)
+    one_way_connect(view, store, state_to_props=state_to_props)
+
+
+def one_way_connect(view, store, state_to_props=state_to_props):
     """Connect component to Store
 
     UI components connected to a Store
@@ -570,7 +659,6 @@ def connect(view, store):
     to a stream of states, maps the states to
     props and filters out duplicates.
     """
-    view.add_subscriber(store.dispatch)
     stream = (Stream()
                 .listen_to(store)
                 .map(state_to_props)
@@ -579,10 +667,40 @@ def connect(view, store):
     stream.map(lambda props: view.render(props))
 
 
-class ColorPalette(Observable):
-    """Color palette user interface"""
-    def __init__(self, color_mapper):
-        self.color_mapper = color_mapper
+class LayerSelect(Observable):
+    """Choose layer setting to edit"""
+    def __init__(self):
+        widths = {
+            "div": 80,
+            "select": 210,
+            "row": 300
+        }
+        self.select = bokeh.models.Select(options=["Please specify"],
+                                          width=widths["select"])
+        self.select.on_change("value", self.on_change)
+        self.layout = bokeh.layouts.row(
+            bokeh.models.Div(text="Choose layer:", width=widths["div"]),
+            self.select,
+            width=widths["row"])
+        super().__init__()
+
+    def connect(self, store):
+        store.add_subscriber(self.render)
+        self.add_subscriber(store.dispatch)
+
+    def on_change(self, attr, old, new):
+        """Event-handler to set layer to edit"""
+        self.notify(set_edit_layer(new))
+
+    def render(self, state):
+        values = state.get("layers", {}).get("labels", [])
+        labels = [value for value in values if value is not None]
+        self.select.options = ["Please specify"] + labels
+
+
+class ColorbarControls(Observable):
+    """Colorbar user interface"""
+    def __init__(self):
         self.dropdowns = {
             "names": bokeh.models.Dropdown(label="Palettes"),
             "numbers": bokeh.models.Dropdown(label="N")
@@ -595,8 +713,11 @@ class ColorPalette(Observable):
             active=[])
         self.checkbox.on_change("active", self.on_reverse)
 
+        self.layer_select = LayerSelect()
+
         self.layout = bokeh.layouts.column(
-                bokeh.models.Div(text="Color palette:"),
+                bokeh.models.Div(text="Layer settings:"),
+                self.layer_select.layout,
                 self.dropdowns["names"],
                 self.dropdowns["numbers"],
                 self.checkbox)
@@ -604,7 +725,8 @@ class ColorPalette(Observable):
 
     def connect(self, store):
         """Connect component to Store"""
-        connect(self, store)
+        self.layer_select.connect(store)
+        two_way_connect(self, store, state_to_props=self.render_kwargs)
         return self
 
     def on_name(self, attr, old, new):
@@ -619,21 +741,28 @@ class ColorPalette(Observable):
         """Event-handler when reverse toggle is changed"""
         self.notify(set_reverse(len(new) == 1))
 
+    def render_kwargs(self, state):
+        """Convert application state to keyword arguments"""
+        if "colorbar" in state:
+            props = ("name", "number", "names", "numbers", "reverse")
+            sub_state = state["colorbar"]
+            if "edit" in sub_state:
+                label = sub_state["edit"]
+                settings = sub_state["layers"].get(label, {}).get("colorbar", {})
+            else:
+                settings = sub_state
+            return {key: value for key, value in settings.items()
+                    if key in props}
+
     def render(self, props):
         """Render component from properties derived from state"""
         assert isinstance(props, dict), "only support dict"
+
+        # Update UI widgets
         if "name" in props:
             self.dropdowns["names"].label = props["name"]
         if "number" in props:
             self.dropdowns["numbers"].label = str(props["number"])
-        if ("name" in props) and ("number" in props):
-            name = props["name"]
-            number = props["number"]
-            reverse = props.get("reverse", False)
-            palette = self.palette(name, number)
-            if reverse:
-                palette = palette[::-1]
-            self.color_mapper.palette = palette
         if "names" in props:
             values = props["names"]
             self.dropdowns["names"].menu = list(zip(values, values))
@@ -641,39 +770,8 @@ class ColorPalette(Observable):
             values = [str(n) for n in props["numbers"]]
             self.dropdowns["numbers"].menu = list(zip(values, values))
 
-        # Set color_mapper low/high from either user/data limits
-        origin = props.get("limits", {}).get("origin", "column_data_source")
-        attrs = props.get("limits", {}).get(origin, {})
-        if "low" in attrs:
-            try:
-                self.color_mapper.low = float(attrs["low"])
-            except ValueError:
-                pass
-        if "high" in attrs:
-            try:
-                self.color_mapper.high = float(attrs["high"])
-            except ValueError:
-                pass
-
-        invisible_min = props.get("invisible_min", False)
-        if invisible_min:
-            color = bokeh.colors.RGB(0, 0, 0, a=0)
-            self.color_mapper.low_color = color
-        else:
-            self.color_mapper.low_color = None
-        invisible_max = props.get("invisible_max", False)
-        if invisible_max:
-            color = bokeh.colors.RGB(0, 0, 0, a=0)
-            self.color_mapper.high_color = color
-        else:
-            self.color_mapper.high_color = None
-
         # Render reverse checkbox state
         if props.get("reverse", False):
             self.checkbox.active = [0]
         else:
             self.checkbox.active = []
-
-    @staticmethod
-    def palette(name, number):
-        return bokeh.palettes.all_palettes[name][number]

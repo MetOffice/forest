@@ -1,10 +1,12 @@
 """Colorbar sub-figure component"""
 import bokeh.plotting
+import bokeh.models
+from forest.colors import one_way_connect, ColorSpec
 
 
-class ColorbarUI:
-    """Helper to make a figure containing only one colorbar"""
-    def __init__(self, color_mapper):
+class Colorbars:
+    """Helper to layout/maintain colorbars"""
+    def __init__(self):
         # Dimensions
         padding = 5
         margin = 20
@@ -12,9 +14,15 @@ class ColorbarUI:
         plot_height = colorbar_height + 30
         plot_width = 500
 
+        # LinearColorMapper
+        self.color_mapper = bokeh.models.LinearColorMapper(
+                low=0,
+                high=1,
+                palette=bokeh.palettes.Plasma[256])
+
         # Colorbar
         self.colorbar = bokeh.models.ColorBar(
-            color_mapper=color_mapper,
+            color_mapper=self.color_mapper,
             location=(0, 0),
             height=colorbar_height,
             width=int(plot_width - (margin + padding)),
@@ -40,3 +48,20 @@ class ColorbarUI:
         self.figure.add_layout(self.colorbar, 'center')
 
         self.layout = self.figure
+
+    def connect(self, store):
+        one_way_connect(self, store)
+        return self
+
+    def render(self, props):
+        # Make ColorSpec from props
+        # TODO: Tidy-up awkward mapping from props to ColorSpec
+        kwargs = {k: v for k, v in props.items()
+                  if k in ["name", "number", "low", "high", "reverse"]}
+        if "invisible_min" in props:
+            kwargs["low_visible"] = not props["invisible_min"]
+        if "invisible_max" in props:
+            kwargs["high_visible"] = not props["invisible_max"]
+        spec = ColorSpec(**kwargs)
+        print(f"forest.components.Colorbars {spec}")
+        spec.apply(self.color_mapper)

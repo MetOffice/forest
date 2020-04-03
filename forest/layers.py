@@ -605,13 +605,11 @@ class Factory:
     in future releases
     """
     def __init__(self, dataset,
-                 color_mapper,
                  figures,
                  source_limits,
                  opacity_slider):
         self._calls = 0
         self.dataset = dataset
-        self.color_mapper = color_mapper
         self.figures = figures
         self.source_limits = source_limits
         self.opacity_slider = opacity_slider
@@ -620,10 +618,7 @@ class Factory:
         """Complex construction"""
         self._calls += 1
         print("Factory.__call__: {}".format(self._calls))
-        try:
-            map_view = self.dataset.map_view(self.color_mapper)
-        except TypeError:
-            map_view = self.dataset.map_view()
+        map_view = self.dataset.map_view()
         visible = Visible.from_map_view(map_view, self.figures)
         if self.opacity_slider is not None:
             self.opacity_slider.add_renderers(visible.renderers)

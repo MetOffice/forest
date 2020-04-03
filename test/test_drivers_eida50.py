@@ -60,13 +60,15 @@ def test_dataset_navigator():
 
 
 def test_dataset_map_view():
+    store = Mock()
     settings = {
         "pattern": "",
     }
-    color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("eida50", settings)
-    view = dataset.map_view(color_mapper)
-    view.render({})
+    view = dataset.map_view()
+    view.connect(store)
+    view.add_figure(bokeh.plotting.figure())
+    store.add_subscriber.assert_called()
 
 
 def test_navigator_pressures():

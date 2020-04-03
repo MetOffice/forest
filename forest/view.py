@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import datetime as dt
 import numpy as np
 import bokeh.models
+import forest.colors
 from forest import geo
 from forest.old_state import old_state, unique
 from forest.exceptions import FileNotFound, IndexNotFound
@@ -15,6 +16,56 @@ class AbstractMapView(ABC):
     @abstractmethod
     def render(self, state):
         pass
+
+
+def color_image(label, loader, use_hover_tool=True):
+    """Helper to create a ColorImageView
+
+    .. note:: This is convenient since there are
+              multiple drivers that use color imagery
+    """
+    # ColorView
+    color_mapper = bokeh.models.LinearColorMapper()
+    color_view = forest.colors.ColorView(
+        color_mapper,
+        forest.colors.SpecParser(label))
+
+    # ImageView
+    image_view = UMView(
+        loader,
+        color_mapper,
+        use_hover_tool=use_hover_tool)
+    return ColorImageView(image_view, color_view)
+
+
+class ColorImageView:
+    """Delegates to more specialist views
+
+    Facade to combine color_mapper and image glyph views
+    behind a single interface
+    """
+    def __init__(self, image_view, color_view):
+        self.image_view = image_view
+        self.color_view = color_view
+
+    @property
+    def image_sources(self):
+        # TODO: Remove this delegation by redesigning how source limits
+        #       are calculated
+        return self.image_view.image_sources
+
+    def render(self, state):
+        self.image_view.render(state)
+
+    def connect(self, store):
+        """Subscribe to store"""
+        self.color_view.connect(store)
+        self.image_view.connect(store)  # TODO: Check if this is needed
+        return self
+
+    def add_figure(self, figure):
+        """Add glyphs to figure"""
+        return self.image_view.add_figure(figure)
 
 
 class UMView(AbstractMapView):
@@ -43,6 +94,11 @@ class UMView(AbstractMapView):
             'valid': 'datetime',
             'initial': 'datetime'
         }
+
+    def connect(self, store):
+        """Represent application state changes"""
+        store.add_subscriber(self.render)
+        return self
 
     @old_state
     @unique
