@@ -3,7 +3,7 @@ dist: xenial
 
 env:
   matrix:
-    - PYTHON_VERSION="3.6" EXTRA_ARGS="--file requirements-py3.6.txt"
+    - PYTHON_VERSION="3.6" EXTRA_ARGS="--file requirements-py36.txt"
     - PYTHON_VERSION="3.7" EXTRA_ARGS=""
     - PYTHON_VERSION="3.8" EXTRA_ARGS=""
 
