@@ -1,31 +1,30 @@
-from forest import drivers
 
 
 class Navigator:
-    def __init__(self, config, color_mapper=None):
-        # TODO: Once the idea of a "Group" exists we can avoid using the
-        # config and defer the sub-navigator creation to each of the
-        # groups. This will remove the need for the `_from_group` helper
-        # and the logic in FileSystemNavigator.from_file_type().
-        # Also, it'd be good to switch the identification of groups from
+    """High-level Navigator
+
+    :param navigators: dict of sub-navigators distinguished by pattern
+    """
+    def __init__(self, _navigators):
+        # TODO: It'd be good to switch the identification of navigators from
         # using the `pattern` to using the `label`. In general, not every
         # group would have a `pattern`.
         # e.g.
-        # self._navigators = {group.label: group.navigator for group in ...}
-        self._navigators = {group.pattern: self._from_group(group, color_mapper)
-                           for group in config.file_groups}
+        # self._navigators = {label: navigator for label, navigator in ...}
+        self._navigators = _navigators
 
-    @classmethod
-    def _from_group(cls, group, color_mapper=None):
-        settings = {
-            "label": group.label,
-            "pattern": group.pattern,
-            "locator": group.locator,
-            "database_path": group.database_path,
-            "color_mapper": color_mapper,
-        }
-        dataset = drivers.get_dataset(group.file_type, settings)
-        return dataset.navigator()
+    def __call__(self, store, action):
+        """Pass through to appropriate sub-navigator"""
+        pattern = store.state.get("pattern")
+        if pattern is not None:
+            try:
+                yield from self._navigators[pattern](store, action)
+            except TypeError:
+                # Sub-navigator not middleware pass on action
+                yield action
+        else:
+            # Pattern not yet set
+            yield action
 
     def variables(self, pattern):
         navigator = self._navigators[pattern]

@@ -6,12 +6,10 @@ import forest.drivers.gpm
 
 
 def test_gpm_dataset():
-    settings = {
-        "color_mapper": bokeh.models.ColorMapper()
-    }
-    dataset = forest.drivers.get_dataset("gpm", settings)
+    color_mapper = bokeh.models.ColorMapper()
+    dataset = forest.drivers.get_dataset("gpm")
     navigator = dataset.navigator()
-    map_view = dataset.map_view()
+    map_view = dataset.map_view(color_mapper)
     map_view.render({})
     assert hasattr(map_view, "image_sources")
 

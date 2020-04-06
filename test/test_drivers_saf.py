@@ -7,10 +7,8 @@ from forest.drivers import saf
 
 @pytest.fixture
 def dataset():
-    color_mapper = bokeh.models.ColorMapper()
     return forest.drivers.get_dataset("saf", {
         "pattern": "saf.nc",
-        "color_mapper": color_mapper
     })
 
 
@@ -20,7 +18,8 @@ def navigator():
 
 
 def test_dataset_map_view(dataset):
-    assert isinstance(dataset.map_view(), forest.view.UMView)
+    color_mapper = bokeh.models.ColorMapper()
+    assert isinstance(dataset.map_view(color_mapper), forest.view.UMView)
 
 
 def test_dataset_navigator(dataset):

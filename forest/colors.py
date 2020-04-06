@@ -283,6 +283,21 @@ def palettes(store, action):
             yield set_colorbar({**defaults(), **settings})
 
 
+def middleware():
+    previous = None
+    seen = False
+    def call(store, action):
+        nonlocal previous, seen
+        if not seen:
+            seen = True
+            previous = action
+            yield action
+        elif previous != action:
+            previous = action
+            yield action
+    return call
+
+
 def is_fixed(state):
     """Helper to discover if fixed limits have been selected"""
     return state.get("colorbar", {}).get("fixed", False)

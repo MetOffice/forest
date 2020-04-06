@@ -19,18 +19,17 @@ def read_times(path):
 
 
 class Dataset:
-    def __init__(self, pattern=None, color_mapper=None, **kwargs):
+    def __init__(self, pattern=None, **kwargs):
         self.pattern = pattern
         self.locator = Locator()
-        self.color_mapper = color_mapper
 
     def navigator(self):
         return Navigator(self.pattern, self.locator)
 
-    def map_view(self):
+    def map_view(self, color_mapper):
         return forest.view.UMView(_Loader(self.pattern,
                                           self.locator),
-                                  self.color_mapper,
+                                  color_mapper,
                                   use_hover_tool=False)
 
 
