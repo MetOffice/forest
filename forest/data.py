@@ -53,7 +53,7 @@ DISPUTED = {
     "xs": [],
     "ys": []
 }
-
+AUTO_SHUTDOWN = False
 
 def on_server_loaded():
     global DISPUTED

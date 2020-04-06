@@ -28,3 +28,7 @@ def add_arguments(parser):
         "--var", action="append", dest="variables",
         nargs=2, metavar=("KEY", "VALUE"),
         help="variable(s) to substitute in --config-file, may be repeated")
+    parser.add_argument(
+        "--auto-shutdown", action="store_true", default=False,
+        help="server shutdown on tab close - for desktop versions.")    
+    
