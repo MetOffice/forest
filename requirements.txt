@@ -8,4 +8,3 @@ pygrib
 libwebp=1.0.2  # Pin to prevent Travis issue
 xarray
 geojson
-dataclasses; python_version == '3.6'
