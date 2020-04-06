@@ -28,7 +28,10 @@ from forest.db.util import autolabel
 
 
 def main(argv=None):
+
     args = parse_args.parse_args(argv)
+    data.AUTO_SHUTDOWN = args.auto_shutdown
+    
     if len(args.files) > 0:
         if args.config_file is not None:
             raise Exception('--config-file and [FILE [FILE ...]] not compatible')
