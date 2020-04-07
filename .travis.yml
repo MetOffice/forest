@@ -3,9 +3,9 @@ dist: xenial
 
 env:
   matrix:
-    - PYTHON_VERSION="3.6"
-    - PYTHON_VERSION="3.7"
-    - PYTHON_VERSION="3.8"
+    - PYTHON_VERSION="3.6" EXTRA_ARGS="--file requirements-py36.txt"
+    - PYTHON_VERSION="3.7" EXTRA_ARGS=""
+    - PYTHON_VERSION="3.8" EXTRA_ARGS=""
 
 git:
   # We need a deep clone so that we can compute the age of the files using their git history.
@@ -34,7 +34,7 @@ install:
   # Customise the testing environment
   # ---------------------------------
   - echo "Install forest dependencies"
-  - conda install --quiet -n ${ENV_NAME} --file requirements.txt --file requirements-dev.txt
+  - conda install --quiet -n ${ENV_NAME} --file requirements.txt --file requirements-dev.txt ${EXTRA_ARGS}
 
   # Output debug info
   # -----------------
