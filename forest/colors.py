@@ -70,8 +70,6 @@ and either update state or generate new actions
 
 .. autofunction:: set_colorbar
 
-.. autofunction:: set_fixed
-
 .. autofunction:: set_reverse
 
 .. autofunction:: set_palette_name
@@ -111,11 +109,6 @@ SET_LIMITS_ORIGIN = "SET_LIMITS_ORIGIN"
 def set_colorbar(options):
     """Action to set multiple settings at once"""
     return {"kind": SET_PALETTE, "payload": options}
-
-
-def set_fixed(flag):
-    """Action to set fix user-defined limits"""
-    return {"kind": SET_PALETTE, "payload": {"fixed": flag}}
 
 
 def set_reverse(flag):
@@ -241,7 +234,6 @@ def defaults():
             "numbers": palette_numbers("Viridis"),
             "low": 0,
             "high": 1,
-            "fixed": False,
             "reverse": False,
             "invisible_min": False,
             "invisible_max": False,
@@ -259,7 +251,6 @@ def defaults():
         "numbers": palette_numbers("Viridis"),
         "low": 0,
         "high": 1,
-        "fixed": False,
         "reverse": False,
         "invisible_min": False,
         "invisible_max": False,
@@ -293,9 +284,6 @@ def palettes(store, action):
     .. note:: middleware is an action generator
     """
     kind = action["kind"]
-    if (kind == SET_LIMITS) and is_fixed(store.state) and is_source_origin(action):
-        # Filter SET_LIMIT actions from ColumnDataSource
-        return
     if kind == SET_PALETTE:
         payload = action["payload"]
         if "name" in payload:
@@ -331,11 +319,6 @@ def middleware():
             previous = action
             yield action
     return call
-
-
-def is_fixed(state):
-    """Helper to discover if fixed limits have been selected"""
-    return state.get("colorbar", {}).get("fixed", False)
 
 
 def palette_numbers(name):
@@ -384,8 +367,8 @@ class UserLimits(Observable):
     """User controlled color mapper limits"""
     def __init__(self):
         self.inputs = {
-            "low": bokeh.models.TextInput(title="Min:"),
-            "high": bokeh.models.TextInput(title="Max:"),
+            "low": bokeh.models.TextInput(title="User min:"),
+            "high": bokeh.models.TextInput(title="User max:"),
             "source_low": bokeh.models.TextInput(title="Data min:",
                                                  disabled=True),
             "source_high": bokeh.models.TextInput(title="Data max:",
@@ -402,12 +385,6 @@ class UserLimits(Observable):
         self.radio_group.on_change("active", self.on_origin)
 
         self.checkboxes = {}
-
-        # Checkbox fix data limits to user supplied limits
-        self.checkboxes["fixed"] = bokeh.models.CheckboxGroup(
-                labels=["Fix min/max settings for all frames"],
-                active=[])
-        self.checkboxes["fixed"].on_change("active", self.on_checkbox_change)
 
         # Checkbox transparency lower threshold
         self.checkboxes["invisible_min"] = bokeh.models.CheckboxGroup(
@@ -436,7 +413,6 @@ class UserLimits(Observable):
             bokeh.layouts.row(
                 self.radio_group,
                 width=widths["row"]),
-            self.checkboxes["fixed"],
             self.checkboxes["invisible_min"],
             self.checkboxes["invisible_max"],
         )
@@ -453,9 +429,6 @@ class UserLimits(Observable):
         """
         connect(self, store)
         return self
-
-    def on_checkbox_change(self, attr, old, new):
-        self.notify(set_fixed(len(new) == 1))
 
     def on_input_low(self, attr, old, new):
         self.notify(set_user_low(float(new)))
@@ -477,7 +450,7 @@ class UserLimits(Observable):
 
     def render(self, props):
         """Update user-defined limits inputs"""
-        for key in ["fixed", "invisible_min", "invisible_max"]:
+        for key in ["invisible_min", "invisible_max"]:
             if props.get(key, False):
                 self.checkboxes[key].active = [0]
             else:
