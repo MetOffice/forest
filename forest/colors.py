@@ -101,6 +101,7 @@ from forest.rx import Stream
 from forest.db.util import autolabel
 
 
+SET_INVISIBLE = "SET_INVISIBLE"
 SET_PALETTE = "SET_PALETTE"
 SET_LIMITS = "SET_LIMITS"
 SET_LIMITS_ORIGIN = "SET_LIMITS_ORIGIN"
@@ -142,11 +143,6 @@ def set_source_limits(low, high):
             "payload": {"low": low, "high": high},
             "meta": {"origin": "column_data_source"}}
 
-def is_source_origin(action):
-    """Detect origin of set_limits action"""
-    origin = action.get("meta", {}).get("origin", "")
-    return origin == "column_data_source"
-
 
 def set_user_high(high):
     """Action to set user defined colorbar higher limit"""
@@ -169,11 +165,11 @@ def set_limits_origin(text):
 
 def set_invisible_min(flag):
     """Action to mask out data below colour bar limits"""
-    return {"kind": SET_LIMITS, "payload": {"invisible_min": flag}}
+    return {"kind": SET_INVISIBLE, "payload": {"invisible_min": flag}}
 
 def set_invisible_max(flag):
     """Action to mask out data below colour bar limits"""
-    return {"kind": SET_LIMITS, "payload": {"invisible_max": flag}}
+    return {"kind": SET_INVISIBLE, "payload": {"invisible_max": flag}}
 
 
 def reducer(state, action):
@@ -187,7 +183,7 @@ def reducer(state, action):
     """
     state = copy.deepcopy(state)
     kind = action["kind"]
-    if kind in [SET_PALETTE, SET_LIMITS]:
+    if kind in [SET_PALETTE, SET_INVISIBLE]:
         state["colorbar"] = state.get("colorbar", {})
         state["colorbar"].update(action["payload"])
     return state
