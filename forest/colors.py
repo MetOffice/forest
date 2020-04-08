@@ -573,10 +573,15 @@ class ColorPalette(Observable):
         if "numbers" in props:
             values = [str(n) for n in props["numbers"]]
             self.dropdowns["numbers"].menu = list(zip(values, values))
-        if "low" in props:
-            self.color_mapper.low = props["low"]
-        if "high" in props:
-            self.color_mapper.high = props["high"]
+
+        # Set color_mapper low/high from either user/data limits
+        origin = "column_data_source"
+        attrs = props.get("limits", {}).get(origin, {})
+        if "low" in attrs:
+            self.color_mapper.low = attrs["low"]
+        if "high" in attrs:
+            self.color_mapper.high = attrs["high"]
+
         invisible_min = props.get("invisible_min", False)
         if invisible_min:
             color = bokeh.colors.RGB(0, 0, 0, a=0)
