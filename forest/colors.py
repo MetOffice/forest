@@ -194,6 +194,27 @@ def reducer(state, action):
     return state
 
 
+def limits_reducer(state, action):
+    state = copy.deepcopy(state)
+
+    # Do nothing if not column_data_source/user meta
+    if meta_origin(action) not in {"user", "column_data_source"}:
+        return state
+
+    # Build/traverse tree
+    node = state
+    keys = ("colorbar", "limits", meta_origin(action))
+    for key in keys:
+        node[key] = node.get(key, {})
+        node = node[key]
+    node.update(action["payload"])
+    return state
+
+
+def meta_origin(action):
+    return action.get("meta", {}).get("origin", "")
+
+
 def defaults():
     """Default color palette settings
 

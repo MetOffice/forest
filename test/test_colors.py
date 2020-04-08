@@ -27,6 +27,31 @@ def test_reducer(state, action, expect):
     assert expect == result
 
 
+def test_limits_reducer_user_low():
+    number = 42
+    action = colors.set_user_low(number)
+    state = colors.limits_reducer({}, action)
+    origin = "user"
+    assert state["colorbar"]["limits"][origin]["low"] == number
+
+
+def test_limits_reducer_user_high():
+    number = 42
+    action = colors.set_user_high(number)
+    state = colors.limits_reducer({}, action)
+    origin = "user"
+    assert state["colorbar"]["limits"][origin]["high"] == number
+
+
+def test_limits_reducer_source():
+    low, high = 42, 1729
+    action = colors.set_source_limits(low, high)
+    state = colors.limits_reducer({}, action)
+    origin = "column_data_source"
+    assert state["colorbar"]["limits"][origin]["low"] == low
+    assert state["colorbar"]["limits"][origin]["high"] == high
+
+
 def test_reducer_immutable_state():
     state = {"colorbar": {"number": 1}}
     colors.reducer(state, colors.set_palette_number(3))
