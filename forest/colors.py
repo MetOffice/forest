@@ -350,7 +350,11 @@ class UserLimits(Observable):
     def __init__(self):
         self.inputs = {
             "low": bokeh.models.TextInput(title="Min:"),
-            "high": bokeh.models.TextInput(title="Max:")
+            "high": bokeh.models.TextInput(title="Max:"),
+            "source_low": bokeh.models.TextInput(title="Data min:",
+                                                 disabled=True),
+            "source_high": bokeh.models.TextInput(title="Data max:",
+                                                  disabled=True)
         }
         self.inputs["low"].on_change("value", self.on_input_low)
         self.inputs["high"].on_change("value", self.on_input_high)
@@ -375,9 +379,18 @@ class UserLimits(Observable):
             active=[])
         self.checkboxes["invisible_max"].on_change("active", self.on_invisible_max)
 
+        widths = {
+            "row": 310
+        }
         self.layout = bokeh.layouts.column(
-            self.inputs["low"],
-            self.inputs["high"],
+            bokeh.layouts.row(
+                self.inputs["low"],
+                self.inputs["high"],
+                width=widths["row"]),
+            bokeh.layouts.row(
+                self.inputs["source_low"],
+                self.inputs["source_high"],
+                width=widths["row"]),
             self.checkboxes["fixed"],
             self.checkboxes["invisible_min"],
             self.checkboxes["invisible_max"],
@@ -423,8 +436,10 @@ class UserLimits(Observable):
 
         if "high" in props:
             self.inputs["high"].value = str(props["high"])
+            self.inputs["source_high"].value = str(props["high"])
         if "low" in props:
             self.inputs["low"].value = str(props["low"])
+            self.inputs["source_low"].value = str(props["low"])
 
 
 def state_to_props(state):
