@@ -380,6 +380,12 @@ class UserLimits(Observable):
         self.inputs["low"].on_change("value", self.on_input_low)
         self.inputs["high"].on_change("value", self.on_input_high)
 
+        # RadioGroup for user/data limits
+        self.radio_group = bokeh.models.RadioGroup(
+            labels=["Use data limits", "Use user limits"],
+            active=0,
+            inline=True)
+
         self.checkboxes = {}
 
         # Checkbox fix data limits to user supplied limits
@@ -411,6 +417,9 @@ class UserLimits(Observable):
             bokeh.layouts.row(
                 self.inputs["source_low"],
                 self.inputs["source_high"],
+                width=widths["row"]),
+            bokeh.layouts.row(
+                self.radio_group,
                 width=widths["row"]),
             self.checkboxes["fixed"],
             self.checkboxes["invisible_min"],
@@ -455,12 +464,21 @@ class UserLimits(Observable):
             else:
                 self.checkboxes[key].active = []
 
-        if "high" in props:
-            self.inputs["high"].value = str(props["high"])
-            self.inputs["source_high"].value = str(props["high"])
-        if "low" in props:
-            self.inputs["low"].value = str(props["low"])
-            self.inputs["source_low"].value = str(props["low"])
+        # User limits
+        origin = "user"
+        attrs = props.get("limits", {}).get(origin, {})
+        if "high" in attrs:
+            self.inputs["high"].value = str(attrs["high"])
+        if "low" in attrs:
+            self.inputs["low"].value = str(attrs["low"])
+
+        # ColumnDataSource limits
+        origin = "column_data_source"
+        attrs = props.get("limits", {}).get(origin, {})
+        if "high" in attrs:
+            self.inputs["source_high"].value = str(attrs["high"])
+        if "low" in attrs:
+            self.inputs["source_low"].value = str(attrs["low"])
 
 
 def state_to_props(state):
