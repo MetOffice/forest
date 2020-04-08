@@ -27,6 +27,13 @@ def test_reducer(state, action, expect):
     assert expect == result
 
 
+def test_limits_reducer_origin():
+    text = "foo"
+    action = colors.set_limits_origin(text)
+    state = colors.limits_reducer({}, action)
+    assert state["colorbar"]["limits"]["origin"] == text
+
+
 def test_limits_reducer_user_low():
     number = 42
     action = colors.set_user_low(number)

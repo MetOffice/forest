@@ -105,6 +105,7 @@ from forest.db.util import autolabel
 
 SET_PALETTE = "SET_PALETTE"
 SET_LIMITS = "SET_LIMITS"
+SET_LIMITS_ORIGIN = "SET_LIMITS_ORIGIN"
 
 
 def set_colorbar(options):
@@ -168,6 +169,11 @@ def set_user_low(low):
             "meta": {"origin": "user"}}
 
 
+def set_limits_origin(text):
+    """Action to set limits origin, e.g. user/column_data_source"""
+    return {"kind": SET_LIMITS_ORIGIN, "payload": text}
+
+
 def set_invisible_min(flag):
     """Action to mask out data below colour bar limits"""
     return {"kind": SET_LIMITS, "payload": {"invisible_min": flag}}
@@ -197,17 +203,25 @@ def reducer(state, action):
 def limits_reducer(state, action):
     state = copy.deepcopy(state)
 
-    # Do nothing if not column_data_source/user meta
-    if meta_origin(action) not in {"user", "column_data_source"}:
+    if action["kind"] == SET_LIMITS_ORIGIN:
+        # Build/traverse tree
+        node = state
+        keys = ("colorbar", "limits")
+        for key in keys:
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update({"origin": action["payload"]})
+
+    elif meta_origin(action) in {"user", "column_data_source"}:
+        # Build/traverse tree
+        node = state
+        keys = ("colorbar", "limits", meta_origin(action))
+        for key in keys:
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update(action["payload"])
         return state
 
-    # Build/traverse tree
-    node = state
-    keys = ("colorbar", "limits", meta_origin(action))
-    for key in keys:
-        node[key] = node.get(key, {})
-        node = node[key]
-    node.update(action["payload"])
     return state
 
 
@@ -385,6 +399,7 @@ class UserLimits(Observable):
             labels=["Use data limits", "Use user limits"],
             active=0,
             inline=True)
+        self.radio_group.on_change("active", self.on_origin)
 
         self.checkboxes = {}
 
@@ -455,6 +470,10 @@ class UserLimits(Observable):
     def on_invisible_max(self, attr, old, new):
         """Event-handler when invisible_max toggle is changed"""
         self.notify(set_invisible_max(len(new) == 1))
+
+    def on_origin(self, attr, old, new):
+        origin = {1: "user"}.get(new, "column_data_source")
+        self.notify(set_limits_origin(origin))
 
     def render(self, props):
         """Update user-defined limits inputs"""
@@ -575,7 +594,7 @@ class ColorPalette(Observable):
             self.dropdowns["numbers"].menu = list(zip(values, values))
 
         # Set color_mapper low/high from either user/data limits
-        origin = "column_data_source"
+        origin = props.get("limits", {}).get("origin", "column_data_source")
         attrs = props.get("limits", {}).get(origin, {})
         if "low" in attrs:
             self.color_mapper.low = attrs["low"]
