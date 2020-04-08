@@ -33,7 +33,8 @@ class Dataset:
                  label=None,
                  pattern=None,
                  locator=None,
-                 database_path=None):
+                 database_path=None,
+                 **kwargs):
         self.label = label
         self.pattern = pattern
         self.locator = Locator(self.pattern)
