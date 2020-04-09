@@ -21,6 +21,7 @@ from forest.db.util import autolabel
 
 ADD_LAYER = "LAYERS_ADD_LAYER"
 EDIT_LAYER = "LAYERS_EDIT_LAYER"
+ON_EDIT = "LAYERS_ON_EDIT"
 ON_REMOVE = "LAYERS_ON_REMOVE"
 ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
 ON_BUTTON_GROUP = "LAYERS_ON_BUTTON_GROUP"
@@ -65,6 +66,10 @@ def on_dropdown(row_index: int, label: str) -> Action:
         "kind": ON_DROPDOWN,
         "payload": {"row_index": row_index, "label": label}
     }
+
+
+def on_edit(row_index: int) -> Action:
+    return {"kind": ON_EDIT, "payload": {"row_index": row_index}}
 
 
 def set_label(index: int, label: str) -> Action:
@@ -339,6 +344,7 @@ class LayersUI(Observable):
             el.style.visibility = "visible";
         """)
         button.js_on_click(custom_js)
+        button.on_click(self.on_edit(row_index))
         self.buttons["edit"].append(button)
 
         # Button group
@@ -370,6 +376,11 @@ class LayersUI(Observable):
         def _callback(attr, old, new):
             if old != new:
                 self.notify(on_dropdown(row_index, new))
+        return _callback
+
+    def on_edit(self, row_index: int):
+        def _callback():
+            self.notify(on_edit(row_index))
         return _callback
 
     def on_button_group(self, row_index: int):
