@@ -363,8 +363,10 @@ class UserLimits(Observable):
     """User controlled color mapper limits"""
     def __init__(self):
         self.inputs = {
-            "low": bokeh.models.TextInput(title="User min:"),
-            "high": bokeh.models.TextInput(title="User max:"),
+            "low": bokeh.models.TextInput(title="User min:",
+                                          placeholder="Enter a number"),
+            "high": bokeh.models.TextInput(title="User max:",
+                                           placeholder="Enter a number"),
             "source_low": bokeh.models.TextInput(title="Data min:",
                                                  disabled=True),
             "source_high": bokeh.models.TextInput(title="Data max:",
@@ -427,10 +429,12 @@ class UserLimits(Observable):
         return self
 
     def on_input_low(self, attr, old, new):
-        self.notify(set_user_low(float(new)))
+        """Event-handler to set user low"""
+        self.notify(set_user_low(new))
 
     def on_input_high(self, attr, old, new):
-        self.notify(set_user_high(float(new)))
+        """Event-handler to set user high"""
+        self.notify(set_user_high(new))
 
     def on_invisible_min(self, attr, old, new):
         """Event-handler when invisible_min toggle is changed"""
@@ -566,9 +570,15 @@ class ColorPalette(Observable):
         origin = props.get("limits", {}).get("origin", "column_data_source")
         attrs = props.get("limits", {}).get(origin, {})
         if "low" in attrs:
-            self.color_mapper.low = attrs["low"]
+            try:
+                self.color_mapper.low = float(attrs["low"])
+            except ValueError:
+                pass
         if "high" in attrs:
-            self.color_mapper.high = attrs["high"]
+            try:
+                self.color_mapper.high = float(attrs["high"])
+            except ValueError:
+                pass
 
         invisible_min = props.get("invisible_min", False)
         if invisible_min:
