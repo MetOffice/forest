@@ -51,7 +51,7 @@ footer {
     z-index: 6;
     top: 0;
     right: 0;
-    bacground-color: #333;
+    background-color: #333;
     overflow-x: hidden;
     transition: 0.2s;
     background-color: #F1F1F1;
@@ -111,7 +111,7 @@ footer {
 }
 .modal-outer {
     visibility: hidden;
-    z-index: 8;
+    z-index: 80;
     position: fixed;
     top: 0;
     bottom: 0;
@@ -120,7 +120,7 @@ footer {
     background-color: rgba(0, 0, 0, 0.4);
 }
 .modal-inner {
-    z-index: 9;
+    z-index: 90;
     width: 30%;
     position: fixed;
     top: 50%;
