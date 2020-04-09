@@ -11,20 +11,50 @@ def listener():
 
 
 @pytest.mark.parametrize("state,action,expect", [
-    ({}, colors.set_fixed(True), {"colorbar": {"fixed": True}}),
-    ({}, colors.set_fixed(False), {"colorbar": {"fixed": False}}),
     ({}, colors.set_palette_name("Accent"), {"colorbar": {"name": "Accent"}}),
     ({}, colors.set_palette_number(3), {"colorbar": {"number": 3}}),
     ({}, colors.set_palette_numbers([1, 2 ,3]), {"colorbar": {"numbers": [1, 2, 3]}}),
-    ({}, colors.set_user_high(100), {"colorbar": {"high": 100}}),
-    ({}, colors.set_user_low(0), {"colorbar": {"low": 0}}),
-    ({}, colors.set_source_limits(0, 100), {"colorbar": {"low": 0, "high": 100}}),
+    ({}, colors.set_user_high(100), {}),
+    ({}, colors.set_user_low(0), {}),
+    ({}, colors.set_source_limits(0, 100), {}),
     ({}, colors.set_colorbar({"key": "value"}), {"colorbar": {"key": "value"}}),
     ({}, colors.set_palette_names(["example"]), {"colorbar": {"names": ["example"]}}),
 ])
 def test_reducer(state, action, expect):
     result = colors.reducer(state, action)
     assert expect == result
+
+
+def test_limits_reducer_origin():
+    text = "foo"
+    action = colors.set_limits_origin(text)
+    state = colors.limits_reducer({}, action)
+    assert state["colorbar"]["limits"]["origin"] == text
+
+
+def test_limits_reducer_user_low():
+    number = 42
+    action = colors.set_user_low(number)
+    state = colors.limits_reducer({}, action)
+    origin = "user"
+    assert state["colorbar"]["limits"][origin]["low"] == number
+
+
+def test_limits_reducer_user_high():
+    number = 42
+    action = colors.set_user_high(number)
+    state = colors.limits_reducer({}, action)
+    origin = "user"
+    assert state["colorbar"]["limits"][origin]["high"] == number
+
+
+def test_limits_reducer_source():
+    low, high = 42, 1729
+    action = colors.set_source_limits(low, high)
+    state = colors.limits_reducer({}, action)
+    origin = "column_data_source"
+    assert state["colorbar"]["limits"][origin]["low"] == low
+    assert state["colorbar"]["limits"][origin]["high"] == high
 
 
 def test_reducer_immutable_state():
@@ -41,7 +71,6 @@ def test_defaults():
         "numbers": colors.palette_numbers("Viridis"),
         "low": 0,
         "high": 1,
-        "fixed": False,
         "reverse": False,
         "invisible_min": False,
         "invisible_max": False
@@ -101,22 +130,6 @@ def test_middleware_given_inconsistent_number():
                 colors.palette_numbers("Viridis")),
             colors.set_palette_number(256),
             colors.set_palette_name("Viridis")]
-
-
-def test_middleware_given_fixed_swallows_source_limit_actions():
-    store = redux.Store(colors.reducer, middlewares=[
-        colors.palettes])
-    store.dispatch(colors.set_fixed(True))
-    action = colors.set_source_limits(0, 100)
-    assert list(colors.palettes(store, action)) == []
-    assert store.state == {"colorbar": {"fixed": True}}
-
-
-@pytest.mark.skip()
-def test_middleware_given_fixed_allows_source_limit_actions():
-    store = redux.Store(colors.reducer)
-    action = colors.set_source_limits(0, 100)
-    assert list(colors.palettes(store, action)) == [action]
 
 
 @pytest.mark.parametrize("name,expect", [
@@ -197,9 +210,6 @@ def test_color_palette_render_checkbox(props, active):
 
 
 @pytest.mark.parametrize("key,props,active", [
-    ("fixed", {}, []),
-    ("fixed", {"fixed": False}, []),
-    ("fixed", {"fixed": True}, [0]),
     ("invisible_min", {}, []),
     ("invisible_min", {"invisible_min": False}, []),
     ("invisible_min", {"invisible_min": True}, [0]),
@@ -215,20 +225,9 @@ def test_user_limits_render_checkboxes(key, props, active):
 
 def test_user_limits_render():
     user_limits = colors.UserLimits()
-    user_limits.render({"low": -1, "high": 1})
+    user_limits.render({"limits": {"user": {"low": -1, "high": 1}}})
     assert user_limits.inputs["low"].value == "-1"
     assert user_limits.inputs["high"].value == "1"
-
-
-@pytest.mark.parametrize("new,action", [
-    ([0], colors.set_fixed(True)),
-    ([], colors.set_fixed(False)),
-])
-def test_user_limits_on_fixed(listener, new, action):
-    user_limits = colors.UserLimits()
-    user_limits.add_subscriber(listener)
-    user_limits.on_checkbox_change(None, None, new)
-    listener.assert_called_once_with(action)
 
 
 @pytest.mark.parametrize("sources,low,high", [

@@ -225,6 +225,7 @@ def main(argv=None):
             screen.reducer,
             tools.reducer,
             colors.reducer,
+            colors.limits_reducer,
             presets.reducer,
             tiles.reducer),
         initial_state=initial_state,

@@ -70,8 +70,6 @@ and either update state or generate new actions
 
 .. autofunction:: set_colorbar
 
-.. autofunction:: set_fixed
-
 .. autofunction:: set_reverse
 
 .. autofunction:: set_palette_name
@@ -103,18 +101,15 @@ from forest.rx import Stream
 from forest.db.util import autolabel
 
 
+SET_INVISIBLE = "SET_INVISIBLE"
 SET_PALETTE = "SET_PALETTE"
 SET_LIMITS = "SET_LIMITS"
+SET_LIMITS_ORIGIN = "SET_LIMITS_ORIGIN"
 
 
 def set_colorbar(options):
     """Action to set multiple settings at once"""
     return {"kind": SET_PALETTE, "payload": options}
-
-
-def set_fixed(flag):
-    """Action to set fix user-defined limits"""
-    return {"kind": SET_PALETTE, "payload": {"fixed": flag}}
 
 
 def set_reverse(flag):
@@ -148,11 +143,6 @@ def set_source_limits(low, high):
             "payload": {"low": low, "high": high},
             "meta": {"origin": "column_data_source"}}
 
-def is_source_origin(action):
-    """Detect origin of set_limits action"""
-    origin = action.get("meta", {}).get("origin", "")
-    return origin == "column_data_source"
-
 
 def set_user_high(high):
     """Action to set user defined colorbar higher limit"""
@@ -168,13 +158,18 @@ def set_user_low(low):
             "meta": {"origin": "user"}}
 
 
+def set_limits_origin(text):
+    """Action to set limits origin, e.g. user/column_data_source"""
+    return {"kind": SET_LIMITS_ORIGIN, "payload": text}
+
+
 def set_invisible_min(flag):
     """Action to mask out data below colour bar limits"""
-    return {"kind": SET_LIMITS, "payload": {"invisible_min": flag}}
+    return {"kind": SET_INVISIBLE, "payload": {"invisible_min": flag}}
 
 def set_invisible_max(flag):
     """Action to mask out data below colour bar limits"""
-    return {"kind": SET_LIMITS, "payload": {"invisible_max": flag}}
+    return {"kind": SET_INVISIBLE, "payload": {"invisible_max": flag}}
 
 
 def reducer(state, action):
@@ -188,10 +183,39 @@ def reducer(state, action):
     """
     state = copy.deepcopy(state)
     kind = action["kind"]
-    if kind in [SET_PALETTE, SET_LIMITS]:
+    if kind in [SET_PALETTE, SET_INVISIBLE]:
         state["colorbar"] = state.get("colorbar", {})
         state["colorbar"].update(action["payload"])
     return state
+
+
+def limits_reducer(state, action):
+    state = copy.deepcopy(state)
+
+    if action["kind"] == SET_LIMITS_ORIGIN:
+        # Build/traverse tree
+        node = state
+        keys = ("colorbar", "limits")
+        for key in keys:
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update({"origin": action["payload"]})
+
+    elif meta_origin(action) in {"user", "column_data_source"}:
+        # Build/traverse tree
+        node = state
+        keys = ("colorbar", "limits", meta_origin(action))
+        for key in keys:
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update(action["payload"])
+        return state
+
+    return state
+
+
+def meta_origin(action):
+    return action.get("meta", {}).get("origin", "")
 
 
 def defaults():
@@ -206,7 +230,6 @@ def defaults():
             "numbers": palette_numbers("Viridis"),
             "low": 0,
             "high": 1,
-            "fixed": False,
             "reverse": False,
             "invisible_min": False,
             "invisible_max": False,
@@ -224,7 +247,6 @@ def defaults():
         "numbers": palette_numbers("Viridis"),
         "low": 0,
         "high": 1,
-        "fixed": False,
         "reverse": False,
         "invisible_min": False,
         "invisible_max": False,
@@ -258,9 +280,6 @@ def palettes(store, action):
     .. note:: middleware is an action generator
     """
     kind = action["kind"]
-    if (kind == SET_LIMITS) and is_fixed(store.state) and is_source_origin(action):
-        # Filter SET_LIMIT actions from ColumnDataSource
-        return
     if kind == SET_PALETTE:
         payload = action["payload"]
         if "name" in payload:
@@ -296,11 +315,6 @@ def middleware():
             previous = action
             yield action
     return call
-
-
-def is_fixed(state):
-    """Helper to discover if fixed limits have been selected"""
-    return state.get("colorbar", {}).get("fixed", False)
 
 
 def palette_numbers(name):
@@ -349,19 +363,26 @@ class UserLimits(Observable):
     """User controlled color mapper limits"""
     def __init__(self):
         self.inputs = {
-            "low": bokeh.models.TextInput(title="Min:"),
-            "high": bokeh.models.TextInput(title="Max:")
+            "low": bokeh.models.TextInput(title="User min:",
+                                          placeholder="Enter a number"),
+            "high": bokeh.models.TextInput(title="User max:",
+                                           placeholder="Enter a number"),
+            "source_low": bokeh.models.TextInput(title="Data min:",
+                                                 disabled=True),
+            "source_high": bokeh.models.TextInput(title="Data max:",
+                                                  disabled=True)
         }
         self.inputs["low"].on_change("value", self.on_input_low)
         self.inputs["high"].on_change("value", self.on_input_high)
 
-        self.checkboxes = {}
+        # RadioGroup for user/data limits
+        self.radio_group = bokeh.models.RadioGroup(
+            labels=["Use data limits", "Use user limits"],
+            active=0,
+            inline=True)
+        self.radio_group.on_change("active", self.on_origin)
 
-        # Checkbox fix data limits to user supplied limits
-        self.checkboxes["fixed"] = bokeh.models.CheckboxGroup(
-                labels=["Fix min/max settings for all frames"],
-                active=[])
-        self.checkboxes["fixed"].on_change("active", self.on_checkbox_change)
+        self.checkboxes = {}
 
         # Checkbox transparency lower threshold
         self.checkboxes["invisible_min"] = bokeh.models.CheckboxGroup(
@@ -375,10 +396,21 @@ class UserLimits(Observable):
             active=[])
         self.checkboxes["invisible_max"].on_change("active", self.on_invisible_max)
 
+        widths = {
+            "row": 310
+        }
         self.layout = bokeh.layouts.column(
-            self.inputs["low"],
-            self.inputs["high"],
-            self.checkboxes["fixed"],
+            bokeh.layouts.row(
+                self.inputs["low"],
+                self.inputs["high"],
+                width=widths["row"]),
+            bokeh.layouts.row(
+                self.inputs["source_low"],
+                self.inputs["source_high"],
+                width=widths["row"]),
+            bokeh.layouts.row(
+                self.radio_group,
+                width=widths["row"]),
             self.checkboxes["invisible_min"],
             self.checkboxes["invisible_max"],
         )
@@ -396,14 +428,13 @@ class UserLimits(Observable):
         connect(self, store)
         return self
 
-    def on_checkbox_change(self, attr, old, new):
-        self.notify(set_fixed(len(new) == 1))
-
     def on_input_low(self, attr, old, new):
-        self.notify(set_user_low(float(new)))
+        """Event-handler to set user low"""
+        self.notify(set_user_low(new))
 
     def on_input_high(self, attr, old, new):
-        self.notify(set_user_high(float(new)))
+        """Event-handler to set user high"""
+        self.notify(set_user_high(new))
 
     def on_invisible_min(self, attr, old, new):
         """Event-handler when invisible_min toggle is changed"""
@@ -413,18 +444,33 @@ class UserLimits(Observable):
         """Event-handler when invisible_max toggle is changed"""
         self.notify(set_invisible_max(len(new) == 1))
 
+    def on_origin(self, attr, old, new):
+        origin = {1: "user"}.get(new, "column_data_source")
+        self.notify(set_limits_origin(origin))
+
     def render(self, props):
         """Update user-defined limits inputs"""
-        for key in ["fixed", "invisible_min", "invisible_max"]:
+        for key in ["invisible_min", "invisible_max"]:
             if props.get(key, False):
                 self.checkboxes[key].active = [0]
             else:
                 self.checkboxes[key].active = []
 
-        if "high" in props:
-            self.inputs["high"].value = str(props["high"])
-        if "low" in props:
-            self.inputs["low"].value = str(props["low"])
+        # User limits
+        origin = "user"
+        attrs = props.get("limits", {}).get(origin, {})
+        if "high" in attrs:
+            self.inputs["high"].value = str(attrs["high"])
+        if "low" in attrs:
+            self.inputs["low"].value = str(attrs["low"])
+
+        # ColumnDataSource limits
+        origin = "column_data_source"
+        attrs = props.get("limits", {}).get(origin, {})
+        if "high" in attrs:
+            self.inputs["source_high"].value = str(attrs["high"])
+        if "low" in attrs:
+            self.inputs["source_low"].value = str(attrs["low"])
 
 
 def state_to_props(state):
@@ -519,10 +565,21 @@ class ColorPalette(Observable):
         if "numbers" in props:
             values = [str(n) for n in props["numbers"]]
             self.dropdowns["numbers"].menu = list(zip(values, values))
-        if "low" in props:
-            self.color_mapper.low = props["low"]
-        if "high" in props:
-            self.color_mapper.high = props["high"]
+
+        # Set color_mapper low/high from either user/data limits
+        origin = props.get("limits", {}).get("origin", "column_data_source")
+        attrs = props.get("limits", {}).get(origin, {})
+        if "low" in attrs:
+            try:
+                self.color_mapper.low = float(attrs["low"])
+            except ValueError:
+                pass
+        if "high" in attrs:
+            try:
+                self.color_mapper.high = float(attrs["high"])
+            except ValueError:
+                pass
+
         invisible_min = props.get("invisible_min", False)
         if invisible_min:
             color = bokeh.colors.RGB(0, 0, 0, a=0)
