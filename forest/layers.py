@@ -20,9 +20,10 @@ from forest.db.util import autolabel
 
 
 ADD_LAYER = "LAYERS_ADD_LAYER"
-EDIT_LAYER = "LAYERS_EDIT_LAYER"
+SAVE_LAYER = "LAYERS_SAVE_LAYER"
 ON_ADD = "LAYERS_ON_ADD"
 ON_EDIT = "LAYERS_ON_EDIT"
+ON_SAVE = "LAYERS_ON_SAVE"
 ON_REMOVE = "LAYERS_ON_REMOVE"
 ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
 ON_BUTTON_GROUP = "LAYERS_ON_BUTTON_GROUP"
@@ -39,9 +40,9 @@ def add_layer(name) -> Action:
     return {"kind": ADD_LAYER, "payload": name}
 
 
-def edit_layer(index, settings) -> Action:
-    """Action to edit layer settings"""
-    return {"kind": EDIT_LAYER, "payload": {"index": index, "settings": settings}}
+def save_layer(index, settings) -> Action:
+    """Action to save layer settings"""
+    return {"kind": SAVE_LAYER, "payload": {"index": index, "settings": settings}}
 
 
 def on_remove() -> Action:
@@ -77,6 +78,10 @@ def on_edit(row_index: int) -> Action:
     return {"kind": ON_EDIT, "payload": row_index}
 
 
+def on_save(settings: dict) -> Action:
+    return {"kind": ON_SAVE, "payload": settings}
+
+
 def set_label(index: int, label: str) -> Action:
     """Set i-th layer label"""
     return {"kind": SET_LABEL, "payload": {"index": index, "label": label}}
@@ -91,8 +96,42 @@ def middleware(store: Store, action: Action) -> Iterable[Action]:
     elif kind == ON_DROPDOWN:
         payload = action["payload"]
         yield set_label(payload["row_index"], payload["label"])
+    elif kind == ON_SAVE:
+        if get_mode(store.state) == "edit":
+            index = edit_index(store.state)
+        else:
+            index = next_index(store.state)
+        yield save_layer(index, action["payload"])
     else:
         yield action
+
+
+def get_mode(state):
+    """Parse state into either add/edit"""
+    node = state
+    for key in ("layers", "mode"):
+        node = node.get(key, {})
+    return node.get("state", "add")
+
+
+def edit_index(state):
+    """Parse state into index"""
+    node = state
+    for key in ("layers", "mode"):
+        node = node.get(key, {})
+    return node.get("index", 0)
+
+
+def next_index(state):
+    """Parse state into index"""
+    node = state
+    for key in ("layers", "index"):
+        node = node.get(key, {})
+    indices = [key for key in node.keys()]
+    if len(indices) == 0:
+        return 0
+    else:
+        return max(indices) + 1
 
 
 def reducer(state: State, action: Action) -> State:
@@ -122,7 +161,7 @@ def reducer(state: State, action: Action) -> State:
             node[key] = node.get(key, {})
             node = node[key]
         node.update({"state": "edit", "index": index})
-    elif kind == EDIT_LAYER:
+    elif kind == SAVE_LAYER:
         # Traverse/build tree
         index = action["payload"]["index"]
         settings = action["payload"]["settings"]

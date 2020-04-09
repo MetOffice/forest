@@ -56,12 +56,12 @@ def test_reducer(state, actions, expect):
     assert result == expect
 
 
-def test_reducer_edit_layer():
+def test_reducer_save_layer():
     i = 42
     label = "Label"
     dataset = "Dataset"
     variable = "Variable"
-    action = layers.edit_layer(i, {"label": label,
+    action = layers.save_layer(i, {"label": label,
                                    "dataset": dataset,
                                    "variable": variable})
     state = layers.reducer({}, action)

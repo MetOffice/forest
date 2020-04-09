@@ -80,6 +80,10 @@ class Modal(Observable):
         return [name for name, _ in state.get("patterns", [])]
 
     def on_save(self):
-        name = self.inputs["name"].value
-        action = layers.add_layer(name)
-        self.notify(action)
+        # Send settings to forest.layers to process
+        settings = {
+            "label": self.inputs["name"].value,
+            "dataset": self.selects["dataset"].value,
+            "variable": self.selects["variable"].value
+        }
+        self.notify(layers.on_save(settings))
