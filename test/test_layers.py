@@ -56,6 +56,20 @@ def test_reducer(state, actions, expect):
     assert result == expect
 
 
+def test_layers_reducer():
+    i = 42
+    label = "Label"
+    dataset = "Dataset"
+    variable = "Variable"
+    action = layers.edit_layer(i, {"label": label,
+                                   "dataset": dataset,
+                                   "variable": variable})
+    state = layers.reducer({}, action)
+    assert state["layers"]["index"][i]["label"] == label
+    assert state["layers"]["index"][i]["dataset"] == dataset
+    assert state["layers"]["index"][i]["variable"] == variable
+
+
 def test_controls_render():
     state = {
         "layers": {

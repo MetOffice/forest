@@ -20,6 +20,7 @@ from forest.db.util import autolabel
 
 
 ADD_LAYER = "LAYERS_ADD_LAYER"
+EDIT_LAYER = "LAYERS_EDIT_LAYER"
 ON_REMOVE = "LAYERS_ON_REMOVE"
 ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
 ON_BUTTON_GROUP = "LAYERS_ON_BUTTON_GROUP"
@@ -34,6 +35,11 @@ def set_figures(n: int) -> Action:
 
 def add_layer(name) -> Action:
     return {"kind": ADD_LAYER, "payload": name}
+
+
+def edit_layer(index, settings) -> Action:
+    """Action to edit layer settings"""
+    return {"kind": EDIT_LAYER, "payload": {"index": index, "settings": settings}}
 
 
 def on_remove() -> Action:
@@ -91,6 +97,15 @@ def reducer(state: State, action: Action) -> State:
             ON_REMOVE]:
         layers = state.get("layers", {})
         state["layers"] = _layers_reducer(layers, action)
+    elif kind == EDIT_LAYER:
+        # Traverse/build tree
+        index = action["payload"]["index"]
+        settings = action["payload"]["settings"]
+        node = state
+        for key in ("layers", "index", index):
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update(settings)
     return state
 
 
