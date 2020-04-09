@@ -21,6 +21,7 @@ from forest.db.util import autolabel
 
 ADD_LAYER = "LAYERS_ADD_LAYER"
 EDIT_LAYER = "LAYERS_EDIT_LAYER"
+ON_ADD = "LAYERS_ON_ADD"
 ON_EDIT = "LAYERS_ON_EDIT"
 ON_REMOVE = "LAYERS_ON_REMOVE"
 ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
@@ -68,8 +69,12 @@ def on_dropdown(row_index: int, label: str) -> Action:
     }
 
 
+def on_add() -> Action:
+    return {"kind": ON_ADD}
+
+
 def on_edit(row_index: int) -> Action:
-    return {"kind": ON_EDIT, "payload": {"row_index": row_index}}
+    return {"kind": ON_EDIT, "payload": row_index}
 
 
 def set_label(index: int, label: str) -> Action:
@@ -102,6 +107,21 @@ def reducer(state: State, action: Action) -> State:
             ON_REMOVE]:
         layers = state.get("layers", {})
         state["layers"] = _layers_reducer(layers, action)
+    elif kind == ON_ADD:
+        # Traverse/build tree
+        node = state
+        for key in ("layers", "mode"):
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update({"state": "add"})
+    elif kind == ON_EDIT:
+        # Traverse/build tree
+        index = action["payload"]
+        node = state
+        for key in ("layers", "mode"):
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update({"state": "edit", "index": index})
     elif kind == EDIT_LAYER:
         # Traverse/build tree
         index = action["payload"]["index"]
@@ -250,6 +270,7 @@ class LayersUI(Observable):
             el.style.visibility = "visible";
         """)
         self.buttons["add"].js_on_click(custom_js)
+        self.buttons["add"].on_click(self.on_click_add)
         self.buttons["remove"].on_click(self.on_click_remove)
         self.columns = {
             "rows": bokeh.layouts.column(),
@@ -305,6 +326,10 @@ class LayersUI(Observable):
     def on_click_remove(self):
         """Event-handler when Remove button is clicked"""
         self.notify(on_remove())
+
+    def on_click_add(self):
+        """Event-handler when Add button is clicked"""
+        self.notify(on_add())
 
     @property
     def labels(self):

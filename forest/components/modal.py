@@ -7,7 +7,7 @@ from forest import layers
 class Modal(Observable):
     """Modal component"""
     def __init__(self):
-        div = bokeh.models.Div(text="Add layer",
+        self.div = bokeh.models.Div(text="Add layer",
                                css_classes=["custom"],
                                sizing_mode="stretch_width")
         self.inputs = {}
@@ -37,7 +37,7 @@ class Modal(Observable):
             """)
             button.js_on_click(custom_js)
         self.layout = bokeh.layouts.column(
-            div,
+            self.div,
             self.inputs["name"],
             self.selects["dataset"],
             self.selects["variable"],
@@ -52,6 +52,10 @@ class Modal(Observable):
         return self
 
     def render(self, state):
+        # Configure title
+        mode = state.get("layers", {}).get("mode", {}).get("state", "add")
+        self.div.text = {"edit": "Edit layer"}.get(mode, "Add layer")
+
         # Set name for layer, e.g. layer-0
         self.inputs["name"].value = "layer-0"
 
