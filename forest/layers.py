@@ -89,6 +89,7 @@ def set_label(index: int, label: str) -> Action:
 
 def middleware(store: Store, action: Action) -> Iterable[Action]:
     """Action generator given current state and action"""
+    print(store.state.get("layers", {}))
     kind = action["kind"]
     if kind == ON_BUTTON_GROUP:
         payload = action["payload"]
@@ -299,6 +300,7 @@ class LayersUI(Observable):
         }
         self.button_groups = []
         self.dropdowns = []
+        self.selects = []
         self.buttons = {
             "edit": [],
             "add": bokeh.models.Button(label="Add", width=50),
@@ -329,15 +331,21 @@ class LayersUI(Observable):
         _connect(self, store)
         return self
 
-    @staticmethod
-    def to_props(state) -> tuple:
+    def to_props(self, state) -> tuple:
         """Select data from state that satisfies self.render(*props)"""
         layers = state.get("layers", {})
         return (
-            layers.get("labels", []),
+            self.parse_labels(state),
             layers.get("active", []),
-            layers.get("figures", None)
+            layers.get("figures", None),
         )
+
+    def parse_labels(self, state):
+        node = state
+        for key in ("layers", "index"):
+            node = node.get(key, {})
+        return {key: value["label"] for key, value in node.items()
+                if "label" in value}
 
     def render(self, labels, active_list, figure_index):
         """Display latest application state in user interface
@@ -348,8 +356,9 @@ class LayersUI(Observable):
         n = len(labels)
         nrows = len(self.columns["rows"].children) # - 1
         if n > nrows:
-            for label in labels[nrows:]:
-                self.add_row(label)
+            # for label in labels[nrows:]:
+            for _ in range(n - nrows):
+                self.add_row()
         if n < nrows:
             for _ in range(nrows - n):
                 self.remove_row()
@@ -361,6 +370,15 @@ class LayersUI(Observable):
         # Set button group labels
         if figure_index is not None:
             self.labels = self.defaults["figure"][figure_index]
+
+        # Set options in select menus
+        options = [label for _, label in sorted(labels.items())]
+        for select in self.selects:
+            select.options = options
+
+        # Set value for each select
+        for i, label in labels.items():
+            self.selects[i].value = label
 
     def on_click_remove(self):
         """Event-handler when Remove button is clicked"""
@@ -401,6 +419,10 @@ class LayersUI(Observable):
         dropdown.on_change('value', self.on_dropdown(row_index))
         self.dropdowns.append(dropdown)
 
+        # Select
+        select = bokeh.models.Select(width=widths["dropdown"])
+        self.selects.append(select)
+
         # Edit button
         button = bokeh.models.Button(label="Edit", width=widths["edit"])
         custom_js = bokeh.models.CustomJS(code="""
@@ -421,7 +443,7 @@ class LayersUI(Observable):
         self.button_groups.append(button_group)
 
         # Row
-        row = bokeh.layouts.row(dropdown,
+        row = bokeh.layouts.row(select,
                                 button,
                                 button_group,
                                 width=widths["row"])
@@ -430,6 +452,7 @@ class LayersUI(Observable):
     def remove_row(self):
         """Remove a row from user interface"""
         if len(self.columns["rows"].children) > 0:
+            self.selects.pop()
             self.dropdowns.pop()
             self.button_groups.pop()
             self.buttons["edit"].pop()

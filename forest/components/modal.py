@@ -62,10 +62,14 @@ class Modal(Observable):
             node = node.get(key, {})
         mode = node.get("state", "add")
         if mode == "edit":
+            # Edit mode
             index = node["index"]
-            label = state["layers"]["index"][index]["label"]
-            self.inputs["name"].value = label
+            settings = state["layers"]["index"][index]
+            self.inputs["name"].value = settings["label"]
+            self.selects["dataset"].value = settings["dataset"]
+            self.selects["variable"].value = settings["variable"]
         else:
+            # Add mode
             self.inputs["name"].value = "layer-0"
 
         # Configure available datasets
