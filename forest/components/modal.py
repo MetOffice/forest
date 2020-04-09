@@ -57,7 +57,16 @@ class Modal(Observable):
         self.div.text = {"edit": "Edit layer"}.get(mode, "Add layer")
 
         # Set name for layer, e.g. layer-0
-        self.inputs["name"].value = "layer-0"
+        node = state
+        for key in ("layers", "mode"):
+            node = node.get(key, {})
+        mode = node.get("state", "add")
+        if mode == "edit":
+            index = node["index"]
+            label = state["layers"]["index"][index]["label"]
+            self.inputs["name"].value = label
+        else:
+            self.inputs["name"].value = "layer-0"
 
         # Configure available datasets
         self.selects["dataset"].options = self.to_props(state)
