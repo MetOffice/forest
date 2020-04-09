@@ -221,6 +221,7 @@ class LayersUI(Observable):
         self.button_groups = []
         self.dropdowns = []
         self.buttons = {
+            "edit": [],
             "add": bokeh.models.Button(label="Add", width=50),
             "remove": bokeh.models.Button(label="Remove", width=50)
         }
@@ -299,25 +300,46 @@ class LayersUI(Observable):
         """Add a bokeh.layouts.row with a dropdown and checkboxbuttongroup"""
         row_index = len(self.columns["rows"].children)
 
+        widths = {
+            "dropdown": 200,
+            "edit": 50,
+            "group": 50,
+            "row": 350
+        }
+
         # Dropdown
         if label is None:
             label = self.defaults["label"]
         dropdown = bokeh.models.Dropdown(
                 menu=self.menu,
                 label=label,
-                width=230,)
+                width=widths["dropdown"])
         dropdown.on_change('value', self.on_dropdown(row_index))
         self.dropdowns.append(dropdown)
 
+        # Edit button
+        button = bokeh.models.Button(label="Edit", width=widths["edit"])
+        custom_js = bokeh.models.CustomJS(code="""
+            let el = document.getElementById("modal");
+            el.style.visibility = "visible";
+        """)
+        button.js_on_click(custom_js)
+        self.buttons["edit"].append(button)
+
         # Button group
         button_group = bokeh.models.CheckboxButtonGroup(
+                default_size=widths["group"],
+                max_width=widths["group"],
                 labels=self.labels,
-                width=50)
+                width=widths["group"])
         button_group.on_change("active", self.on_button_group(row_index))
         self.button_groups.append(button_group)
 
         # Row
-        row = bokeh.layouts.row(dropdown, button_group)
+        row = bokeh.layouts.row(dropdown,
+                                button,
+                                button_group,
+                                width=widths["row"])
         self.columns["rows"].children.append(row)
 
     def remove_row(self):
@@ -325,6 +347,7 @@ class LayersUI(Observable):
         if len(self.columns["rows"].children) > 0:
             self.dropdowns.pop()
             self.button_groups.pop()
+            self.buttons["edit"].pop()
             self.columns["rows"].children.pop()
 
     def on_dropdown(self, row_index: int):
