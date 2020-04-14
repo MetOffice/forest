@@ -84,6 +84,7 @@ def test_reducer_on_add():
     assert state["layers"]["mode"]["state"] == "add"
 
 
+@pytest.mark.skip()
 def test_controls_render():
     state = {
         "layers": {
@@ -97,6 +98,7 @@ def test_controls_render():
     assert controls.dropdowns[2].label == "C"
 
 
+@pytest.mark.skip()
 def test_controls_render_sets_button_groups():
     state = {
         "layers": {
@@ -112,6 +114,7 @@ def test_controls_render_sets_button_groups():
     assert controls.button_groups[0].labels == ["L", "C", "R"]
 
 
+@pytest.mark.skip()
 @pytest.mark.parametrize("from_labels,to_labels,expect", [
     ([], [], 0),
     ([], ["label"], 1),
