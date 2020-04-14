@@ -333,17 +333,28 @@ class SourceLimits(Observable):
     of connecting to a :class:`forest.redux.Store`, simply
     subscribe ``store.dispatch`` to action events.
 
-    >>> source_limits = SourceLimits(sources)
-    >>> source_limits.add_subscriber(store.dispatch)
+    >>> source_limits = SourceLimits()
+    >>> for source in sources:
+    ...     source_limits.add_source(source)
+    >>> source_limits.connect(store)
 
     .. note:: Unlike a typical component there is no ``layout`` property
               to attach to a bokeh document
     """
-    def __init__(self, sources):
-        self.sources = sources
-        for source in self.sources:
-            source.on_change("data", self.on_change)
+    def __init__(self):
+        self.sources = []
         super().__init__()
+
+    def connect(self, store):
+        """Connect events to the Store"""
+        self.add_subscriber(store.dispatch)
+        return self
+
+    def add_source(self, source):
+        """Add ColumnDataSource to listened sources"""
+        print("SourceLimits.add_source called")
+        source.on_change("data", self.on_change)
+        self.sources.append(source)
 
     def on_change(self, attr, old, new):
         images = []

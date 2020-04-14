@@ -501,13 +501,15 @@ class LayersUI(Observable):
 
 class Gallery:
     """Orchestration layer for MapViews"""
-    def __init__(self, datasets, color_mapper, figures):
+    def __init__(self, datasets, color_mapper, figures, source_limits=None):
         self.datasets = datasets
         self.map_views = deque()
+        self.source_limits = source_limits
         self.factories = {}
         self.glyph_renderers = {}
         for label, dataset in datasets.items():
-            self.factories[label] = Factory(dataset, color_mapper, figures)
+            self.factories[label] = Factory(dataset, color_mapper, figures,
+                                            source_limits=source_limits)
 
     def connect(self, store):
         store.add_subscriber(self.render)
@@ -539,11 +541,12 @@ class Gallery:
 
 class Factory:
     """Reusable MapViews"""
-    def __init__(self, dataset, color_mapper, figures):
+    def __init__(self, dataset, color_mapper, figures, source_limits=None):
         self._calls = 0
         self.dataset = dataset
         self.color_mapper = color_mapper
         self.figures = figures
+        self.source_limits = source_limits
 
     def __call__(self):
         """Complex MapView construction"""
@@ -554,6 +557,12 @@ class Factory:
                 map_view = self.dataset.map_view(self.color_mapper)
             except TypeError:
                 map_view = self.dataset.map_view()
+
+            # TODO: De-couple SourceLimits from Gallery
+            if self.source_limits is not None:
+                if hasattr(map_view, "image_sources"):
+                    for source in map_view.image_sources:
+                        self.source_limits.add_source(source)
             return Visible(map_view, self.figures)
 
 

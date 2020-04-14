@@ -234,7 +234,9 @@ def main(argv=None):
     time_ui.connect(store)
 
     # Connect MapView orchestration to store
-    gallery = forest.layers.Gallery(datasets, color_mapper, figures)
+    source_limits = colors.SourceLimits().connect(store)
+    gallery = forest.layers.Gallery(datasets, color_mapper, figures,
+                                    source_limits=source_limits)
     gallery.connect(store)
 
     # Connect layers controls
@@ -277,9 +279,6 @@ def main(argv=None):
     color_palette = colors.ColorPalette(color_mapper).connect(store)
 
     # Connect limit controllers to store
-    source_limits = colors.SourceLimits(image_sources)
-    source_limits.add_subscriber(store.dispatch)
-
     user_limits = colors.UserLimits().connect(store)
 
     # Preset
@@ -303,11 +302,7 @@ def main(argv=None):
     store.dispatch(db.set_value("patterns", config.patterns))
 
     # Pre-select first map_view layer
-    # for label in map_views:
-    #     row_index = 0
-    #     store.dispatch(layers.set_label(row_index, label))
-    #     store.dispatch(layers.set_active(row_index, [0]))
-    #     break
+    # TODO: Add an appropriate action here
 
     # Select web map tiling
     if config.use_web_map_tiles:
