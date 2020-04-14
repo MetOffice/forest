@@ -492,9 +492,12 @@ class LayersUI(Observable):
 
 class Gallery:
     """Orchestration layer for MapViews"""
-    def __init__(self, datasets, color_mapper):
+    def __init__(self, datasets, color_mapper, figures):
         self.datasets = datasets
-        self.color_mapper = color_mapper
+        self.map_views = deque()
+        self.factories = {}
+        for label, dataset in datasets.items():
+            self.factories[label] = Factory(dataset, color_mapper, figures)
 
     def connect(self, store):
         store.add_subscriber(self.render)
@@ -509,18 +512,34 @@ class Gallery:
         for ilayer, settings in node.items():
             if "dataset" in settings:
                 name = settings["dataset"]
-                print(ilayer, name, self.datasets[name])
+                try:
+                    map_view = self.map_views[ilayer]
+                except IndexError:
+                    map_view = self.factories[name]()
+                    self.map_views.append(map_view)
+                map_view.render(state)
 
 
 class Factory:
-    """Generate MapViews"""
-    def __init__(self, dataset, color_mapper):
+    """Reusable MapViews"""
+    def __init__(self, dataset, color_mapper, figures):
+        self._calls = 0
         self.dataset = dataset
         self.color_mapper = color_mapper
+        self.figures = figures
 
     def __call__(self):
         """Complex MapView construction"""
-        return self.dataset.map_view(self.color_mapper)
+        self._calls += 1
+        print("Factory.__call__: {}".format(self._calls))
+        if hasattr(self.dataset, "map_view"):
+            try:
+                map_view = self.dataset.map_view(self.color_mapper)
+            except TypeError:
+                map_view = self.dataset.map_view()
+            for figure in self.figures:
+                map_view.add_figure(figure)
+            return map_view
 
 
 class Pool:

@@ -240,7 +240,7 @@ def main(argv=None):
     artist.connect(store)
 
     # Connect MapView orchestration to store
-    gallery = forest.layers.Gallery(datasets, color_mapper)
+    gallery = forest.layers.Gallery(datasets, color_mapper, figures)
     gallery.connect(store)
 
     # Connect layers controls
