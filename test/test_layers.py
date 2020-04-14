@@ -70,6 +70,22 @@ def test_reducer_save_layer():
     assert state["layers"]["index"][i]["variable"] == variable
 
 
+def test_reducer_remove_layer():
+    index = 42
+    state = {
+        "layers": {
+            "index": {
+                index: {
+                    "key": "value"
+                }
+            }
+        }
+    }
+    action = layers.on_close(index)
+    state = layers.reducer(state, action)
+    assert state["layers"]["index"] == {}
+
+
 def test_reducer_on_edit():
     i = 42
     action = layers.on_edit(i)

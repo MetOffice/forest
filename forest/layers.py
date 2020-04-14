@@ -160,6 +160,13 @@ def reducer(state: State, action: Action) -> State:
             node[key] = node.get(key, {})
             node = node[key]
         node.update({"state": "add"})
+    elif kind == ON_CLOSE:
+        # Traverse/build tree
+        index = action["payload"]
+        node = state
+        for key in ("layers", "index"):
+            node = node.get(key, {})
+        del node[index]
     elif kind == ON_EDIT:
         # Traverse/build tree
         index = action["payload"]
