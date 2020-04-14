@@ -18,6 +18,7 @@ from forest.redux import Action, State, Store
 from forest.observe import Observable
 from forest.db.util import autolabel
 import forest.drivers
+import forest.view
 
 
 ADD_LAYER = "LAYERS_ADD_LAYER"
@@ -566,7 +567,7 @@ class Factory:
             return Visible(map_view, self.figures)
 
 
-class Visible:
+class Visible(forest.view.AbstractMapView):
     """Wrapper to make MapView layers visible/invisible"""
     def __init__(self, map_view, figures):
         self._active = []
@@ -579,7 +580,12 @@ class Visible:
             renderer.level = "underlay"
 
     def render(self, state):
+        # TODO: Make Visible a class decorator not an AbstractMapView
         self.map_view.render(state)
+
+    def add_figure(self, figure):
+        # TODO: Make Visible a class decorator not an AbstractMapView
+        pass
 
     @property
     def active(self):

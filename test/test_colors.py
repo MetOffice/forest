@@ -238,7 +238,9 @@ def test_user_limits_render():
         )], -1, 1)
 ])
 def test_source_limits_on_change(listener, sources, low, high):
-    source_limits = colors.SourceLimits(sources)
+    source_limits = colors.SourceLimits()
+    for source in sources:
+        source_limits.add_source(source)
     source_limits.add_subscriber(listener)
     source_limits.on_change(None, None, None)  # attr, old, new
     listener.assert_called_once_with(colors.set_source_limits(low, high))
