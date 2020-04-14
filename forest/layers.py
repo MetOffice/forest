@@ -569,7 +569,7 @@ class Factory:
             return map_view
 
 
-class Visible(forest.view.AbstractMapView):
+class Visible:
     """Wrapper to make MapView layers visible/invisible"""
     def __init__(self, map_view, figures):
         self._active = []
@@ -580,14 +580,6 @@ class Visible(forest.view.AbstractMapView):
         for renderer in self.renderers:
             renderer.visible = False
             renderer.level = "underlay"
-
-    def render(self, state):
-        # TODO: Make Visible a class decorator not an AbstractMapView
-        self.map_view.render(state)
-
-    def add_figure(self, figure):
-        # TODO: Make Visible a class decorator not an AbstractMapView
-        pass
 
     @property
     def active(self):
