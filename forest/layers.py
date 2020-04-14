@@ -24,6 +24,7 @@ ADD_LAYER = "LAYERS_ADD_LAYER"
 SAVE_LAYER = "LAYERS_SAVE_LAYER"
 ON_ADD = "LAYERS_ON_ADD"
 ON_EDIT = "LAYERS_ON_EDIT"
+ON_CLOSE = "LAYERS_ON_CLOSE"
 ON_SAVE = "LAYERS_ON_SAVE"
 ON_REMOVE = "LAYERS_ON_REMOVE"
 ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
@@ -77,6 +78,10 @@ def on_add() -> Action:
 
 def on_edit(row_index: int) -> Action:
     return {"kind": ON_EDIT, "payload": row_index}
+
+
+def on_close(row_index: int) -> Action:
+    return {"kind": ON_CLOSE, "payload": row_index}
 
 
 def on_save(settings: dict) -> Action:
@@ -304,8 +309,8 @@ class LayersUI(Observable):
         self.selects = []
         self.buttons = {
             "edit": [],
-            "add": bokeh.models.Button(label="Add", width=50),
-            "remove": bokeh.models.Button(label=u"\u274C", width=50)
+            "close": [],
+            "add": bokeh.models.Button(label="New layer", width=110),
         }
         custom_js = bokeh.models.CustomJS(code="""
             let el = document.getElementById("modal");
@@ -313,11 +318,10 @@ class LayersUI(Observable):
         """)
         self.buttons["add"].js_on_click(custom_js)
         self.buttons["add"].on_click(self.on_click_add)
-        self.buttons["remove"].on_click(self.on_click_remove)
         self.columns = {
             "rows": bokeh.layouts.column(),
             "buttons": bokeh.layouts.column(
-                bokeh.layouts.row(self.buttons["add"], self.buttons["remove"])
+                bokeh.layouts.row(self.buttons["add"])
             )
         }
         self.layout = bokeh.layouts.column(
@@ -404,8 +408,8 @@ class LayersUI(Observable):
         row_index = len(self.columns["rows"].children)
 
         widths = {
-            "dropdown": 200,
-            "edit": 50,
+            "dropdown": 150,
+            "button": 50,
             "group": 50,
             "row": 350
         }
@@ -425,14 +429,19 @@ class LayersUI(Observable):
         self.selects.append(select)
 
         # Edit button
-        button = bokeh.models.Button(label=u"\u270E", width=widths["edit"])
+        edit_button = bokeh.models.Button(label="Edit", width=widths["button"])
         custom_js = bokeh.models.CustomJS(code="""
             let el = document.getElementById("modal");
             el.style.visibility = "visible";
         """)
-        button.js_on_click(custom_js)
-        button.on_click(self.on_edit(row_index))
-        self.buttons["edit"].append(button)
+        edit_button.js_on_click(custom_js)
+        edit_button.on_click(self.on_edit(row_index))
+        self.buttons["edit"].append(edit_button)
+
+        # Close button
+        close_button = bokeh.models.Button(label=u"\u274C", width=widths["button"])
+        close_button.on_click(self.on_close(row_index))
+        self.buttons["close"].append(close_button)
 
         # Button group
         button_group = bokeh.models.CheckboxButtonGroup(
@@ -444,8 +453,9 @@ class LayersUI(Observable):
         self.button_groups.append(button_group)
 
         # Row
-        row = bokeh.layouts.row(select,
-                                button,
+        row = bokeh.layouts.row(edit_button,
+                                close_button,
+                                select,
                                 button_group,
                                 width=widths["row"])
         self.columns["rows"].children.append(row)
@@ -469,6 +479,11 @@ class LayersUI(Observable):
     def on_edit(self, row_index: int):
         def _callback():
             self.notify(on_edit(row_index))
+        return _callback
+
+    def on_close(self, row_index: int):
+        def _callback():
+            self.notify(on_close(row_index))
         return _callback
 
     def on_button_group(self, row_index: int):
