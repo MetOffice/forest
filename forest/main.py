@@ -97,7 +97,6 @@ def main(argv=None):
         datasets_by_pattern[group.pattern] = dataset
 
     # TODO: Migrate this logic into run-time components
-    renderers = {}
     map_views = {}
     for label, dataset in datasets.items():
         # Add optional map view
@@ -107,9 +106,6 @@ def main(argv=None):
             except TypeError:
                 map_view = dataset.map_view()
             map_views[label] = map_view
-            renderers[label] = [
-                    map_view.add_figure(f)
-                    for f in figures]
 
     image_sources = []
     for name, map_view in map_views.items():
@@ -159,6 +155,7 @@ def main(argv=None):
 
     dropdown.on_change("value", on_change)
 
+    # TODO: Move this functionality into separate component
     # Image opacity user interface (client-side)
     slider = bokeh.models.Slider(
         start=0,
@@ -170,6 +167,7 @@ def main(argv=None):
     def is_image(renderer):
         return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
 
+    renderers = {}  # TODO: Replace with dynamically created GlyphRenderers
     renderers_list = []
     for _, r in renderers.items():
         renderers_list += r
@@ -235,10 +233,6 @@ def main(argv=None):
     time_ui = forest.components.TimeUI()
     time_ui.connect(store)
 
-    # Connect renderer.visible states to store
-    artist = layers.Artist(renderers)
-    artist.connect(store)
-
     # Connect MapView orchestration to store
     gallery = forest.layers.Gallery(datasets, color_mapper, figures)
     gallery.connect(store)
@@ -294,11 +288,6 @@ def main(argv=None):
     # Connect navigation controls
     controls = db.ControlView()
     controls.connect(store)
-
-    # # Connect views to state changes
-    # connector = layers.ViewerConnector().connect(store)
-    # for label, map_view in map_views.items():
-    #     connector.add_label_subscriber(label, map_view.render)
 
     # Add support for a modal dialogue
     modal = forest.components.Modal()

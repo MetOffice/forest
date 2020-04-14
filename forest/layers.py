@@ -603,6 +603,7 @@ class Pool:
         self.reusables.appendleft(reusable)
 
 
+# TODO: Delete this class
 class ViewerConnector:
     """Connect Views to Store"""
     def __init__(self):
@@ -629,6 +630,7 @@ class ViewerConnector:
         return state.get("layers", {}).get("labels", [])
 
 
+# TODO: Delete this class
 class Artist:
     """Applies renderer.visible logic to renderers"""
     def __init__(self, renderers: dict):
@@ -655,6 +657,7 @@ class Artist:
         self.previous_visible_state = visible_state
 
 
+# TODO: Delete this function
 def to_visible_state(labels: List[str], active_list: List[List[int]]) -> dict:
     """Maps user interface settings to visible flags
 
@@ -675,6 +678,7 @@ def to_visible_state(labels: List[str], active_list: List[List[int]]) -> dict:
     return result
 
 
+# TODO: Delete this function
 def diff_visible_states(left: dict, right: dict) -> List[tuple]:
     """Calculate changes needed to map from left to right state
 
