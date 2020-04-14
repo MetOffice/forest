@@ -81,9 +81,9 @@ def main(argv=None):
     # Colorbar user interface
     colorbar_ui = forest.components.ColorbarUI(color_mapper)
 
+    # Convert config to datasets
     datasets = {}
-    renderers = {}
-    map_views = {}
+    datasets_by_pattern = {}
     for group in config.file_groups:
         settings = {
             "label": group.label,
@@ -93,16 +93,21 @@ def main(argv=None):
             "directory": group.directory
         }
         dataset = drivers.get_dataset(group.file_type, settings)
-        datasets[group.pattern] = dataset
+        datasets[group.label] = dataset
+        datasets_by_pattern[group.pattern] = dataset
 
+    # TODO: Migrate this logic into run-time components
+    renderers = {}
+    map_views = {}
+    for label, dataset in datasets.items():
         # Add optional map view
         if hasattr(dataset, "map_view"):
             try:
                 map_view = dataset.map_view(color_mapper)
             except TypeError:
                 map_view = dataset.map_view()
-            map_views[group.label] = map_view
-            renderers[group.label] = [
+            map_views[label] = map_view
+            renderers[label] = [
                     map_view.add_figure(f)
                     for f in figures]
 
@@ -194,7 +199,7 @@ def main(argv=None):
 
     # Add optional sub-navigators
     sub_navigators = {
-        key: dataset.navigator() for key, dataset in datasets.items()
+        key: dataset.navigator() for key, dataset in datasets_by_pattern.items()
         if hasattr(dataset, "navigator")
     }
     navigator = navigate.Navigator(sub_navigators)
@@ -238,6 +243,10 @@ def main(argv=None):
     # Connect renderer.visible states to store
     artist = layers.Artist(renderers)
     artist.connect(store)
+
+    # Connect MapView orchestration to store
+    gallery = forest.layers.Gallery(datasets, color_mapper)
+    gallery.connect(store)
 
     # Connect layers controls
     layers_ui.add_subscriber(store.dispatch)
@@ -291,10 +300,10 @@ def main(argv=None):
     controls = db.ControlView()
     controls.connect(store)
 
-    # Connect views to state changes
-    connector = layers.ViewerConnector().connect(store)
-    for label, map_view in map_views.items():
-        connector.add_label_subscriber(label, map_view.render)
+    # # Connect views to state changes
+    # connector = layers.ViewerConnector().connect(store)
+    # for label, map_view in map_views.items():
+    #     connector.add_label_subscriber(label, map_view.render)
 
     # Add support for a modal dialogue
     modal = forest.components.Modal()

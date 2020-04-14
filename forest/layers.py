@@ -305,7 +305,7 @@ class LayersUI(Observable):
         self.buttons = {
             "edit": [],
             "add": bokeh.models.Button(label="Add", width=50),
-            "remove": bokeh.models.Button(label="Remove", width=50)
+            "remove": bokeh.models.Button(label=u"\u274C", width=50)
         }
         custom_js = bokeh.models.CustomJS(code="""
             let el = document.getElementById("modal");
@@ -425,7 +425,7 @@ class LayersUI(Observable):
         self.selects.append(select)
 
         # Edit button
-        button = bokeh.models.Button(label="Edit", width=widths["edit"])
+        button = bokeh.models.Button(label=u"\u270E", width=widths["edit"])
         custom_js = bokeh.models.CustomJS(code="""
             let el = document.getElementById("modal");
             el.style.visibility = "visible";
@@ -479,6 +479,28 @@ class LayersUI(Observable):
             active = list(new)
             self.notify(on_button_group(row_index, active))
         return _callback
+
+
+class Gallery:
+    """Orchestration layer for MapViews"""
+    def __init__(self, datasets, color_mapper):
+        self.datasets = datasets
+        self.color_mapper = color_mapper
+
+    def connect(self, store):
+        store.add_subscriber(self.render)
+
+    def render(self, state):
+        # Parse application state
+        node = state
+        for key in ("layers", "index"):
+            node = node.get(key, {})
+
+        # Dynamically build layers from datasets
+        for ilayer, settings in node.items():
+            if "dataset" in settings:
+                name = settings["dataset"]
+                print(ilayer, name, self.datasets[name])
 
 
 class Factory:

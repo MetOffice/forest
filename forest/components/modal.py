@@ -80,7 +80,8 @@ class Modal(Observable):
             if self.selects["dataset"].value == "":
                 self.selects["dataset"].value = self.selects["dataset"].options[0]
 
-        self.selects["variable"].options = state.get("variables", [])
+        options = ["Please specify"] + state.get("variables", [])
+        self.selects["variable"].options = options
 
     def to_props(self, state):
         return [name for name, _ in state.get("patterns", [])]
