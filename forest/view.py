@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import datetime as dt
 import numpy as np
 import bokeh.models
@@ -6,7 +7,17 @@ from forest.old_state import old_state, unique
 from forest.exceptions import FileNotFound, IndexNotFound
 
 
-class UMView(object):
+class AbstractMapView(ABC):
+    @abstractmethod
+    def add_figure(self, figure):
+        pass
+
+    @abstractmethod
+    def render(self, state):
+        pass
+
+
+class UMView(AbstractMapView):
     def __init__(self, loader, color_mapper, use_hover_tool=True):
         self.loader = loader
         self.color_mapper = color_mapper

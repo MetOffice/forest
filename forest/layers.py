@@ -11,12 +11,13 @@ import copy
 import bokeh.models
 import bokeh.layouts
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import Iterable, List
 from forest import rx
 from forest.redux import Action, State, Store
 from forest.observe import Observable
 from forest.db.util import autolabel
+import forest.drivers
 
 
 ADD_LAYER = "LAYERS_ADD_LAYER"
@@ -478,6 +479,37 @@ class LayersUI(Observable):
             active = list(new)
             self.notify(on_button_group(row_index, active))
         return _callback
+
+
+class Factory:
+    """Generate MapViews"""
+    def __init__(self, dataset, color_mapper):
+        self.dataset = dataset
+        self.color_mapper = color_mapper
+
+    def __call__(self):
+        """Complex MapView construction"""
+        return self.dataset.map_view(self.color_mapper)
+
+
+class Pool:
+    """Manage reusable objects
+
+    :param factory: function to create new objects
+    """
+    def __init__(self, factory):
+        self.factory = factory
+        self.reusables = deque()
+
+    def acquire(self):
+        """Select or create an object"""
+        if len(self.reusables) == 0:
+            self.reusables.appendleft(self.factory())
+        return self.reusables.pop()
+
+    def release(self, reusable):
+        """Return object to Pool"""
+        self.reusables.appendleft(reusable)
 
 
 class ViewerConnector:
