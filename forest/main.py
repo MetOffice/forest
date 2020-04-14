@@ -96,22 +96,6 @@ def main(argv=None):
         datasets[group.label] = dataset
         datasets_by_pattern[group.pattern] = dataset
 
-    # TODO: Migrate this logic into run-time components
-    map_views = {}
-    for label, dataset in datasets.items():
-        # Add optional map view
-        if hasattr(dataset, "map_view"):
-            try:
-                map_view = dataset.map_view(color_mapper)
-            except TypeError:
-                map_view = dataset.map_view()
-            map_views[label] = map_view
-
-    image_sources = []
-    for name, map_view in map_views.items():
-        for source in getattr(map_view, "image_sources", []):
-            image_sources.append(source)
-
     # Lakes
     for figure in figures:
         add_feature(figure, data.LAKES, color="lightblue")
