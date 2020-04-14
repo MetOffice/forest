@@ -528,7 +528,13 @@ class Gallery:
                     map_view = self.factories[name]()
                     self.map_views.append(map_view)
                 map_view.active = settings.get("active", [])
-                map_view.render(state)
+
+                # Layer-specific state
+                layer_state = {}
+                layer_state.update(state)
+                layer_state.update(
+                    variable=settings.get("variable"))
+                map_view.render(layer_state)
 
 
 class Factory:
