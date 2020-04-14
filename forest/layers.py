@@ -504,13 +504,14 @@ class Gallery:
     """Orchestration layer for MapViews"""
     def __init__(self, datasets, color_mapper, figures, source_limits=None):
         self.datasets = datasets
+        self.figures = figures
         self.map_views = deque()
+        self.visibles = deque()
         self.source_limits = source_limits
         self.factories = {}
         self.glyph_renderers = {}
         for label, dataset in datasets.items():
-            self.factories[label] = Factory(dataset, color_mapper, figures,
-                                            source_limits=source_limits)
+            self.factories[label] = Factory(dataset, color_mapper)
 
     def connect(self, store):
         store.add_subscriber(self.render)
@@ -527,10 +528,19 @@ class Gallery:
                 name = settings["dataset"]
                 try:
                     map_view = self.map_views[ilayer]
+                    visible = self.visibles[ilayer]
                 except IndexError:
                     map_view = self.factories[name]()
+                    visible = Visible(map_view, self.figures)
+                    if self.source_limits is not None:
+                        if hasattr(map_view, "image_sources"):
+                            for source in map_view.image_sources:
+                                self.source_limits.add_source(source)
                     self.map_views.append(map_view)
-                map_view.active = settings.get("active", [])
+                    self.visibles.append(visible)
+
+                # Update figure visibility
+                visible.active = settings.get("active", [])
 
                 # Layer-specific state
                 layer_state = {}
@@ -542,12 +552,10 @@ class Gallery:
 
 class Factory:
     """Reusable MapViews"""
-    def __init__(self, dataset, color_mapper, figures, source_limits=None):
+    def __init__(self, dataset, color_mapper):
         self._calls = 0
         self.dataset = dataset
         self.color_mapper = color_mapper
-        self.figures = figures
-        self.source_limits = source_limits
 
     def __call__(self):
         """Complex MapView construction"""
@@ -558,13 +566,7 @@ class Factory:
                 map_view = self.dataset.map_view(self.color_mapper)
             except TypeError:
                 map_view = self.dataset.map_view()
-
-            # TODO: De-couple SourceLimits from Gallery
-            if self.source_limits is not None:
-                if hasattr(map_view, "image_sources"):
-                    for source in map_view.image_sources:
-                        self.source_limits.add_source(source)
-            return Visible(map_view, self.figures)
+            return map_view
 
 
 class Visible(forest.view.AbstractMapView):

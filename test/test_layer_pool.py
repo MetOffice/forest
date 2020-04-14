@@ -11,8 +11,7 @@ def factory():
     name = "unified_model"
     settings = {"pattern": "*.nc"}
     dataset = forest.drivers.get_dataset(name, settings)
-    figures = []
-    return forest.layers.Factory(dataset, color_mapper, figures)
+    return forest.layers.Factory(dataset, color_mapper)
 
 
 @pytest.fixture
