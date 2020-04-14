@@ -183,12 +183,7 @@ def main(argv=None):
             """)
     slider.js_on_change("value", custom_js)
 
-    # Layer dropdowns from map_views
-    menu = []
-    for label in map_views:
-        menu.append((label, label))
-
-    layers_ui = layers.LayersUI(menu)
+    layers_ui = layers.LayersUI()
 
     div = bokeh.models.Div(text="", width=10)
     border_row = bokeh.layouts.row(

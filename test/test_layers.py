@@ -28,7 +28,7 @@ def test_figure_dropdown(listener):
 
 
 def test_remove(listener):
-    ui = layers.LayersUI([])
+    ui = layers.LayersUI()
     ui.add_subscriber(listener)
     ui.on_click_remove()
     listener.assert_called_once_with(layers.on_remove())
@@ -107,7 +107,7 @@ def test_controls_render():
             "labels": [None, "B", "C"]
         }
     }
-    controls = layers.LayersUI([])
+    controls = layers.LayersUI()
     controls.render(*controls.to_props(state))
     assert controls.dropdowns[0].label == "Model/observation"
     assert controls.dropdowns[1].label == "B"
@@ -123,7 +123,7 @@ def test_controls_render_sets_button_groups():
             "active": [[0, 1, 2]]
         }
     }
-    controls = layers.LayersUI([])
+    controls = layers.LayersUI()
     controls.render(*controls.to_props(state))
     assert controls.dropdowns[0].label == "Model/observation"
     assert controls.button_groups[0].active == [0, 1, 2]
@@ -146,7 +146,7 @@ def test_controls_render_number_of_rows(from_labels, to_labels, expect):
     to_state = {
         "layers": {"labels": to_labels}
     }
-    controls = layers.LayersUI([])
+    controls = layers.LayersUI()
     controls.render(*controls.to_props(from_state))
     controls.render(*controls.to_props(to_state))
     assert len(controls.columns["rows"].children) == expect
@@ -155,7 +155,7 @@ def test_controls_render_number_of_rows(from_labels, to_labels, expect):
 def test_on_button_group(listener):
     row_index = 3
     attr, old, new = None, [], [2]
-    controls = layers.LayersUI([])
+    controls = layers.LayersUI()
     controls.add_subscriber(listener)
     controls.on_button_group(row_index)(attr, old, new)
     listener.assert_called_once_with(layers.on_button_group(row_index, new))
@@ -164,7 +164,7 @@ def test_on_button_group(listener):
 def test_on_dropdown(listener):
     row_index = 3
     attr, old, new = None, None, "label"
-    controls = layers.LayersUI([])
+    controls = layers.LayersUI()
     controls.add_subscriber(listener)
     controls.on_dropdown(row_index)(attr, old, new)
     listener.assert_called_once_with(layers.on_dropdown(row_index, new))

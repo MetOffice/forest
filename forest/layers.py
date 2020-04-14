@@ -300,8 +300,7 @@ class FigureRow:
 
 class LayersUI(Observable):
     """Collection of user interface components to manage layers"""
-    def __init__(self, menu):
-        self.menu = menu  # TODO: Derive this from application state
+    def __init__(self):
         self.defaults = {
             "label": "Model/observation",
             "flags": [False, False, False],
@@ -312,7 +311,6 @@ class LayersUI(Observable):
             }
         }
         self.button_groups = []
-        self.dropdowns = []
         self.selects = []
         self.buttons = {
             "edit": [],
@@ -410,7 +408,7 @@ class LayersUI(Observable):
         for g in self.button_groups:
             g.labels = labels
 
-    def add_row(self, label=None):
+    def add_row(self):
         """Add a bokeh.layouts.row with a dropdown and checkboxbuttongroup"""
         row_index = len(self.columns["rows"].children)
 
@@ -420,16 +418,6 @@ class LayersUI(Observable):
             "group": 50,
             "row": 350
         }
-
-        # Dropdown
-        if label is None:
-            label = self.defaults["label"]
-        dropdown = bokeh.models.Dropdown(
-                menu=self.menu,
-                label=label,
-                width=widths["dropdown"])
-        dropdown.on_change('value', self.on_dropdown(row_index))
-        self.dropdowns.append(dropdown)
 
         # Select
         select = bokeh.models.Select(width=widths["dropdown"])
@@ -471,7 +459,6 @@ class LayersUI(Observable):
         """Remove a row from user interface"""
         if len(self.columns["rows"].children) > 0:
             self.selects.pop()
-            self.dropdowns.pop()
             self.button_groups.pop()
             self.buttons["edit"].pop()
             self.columns["rows"].children.pop()
