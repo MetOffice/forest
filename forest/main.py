@@ -314,11 +314,11 @@ def main(argv=None):
     store.dispatch(db.set_value("patterns", config.patterns))
 
     # Pre-select first map_view layer
-    for label in map_views:
-        row_index = 0
-        store.dispatch(layers.set_label(row_index, label))
-        store.dispatch(layers.set_active(row_index, [0]))
-        break
+    # for label in map_views:
+    #     row_index = 0
+    #     store.dispatch(layers.set_label(row_index, label))
+    #     store.dispatch(layers.set_active(row_index, [0]))
+    #     break
 
     # Select web map tiling
     if config.use_web_map_tiles:

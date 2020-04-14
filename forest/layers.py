@@ -147,7 +147,6 @@ def reducer(state: State, action: Action) -> State:
     kind = action["kind"]
     if kind in [
             ADD_LAYER,
-            SET_ACTIVE,
             SET_LABEL,
             SET_FIGURES,
             ON_REMOVE]:
@@ -179,6 +178,15 @@ def reducer(state: State, action: Action) -> State:
         # Traverse/build tree
         index = action["payload"]["index"]
         settings = action["payload"]["settings"]
+        node = state
+        for key in ("layers", "index", index):
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update(settings)
+    elif kind == SET_ACTIVE:
+        # Traverse/build tree
+        index = action["payload"]["row_index"]
+        settings = {"active": action["payload"]["active"]}
         node = state
         for key in ("layers", "index", index):
             node[key] = node.get(key, {})
@@ -387,6 +395,7 @@ class LayersUI(Observable):
             select.options = options
 
         # Set value for each select
+        print(self.selects, labels)
         for i, label in labels.items():
             self.selects[i].value = label
 
@@ -496,6 +505,7 @@ class Gallery:
         self.datasets = datasets
         self.map_views = deque()
         self.factories = {}
+        self.glyph_renderers = {}
         for label, dataset in datasets.items():
             self.factories[label] = Factory(dataset, color_mapper, figures)
 
@@ -517,6 +527,7 @@ class Gallery:
                 except IndexError:
                     map_view = self.factories[name]()
                     self.map_views.append(map_view)
+                map_view.active = settings.get("active", [])
                 map_view.render(state)
 
 
@@ -537,9 +548,33 @@ class Factory:
                 map_view = self.dataset.map_view(self.color_mapper)
             except TypeError:
                 map_view = self.dataset.map_view()
-            for figure in self.figures:
-                map_view.add_figure(figure)
-            return map_view
+            return Visible(map_view, self.figures)
+
+
+class Visible:
+    """Wrapper to make MapView layers visible/invisible"""
+    def __init__(self, map_view, figures):
+        self._active = []
+        self.map_view = map_view
+        self.figures = figures
+        self.renderers = [map_view.add_figure(figure)
+                         for figure in self.figures]
+        for renderer in self.renderers:
+            renderer.visible = False
+            renderer.level = "underlay"
+
+    def render(self, state):
+        self.map_view.render(state)
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, indices):
+        for i in range(len(self.figures)):
+            self.renderers[i].visible = i in indices
+        self._active = indices
 
 
 class Pool:

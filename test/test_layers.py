@@ -43,9 +43,10 @@ def test_remove(listener):
     ({}, layers.set_label(0, "Other"), {"labels": ["Other"]}),
     ({}, layers.set_label(1, "Label"), {"labels": [None, "Label"]}),
     ({}, layers.set_label(2, "Label"), {"labels": [None, None, "Label"]}),
-    ({}, layers.set_active(0, []), {"active": [[]]}),
-    ({}, layers.set_active(1, []), {"active": [None, []]}),
-    ({"layers": {"active": [[]]}}, layers.set_active(0, [0]), {"active": [[0]]}),
+    ({}, layers.set_active(0, []), {"index": {0: {"active": []}}}),
+    ({}, layers.set_active(1, []), {"index": {1: {"active": []}}}),
+    ({"layers": {"index": {0: {"active": []}}}}, layers.set_active(0, [0]),
+                {"index": {0: {"active": [0]}}}),
 ])
 def test_reducer(state, actions, expect):
     if isinstance(actions, dict):
@@ -98,6 +99,14 @@ def test_reducer_on_add():
     action = layers.on_add()
     state = layers.reducer({}, action)
     assert state["layers"]["mode"]["state"] == "add"
+
+
+def test_reducer_set_active():
+    index = 42
+    active = [0, 2]
+    action = layers.set_active(index, active)
+    state = layers.reducer({}, action)
+    assert state["layers"]["index"][index]["active"] == active
 
 
 @pytest.mark.skip()
