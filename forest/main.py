@@ -139,32 +139,6 @@ def main(argv=None):
 
     dropdown.on_change("value", on_change)
 
-    # TODO: Move this functionality into separate component
-    # Image opacity user interface (client-side)
-    slider = bokeh.models.Slider(
-        start=0,
-        end=1,
-        step=0.1,
-        value=1.0,
-        show_value=False)
-
-    def is_image(renderer):
-        return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
-
-    renderers = {}  # TODO: Replace with dynamically created GlyphRenderers
-    renderers_list = []
-    for _, r in renderers.items():
-        renderers_list += r
-    image_renderers = [r for r in renderers_list if is_image(r)]
-    custom_js = bokeh.models.CustomJS(
-            args=dict(renderers=image_renderers),
-            code="""
-            renderers.forEach(function (r) {
-                r.glyph.global_alpha = cb_obj.value
-            })
-            """)
-    slider.js_on_change("value", custom_js)
-
     layers_ui = layers.LayersUI()
 
     div = bokeh.models.Div(text="", width=10)
@@ -218,11 +192,13 @@ def main(argv=None):
     time_ui.connect(store)
 
     # Connect MapView orchestration to store
+    opacity_slider = forest.layers.OpacitySlider()
     source_limits = colors.SourceLimits().connect(store)
-    gallery = forest.layers.Gallery.from_datasets(datasets,
-                                                  color_mapper,
-                                                  figures,
-                                                  source_limits)
+    factory_class = forest.layers.factory(color_mapper,
+                                          figures,
+                                          source_limits,
+                                          opacity_slider)
+    gallery = forest.layers.Gallery.from_datasets(datasets, factory_class)
     gallery.connect(store)
 
     # Connect layers controls
@@ -307,7 +283,7 @@ def main(argv=None):
     ]
     layouts["settings"] = [
         border_row,
-        bokeh.layouts.row(slider),
+        opacity_slider.layout,
         preset_ui.layout,
         color_palette.layout,
         user_limits.layout,

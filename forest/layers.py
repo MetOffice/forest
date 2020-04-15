@@ -287,6 +287,36 @@ class FigureRow:
                     self.figures[2]]
 
 
+class OpacitySlider:
+    def __init__(self):
+        # Image opacity user interface (client-side)
+        self.slider = bokeh.models.Slider(
+            start=0,
+            end=1,
+            step=0.1,
+            value=1.0,
+            show_value=False)
+        self.layout = bokeh.layouts.row(self.slider)
+
+    def add_renderers(self, renderers):
+        renderers = [r for r in renderers if self.is_image(r)]
+        if len(renderers) == 0:
+            return
+        # Pass server-side renderers to client-side callback
+        custom_js = bokeh.models.CustomJS(
+                args=dict(renderers=renderers),
+                code="""
+                renderers.forEach(function (r) {
+                    r.glyph.global_alpha = cb_obj.value
+                })
+                """)
+        self.slider.js_on_change("value", custom_js)
+
+    @staticmethod
+    def is_image(renderer):
+        return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
+
+
 class LayersUI(Observable):
     """Collection of user interface components to manage layers"""
     def __init__(self):
@@ -486,15 +516,12 @@ class Gallery:
         self.lock = False
 
     @classmethod
-    def from_datasets(cls, datasets, color_mapper, figures, source_limits):
+    def from_datasets(cls, datasets, factory_class):
         """Convenient constructor"""
         pools = {}
         for label, dataset in datasets.items():
             if hasattr(dataset, "map_view"):
-                pools[label] = Pool(Factory(dataset,
-                                            color_mapper,
-                                            figures,
-                                            source_limits))
+                pools[label] = Pool(factory_class(dataset))
         return cls(pools)
 
     def connect(self, store):
@@ -568,14 +595,30 @@ class Layer:
         self.visible.active = value
 
 
+def factory(*args):
+    """Curry Factory constructor to accept a single argument"""
+    def wrapper(dataset):
+        return Factory(dataset, *args)
+    return wrapper
+
+
 class Factory:
-    """Reusable layers"""
-    def __init__(self, dataset, color_mapper, figures, source_limits):
+    """Reusable layers
+
+    Admittedly, there is a lot of coupling here that could be revised
+    in future releases
+    """
+    def __init__(self, dataset,
+                 color_mapper,
+                 figures,
+                 source_limits,
+                 opacity_slider):
         self._calls = 0
         self.dataset = dataset
         self.color_mapper = color_mapper
         self.figures = figures
         self.source_limits = source_limits
+        self.opacity_slider = opacity_slider
 
     def __call__(self):
         """Complex construction"""
@@ -586,6 +629,8 @@ class Factory:
         except TypeError:
             map_view = self.dataset.map_view()
         visible = Visible.from_map_view(map_view, self.figures)
+        if self.opacity_slider is not None:
+            self.opacity_slider.add_renderers(visible.renderers)
         if self.source_limits is not None:
             if hasattr(map_view, "image_sources"):
                 for source in map_view.image_sources:
