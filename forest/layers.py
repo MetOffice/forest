@@ -220,15 +220,6 @@ def _layers_reducer(state, action):
         labels[row_index] = label
         state["labels"] = labels
 
-    elif kind == SET_ACTIVE:
-        payload = action["payload"]
-        row_index = payload["row_index"]
-        active = payload["active"]
-        items = state.get("active", [])
-        items += (row_index + 1 - len(items)) * [None]
-        items[row_index] = active
-        state["active"] = items
-
     return state
 
 
@@ -511,7 +502,8 @@ class Gallery:
         self.factories = {}
         self.glyph_renderers = {}
         for label, dataset in datasets.items():
-            self.factories[label] = Factory(dataset, color_mapper)
+            if hasattr(dataset, "map_view"):
+                self.factories[label] = Factory(dataset, color_mapper)
 
     def connect(self, store):
         store.add_subscriber(self.render)
@@ -531,7 +523,7 @@ class Gallery:
                     visible = self.visibles[ilayer]
                 except IndexError:
                     map_view = self.factories[name]()
-                    visible = Visible(map_view, self.figures)
+                    visible = Visible.from_map_view(map_view, self.figures)
                     if self.source_limits is not None:
                         if hasattr(map_view, "image_sources"):
                             for source in map_view.image_sources:
@@ -561,25 +553,27 @@ class Factory:
         """Complex MapView construction"""
         self._calls += 1
         print("Factory.__call__: {}".format(self._calls))
-        if hasattr(self.dataset, "map_view"):
-            try:
-                map_view = self.dataset.map_view(self.color_mapper)
-            except TypeError:
-                map_view = self.dataset.map_view()
-            return map_view
+        try:
+            map_view = self.dataset.map_view(self.color_mapper)
+        except TypeError:
+            map_view = self.dataset.map_view()
+        return map_view
 
 
 class Visible:
     """Wrapper to make MapView layers visible/invisible"""
-    def __init__(self, map_view, figures):
+    def __init__(self, renderers):
         self._active = []
-        self.map_view = map_view
-        self.figures = figures
-        self.renderers = [map_view.add_figure(figure)
-                         for figure in self.figures]
+        self.renderers = renderers
         for renderer in self.renderers:
             renderer.visible = False
             renderer.level = "underlay"
+
+    @classmethod
+    def from_map_view(cls, map_view, figures):
+        """Construct from map_view and figures"""
+        renderers = [map_view.add_figure(figure) for figure in figures]
+        return cls(renderers)
 
     @property
     def active(self):
@@ -587,7 +581,7 @@ class Visible:
 
     @active.setter
     def active(self, indices):
-        for i in range(len(self.figures)):
+        for i in range(len(self.renderers)):
             self.renderers[i].visible = i in indices
         self._active = indices
 
@@ -610,127 +604,3 @@ class Pool:
     def release(self, reusable):
         """Return object to Pool"""
         self.reusables.appendleft(reusable)
-
-
-# TODO: Delete this class
-class ViewerConnector:
-    """Connect Views to Store"""
-    def __init__(self):
-        self.subscribers = defaultdict(list)
-
-    def add_label_subscriber(self, label, callback):
-        """Register views that depend on a label"""
-        self.subscribers[label].append(callback)
-
-    def connect(self, store):
-        """Subscribe to all store dispatch events"""
-        store.add_subscriber(self.render)
-        return self
-
-    def render(self, state):
-        """Notify listeners related to labels"""
-        for label in self.labels(state):
-            if label is None:
-                continue
-            for method in self.subscribers[label]:
-                method(state)
-
-    def labels(self, state):
-        return state.get("layers", {}).get("labels", [])
-
-
-# TODO: Delete this class
-class Artist:
-    """Applies renderer.visible logic to renderers"""
-    def __init__(self, renderers: dict):
-        self.renderers = renderers
-        self.previous_visible_state = None
-
-    def connect(self, store):
-        """Connect component to the store"""
-        store.add_subscriber(self.render)
-        return self
-
-    def render(self, state: dict):
-        """Update visible settings of renderers"""
-        labels = state.get("layers", {}).get("labels", [])
-        active_list = state.get("layers", {}).get("active", [])
-        visible_state = to_visible_state(labels, active_list)
-        if self.previous_visible_state is None:
-            changes = diff_visible_states({}, visible_state)
-        else:
-            changes = diff_visible_states(
-                self.previous_visible_state, visible_state)
-        for label, figure_index, flag in changes:
-            self.renderers[label][figure_index].visible = flag
-        self.previous_visible_state = visible_state
-
-
-# TODO: Delete this function
-def to_visible_state(labels: List[str], active_list: List[List[int]]) -> dict:
-    """Maps user interface settings to visible flags
-
-    >>> to_visible_state(['label'], [[1, 2]])
-    {
-        'label': [False, True, True]
-    }
-
-    """
-    result = {}
-    for label, active in zip(labels, active_list):
-        if label is None:
-            continue
-        if label not in result:
-            result[label] = [False, False, False]
-        for i in active:
-            result[label][i] = True
-    return result
-
-
-# TODO: Delete this function
-def diff_visible_states(left: dict, right: dict) -> List[tuple]:
-    """Calculate changes needed to map from left to right state
-
-    There are essentially three situations:
-       1. A label has been added, apply all flags
-       2. A label has been removed, mute True flags
-       3. The flags of an existing label have been altered
-
-    >>> left = {
-       'label': [True, False, False]
-    }
-    >>> right = {
-       'label': [True, True, False]
-    }
-    >>> diff_visible(left, right)
-    [('label', 1, True)]
-
-    A change is defined as a tuple ``(label, figure_index, flag)``, to
-    make it easy to update renderer visible attributes
-
-    .. note:: If nothing has changed an empty list is returned
-
-    :returns: list of changes
-    """
-    diff = []
-
-    # Detect additions to state
-    for key in right:
-        if key not in left:
-            for i, flag in enumerate(right[key]):
-                diff.append((key, i, flag))
-
-    # Detect removals from state
-    for key in left:
-        if key not in right:
-            for i, flag in enumerate(left[key]):
-                if flag:
-                    diff.append((key, i, False))  # Turn off True flags
-
-    # Detect alterations to existing labels
-    for key in left:
-        if key in right:
-            for i, flag in enumerate(left[key]):
-                if flag != right[key][i]:
-                    diff.append((key, i, right[key][i]))
-    return diff

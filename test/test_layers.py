@@ -1,5 +1,5 @@
 import pytest
-import unittest.mock
+from unittest.mock import Mock, sentinel
 import bokeh.plotting
 from forest import layers, redux
 
@@ -17,7 +17,7 @@ def test_middleware(action, expect):
 
 @pytest.fixture
 def listener():
-    return unittest.mock.Mock()
+    return Mock()
 
 
 def test_figure_dropdown(listener):
@@ -179,44 +179,50 @@ def test_on_dropdown(listener):
     listener.assert_called_once_with(layers.on_dropdown(row_index, new))
 
 
-@pytest.mark.parametrize("labels,active_list,expect", [
-    ([], [], {}),
-    (["label"], [[0]], {"label": [True, False, False]}),
-    (["A", "A"],[[0], [2]], {"A": [True, False, True]}),
-    (["A", None],[[0], [2]], {"A": [True, False, False]}),
-])
-def test_ui_state_to_visible_state(labels, active_list, expect):
-    result = layers.to_visible_state(labels, active_list)
-    assert expect == result
-
-
-@pytest.mark.parametrize("left,right,expect", [
-    ({}, {}, []),
-    ({}, {"label": [True, False, False]}, [
-        ("label", 0, True),
-        ("label", 1, False),
-        ("label", 2, False),
-    ]),
-    ({"label": [True, False, False]}, {}, [
-        ("label", 0, False),
-    ]),
-    ({"label": [True, False, False]}, {"label": [False, False, False]}, [
-        ("label", 0, False),
-    ]),
-    ({"label": [False, False, False]}, {"label": [False, True, False]}, [
-        ("label", 1, True),
-    ]),
-])
-def test_diff_visible_states(left, right, expect):
-    """Needed to be efficient when toggling renderer.visible and calling
-       viewer.render(tuple_state)"""
-    result = layers.diff_visible_states(left, right)
-    assert expect == result
-
-
 @pytest.mark.parametrize("n", [1, 2, 3])
 def test_figure_row(n):
     figures = [bokeh.plotting.figure() for _ in range(3)]
     figure_row = layers.FigureRow(figures)
     figure_row.render(n)
     assert len(figure_row.layout.children) == n
+
+
+def test_visible_from_map_view():
+    map_view = Mock()
+    map_view.add_figure.return_value = sentinel.renderer
+    figures = [sentinel.figure]
+    visible = layers.Visible.from_map_view(map_view, figures)
+    map_view.add_figure.assert_called_once_with(sentinel.figure)
+    assert visible.renderers == [sentinel.renderer]
+
+
+def test_visible_render():
+    renderers = Mock(), Mock(), Mock()
+    visible = layers.Visible(renderers)
+    visible.active = [0, 2]
+    assert renderers[0].visible == True
+    assert renderers[1].visible == False
+    assert renderers[2].visible == True
+
+
+def test_gallery_render():
+    color_mapper = bokeh.models.LinearColorMapper()
+    dataset = Mock()
+    dataset.map_view.add_figure.return_value = sentinel.renderer
+    datasets = {
+        "Dataset": dataset
+    }
+    figures = [sentinel.figure]
+    state = {
+        "layers": {
+            "index": {
+                42: {
+                    "dataset": "Dataset",
+                    "variable": "Variable",
+                    "active": [0]
+                }
+            }
+        }
+    }
+    gallery = layers.Gallery(datasets, color_mapper, figures)
+    gallery.render(state)
