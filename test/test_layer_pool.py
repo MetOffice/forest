@@ -15,10 +15,12 @@ def factory():
     dataset = forest.drivers.get_dataset(name, settings)
     figures = [bokeh.plotting.figure()]
     source_limits = Mock()
+    opacity_slider = Mock()
     return forest.layers.Factory(dataset,
                                  color_mapper,
                                  figures,
-                                 source_limits)
+                                 source_limits,
+                                 opacity_slider)
 
 
 @pytest.fixture
