@@ -219,8 +219,10 @@ def main(argv=None):
 
     # Connect MapView orchestration to store
     source_limits = colors.SourceLimits().connect(store)
-    gallery = forest.layers.Gallery(datasets, color_mapper, figures,
-                                    source_limits=source_limits)
+    gallery = forest.layers.Gallery.from_datasets(datasets,
+                                                  color_mapper,
+                                                  figures,
+                                                  source_limits)
     gallery.connect(store)
 
     # Connect layers controls

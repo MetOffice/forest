@@ -472,17 +472,20 @@ class LayersUI(Observable):
 
 class Gallery:
     """Orchestration layer for MapViews"""
-    def __init__(self, datasets, color_mapper, figures, source_limits=None):
-        self.datasets = datasets
-        self.figures = figures
-        self.map_views = deque()
-        self.visibles = deque()
-        self.source_limits = source_limits
-        self.factories = {}
-        self.glyph_renderers = {}
+    def __init__(self, pools):
+        self.pools = pools
+
+    @classmethod
+    def from_datasets(cls, datasets, color_mapper, figures, source_limits):
+        """Convenient constructor"""
+        pools = {}
         for label, dataset in datasets.items():
             if hasattr(dataset, "map_view"):
-                self.factories[label] = Factory(dataset, color_mapper)
+                pools[label] = Pool(Factory(dataset,
+                                            color_mapper,
+                                            figures,
+                                            source_limits))
+        return cls(pools)
 
     def connect(self, store):
         store.add_subscriber(self.render)
@@ -493,50 +496,79 @@ class Gallery:
         for key in ("layers", "index"):
             node = node.get(key, {})
 
-        # Dynamically build layers from datasets
-        for ilayer, settings in node.items():
+        # Dynamically build/use layers from object pools
+        used_layers = defaultdict(list)
+        for _, settings in node.items():
             if "dataset" in settings:
-                name = settings["dataset"]
-                try:
-                    map_view = self.map_views[ilayer]
-                    visible = self.visibles[ilayer]
-                except IndexError:
-                    map_view = self.factories[name]()
-                    visible = Visible.from_map_view(map_view, self.figures)
-                    if self.source_limits is not None:
-                        if hasattr(map_view, "image_sources"):
-                            for source in map_view.image_sources:
-                                self.source_limits.add_source(source)
-                    self.map_views.append(map_view)
-                    self.visibles.append(visible)
+                key = settings["dataset"]
+                layer = self.pools[key].acquire()
 
                 # Update figure visibility
-                visible.active = settings.get("active", [])
+                layer.active = settings.get("active", [])
 
                 # Layer-specific state
                 layer_state = {}
                 layer_state.update(state)
                 layer_state.update(
                     variable=settings.get("variable"))
-                map_view.render(layer_state)
+                layer.render(layer_state)
+
+                used_layers[key].append(layer)
+
+        # Hide unused layers
+        for pool in self.pools.values():
+            pool.map(lambda layer: layer.hide())
+
+        # Return used layers to pool(s)
+        for key, layers in used_layers.items():
+            pool = self.pools[key]
+            for layer in layers:
+                pool.release(layer)
+
+class Layer:
+    """Facade to ease API"""
+    def __init__(self, map_view, visible):
+        self.map_view = map_view
+        self.visible = visible
+
+    def render(self, state):
+        self.map_view.render(state)
+
+    def hide(self):
+        self.active = []
+
+    @property
+    def active(self):
+        return self.visible.active
+
+    @active.setter
+    def active(self, value):
+        self.visible.active = value
 
 
 class Factory:
-    """Reusable MapViews"""
-    def __init__(self, dataset, color_mapper):
+    """Reusable layers"""
+    def __init__(self, dataset, color_mapper, figures, source_limits):
         self._calls = 0
         self.dataset = dataset
         self.color_mapper = color_mapper
+        self.figures = figures
+        self.source_limits = source_limits
 
     def __call__(self):
-        """Complex MapView construction"""
+        """Complex construction"""
         self._calls += 1
         print("Factory.__call__: {}".format(self._calls))
         try:
             map_view = self.dataset.map_view(self.color_mapper)
         except TypeError:
             map_view = self.dataset.map_view()
-        return map_view
+        visible = Visible.from_map_view(map_view, self.figures)
+        if self.source_limits is not None:
+            if hasattr(map_view, "image_sources"):
+                for source in map_view.image_sources:
+                    self.source_limits.add_source(source)
+        return Layer(map_view, visible)
 
 
 class Visible:
@@ -573,6 +605,11 @@ class Pool:
     def __init__(self, factory):
         self.factory = factory
         self.reusables = deque()
+
+    def map(self, func):
+        """Apply function to objects inside pool"""
+        for reusable in self.reusables:
+            func(reusable)
 
     def acquire(self):
         """Select or create an object"""

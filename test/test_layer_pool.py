@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock, sentinel
 import bokeh.models
 import forest.drivers
 import forest.layers
@@ -37,3 +38,15 @@ def test_pool_acquire_different_objects(pool):
     layer_0 = pool.acquire()
     layer_1 = pool.acquire()
     assert id(layer_0) != id(layer_1)
+
+
+def test_pool_map():
+    """Apply function to objects in Pool"""
+    method = Mock()
+    factory = Mock()
+    factory.return_value = sentinel.layer
+    pool = forest.layers.Pool(factory)
+    layer = pool.acquire()
+    pool.release(layer)
+    pool.map(method)
+    method.assert_called_once_with(sentinel.layer)

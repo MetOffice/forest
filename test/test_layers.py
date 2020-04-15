@@ -194,8 +194,12 @@ def test_visible_render():
     assert renderers[2].visible == True
 
 
-def test_gallery_render():
-    color_mapper = bokeh.models.LinearColorMapper()
+@pytest.fixture
+def color_mapper():
+    return bokeh.models.LinearColorMapper()
+
+
+def test_gallery_render(color_mapper):
     dataset = Mock()
     dataset.map_view.add_figure.return_value = sentinel.renderer
     datasets = {
