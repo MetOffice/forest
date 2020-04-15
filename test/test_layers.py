@@ -6,7 +6,6 @@ from forest import layers, redux
 
 @pytest.mark.parametrize("action,expect", [
     ({"kind": "ANY"}, [{"kind": "ANY"}]),
-    (layers.on_dropdown(0, "label"), [layers.set_label(0, "label")]),
     (layers.on_button_group(0, [0, 1, 2]), [layers.set_active(0, [0, 1, 2])]),
 ])
 def test_middleware(action, expect):
@@ -109,32 +108,21 @@ def test_reducer_set_active():
     assert state["layers"]["index"][index]["active"] == active
 
 
-@pytest.mark.skip()
-def test_controls_render():
-    state = {
-        "layers": {
-            "labels": [None, "B", "C"]
-        }
-    }
-    controls = layers.LayersUI()
-    controls.render(*controls.to_props(state))
-    assert controls.dropdowns[0].label == "Model/observation"
-    assert controls.dropdowns[1].label == "B"
-    assert controls.dropdowns[2].label == "C"
-
-
-@pytest.mark.skip()
-def test_controls_render_sets_button_groups():
+def test_layersui_render_sets_button_groups():
     state = {
         "layers": {
             "figures": 3,
-            "labels": [None],
-            "active": [[0, 1, 2]]
+            "index": {
+                0: {
+                    "label": "Foo",
+                    "active": [0, 1, 2]
+                }
+            }
         }
     }
     controls = layers.LayersUI()
     controls.render(*controls.to_props(state))
-    assert controls.dropdowns[0].label == "Model/observation"
+    assert len(controls.button_groups) == 1
     assert controls.button_groups[0].active == [0, 1, 2]
     assert controls.button_groups[0].labels == ["L", "C", "R"]
 
@@ -170,6 +158,7 @@ def test_on_button_group(listener):
     listener.assert_called_once_with(layers.on_button_group(row_index, new))
 
 
+@pytest.mark.skip("refactor to test on_event handlers")
 def test_on_dropdown(listener):
     row_index = 3
     attr, old, new = None, None, "label"

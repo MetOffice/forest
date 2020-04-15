@@ -16,7 +16,6 @@ from typing import Iterable, List
 from forest import rx
 from forest.redux import Action, State, Store
 from forest.observe import Observable
-from forest.db.util import autolabel
 import forest.drivers
 import forest.view
 
@@ -28,7 +27,6 @@ ON_EDIT = "LAYERS_ON_EDIT"
 ON_CLOSE = "LAYERS_ON_CLOSE"
 ON_SAVE = "LAYERS_ON_SAVE"
 ON_REMOVE = "LAYERS_ON_REMOVE"
-ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
 ON_BUTTON_GROUP = "LAYERS_ON_BUTTON_GROUP"
 SET_FIGURES = "LAYERS_SET_FIGURES"
 SET_ACTIVE = "LAYERS_SET_ACTIVE"
@@ -66,13 +64,6 @@ def set_active(row_index: int, active: List[int]) -> Action:
     }
 
 
-def on_dropdown(row_index: int, label: str) -> Action:
-    return {
-        "kind": ON_DROPDOWN,
-        "payload": {"row_index": row_index, "label": label}
-    }
-
-
 def on_add() -> Action:
     return {"kind": ON_ADD}
 
@@ -101,9 +92,6 @@ def middleware(store: Store, action: Action) -> Iterable[Action]:
     if kind == ON_BUTTON_GROUP:
         payload = action["payload"]
         yield set_active(payload["row_index"], payload["active"])
-    elif kind == ON_DROPDOWN:
-        payload = action["payload"]
-        yield set_label(payload["row_index"], payload["label"])
     elif kind == ON_SAVE:
         if get_mode(store.state) == "edit":
             index = edit_index(store.state)
@@ -345,25 +333,23 @@ class LayersUI(Observable):
         """Select data from state that satisfies self.render(*props)"""
         layers = state.get("layers", {})
         return (
-            self.parse_labels(state),
-            layers.get("active", []),
+            self.parse_layers(state),
             layers.get("figures", None),
         )
 
-    def parse_labels(self, state):
+    def parse_layers(self, state):
         node = state
         for key in ("layers", "index"):
             node = node.get(key, {})
-        return {key: value["label"] for key, value in node.items()
-                if "label" in value}
+        return [value for _, value in sorted(node.items())]
 
-    def render(self, labels, active_list, figure_index):
+    def render(self, layers, figure_index):
         """Display latest application state in user interface
 
         :param n: integer representing number of rows
         """
         # Match rows to number of labels
-        n = len(labels)
+        n = len(layers)
         nrows = len(self.columns["rows"].children) # - 1
         if n > nrows:
             # for label in labels[nrows:]:
@@ -373,23 +359,23 @@ class LayersUI(Observable):
             for _ in range(nrows - n):
                 self.remove_row()
 
-        # Set button group active
-        for button_group, active in zip(self.button_groups, active_list):
-            button_group.active = active
-
         # Set button group labels
         if figure_index is not None:
             self.labels = self.defaults["figure"][figure_index]
 
         # Set options in select menus
-        options = [label for _, label in sorted(labels.items())]
+        labels = [layer["label"] for layer in layers
+                  if "label" in layer]
+        options = list(sorted(labels))
         for select in self.selects:
             select.options = options
 
         # Set value for each select
-        print(self.selects, labels)
-        for i, label in labels.items():
-            self.selects[i].value = label
+        for i, layer in enumerate(layers):
+            if "label" in layer:
+                self.selects[i].value = layer["label"]
+            if "active" in layer:
+                self.button_groups[i].active = layer["active"]
 
     def on_click_remove(self):
         """Event-handler when Remove button is clicked"""
@@ -463,13 +449,6 @@ class LayersUI(Observable):
             self.button_groups.pop()
             self.buttons["edit"].pop()
             self.columns["rows"].children.pop()
-
-    def on_dropdown(self, row_index: int):
-        """Translate event into Action"""
-        def _callback(attr, old, new):
-            if old != new:
-                self.notify(on_dropdown(row_index, new))
-        return _callback
 
     def on_edit(self, row_index: int):
         def _callback():
