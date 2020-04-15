@@ -52,7 +52,11 @@
 
     <!-- Add modal container -->
     <div id="modal" class="modal-outer">
-        <div class="modal-inner">{{ embed(roots.modal) }}</div>
+        {% for root in roots %}
+            {% if root.name == 'modal' %}
+                <div class="modal-inner">{{ embed(roots.modal) }}</div>
+            {% endif %}
+        {% endfor %}
     </div>
 
     <!-- Layout figure row -->

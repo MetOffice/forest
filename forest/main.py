@@ -84,6 +84,7 @@ def main(argv=None):
     # Convert config to datasets
     datasets = {}
     datasets_by_pattern = {}
+    label_to_pattern = {}
     for group in config.file_groups:
         settings = {
             "label": group.label,
@@ -95,6 +96,7 @@ def main(argv=None):
         dataset = drivers.get_dataset(group.file_type, settings)
         datasets[group.label] = dataset
         datasets_by_pattern[group.pattern] = dataset
+        label_to_pattern[group.label] = group.pattern
 
     # Lakes
     for figure in figures:
@@ -264,7 +266,16 @@ def main(argv=None):
     store.dispatch(db.set_value("patterns", config.patterns))
 
     # Pre-select first map_view layer
-    # TODO: Add an appropriate action here
+    for label, dataset in datasets.items():
+        pattern = label_to_pattern[label]
+        for variable in navigator.variables(pattern):
+            spec = {"label": label,
+                    "dataset": label,
+                    "variable": variable,
+                    "active": [0]}
+            store.dispatch(forest.layers.save_layer(0, spec))
+            break
+        break
 
     # Select web map tiling
     if config.use_web_map_tiles:

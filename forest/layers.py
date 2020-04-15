@@ -438,7 +438,7 @@ class LayersUI(Observable):
         }
 
         # Select
-        select = bokeh.models.Select(width=widths["dropdown"])
+        select = bokeh.models.Select(width=widths["dropdown"], disabled=True)
         self.selects.append(select)
 
         # Edit button
