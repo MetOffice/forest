@@ -12,6 +12,7 @@ import bokeh.models
 import bokeh.layouts
 import numpy as np
 from collections import defaultdict, deque
+from dataclasses import dataclass, field
 from typing import Iterable, List
 from forest import rx
 from forest.redux import Action, State, Store
@@ -470,10 +471,19 @@ class LayersUI(Observable):
         return _callback
 
 
+@dataclass
+class LayerSpec:
+    label: str = ""
+    dataset: str = ""
+    variable: str = ""
+    active: List[int] = field(default_factory=list)
+
+
 class Gallery:
     """Orchestration layer for MapViews"""
     def __init__(self, pools):
         self.pools = pools
+        self.lock = False
 
     @classmethod
     def from_datasets(cls, datasets, color_mapper, figures, source_limits):
@@ -491,29 +501,39 @@ class Gallery:
         store.add_subscriber(self.render)
 
     def render(self, state):
+        if not self.lock:
+            self.lock = True
+            self.render_specs(self.parse_specs(state), state)
+            self.lock = False
+
+    def parse_specs(self, state):
         # Parse application state
         node = state
         for key in ("layers", "index"):
             node = node.get(key, {})
+        return [LayerSpec(**kwargs) for _, kwargs in sorted(node.items())]
 
+    def render_specs(self, specs, state):
         # Dynamically build/use layers from object pools
         used_layers = defaultdict(list)
-        for _, settings in node.items():
-            if "dataset" in settings:
-                key = settings["dataset"]
-                layer = self.pools[key].acquire()
+        for spec in specs:
+            if spec.dataset == "":
+                continue
 
-                # Update figure visibility
-                layer.active = settings.get("active", [])
+            key = spec.dataset
+            layer = self.pools[key].acquire()
 
-                # Layer-specific state
-                layer_state = {}
-                layer_state.update(state)
-                layer_state.update(
-                    variable=settings.get("variable"))
-                layer.render(layer_state)
+            # Update figure visibility
+            layer.active = spec.active
 
-                used_layers[key].append(layer)
+            # Layer-specific state
+            layer_state = {}
+            layer_state.update(state)
+            if spec.variable != "":
+                layer_state.update(variable=spec.variable)
+            layer.render(layer_state)
+
+            used_layers[key].append(layer)
 
         # Hide unused layers
         for pool in self.pools.values():
