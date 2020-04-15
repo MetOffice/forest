@@ -501,6 +501,8 @@ class Gallery:
         store.add_subscriber(self.render)
 
     def render(self, state):
+        # Note: lock used to ignore state changes while building layers
+        #       e.g. source limit events
         if not self.lock:
             self.lock = True
             self.render_specs(self.parse_specs(state), state)

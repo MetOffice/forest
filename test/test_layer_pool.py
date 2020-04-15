@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import Mock, sentinel
 import bokeh.models
+import bokeh.plotting
 import forest.drivers
 import forest.layers
 import forest.view
@@ -12,7 +13,12 @@ def factory():
     name = "unified_model"
     settings = {"pattern": "*.nc"}
     dataset = forest.drivers.get_dataset(name, settings)
-    return forest.layers.Factory(dataset, color_mapper)
+    figures = [bokeh.plotting.figure()]
+    source_limits = Mock()
+    return forest.layers.Factory(dataset,
+                                 color_mapper,
+                                 figures,
+                                 source_limits)
 
 
 @pytest.fixture
@@ -23,8 +29,7 @@ def pool(factory):
 def test_pool(pool):
     layer = pool.acquire()
     pool.release(layer)
-    assert isinstance(layer,
-                      forest.view.AbstractMapView)
+    assert isinstance(layer, forest.layers.Layer)
 
 
 def test_pool_acquire_same_object(pool):

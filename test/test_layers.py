@@ -194,18 +194,7 @@ def test_visible_render():
     assert renderers[2].visible == True
 
 
-@pytest.fixture
-def color_mapper():
-    return bokeh.models.LinearColorMapper()
-
-
-def test_gallery_render(color_mapper):
-    dataset = Mock()
-    dataset.map_view.add_figure.return_value = sentinel.renderer
-    datasets = {
-        "Dataset": dataset
-    }
-    figures = [sentinel.figure]
+def test_gallery_render():
     state = {
         "layers": {
             "index": {
@@ -217,5 +206,9 @@ def test_gallery_render(color_mapper):
             }
         }
     }
-    gallery = layers.Gallery(datasets, color_mapper, figures)
+    pools = {
+        "Dataset": Mock()
+    }
+    gallery = layers.Gallery(pools)
     gallery.render(state)
+    pools["Dataset"].acquire.assert_called_once_with()
