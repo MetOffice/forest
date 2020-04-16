@@ -88,7 +88,6 @@ def set_label(index: int, label: str) -> Action:
 
 def middleware(store: Store, action: Action) -> Iterable[Action]:
     """Action generator given current state and action"""
-    print(store.state.get("layers", {}))
     kind = action["kind"]
     if kind == ON_BUTTON_GROUP:
         payload = action["payload"]

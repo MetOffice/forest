@@ -14,6 +14,42 @@ def test_middleware(action, expect):
     assert expect == result
 
 
+def test_middleware_on_save_given_add():
+    mode = "add"
+    index = 42
+    initial_state = {
+        "layers": {
+            "mode": {"state": mode},
+            "index": {
+                index: {}
+            }
+        }
+    }
+    store = redux.Store(layers.reducer, initial_state=initial_state)
+    action = layers.on_save({})
+    expect = layers.save_layer(index + 1, {})
+    result = list(layers.middleware(store, action))
+    assert expect == result[0]
+
+
+def test_middleware_on_save_given_edit():
+    mode = "edit"
+    index = 5
+    initial_state = {
+        "layers": {
+            "mode": {"state": mode, "index": index},
+            "index": {
+                0: {}
+            }
+        }
+    }
+    store = redux.Store(layers.reducer, initial_state=initial_state)
+    action = layers.on_save({})
+    expect = [layers.save_layer(index, {})]
+    result = list(layers.middleware(store, action))
+    assert expect == result
+
+
 @pytest.fixture
 def listener():
     return Mock()
