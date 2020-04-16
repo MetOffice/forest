@@ -1,6 +1,7 @@
 import pytest
-from unittest.mock import Mock, sentinel
+from unittest.mock import Mock, sentinel, call
 import bokeh.plotting
+import numpy as np
 from forest import layers, redux
 
 
@@ -159,7 +160,6 @@ def test_layersui_render_sets_button_groups():
     assert controls.button_groups[0].labels == ["L", "C", "R"]
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize("from_labels,to_labels,expect", [
     ([], [], 0),
     ([], ["label"], 1),
@@ -169,15 +169,24 @@ def test_layersui_render_sets_button_groups():
     (["label", "label"], ["label"], 1),
 ])
 def test_controls_render_number_of_rows(from_labels, to_labels, expect):
-    from_state = {
-        "layers": {"labels": from_labels}
-    }
-    to_state = {
-        "layers": {"labels": to_labels}
-    }
+    states = [
+        {
+            "layers": {
+                "index": {
+                    i: {"label": label} for i, label in enumerate(from_labels)
+                }
+            }
+        }, {
+            "layers": {
+                "index": {
+                    i: {"label": label} for i, label in enumerate(to_labels)
+                }
+            }
+        }
+    ]
     controls = layers.LayersUI()
-    controls.render(*controls.to_props(from_state))
-    controls.render(*controls.to_props(to_state))
+    for state in states:
+        controls.render(*controls.to_props(state))
     assert len(controls.columns["rows"].children) == expect
 
 
@@ -190,14 +199,17 @@ def test_on_button_group(listener):
     listener.assert_called_once_with(layers.on_button_group(row_index, new))
 
 
-@pytest.mark.skip("refactor to test on_event handlers")
-def test_on_dropdown(listener):
+@pytest.mark.parametrize("method", [
+    "on_edit",
+    "on_close"
+])
+def test_layers_ui_on_click(listener, method):
     row_index = 3
-    attr, old, new = None, None, "label"
-    controls = layers.LayersUI()
-    controls.add_subscriber(listener)
-    controls.on_dropdown(row_index)(attr, old, new)
-    listener.assert_called_once_with(layers.on_dropdown(row_index, new))
+    layers_ui = layers.LayersUI()
+    layers_ui.add_subscriber(listener)
+    getattr(layers_ui, method)(row_index)()
+    expect = getattr(layers, method)(row_index)
+    listener.assert_called_once_with(expect)
 
 
 @pytest.mark.parametrize("n", [1, 2, 3])
@@ -244,3 +256,49 @@ def test_gallery_render():
     gallery = layers.Gallery(pools)
     gallery.render(state)
     pools["Dataset"].acquire.assert_called_once_with()
+
+
+def test_layer_mute():
+    map_view = Mock()
+    map_view.image_sources = [sentinel.source]
+    source_limits = Mock(spec=["add_source", "remove_source"])
+    layer = layers.Layer(map_view,
+                         sentinel.visible,
+                         source_limits)
+    layer.mute()
+    source_limits.add_source.assert_called_once_with(sentinel.source)
+    source_limits.remove_source.assert_called_once_with(sentinel.source)
+
+
+def test_layer_unmute():
+    map_view = Mock()
+    map_view.image_sources = [sentinel.source]
+    source_limits = Mock(spec=["add_source", "remove_source"])
+    layer = layers.Layer(map_view,
+                         sentinel.visible,
+                         source_limits)
+    layer.unmute()
+    # One call during __init__ and one during unmute()
+    calls = [call(sentinel.source),
+             call(sentinel.source)]
+    source_limits.add_source.assert_has_calls(calls)
+
+
+def test_opacity_slider():
+    """Should set opacity when a renderer is added"""
+    value = 0.6
+    opacity_slider = layers.OpacitySlider()
+    opacity_slider.slider.value = value
+
+    # Fake image
+    figure = bokeh.plotting.figure()
+    renderer = figure.image(
+        x=[0],
+        y=[0],
+        dw=[1],
+        dh=[1],
+        image=[np.zeros((3, 3))]
+    )
+
+    opacity_slider.add_renderers([renderer])
+    assert renderer.glyph.global_alpha == value

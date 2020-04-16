@@ -284,6 +284,11 @@ class OpacitySlider:
         renderers = [r for r in renderers if self.is_image(r)]
         if len(renderers) == 0:
             return
+
+        # Set initial alpha to slider value
+        for renderer in renderers:
+            renderer.glyph.global_alpha = self.slider.value
+
         # Pass server-side renderers to client-side callback
         custom_js = bokeh.models.CustomJS(
                 args=dict(renderers=renderers),
