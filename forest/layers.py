@@ -277,6 +277,7 @@ class OpacitySlider:
             end=1,
             step=0.1,
             value=1.0,
+            title="Image opacity",
             show_value=False)
         self.layout = bokeh.layouts.row(self.slider)
 
