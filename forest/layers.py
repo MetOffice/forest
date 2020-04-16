@@ -46,10 +46,6 @@ def save_layer(index, settings) -> Action:
     return {"kind": SAVE_LAYER, "payload": {"index": index, "settings": settings}}
 
 
-def on_remove() -> Action:
-    return {"kind": ON_REMOVE}
-
-
 def on_button_group(row_index: int, active: List[int]) -> Action:
     return {
         "kind": ON_BUTTON_GROUP,
@@ -329,7 +325,7 @@ class LayersUI(Observable):
             el.style.visibility = "visible";
         """)
         self.buttons["add"].js_on_click(custom_js)
-        self.buttons["add"].on_click(self.on_click_add)
+        self.buttons["add"].on_click(self.on_add)
         self.columns = {
             "rows": bokeh.layouts.column(),
             "buttons": bokeh.layouts.column(
@@ -396,11 +392,7 @@ class LayersUI(Observable):
             if "active" in layer:
                 self.button_groups[i].active = layer["active"]
 
-    def on_click_remove(self):
-        """Event-handler when Remove button is clicked"""
-        self.notify(on_remove())
-
-    def on_click_add(self):
+    def on_add(self):
         """Event-handler when Add button is clicked"""
         self.notify(on_add())
 

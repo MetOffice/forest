@@ -63,18 +63,9 @@ def test_figure_dropdown(listener):
     listener.assert_called_once_with(layers.set_figures(1))
 
 
-def test_remove(listener):
-    ui = layers.LayersUI()
-    ui.add_subscriber(listener)
-    ui.on_click_remove()
-    listener.assert_called_once_with(layers.on_remove())
-
-
 @pytest.mark.parametrize("state,actions,expect", [
     ({}, layers.set_figures(3), {"figures": 3}),
     ({}, layers.add_layer("Name"), {"labels": ["Name"]}),
-    ({}, layers.on_remove(), {"labels": []}),
-    ({"layers": {"labels": [None, None]}}, layers.on_remove(), {"labels": [None]}),
     ({}, layers.set_active(0, []), {"index": {0: {"active": []}}}),
     ({}, layers.set_active(1, []), {"index": {1: {"active": []}}}),
     ({"layers": {"index": {0: {"active": []}}}}, layers.set_active(0, [0]),
@@ -209,6 +200,14 @@ def test_layers_ui_on_click(listener, method):
     layers_ui.add_subscriber(listener)
     getattr(layers_ui, method)(row_index)()
     expect = getattr(layers, method)(row_index)
+    listener.assert_called_once_with(expect)
+
+
+def test_layers_ui_on_click_add(listener):
+    layers_ui = layers.LayersUI()
+    layers_ui.add_subscriber(listener)
+    layers_ui.on_add()
+    expect = layers.on_add()
     listener.assert_called_once_with(expect)
 
 
