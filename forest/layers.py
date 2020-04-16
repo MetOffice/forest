@@ -552,6 +552,9 @@ class Gallery:
             key = spec.dataset
             layer = self.pools[key].acquire()
 
+            # Unmute layer
+            layer.unmute()
+
             # Update figure visibility
             layer.active = spec.active
 
@@ -564,9 +567,9 @@ class Gallery:
 
             used_layers[key].append(layer)
 
-        # Hide unused layers
+        # Mute unused layers
         for pool in self.pools.values():
-            pool.map(lambda layer: layer.hide())
+            pool.map(lambda layer: layer.mute())
 
         # Return used layers to pool(s)
         for key, layers in used_layers.items():
@@ -576,15 +579,28 @@ class Gallery:
 
 class Layer:
     """Facade to ease API"""
-    def __init__(self, map_view, visible):
+    def __init__(self, map_view, visible, source_limits):
         self.map_view = map_view
+        self.image_sources = getattr(self.map_view, "image_sources", [])
         self.visible = visible
+        self.source_limits = source_limits
+        if self.source_limits is not None:
+            for source in self.image_sources:
+                self.source_limits.add_source(source)
 
     def render(self, state):
         self.map_view.render(state)
 
-    def hide(self):
+    def mute(self):
         self.active = []
+        if self.source_limits is not None:
+            for source in self.image_sources:
+                self.source_limits.remove_source(source)
+
+    def unmute(self):
+        if self.source_limits is not None:
+            for source in self.image_sources:
+                self.source_limits.add_source(source)
 
     @property
     def active(self):
@@ -631,11 +647,7 @@ class Factory:
         visible = Visible.from_map_view(map_view, self.figures)
         if self.opacity_slider is not None:
             self.opacity_slider.add_renderers(visible.renderers)
-        if self.source_limits is not None:
-            if hasattr(map_view, "image_sources"):
-                for source in map_view.image_sources:
-                    self.source_limits.add_source(source)
-        return Layer(map_view, visible)
+        return Layer(map_view, visible, self.source_limits)
 
 
 class Visible:

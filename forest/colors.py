@@ -352,22 +352,43 @@ class SourceLimits(Observable):
 
     def add_source(self, source):
         """Add ColumnDataSource to listened sources"""
-        print("SourceLimits.add_source called")
-        source.on_change("data", self.on_change)
-        self.sources.append(source)
+        if source not in self.sources:
+            source.on_change("data", self.on_change)
+            self.sources.append(source)
+
+    def remove_source(self, source):
+        """Remove ColumnDataSource from listened sources"""
+        # Remove on_change handler
+        try:
+            source.remove_on_change("data", self.on_change)
+        except ValueError:
+            pass
+
+        # Remove source from limit calculation
+        if source in self.sources:
+            self.sources = [_source for _source in self.sources
+                            if _source.id != source.id]
+            low, high = self.limits(self.sources)
+            self.notify(set_source_limits(low, high))
 
     def on_change(self, attr, old, new):
+        """Generate action from bokeh event"""
+        low, high = self.limits(self.sources)
+        self.notify(set_source_limits(low, high))
+
+    def limits(self, sources):
+        """Calculate limits from underlying sources"""
         images = []
-        for source in self.sources:
+        for source in sources:
             if len(source.data["image"]) == 0:
                 continue
             images.append(source.data["image"][0])
         if len(images) > 0:
             low = np.min([np.min(x) for x in images])
             high = np.max([np.max(x) for x in images])
-            self.notify(set_source_limits(low, high))
+            return low, high
         else:
-            self.notify(set_source_limits(0, 1))
+            return 0, 1
 
 
 class UserLimits(Observable):
