@@ -31,7 +31,6 @@ ON_REMOVE = "LAYERS_ON_REMOVE"
 ON_BUTTON_GROUP = "LAYERS_ON_BUTTON_GROUP"
 SET_FIGURES = "LAYERS_SET_FIGURES"
 SET_ACTIVE = "LAYERS_SET_ACTIVE"
-SET_LABEL = "LAYERS_SET_LABEL"
 
 
 def set_figures(n: int) -> Action:
@@ -79,11 +78,6 @@ def on_close(row_index: int) -> Action:
 
 def on_save(settings: dict) -> Action:
     return {"kind": ON_SAVE, "payload": settings}
-
-
-def set_label(index: int, label: str) -> Action:
-    """Set i-th layer label"""
-    return {"kind": SET_LABEL, "payload": {"index": index, "label": label}}
 
 
 def middleware(store: Store, action: Action) -> Iterable[Action]:
@@ -136,7 +130,6 @@ def reducer(state: State, action: Action) -> State:
     kind = action["kind"]
     if kind in [
             ADD_LAYER,
-            SET_LABEL,
             SET_FIGURES,
             ON_REMOVE]:
         layers = state.get("layers", {})
@@ -197,16 +190,6 @@ def _layers_reducer(state, action):
     elif kind == ON_REMOVE:
         labels = state.get("labels", [])
         state["labels"] = labels[:-1]
-
-    elif kind == SET_LABEL:
-        row_index = action["payload"]["index"]
-        label = action["payload"]["label"]
-        labels = state.get("labels", [])
-
-        # Pad with None for each missing element
-        labels += (row_index + 1 - len(labels)) * [None]
-        labels[row_index] = label
-        state["labels"] = labels
 
     return state
 
