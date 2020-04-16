@@ -25,6 +25,22 @@ class Modal(Observable):
         self.selects["variable"] = bokeh.models.Select(
             title="Variable:",
             options=[])
+        self.source = bokeh.models.ColumnDataSource({
+            "datasets":  [],
+            "variables": []
+        })
+        custom_js = bokeh.models.CustomJS(
+            args=dict(
+                select=self.selects["variable"],
+                source=self.source),
+            code="""
+                let label = cb_obj.value;
+                let index = source.data['datasets'].indexOf(label);
+                let defaults = ["Please specify"];
+                select.options = defaults.concat(
+                    source.data['variables'][index]);
+        """)
+        self.selects["dataset"].js_on_change("value", custom_js)
 
         buttons = (
             bokeh.models.Button(label="Save"),
@@ -75,10 +91,24 @@ class Modal(Observable):
             self.inputs["name"].value = "layer-0"
 
         # Configure available datasets
-        self.selects["dataset"].options = self.to_props(state)
+        datasets = self.to_props(state)
+        self.selects["dataset"].options = datasets
         if len(self.selects["dataset"].options) > 0:
             if self.selects["dataset"].value == "":
                 self.selects["dataset"].value = self.selects["dataset"].options[0]
+
+        # Configure dimension(s) source
+        data = state.get("dimension")
+        variables = []
+        for label in datasets:
+            texts = (state.get("dimension", {})
+                          .get(label, {})
+                          .get("variables", []))
+            variables.append(texts)
+        self.source.data = {
+            "datasets": datasets,
+            "variables": variables
+        }
 
         options = ["Please specify"] + state.get("variables", [])
         self.selects["variable"].options = options
