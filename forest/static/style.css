@@ -51,7 +51,7 @@ footer {
     z-index: 6;
     top: 0;
     right: 0;
-    bacground-color: #333;
+    background-color: #333;
     overflow-x: hidden;
     transition: 0.2s;
     background-color: #F1F1F1;
@@ -102,4 +102,33 @@ footer {
 /* Bokeh roots */
 .keypress-hidden-btn {
     display: none !important;
+}
+
+
+/* Modal component */
+.bk.custom {
+    font-size: 1.4rem;
+}
+.modal-outer {
+    visibility: hidden;
+    z-index: 80;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+.modal-inner {
+    z-index: 90;
+    width: 30%;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: auto;
+    padding: 0.5rem;
+    background-color: #F1F1F1;
+    border-radius: 0.2rem;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5);
 }

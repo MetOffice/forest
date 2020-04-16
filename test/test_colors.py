@@ -1,4 +1,5 @@
 import unittest.mock
+from unittest.mock import Mock, sentinel
 import pytest
 from forest import colors, main, redux, db
 import bokeh.models
@@ -238,10 +239,21 @@ def test_user_limits_render():
         )], -1, 1)
 ])
 def test_source_limits_on_change(listener, sources, low, high):
-    source_limits = colors.SourceLimits(sources)
+    source_limits = colors.SourceLimits()
+    for source in sources:
+        source_limits.add_source(source)
     source_limits.add_subscriber(listener)
     source_limits.on_change(None, None, None)  # attr, old, new
     listener.assert_called_once_with(colors.set_source_limits(low, high))
+
+
+def test_remove_source():
+    """Should be able to stop listening to changes"""
+    source = bokeh.models.ColumnDataSource()
+    limits = colors.SourceLimits()
+    limits.add_source(source)
+    limits.remove_source(source)
+    assert source not in limits.sources
 
 
 def test_render_called_once_with_two_identical_settings():

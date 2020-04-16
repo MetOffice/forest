@@ -50,6 +50,15 @@
         {% endfor %}
     </nav>
 
+    <!-- Add modal container -->
+    <div id="modal" class="modal-outer">
+        {% for root in roots %}
+            {% if root.name == 'modal' %}
+                <div class="modal-inner">{{ embed(roots.modal) }}</div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
     <!-- Layout figure row -->
     <div id="figures">
         {% for root in roots %}

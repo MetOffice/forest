@@ -84,6 +84,8 @@ class Store(Observable):
         self.reducer = reducer
         self.state = initial_state if initial_state is not None else {}
         self.middlewares = middlewares
+        self.in_progress = False
+        self.queue = []
         super().__init__()
 
     def dispatch(self, action):
@@ -91,6 +93,25 @@ class Store(Observable):
 
         :param action: plain dict consumed by the reducer
         """
+        if self.in_progress:
+            # Add asynchronous action to backlog
+            self.queue.append(action)
+            return
+
+        # Synchronous processing
+        self.in_progress = True
+        self.sync_process(action)
+
+        # Process backlog
+        actions = list(self.queue)
+        self.queue = []
+        for action in actions:
+            self.sync_process(action)
+
+        self.in_progress = False
+
+    def sync_process(self, action):
+        """Pass action through middleware/reducer pipeline"""
         actions = self.pure(action)
         for middleware in self.middlewares:
             actions = self.bind(middleware, self, actions)

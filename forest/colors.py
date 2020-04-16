@@ -333,30 +333,62 @@ class SourceLimits(Observable):
     of connecting to a :class:`forest.redux.Store`, simply
     subscribe ``store.dispatch`` to action events.
 
-    >>> source_limits = SourceLimits(sources)
-    >>> source_limits.add_subscriber(store.dispatch)
+    >>> source_limits = SourceLimits()
+    >>> for source in sources:
+    ...     source_limits.add_source(source)
+    >>> source_limits.connect(store)
 
     .. note:: Unlike a typical component there is no ``layout`` property
               to attach to a bokeh document
     """
-    def __init__(self, sources):
-        self.sources = sources
-        for source in self.sources:
-            source.on_change("data", self.on_change)
+    def __init__(self):
+        self.sources = []
         super().__init__()
 
+    def connect(self, store):
+        """Connect events to the Store"""
+        self.add_subscriber(store.dispatch)
+        return self
+
+    def add_source(self, source):
+        """Add ColumnDataSource to listened sources"""
+        if source not in self.sources:
+            source.on_change("data", self.on_change)
+            self.sources.append(source)
+
+    def remove_source(self, source):
+        """Remove ColumnDataSource from listened sources"""
+        # Remove on_change handler
+        try:
+            source.remove_on_change("data", self.on_change)
+        except ValueError:
+            pass
+
+        # Remove source from limit calculation
+        if source in self.sources:
+            self.sources = [_source for _source in self.sources
+                            if _source.id != source.id]
+            low, high = self.limits(self.sources)
+            self.notify(set_source_limits(low, high))
+
     def on_change(self, attr, old, new):
+        """Generate action from bokeh event"""
+        low, high = self.limits(self.sources)
+        self.notify(set_source_limits(low, high))
+
+    def limits(self, sources):
+        """Calculate limits from underlying sources"""
         images = []
-        for source in self.sources:
+        for source in sources:
             if len(source.data["image"]) == 0:
                 continue
             images.append(source.data["image"][0])
         if len(images) > 0:
             low = np.min([np.min(x) for x in images])
             high = np.max([np.max(x) for x in images])
-            self.notify(set_source_limits(low, high))
+            return low, high
         else:
-            self.notify(set_source_limits(0, 1))
+            return 0, 1
 
 
 class UserLimits(Observable):

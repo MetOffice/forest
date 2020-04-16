@@ -11,33 +11,39 @@ import copy
 import bokeh.models
 import bokeh.layouts
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict, deque
+from dataclasses import dataclass, field
 from typing import Iterable, List
 from forest import rx
 from forest.redux import Action, State, Store
 from forest.observe import Observable
-from forest.db.util import autolabel
+import forest.drivers
+import forest.view
 
 
+ADD_LAYER = "LAYERS_ADD_LAYER"
+SAVE_LAYER = "LAYERS_SAVE_LAYER"
 ON_ADD = "LAYERS_ON_ADD"
+ON_EDIT = "LAYERS_ON_EDIT"
+ON_CLOSE = "LAYERS_ON_CLOSE"
+ON_SAVE = "LAYERS_ON_SAVE"
 ON_REMOVE = "LAYERS_ON_REMOVE"
-ON_DROPDOWN = "LAYERS_ON_DROPDOWN"
 ON_BUTTON_GROUP = "LAYERS_ON_BUTTON_GROUP"
 SET_FIGURES = "LAYERS_SET_FIGURES"
 SET_ACTIVE = "LAYERS_SET_ACTIVE"
-SET_LABEL = "LAYERS_SET_LABEL"
 
 
 def set_figures(n: int) -> Action:
     return {"kind": SET_FIGURES, "payload": n}
 
 
-def on_add() -> Action:
-    return {"kind": ON_ADD}
+def add_layer(name) -> Action:
+    return {"kind": ADD_LAYER, "payload": name}
 
 
-def on_remove() -> Action:
-    return {"kind": ON_REMOVE}
+def save_layer(index, settings) -> Action:
+    """Action to save layer settings"""
+    return {"kind": SAVE_LAYER, "payload": {"index": index, "settings": settings}}
 
 
 def on_button_group(row_index: int, active: List[int]) -> Action:
@@ -54,16 +60,20 @@ def set_active(row_index: int, active: List[int]) -> Action:
     }
 
 
-def on_dropdown(row_index: int, label: str) -> Action:
-    return {
-        "kind": ON_DROPDOWN,
-        "payload": {"row_index": row_index, "label": label}
-    }
+def on_add() -> Action:
+    return {"kind": ON_ADD}
 
 
-def set_label(index: int, label: str) -> Action:
-    """Set i-th layer label"""
-    return {"kind": SET_LABEL, "payload": {"index": index, "label": label}}
+def on_edit(row_index: int) -> Action:
+    return {"kind": ON_EDIT, "payload": row_index}
+
+
+def on_close(row_index: int) -> Action:
+    return {"kind": ON_CLOSE, "payload": row_index}
+
+
+def on_save(settings: dict) -> Action:
+    return {"kind": ON_SAVE, "payload": settings}
 
 
 def middleware(store: Store, action: Action) -> Iterable[Action]:
@@ -72,11 +82,42 @@ def middleware(store: Store, action: Action) -> Iterable[Action]:
     if kind == ON_BUTTON_GROUP:
         payload = action["payload"]
         yield set_active(payload["row_index"], payload["active"])
-    elif kind == ON_DROPDOWN:
-        payload = action["payload"]
-        yield set_label(payload["row_index"], payload["label"])
+    elif kind == ON_SAVE:
+        if get_mode(store.state) == "edit":
+            index = edit_index(store.state)
+        else:
+            index = next_index(store.state)
+        yield save_layer(index, action["payload"])
     else:
         yield action
+
+
+def get_mode(state):
+    """Parse state into either add/edit"""
+    node = state
+    for key in ("layers", "mode"):
+        node = node.get(key, {})
+    return node.get("state", "add")
+
+
+def edit_index(state):
+    """Parse state into index"""
+    node = state
+    for key in ("layers", "mode"):
+        node = node.get(key, {})
+    return node.get("index", 0)
+
+
+def next_index(state):
+    """Parse state into index"""
+    node = state
+    for key in ("layers", "index"):
+        node = node.get(key, {})
+    indices = [key for key in node.keys()]
+    if len(indices) == 0:
+        return 0
+    else:
+        return max(indices) + 1
 
 
 def reducer(state: State, action: Action) -> State:
@@ -84,13 +125,51 @@ def reducer(state: State, action: Action) -> State:
     state = copy.deepcopy(state)
     kind = action["kind"]
     if kind in [
-            SET_ACTIVE,
-            SET_LABEL,
+            ADD_LAYER,
             SET_FIGURES,
-            ON_ADD,
             ON_REMOVE]:
         layers = state.get("layers", {})
         state["layers"] = _layers_reducer(layers, action)
+    elif kind == ON_ADD:
+        # Traverse/build tree
+        node = state
+        for key in ("layers", "mode"):
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update({"state": "add"})
+    elif kind == ON_CLOSE:
+        # Traverse/build tree
+        index = action["payload"]
+        node = state
+        for key in ("layers", "index"):
+            node = node.get(key, {})
+        del node[index]
+    elif kind == ON_EDIT:
+        # Traverse/build tree
+        index = action["payload"]
+        node = state
+        for key in ("layers", "mode"):
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update({"state": "edit", "index": index})
+    elif kind == SAVE_LAYER:
+        # Traverse/build tree
+        index = action["payload"]["index"]
+        settings = action["payload"]["settings"]
+        node = state
+        for key in ("layers", "index", index):
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update(settings)
+    elif kind == SET_ACTIVE:
+        # Traverse/build tree
+        index = action["payload"]["row_index"]
+        settings = {"active": action["payload"]["active"]}
+        node = state
+        for key in ("layers", "index", index):
+            node[key] = node.get(key, {})
+            node = node[key]
+        node.update(settings)
     return state
 
 
@@ -99,33 +178,14 @@ def _layers_reducer(state, action):
     if kind == SET_FIGURES:
         state["figures"] = action["payload"]
 
-    elif kind == ON_ADD:
+    elif kind == ADD_LAYER:
         labels = state.get("labels", [])
-        labels.append(None)
+        labels.append(action["payload"])
         state["labels"] = labels
 
     elif kind == ON_REMOVE:
         labels = state.get("labels", [])
         state["labels"] = labels[:-1]
-
-    elif kind == SET_LABEL:
-        row_index = action["payload"]["index"]
-        label = action["payload"]["label"]
-        labels = state.get("labels", [])
-
-        # Pad with None for each missing element
-        labels += (row_index + 1 - len(labels)) * [None]
-        labels[row_index] = label
-        state["labels"] = labels
-
-    elif kind == SET_ACTIVE:
-        payload = action["payload"]
-        row_index = payload["row_index"]
-        active = payload["active"]
-        items = state.get("active", [])
-        items += (row_index + 1 - len(items)) * [None]
-        items[row_index] = active
-        state["active"] = items
 
     return state
 
@@ -205,10 +265,45 @@ class FigureRow:
                     self.figures[2]]
 
 
+class OpacitySlider:
+    def __init__(self):
+        # Image opacity user interface (client-side)
+        self.slider = bokeh.models.Slider(
+            start=0,
+            end=1,
+            step=0.1,
+            value=1.0,
+            title="Image opacity",
+            show_value=False)
+        self.layout = bokeh.layouts.row(self.slider)
+
+    def add_renderers(self, renderers):
+        renderers = [r for r in renderers if self.is_image(r)]
+        if len(renderers) == 0:
+            return
+
+        # Set initial alpha to slider value
+        for renderer in renderers:
+            renderer.glyph.global_alpha = self.slider.value
+
+        # Pass server-side renderers to client-side callback
+        custom_js = bokeh.models.CustomJS(
+                args=dict(renderers=renderers),
+                code="""
+                renderers.forEach(function (r) {
+                    r.glyph.global_alpha = cb_obj.value
+                })
+                """)
+        self.slider.js_on_change("value", custom_js)
+
+    @staticmethod
+    def is_image(renderer):
+        return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
+
+
 class LayersUI(Observable):
     """Collection of user interface components to manage layers"""
-    def __init__(self, menu):
-        self.menu = menu  # TODO: Derive this from application state
+    def __init__(self):
         self.defaults = {
             "label": "Model/observation",
             "flags": [False, False, False],
@@ -219,17 +314,22 @@ class LayersUI(Observable):
             }
         }
         self.button_groups = []
-        self.dropdowns = []
+        self.selects = []
         self.buttons = {
-            "add": bokeh.models.Button(label="Add", width=50),
-            "remove": bokeh.models.Button(label="Remove", width=50)
+            "edit": [],
+            "close": [],
+            "add": bokeh.models.Button(label="New layer", width=110),
         }
-        self.buttons["add"].on_click(self.on_click_add)
-        self.buttons["remove"].on_click(self.on_click_remove)
+        custom_js = bokeh.models.CustomJS(code="""
+            let el = document.getElementById("modal");
+            el.style.visibility = "visible";
+        """)
+        self.buttons["add"].js_on_click(custom_js)
+        self.buttons["add"].on_click(self.on_add)
         self.columns = {
             "rows": bokeh.layouts.column(),
             "buttons": bokeh.layouts.column(
-                bokeh.layouts.row(self.buttons["add"], self.buttons["remove"])
+                bokeh.layouts.row(self.buttons["add"])
             )
         }
         self.layout = bokeh.layouts.column(
@@ -244,53 +344,57 @@ class LayersUI(Observable):
         _connect(self, store)
         return self
 
-    @staticmethod
-    def to_props(state) -> tuple:
+    def to_props(self, state) -> tuple:
         """Select data from state that satisfies self.render(*props)"""
         layers = state.get("layers", {})
         return (
-            layers.get("labels", []),
-            layers.get("active", []),
-            layers.get("figures", None)
+            self.parse_layers(state),
+            layers.get("figures", None),
         )
 
-    def render(self, labels, active_list, figure_index):
+    def parse_layers(self, state):
+        node = state
+        for key in ("layers", "index"):
+            node = node.get(key, {})
+        return [value for _, value in sorted(node.items())]
+
+    def render(self, layers, figure_index):
         """Display latest application state in user interface
 
         :param n: integer representing number of rows
         """
         # Match rows to number of labels
-        n = len(labels)
+        n = len(layers)
         nrows = len(self.columns["rows"].children) # - 1
         if n > nrows:
+            # for label in labels[nrows:]:
             for _ in range(n - nrows):
                 self.add_row()
         if n < nrows:
             for _ in range(nrows - n):
                 self.remove_row()
 
-        # Set dropdown labels
-        for label, dropdown in zip(labels, self.dropdowns):
-            if label is None:
-                dropdown.label = self.defaults["label"]
-            else:
-                dropdown.label = label
-
-        # Set button group active
-        for button_group, active in zip(self.button_groups, active_list):
-            button_group.active = active
-
         # Set button group labels
         if figure_index is not None:
             self.labels = self.defaults["figure"][figure_index]
 
-    def on_click_add(self):
+        # Set options in select menus
+        labels = [layer["label"] for layer in layers
+                  if "label" in layer]
+        options = list(sorted(labels))
+        for select in self.selects:
+            select.options = options
+
+        # Set value for each select
+        for i, layer in enumerate(layers):
+            if "label" in layer:
+                self.selects[i].value = layer["label"]
+            if "active" in layer:
+                self.button_groups[i].active = layer["active"]
+
+    def on_add(self):
         """Event-handler when Add button is clicked"""
         self.notify(on_add())
-
-    def on_click_remove(self):
-        """Event-handler when Remove button is clicked"""
-        self.notify(on_remove())
 
     @property
     def labels(self):
@@ -306,37 +410,65 @@ class LayersUI(Observable):
         """Add a bokeh.layouts.row with a dropdown and checkboxbuttongroup"""
         row_index = len(self.columns["rows"].children)
 
-        # Dropdown
-        dropdown = bokeh.models.Dropdown(
-                menu=self.menu,
-                label=self.defaults["label"],
-                width=230,)
-        dropdown.on_change('value', self.on_dropdown(row_index))
-        self.dropdowns.append(dropdown)
+        widths = {
+            "dropdown": 150,
+            "button": 50,
+            "group": 50,
+            "row": 350
+        }
+
+        # Select
+        select = bokeh.models.Select(width=widths["dropdown"], disabled=True)
+        self.selects.append(select)
+
+        # Edit button
+        edit_button = bokeh.models.Button(label="Edit", width=widths["button"])
+        custom_js = bokeh.models.CustomJS(code="""
+            let el = document.getElementById("modal");
+            el.style.visibility = "visible";
+        """)
+        edit_button.js_on_click(custom_js)
+        edit_button.on_click(self.on_edit(row_index))
+        self.buttons["edit"].append(edit_button)
+
+        # Close button
+        close_button = bokeh.models.Button(label=u"\u274C", width=widths["button"])
+        close_button.on_click(self.on_close(row_index))
+        self.buttons["close"].append(close_button)
 
         # Button group
         button_group = bokeh.models.CheckboxButtonGroup(
+                default_size=widths["group"],
+                max_width=widths["group"],
                 labels=self.labels,
-                width=50)
+                width=widths["group"])
         button_group.on_change("active", self.on_button_group(row_index))
         self.button_groups.append(button_group)
 
         # Row
-        row = bokeh.layouts.row(dropdown, button_group)
+        row = bokeh.layouts.row(edit_button,
+                                close_button,
+                                select,
+                                button_group,
+                                width=widths["row"])
         self.columns["rows"].children.append(row)
 
     def remove_row(self):
         """Remove a row from user interface"""
         if len(self.columns["rows"].children) > 0:
-            self.dropdowns.pop()
+            self.selects.pop()
             self.button_groups.pop()
+            self.buttons["edit"].pop()
             self.columns["rows"].children.pop()
 
-    def on_dropdown(self, row_index: int):
-        """Translate event into Action"""
-        def _callback(attr, old, new):
-            if old != new:
-                self.notify(on_dropdown(row_index, new))
+    def on_edit(self, row_index: int):
+        def _callback():
+            self.notify(on_edit(row_index))
+        return _callback
+
+    def on_close(self, row_index: int):
+        def _callback():
+            self.notify(on_close(row_index))
         return _callback
 
     def on_button_group(self, row_index: int):
@@ -349,121 +481,201 @@ class LayersUI(Observable):
         return _callback
 
 
-class ViewerConnector:
-    """Connect Views to Store"""
-    def __init__(self):
-        self.subscribers = defaultdict(list)
+@dataclass
+class LayerSpec:
+    label: str = ""
+    dataset: str = ""
+    variable: str = ""
+    active: List[int] = field(default_factory=list)
 
-    def add_label_subscriber(self, label, callback):
-        """Register views that depend on a label"""
-        self.subscribers[label].append(callback)
+
+class Gallery:
+    """Orchestration layer for MapViews"""
+    def __init__(self, pools):
+        self.pools = pools
+        self.lock = False
+
+    @classmethod
+    def from_datasets(cls, datasets, factory_class):
+        """Convenient constructor"""
+        pools = {}
+        for label, dataset in datasets.items():
+            if hasattr(dataset, "map_view"):
+                pools[label] = Pool(factory_class(dataset))
+        return cls(pools)
 
     def connect(self, store):
-        """Subscribe to all store dispatch events"""
         store.add_subscriber(self.render)
-        return self
 
     def render(self, state):
-        """Notify listeners related to labels"""
-        for label in self.labels(state):
-            if label is None:
+        # Note: lock used to ignore state changes while building layers
+        #       e.g. source limit events
+        if not self.lock:
+            self.lock = True
+            self.render_specs(self.parse_specs(state), state)
+            self.lock = False
+
+    def parse_specs(self, state):
+        # Parse application state
+        node = state
+        for key in ("layers", "index"):
+            node = node.get(key, {})
+        return [LayerSpec(**kwargs) for _, kwargs in sorted(node.items())]
+
+    def render_specs(self, specs, state):
+        # Dynamically build/use layers from object pools
+        used_layers = defaultdict(list)
+        for spec in specs:
+            if spec.dataset == "":
                 continue
-            for method in self.subscribers[label]:
-                method(state)
 
-    def labels(self, state):
-        return state.get("layers", {}).get("labels", [])
+            key = spec.dataset
+            layer = self.pools[key].acquire()
+
+            # Unmute layer
+            layer.unmute()
+
+            # Update figure visibility
+            layer.active = spec.active
+
+            # Layer-specific state
+            layer_state = {}
+            layer_state.update(state)
+            if spec.variable != "":
+                layer_state.update(variable=spec.variable)
+            layer.render(layer_state)
+
+            used_layers[key].append(layer)
+
+        # Mute unused layers
+        for pool in self.pools.values():
+            pool.map(lambda layer: layer.mute())
+
+        # Return used layers to pool(s)
+        for key, layers in used_layers.items():
+            pool = self.pools[key]
+            for layer in layers:
+                pool.release(layer)
+
+class Layer:
+    """Facade to ease API"""
+    def __init__(self, map_view, visible, source_limits):
+        self.map_view = map_view
+        self.image_sources = getattr(self.map_view, "image_sources", [])
+        self.visible = visible
+        self.source_limits = source_limits
+        if self.source_limits is not None:
+            for source in self.image_sources:
+                self.source_limits.add_source(source)
+
+    def render(self, state):
+        self.map_view.render(state)
+
+    def mute(self):
+        self.active = []
+        if self.source_limits is not None:
+            for source in self.image_sources:
+                self.source_limits.remove_source(source)
+
+    def unmute(self):
+        if self.source_limits is not None:
+            for source in self.image_sources:
+                self.source_limits.add_source(source)
+
+    @property
+    def active(self):
+        return self.visible.active
+
+    @active.setter
+    def active(self, value):
+        self.visible.active = value
 
 
-class Artist:
-    """Applies renderer.visible logic to renderers"""
-    def __init__(self, renderers: dict):
+def factory(*args):
+    """Curry Factory constructor to accept a single argument"""
+    def wrapper(dataset):
+        return Factory(dataset, *args)
+    return wrapper
+
+
+class Factory:
+    """Reusable layers
+
+    Admittedly, there is a lot of coupling here that could be revised
+    in future releases
+    """
+    def __init__(self, dataset,
+                 color_mapper,
+                 figures,
+                 source_limits,
+                 opacity_slider):
+        self._calls = 0
+        self.dataset = dataset
+        self.color_mapper = color_mapper
+        self.figures = figures
+        self.source_limits = source_limits
+        self.opacity_slider = opacity_slider
+
+    def __call__(self):
+        """Complex construction"""
+        self._calls += 1
+        print("Factory.__call__: {}".format(self._calls))
+        try:
+            map_view = self.dataset.map_view(self.color_mapper)
+        except TypeError:
+            map_view = self.dataset.map_view()
+        visible = Visible.from_map_view(map_view, self.figures)
+        if self.opacity_slider is not None:
+            self.opacity_slider.add_renderers(visible.renderers)
+        return Layer(map_view, visible, self.source_limits)
+
+
+class Visible:
+    """Wrapper to make MapView layers visible/invisible"""
+    def __init__(self, renderers):
+        self._active = []
         self.renderers = renderers
-        self.previous_visible_state = None
+        for renderer in self.renderers:
+            renderer.visible = False
+            renderer.level = "underlay"
 
-    def connect(self, store):
-        """Connect component to the store"""
-        store.add_subscriber(self.render)
-        return self
+    @classmethod
+    def from_map_view(cls, map_view, figures):
+        """Construct from map_view and figures"""
+        renderers = [map_view.add_figure(figure) for figure in figures]
+        return cls(renderers)
 
-    def render(self, state: dict):
-        """Update visible settings of renderers"""
-        labels = state.get("layers", {}).get("labels", [])
-        active_list = state.get("layers", {}).get("active", [])
-        visible_state = to_visible_state(labels, active_list)
-        if self.previous_visible_state is None:
-            changes = diff_visible_states({}, visible_state)
-        else:
-            changes = diff_visible_states(
-                self.previous_visible_state, visible_state)
-        for label, figure_index, flag in changes:
-            self.renderers[label][figure_index].visible = flag
-        self.previous_visible_state = visible_state
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, indices):
+        for i in range(len(self.renderers)):
+            self.renderers[i].visible = i in indices
+        self._active = indices
 
 
-def to_visible_state(labels: List[str], active_list: List[List[int]]) -> dict:
-    """Maps user interface settings to visible flags
+class Pool:
+    """Manage reusable objects
 
-    >>> to_visible_state(['label'], [[1, 2]])
-    {
-        'label': [False, True, True]
-    }
-
+    :param factory: function to create new objects
     """
-    result = {}
-    for label, active in zip(labels, active_list):
-        if label is None:
-            continue
-        if label not in result:
-            result[label] = [False, False, False]
-        for i in active:
-            result[label][i] = True
-    return result
+    def __init__(self, factory):
+        self.factory = factory
+        self.reusables = deque()
 
+    def map(self, func):
+        """Apply function to objects inside pool"""
+        for reusable in self.reusables:
+            func(reusable)
 
-def diff_visible_states(left: dict, right: dict) -> List[tuple]:
-    """Calculate changes needed to map from left to right state
+    def acquire(self):
+        """Select or create an object"""
+        if len(self.reusables) == 0:
+            self.reusables.appendleft(self.factory())
+        return self.reusables.pop()
 
-    There are essentially three situations:
-       1. A label has been added, apply all flags
-       2. A label has been removed, mute True flags
-       3. The flags of an existing label have been altered
-
-    >>> left = {
-       'label': [True, False, False]
-    }
-    >>> right = {
-       'label': [True, True, False]
-    }
-    >>> diff_visible(left, right)
-    [('label', 1, True)]
-
-    A change is defined as a tuple ``(label, figure_index, flag)``, to
-    make it easy to update renderer visible attributes
-
-    .. note:: If nothing has changed an empty list is returned
-
-    :returns: list of changes
-    """
-    diff = []
-
-    # Detect additions to state
-    for key in right:
-        if key not in left:
-            for i, flag in enumerate(right[key]):
-                diff.append((key, i, flag))
-
-    # Detect removals from state
-    for key in left:
-        if key not in right:
-            for i, flag in enumerate(left[key]):
-                if flag:
-                    diff.append((key, i, False))  # Turn off True flags
-
-    # Detect alterations to existing labels
-    for key in left:
-        if key in right:
-            for i, flag in enumerate(left[key]):
-                if flag != right[key][i]:
-                    diff.append((key, i, right[key][i]))
-    return diff
+    def release(self, reusable):
+        """Return object to Pool"""
+        self.reusables.appendleft(reusable)
