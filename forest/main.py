@@ -6,6 +6,7 @@ import os
 from forest import _profile as profile
 from forest import (
         drivers,
+        dimension,
         screen,
         tools,
         series,
@@ -185,7 +186,8 @@ def main(argv=None):
             colors.reducer,
             colors.limits_reducer,
             presets.reducer,
-            tiles.reducer),
+            tiles.reducer,
+            dimension.reducer),
         initial_state=initial_state,
         middlewares=middlewares)
 
@@ -276,6 +278,12 @@ def main(argv=None):
             store.dispatch(forest.layers.save_layer(0, spec))
             break
         break
+
+    # Set variable dimensions (needed by modal dialogue)
+    for label, dataset in datasets.items():
+        pattern = label_to_pattern[label]
+        values = navigator.variables(pattern)
+        store.dispatch(dimension.set_variables(label, values))
 
     # Select web map tiling
     if config.use_web_map_tiles:

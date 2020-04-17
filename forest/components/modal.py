@@ -25,6 +25,32 @@ class Modal(Observable):
         self.selects["variable"] = bokeh.models.Select(
             title="Variable:",
             options=[])
+        self.source = bokeh.models.ColumnDataSource({
+            "datasets":  [],
+            "variables": []
+        })
+
+        # Variable options on source change
+        custom_js = bokeh.models.CustomJS(
+            args=dict(
+                dataset_select=self.selects["dataset"],
+                variable_select=self.selects["variable"]),
+            code="""
+                let source = cb_obj;
+                forest.link_selects(dataset_select, variable_select, source);
+        """)
+        self.source.js_on_change("data", custom_js)
+
+        # Variable options on dataset select change
+        custom_js = bokeh.models.CustomJS(
+            args=dict(
+                variable_select=self.selects["variable"],
+                source=self.source),
+            code="""
+                let dataset_select = cb_obj;
+                forest.link_selects(dataset_select, variable_select, source);
+        """)
+        self.selects["dataset"].js_on_change("value", custom_js)
 
         buttons = (
             bokeh.models.Button(label="Save"),
@@ -74,14 +100,26 @@ class Modal(Observable):
             # Add mode
             self.inputs["name"].value = "layer-0"
 
+        # Parse list of datasets from state
+        datasets = self.to_props(state)
+
+        # Configure dimension(s) source
+        variables = []
+        for label in datasets:
+            texts = (state.get("dimension", {})
+                          .get(label, {})
+                          .get("variables", []))
+            variables.append(texts)
+        self.source.data = {
+            "datasets": datasets,
+            "variables": variables
+        }
+
         # Configure available datasets
-        self.selects["dataset"].options = self.to_props(state)
+        self.selects["dataset"].options = datasets
         if len(self.selects["dataset"].options) > 0:
             if self.selects["dataset"].value == "":
                 self.selects["dataset"].value = self.selects["dataset"].options[0]
-
-        options = ["Please specify"] + state.get("variables", [])
-        self.selects["variable"].options = options
 
     def to_props(self, state):
         return [name for name, _ in state.get("patterns", [])]
