@@ -28,7 +28,6 @@ from forest.redux import Action
 from forest.observe import Observable
 
 SET_POSITION = "SET_POSITION"
-SET_PROFILE_IDS = "SET_PROFILE_IDS"
 
 
 def reducer(state, action):
@@ -45,8 +44,6 @@ def reducer(state, action):
     state = copy.deepcopy(state)
     if action["kind"] == SET_POSITION:
         state["position"] = action["payload"]
-    if action["kind"] == SET_PROFILE_IDS:
-        state["profile_ids"] = action["payload"]
     return state
 
 def set_position(x, y) -> Action:

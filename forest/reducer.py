@@ -7,7 +7,8 @@ from forest import (
     tools,
     colors,
     presets,
-    dimension)
+    dimension,
+    drivers.argo.reducer)
 from forest.components import (
     tiles)
 
@@ -21,4 +22,6 @@ reducer = redux.combine_reducers(
             colors.limits_reducer,
             presets.reducer,
             tiles.reducer,
-            dimension.reducer)
+            dimension.reducer,
+            drivers.argo.reducer
+            )
