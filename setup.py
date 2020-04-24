@@ -37,6 +37,7 @@ setuptools.setup(
         package_data={
             "forest": [
                 "templates/index.html",
+                "static/*",
                 "tutorial/*.json",
                 "tutorial/*.nc"
             ]
