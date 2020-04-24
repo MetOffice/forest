@@ -57,6 +57,7 @@ class Stream(Observable):
                     y = x  # Important: must be before notify() to prevent recursion
                     stream.notify(x)
                     called = True
+                    return
                 if comparator is None:
                     not_same = x != y
                 else:
