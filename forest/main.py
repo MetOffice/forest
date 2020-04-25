@@ -178,16 +178,7 @@ def main(argv=None):
         navigator,
     ]
     store = redux.Store(
-        redux.combine_reducers(
-            db.reducer,
-            layers.reducer,
-            screen.reducer,
-            tools.reducer,
-            colors.reducer,
-            colors.limits_reducer,
-            presets.reducer,
-            tiles.reducer,
-            dimension.reducer),
+        forest.reducer,
         initial_state=initial_state,
         middlewares=middlewares)
 

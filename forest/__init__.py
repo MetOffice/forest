@@ -27,7 +27,9 @@ __version__ = '0.15.2'
 
 from .config import *
 from . import (
+        actions,
         redux,
         tutorial)
 from .db import Database
 from .keys import *
+from .reducer import reducer
