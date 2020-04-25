@@ -10,7 +10,6 @@ from functools import lru_cache
 from forest.exceptions import FileNotFound, IndexNotFound
 from forest.old_state import old_state, unique
 import forest.util
-import forest.colors
 from forest import (
         geo,
         locate,
