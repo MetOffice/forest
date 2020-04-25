@@ -90,12 +90,14 @@ def set_label_visible(value: bool) -> Action:
 def reducer(state: State, action: Action) -> State:
     """Reducer to handle web map tiling settings"""
     state = copy.deepcopy(state)
-    tree = state.get("tile", {})
-    if action["kind"] == SET_TILE:
-        tree["name"] = action["payload"]
-    elif action["kind"] == SET_LABEL_VISIBLE:
-        tree["labels"] = action["payload"]
-    state["tile"] = tree
+    kind = action["kind"]
+    if kind in [SET_TILE, SET_LABEL_VISIBLE]:
+        tree = state.get("tile", {})
+        if kind == SET_TILE:
+            tree["name"] = action["payload"]
+        elif kind == SET_LABEL_VISIBLE:
+            tree["labels"] = action["payload"]
+        state["tile"] = tree
     return state
 
 
