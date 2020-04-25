@@ -9,7 +9,6 @@ import forest.view
 
 @pytest.fixture
 def factory():
-    color_mapper = bokeh.models.LinearColorMapper()
     name = "unified_model"
     settings = {"pattern": "*.nc"}
     dataset = forest.drivers.get_dataset(name, settings)
@@ -17,7 +16,6 @@ def factory():
     source_limits = Mock()
     opacity_slider = Mock()
     return forest.layers.Factory(dataset,
-                                 color_mapper,
                                  figures,
                                  source_limits,
                                  opacity_slider)

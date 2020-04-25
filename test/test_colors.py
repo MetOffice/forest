@@ -1,6 +1,7 @@
 import unittest.mock
 from unittest.mock import Mock, sentinel
 import pytest
+import forest
 import forest.components
 from forest import colors, main, redux, db
 import bokeh.models
@@ -16,15 +17,40 @@ def listener():
     ({}, colors.set_palette_name("Accent"), {"colorbar": {"name": "Accent"}}),
     ({}, colors.set_palette_number(3), {"colorbar": {"number": 3}}),
     ({}, colors.set_palette_numbers([1, 2 ,3]), {"colorbar": {"numbers": [1, 2, 3]}}),
-    ({}, colors.set_user_high(100), {}),
-    ({}, colors.set_user_low(0), {}),
-    ({}, colors.set_source_limits(0, 100), {}),
+    pytest.param({}, colors.set_user_high(100), {
+        "colorbar": {
+            "limits": {
+                "user": {
+                    "high": 100
+                }
+            }
+        }
+    }, id="set user high"),
+    pytest.param({}, colors.set_user_low(0), {
+        "colorbar": {
+            "limits": {
+                "user": {
+                    "low": 0
+                }
+            }
+        }
+    }, id="set user low"),
+    pytest.param({}, colors.set_source_limits(0, 100), {
+        "colorbar": {
+            "limits": {
+                "column_data_source": {
+                    "low": 0,
+                    "high": 100
+                }
+            }
+        }
+    }, id="set source limits"),
     ({}, colors.set_colorbar({"key": "value"}), {"colorbar": {"key": "value"}}),
     ({}, colors.set_palette_names(["example"]), {"colorbar": {"names": ["example"]}}),
     ({}, colors.set_edit_layer("Foo"), {"colorbar": {"edit": "Foo"}}),
 ])
 def test_reducer_sets_colorbar_namespace(state, action, expect):
-    result = colors.reducer(state, action)
+    result = forest.reducer(state, action)
     assert expect == result
 
 
