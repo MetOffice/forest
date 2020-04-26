@@ -233,7 +233,8 @@ def main(argv=None):
         tile_picker.connect(store)
 
     # Connect color palette controls
-    color_palette = colors.ColorPalette(color_mapper).connect(store)
+    colors.ColorMapperView(color_mapper).connect(store)
+    color_palette = colors.ColorPalette().connect(store)
 
     # Connect limit controllers to store
     user_limits = colors.UserLimits().connect(store)

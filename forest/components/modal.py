@@ -1,5 +1,6 @@
 import bokeh.models
 import bokeh.layouts
+import forest.colors
 from forest.observe import Observable
 from forest import layers
 
@@ -37,13 +38,25 @@ class Tabbed:
 
     def connect(self, store):
         self.views["default"].connect(store)
+        self.views["settings"].connect(store)
         return self
 
 
 class Settings:
     """MapView settings"""
     def __init__(self):
-        self.layout = bokeh.models.Div(text="<h1>Hello, World!</h1>")
+        self.views = {}
+        self.views["color_palette"] = forest.colors.ColorPalette()
+        self.views["user_limits"] = forest.colors.UserLimits()
+        self.layout = bokeh.layouts.column(
+            self.views["color_palette"].layout,
+            self.views["user_limits"].layout
+        )
+
+    def connect(self, store):
+        self.views["color_palette"].connect(store)
+        self.views["user_limits"].connect(store)
+        return self
 
 
 class Default(Observable):
