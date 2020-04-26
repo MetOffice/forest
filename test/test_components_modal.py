@@ -6,8 +6,8 @@ def test_render():
     state = {
         "patterns": [("A", None), ("B", None)]
     }
-    modal.view.render(state)
-    assert modal.view.selects["dataset"].options == ["A", "B"]
+    modal.view.views["layer"].render(state)
+    assert modal.view.views["layer"].selects["dataset"].options == ["A", "B"]
 
 
 def test_render_edit_mode():
@@ -25,5 +25,5 @@ def test_render_edit_mode():
             }
         }
     }
-    modal.view.render(state)
-    assert modal.view.inputs["name"].value == "Label-5"
+    modal.view.views["layer"].render(state)
+    assert modal.view.views["layer"].inputs["name"].value == "Label-5"
