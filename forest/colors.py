@@ -571,6 +571,10 @@ def connect(view, store):
     props and filters out duplicates.
     """
     view.add_subscriber(store.dispatch)
+    one_way_connect(view, store)
+
+
+def one_way_connect(view, store):
     stream = (Stream()
                 .listen_to(store)
                 .map(state_to_props)
@@ -579,10 +583,60 @@ def connect(view, store):
     stream.map(lambda props: view.render(props))
 
 
-class ColorPalette(Observable):
-    """Color palette user interface"""
+class ColorMapperView:
     def __init__(self, color_mapper):
         self.color_mapper = color_mapper
+
+    def connect(self, store):
+        """Connect component to Store"""
+        one_way_connect(self, store)
+        return self
+
+    def render(self, props):
+        if ("name" in props) and ("number" in props):
+            name = props["name"]
+            number = props["number"]
+            reverse = props.get("reverse", False)
+            palette = self.palette(name, number)
+            if reverse:
+                palette = palette[::-1]
+            self.color_mapper.palette = palette
+
+        # Set color_mapper low/high from either user/data limits
+        origin = props.get("limits", {}).get("origin", "column_data_source")
+        attrs = props.get("limits", {}).get(origin, {})
+        if "low" in attrs:
+            try:
+                self.color_mapper.low = float(attrs["low"])
+            except ValueError:
+                pass
+        if "high" in attrs:
+            try:
+                self.color_mapper.high = float(attrs["high"])
+            except ValueError:
+                pass
+
+        invisible_min = props.get("invisible_min", False)
+        if invisible_min:
+            color = bokeh.colors.RGB(0, 0, 0, a=0)
+            self.color_mapper.low_color = color
+        else:
+            self.color_mapper.low_color = None
+        invisible_max = props.get("invisible_max", False)
+        if invisible_max:
+            color = bokeh.colors.RGB(0, 0, 0, a=0)
+            self.color_mapper.high_color = color
+        else:
+            self.color_mapper.high_color = None
+
+    @staticmethod
+    def palette(name, number):
+        return bokeh.palettes.all_palettes[name][number]
+
+
+class ColorPalette(Observable):
+    """Color palette user interface"""
+    def __init__(self):
         self.dropdowns = {
             "names": bokeh.models.Dropdown(label="Palettes"),
             "numbers": bokeh.models.Dropdown(label="N")
@@ -626,14 +680,6 @@ class ColorPalette(Observable):
             self.dropdowns["names"].label = props["name"]
         if "number" in props:
             self.dropdowns["numbers"].label = str(props["number"])
-        if ("name" in props) and ("number" in props):
-            name = props["name"]
-            number = props["number"]
-            reverse = props.get("reverse", False)
-            palette = self.palette(name, number)
-            if reverse:
-                palette = palette[::-1]
-            self.color_mapper.palette = palette
         if "names" in props:
             values = props["names"]
             self.dropdowns["names"].menu = list(zip(values, values))
@@ -641,39 +687,8 @@ class ColorPalette(Observable):
             values = [str(n) for n in props["numbers"]]
             self.dropdowns["numbers"].menu = list(zip(values, values))
 
-        # Set color_mapper low/high from either user/data limits
-        origin = props.get("limits", {}).get("origin", "column_data_source")
-        attrs = props.get("limits", {}).get(origin, {})
-        if "low" in attrs:
-            try:
-                self.color_mapper.low = float(attrs["low"])
-            except ValueError:
-                pass
-        if "high" in attrs:
-            try:
-                self.color_mapper.high = float(attrs["high"])
-            except ValueError:
-                pass
-
-        invisible_min = props.get("invisible_min", False)
-        if invisible_min:
-            color = bokeh.colors.RGB(0, 0, 0, a=0)
-            self.color_mapper.low_color = color
-        else:
-            self.color_mapper.low_color = None
-        invisible_max = props.get("invisible_max", False)
-        if invisible_max:
-            color = bokeh.colors.RGB(0, 0, 0, a=0)
-            self.color_mapper.high_color = color
-        else:
-            self.color_mapper.high_color = None
-
         # Render reverse checkbox state
         if props.get("reverse", False):
             self.checkbox.active = [0]
         else:
             self.checkbox.active = []
-
-    @staticmethod
-    def palette(name, number):
-        return bokeh.palettes.all_palettes[name][number]
