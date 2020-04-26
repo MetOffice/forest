@@ -4,8 +4,50 @@ from forest.observe import Observable
 from forest import layers
 
 
-class Modal(Observable):
+class Modal:
     """Modal component"""
+    def __init__(self, view=None):
+        if view is None:
+            view = Default()
+        self.view = view
+        self.layout = bokeh.layouts.column(
+            self.view.layout,
+            name="modal",
+            sizing_mode="stretch_width")
+
+    def connect(self, store):
+        return self.view.connect(store)
+
+
+class Tabbed:
+    """Tabbed user interface"""
+    def __init__(self):
+        self.views = {}
+        self.views["default"] = Default()
+        self.views["settings"] = Settings()
+        self.layout = bokeh.models.Tabs(tabs=[
+            bokeh.models.Panel(
+                child=self.views["default"].layout,
+                title="Layer"
+            ),
+            bokeh.models.Panel(
+                child=self.views["settings"].layout,
+                title="Settings"
+            )])
+
+    def connect(self, store):
+        self.views["default"].connect(store)
+        return self
+
+
+class Settings:
+    """MapView settings"""
+    def __init__(self):
+        self.layout = bokeh.models.Div(text="<h1>Hello, World!</h1>")
+
+
+class Default(Observable):
+    """Standard modal dialogue user interface"""
     def __init__(self):
         self.div = bokeh.models.Div(text="Add layer",
                                css_classes=["custom"],
@@ -68,7 +110,6 @@ class Modal(Observable):
             self.selects["dataset"],
             self.selects["variable"],
             bokeh.layouts.row(*buttons, sizing_mode="stretch_width"),
-            name="modal",
             sizing_mode="stretch_width")
         super().__init__()
 

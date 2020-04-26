@@ -246,7 +246,11 @@ def main(argv=None):
     controls.connect(store)
 
     # Add support for a modal dialogue
-    modal = forest.components.Modal()
+    if config.features["multiple_colorbars"]:
+        view = forest.components.modal.Tabbed()
+    else:
+        view = forest.components.modal.Default()
+    modal = forest.components.Modal(view=view)
     modal.connect(store)
 
     # Set default time series visibility

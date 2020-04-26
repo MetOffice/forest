@@ -2,16 +2,16 @@ import forest.components
 
 
 def test_render():
-    view = forest.components.Modal()
+    modal = forest.components.Modal()
     state = {
         "patterns": [("A", None), ("B", None)]
     }
-    view.render(state)
-    assert view.selects["dataset"].options == ["A", "B"]
+    modal.view.render(state)
+    assert modal.view.selects["dataset"].options == ["A", "B"]
 
 
 def test_render_edit_mode():
-    view = forest.components.Modal()
+    modal = forest.components.Modal()
     state = {
         "layers": {
             "mode": {
@@ -25,5 +25,5 @@ def test_render_edit_mode():
             }
         }
     }
-    view.render(state)
-    assert view.inputs["name"].value == "Label-5"
+    modal.view.render(state)
+    assert modal.view.inputs["name"].value == "Label-5"
