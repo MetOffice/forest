@@ -20,26 +20,80 @@ class Modal:
         return self.view.connect(store)
 
 
+class Default(Observable):
+    """Standard interface for modal dialogue"""
+    def __init__(self):
+        self.views = {}
+        self.views["layer"] = Layer()
+        self.views["save"] = SaveEdit([self.views["layer"]])
+        self.layout = bokeh.layouts.column(
+            self.views["layer"].layout,
+            self.views["save"].layout
+        )
+
+    def connect(self, store):
+        self.views["layer"].connect(store)
+        self.views["save"].connect(store)
+        return self
+
+
 class Tabbed:
     """Tabbed user interface"""
     def __init__(self):
         self.views = {}
-        self.views["default"] = Default()
+        self.views["layer"] = Layer()
         self.views["settings"] = Settings()
-        self.layout = bokeh.models.Tabs(tabs=[
-            bokeh.models.Panel(
-                child=self.views["default"].layout,
-                title="Layer"
-            ),
-            bokeh.models.Panel(
-                child=self.views["settings"].layout,
-                title="Settings"
-            )])
+        self.views["save"] = SaveEdit([
+            self.views["layer"],
+            self.views["settings"]
+        ])
+        self.layout = bokeh.layouts.column(
+            bokeh.models.Tabs(tabs=[
+                bokeh.models.Panel(
+                    child=self.views["layer"].layout,
+                    title="Layer"
+                ),
+                bokeh.models.Panel(
+                    child=self.views["settings"].layout,
+                    title="Settings"
+                )]),
+            self.views["save"].layout
+        )
 
     def connect(self, store):
-        self.views["default"].connect(store)
+        self.views["layer"].connect(store)
         self.views["settings"].connect(store)
+        self.views["save"].connect(store)
         return self
+
+
+class SaveEdit(Observable):
+    """Communicates save/edit state to Store"""
+    def __init__(self, views):
+        self.views = views
+        buttons = (
+            bokeh.models.Button(label="Save"),
+            bokeh.models.Button(label="Exit"))
+        buttons[0].on_click(self.on_save)
+        for button in buttons:
+            custom_js = bokeh.models.CustomJS(code="""
+                let el = document.getElementById("modal");
+                el.style.visibility = "hidden";
+            """)
+            button.js_on_click(custom_js)
+        self.layout = bokeh.layouts.row(*buttons, sizing_mode="stretch_width")
+        super().__init__()
+
+    def connect(self, store):
+        self.add_subscriber(store.dispatch)
+        return self
+
+    def on_save(self):
+        # Send settings to forest.layers to process
+        settings = {}
+        for view in self.views:
+            settings.update(view.settings())
+        self.notify(layers.on_save(settings))
 
 
 class Settings:
@@ -53,13 +107,18 @@ class Settings:
             self.views["user_limits"].layout
         )
 
+    def settings(self):
+        # TODO: Replace with actual UI values, need to extend LayerSpec to
+        #       support ColorSpec or an equivalent pointer to ColorSpec
+        return {}
+
     def connect(self, store):
         self.views["color_palette"].connect(store)
         self.views["user_limits"].connect(store)
         return self
 
 
-class Default(Observable):
+class Layer(Observable):
     """Standard modal dialogue user interface"""
     def __init__(self):
         self.div = bokeh.models.Div(text="Add layer",
@@ -106,23 +165,11 @@ class Default(Observable):
                 forest.link_selects(dataset_select, variable_select, source);
         """)
         self.selects["dataset"].js_on_change("value", custom_js)
-
-        buttons = (
-            bokeh.models.Button(label="Save"),
-            bokeh.models.Button(label="Exit"))
-        buttons[0].on_click(self.on_save)
-        for button in buttons:
-            custom_js = bokeh.models.CustomJS(code="""
-                let el = document.getElementById("modal");
-                el.style.visibility = "hidden";
-            """)
-            button.js_on_click(custom_js)
         self.layout = bokeh.layouts.column(
             self.div,
             self.inputs["name"],
             self.selects["dataset"],
             self.selects["variable"],
-            bokeh.layouts.row(*buttons, sizing_mode="stretch_width"),
             sizing_mode="stretch_width")
         super().__init__()
 
@@ -178,11 +225,10 @@ class Default(Observable):
     def to_props(self, state):
         return [name for name, _ in state.get("patterns", [])]
 
-    def on_save(self):
+    def settings(self):
         # Send settings to forest.layers to process
-        settings = {
+        return {
             "label": self.inputs["name"].value,
             "dataset": self.selects["dataset"].value,
             "variable": self.selects["variable"].value
         }
-        self.notify(layers.on_save(settings))
