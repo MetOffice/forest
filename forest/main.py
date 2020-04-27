@@ -398,8 +398,7 @@ def main(argv=None):
         bokeh.layouts.row(time_ui.layout, name="time"))
     for root in navbar.roots:
         document.add_root(root)
-    document.add_root(
-        bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
+    document.add_root(colorbar_ui.layout)
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
     document.add_root(modal.layout)

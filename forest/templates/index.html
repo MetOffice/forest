@@ -69,7 +69,7 @@
     </div>
 
     <!-- Layout footer widgets -->
-    <footer>
+    <div id="colorbar-parent" class="colorbar-parent">
         <div id="colorbar" class="colorbar">
             {% for root in roots %}
                 {% if root.name == 'colorbar' %}
@@ -77,6 +77,8 @@
                 {% endif %}
             {% endfor %}
         </div>
+    </div>
+    <footer>
         <div id="time" class="time">
             {% for root in roots %}
                 {% if root.name == 'time' %}
