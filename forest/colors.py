@@ -679,10 +679,13 @@ class ColorPalette(Observable):
     def render(self, props):
         """Render component from properties derived from state"""
         assert isinstance(props, dict), "only support dict"
+
+        spec = parse_color_spec(props)
         if "name" in props:
-            self.dropdowns["names"].label = props["name"]
+            self.dropdowns["names"].label = spec.name
         if "number" in props:
-            self.dropdowns["numbers"].label = str(props["number"])
+            self.dropdowns["numbers"].label = str(spec.number)
+
         if "names" in props:
             values = props["names"]
             self.dropdowns["names"].menu = list(zip(values, values))
@@ -691,7 +694,7 @@ class ColorPalette(Observable):
             self.dropdowns["numbers"].menu = list(zip(values, values))
 
         # Render reverse checkbox state
-        if props.get("reverse", False):
+        if spec.reverse:
             self.checkbox.active = [0]
         else:
             self.checkbox.active = []
