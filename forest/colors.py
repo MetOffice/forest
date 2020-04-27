@@ -102,6 +102,43 @@ from forest.db.util import autolabel
 from dataclasses import dataclass, asdict
 
 
+def colorbar_figure(color_mapper, plot_width=500):
+    # Dimensions
+    padding = 5
+    margin = 20
+    colorbar_height = 20
+    plot_height = colorbar_height + 30
+
+    # Colorbar
+    colorbar = bokeh.models.ColorBar(
+        color_mapper=color_mapper,
+        location=(0, 0),
+        height=colorbar_height,
+        width=int(plot_width - (margin + padding)),
+        padding=padding,
+        orientation="horizontal",
+        major_tick_line_color="black",
+        bar_line_color="black",
+        background_fill_alpha=0.,
+    )
+    colorbar.title = ""
+
+    # Figure
+    figure = bokeh.plotting.figure(
+        plot_height=plot_height,
+        plot_width=plot_width,
+        toolbar_location=None,
+        min_border=0,
+        background_fill_alpha=0,
+        border_fill_alpha=0,
+        outline_line_color=None,
+    )
+    figure.axis.visible = False
+    figure.add_layout(colorbar, 'center')
+    return figure
+
+
+
 @dataclass
 class ColorSpec:
     """Specifies color mapper settings"""
@@ -588,6 +625,10 @@ class UserLimits(Observable):
             _props["limits"]["column_data_source"]["high"] = self.inputs["source_high"].value
         if self.inputs["source_low"].value is not None:
             _props["limits"]["column_data_source"]["low"] = self.inputs["source_low"].value
+
+        # Invisible min/max
+        for key in ("invisible_min", "invisible_max"):
+            _props[key] = len(self.checkboxes[key].active) == 1
         return _props
 
     def render(self, props):
@@ -676,7 +717,7 @@ class ColorPaletteJS:
     """Client-side ColorPalette selector"""
     def __init__(self):
         self.widths = {
-            "select": 150,
+            "select": 140,
             "div": 300
         }
         # Map palettes to ColumnDataSource
@@ -689,6 +730,14 @@ class ColorPaletteJS:
             "names": names,
             "numbers": numbers
         })
+
+        # Figure to display color bar preview
+        self.color_mapper = bokeh.models.LinearColorMapper(
+            palette="Greys256",
+            low=0,
+            high=1)
+        self.figure = colorbar_figure(self.color_mapper,
+                                      plot_width=320)
 
         # Wire up select widgets
         self.selects = {
@@ -714,12 +763,26 @@ class ColorPaletteJS:
             select.options = options
         """)
         self.selects["name"].js_on_change("value", custom_js)
+
+
+        # Preview figure
+        self.selects["name"].on_change("value", self.on_preview)
+        self.selects["number"].on_change("value", self.on_preview)
+
         self.layout = bokeh.layouts.column(
             bokeh.models.Div(text="Color palette:",
                              width=self.widths["div"]),
+            self.figure,
             bokeh.layouts.row(
                 self.selects["name"],
                 self.selects["number"]))
+
+    def on_preview(self, attr, old, new):
+        spec = ColorSpec(**self.props())
+        try:
+            spec.apply(self.color_mapper)
+        except KeyError:
+            pass
 
     def props(self):
         """Useful for aggregating form data"""

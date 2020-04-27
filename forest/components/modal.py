@@ -93,6 +93,7 @@ class SaveEdit(Observable):
         settings = {}
         for view in self.views:
             settings.update(view.settings())
+        print("DEBUG", settings)
         self.notify(layers.on_save(settings))
 
 
@@ -121,7 +122,6 @@ class Settings:
         else:
             props = global_props
 
-        print("DEBUG", props)
         # Populate initial settings with current state
         # TODO: Get this state from stat["layers"] etc.
         self.views["color_palette"].render(props)
