@@ -99,7 +99,7 @@ import numpy as np
 from forest.observe import Observable
 from forest.rx import Stream
 from forest.db.util import autolabel
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 
 @dataclass
@@ -112,6 +112,11 @@ class ColorSpec:
     low_visible: bool = True
     high: float = 1.
     high_visible: bool = True
+
+    def __post_init__(self):
+        self.number = int(self.number)
+        self.low = float(self.low)
+        self.high = float(self.high)
 
     @property
     def palette(self):
@@ -142,6 +147,37 @@ class ColorSpec:
         color_mapper.low_color = self.low_color
         color_mapper.high = self.high
         color_mapper.high_color = self.high_color
+
+
+def parse_color_spec(props):
+    kwargs = {}
+
+    # Palette
+    if "name" in props:
+        kwargs["name"] = props["name"]
+    if "number" in props:
+        kwargs["number"] = props["number"]
+    if "reverse" in props:
+        kwargs["reverse"] = props["reverse"]
+    if "invisible_min" in props:
+        kwargs["low_visible"] = not props["invisible_min"]
+    if "invisible_max" in props:
+        kwargs["high_visible"] = not props["invisible_max"]
+
+    # Limits
+    origin = props.get("limits", {}).get("origin", "column_data_source")
+    attrs = props.get("limits", {}).get(origin, {})
+    if "low" in attrs:
+        try:
+            kwargs["low"] = float(attrs["low"])
+        except ValueError:
+            pass
+    if "high" in attrs:
+        try:
+            kwargs["high"] = float(attrs["high"])
+        except ValueError:
+            pass
+    return ColorSpec(**kwargs)
 
 
 SET_INVISIBLE = "SET_INVISIBLE"
@@ -593,45 +629,12 @@ class ColorMapperView:
         return self
 
     def render(self, props):
-        if ("name" in props) and ("number" in props):
-            name = props["name"]
-            number = props["number"]
-            reverse = props.get("reverse", False)
-            palette = self.palette(name, number)
-            if reverse:
-                palette = palette[::-1]
-            self.color_mapper.palette = palette
-
-        # Set color_mapper low/high from either user/data limits
-        origin = props.get("limits", {}).get("origin", "column_data_source")
-        attrs = props.get("limits", {}).get(origin, {})
-        if "low" in attrs:
-            try:
-                self.color_mapper.low = float(attrs["low"])
-            except ValueError:
-                pass
-        if "high" in attrs:
-            try:
-                self.color_mapper.high = float(attrs["high"])
-            except ValueError:
-                pass
-
-        invisible_min = props.get("invisible_min", False)
-        if invisible_min:
-            color = bokeh.colors.RGB(0, 0, 0, a=0)
-            self.color_mapper.low_color = color
+        if isinstance(props, ColorSpec):
+            spec = props
         else:
-            self.color_mapper.low_color = None
-        invisible_max = props.get("invisible_max", False)
-        if invisible_max:
-            color = bokeh.colors.RGB(0, 0, 0, a=0)
-            self.color_mapper.high_color = color
-        else:
-            self.color_mapper.high_color = None
-
-    @staticmethod
-    def palette(name, number):
-        return bokeh.palettes.all_palettes[name][number]
+            spec = parse_color_spec(props)
+        spec.apply(self.color_mapper)
+        return
 
 
 class ColorPalette(Observable):

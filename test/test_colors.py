@@ -6,6 +6,46 @@ import bokeh.models
 import numpy as np
 
 
+@pytest.mark.parametrize("given,expect", [
+    pytest.param({}, colors.ColorSpec()),
+    pytest.param({
+        "limits": {
+            "origin": "user",
+            "user": {
+                "high": 100,
+                "low": 42
+            }
+        }
+    }, colors.ColorSpec(low=42, high=100)),
+    pytest.param({
+        "limits": {
+            "origin": "column_data_source",
+            "user": {
+                "high": 100,
+                "low": 42
+            },
+            "column_data_source": {
+                "high": 5,
+                "low": 4
+            }
+        }
+    }, colors.ColorSpec(low=4, high=5)),
+    pytest.param({
+        "name": "Accent",
+        "number": 3,
+        "reverse": True,
+        "invisible_min": True,
+        "invisible_max": True,
+    }, colors.ColorSpec(name="Accent",
+                        number=3,
+                        reverse=True,
+                        low_visible=False,
+                        high_visible=False)),
+])
+def test_parse_color_spec(given, expect):
+    assert colors.parse_color_spec(given) == expect
+
+
 @pytest.fixture
 def listener():
     return unittest.mock.Mock()
@@ -180,7 +220,6 @@ def test_controls_render_sets_menu():
 
 
 @pytest.mark.parametrize("props,palette", [
-        ({}, None),
         ({"name": "Accent", "number": 3},
             ["#7fc97f", "#beaed4", "#fdc086"]),
         ({"name": "Accent", "number": 3, "reverse": True},
