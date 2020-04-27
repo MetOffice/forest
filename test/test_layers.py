@@ -2,7 +2,21 @@ import pytest
 from unittest.mock import Mock, sentinel, call
 import bokeh.plotting
 import numpy as np
+import forest.layers
+import forest.colors
 from forest import layers, redux
+
+
+def test_layer_spec():
+    color_spec = forest.colors.ColorSpec(name="Accent")
+    layer_spec = forest.layers.LayerSpec(color_spec=color_spec)
+    assert layer_spec.color_spec.name == "Accent"
+
+
+def test_layer_spec_given_dict():
+    color_spec = {"name": "Accent"}
+    layer_spec = forest.layers.LayerSpec(color_spec=color_spec)
+    assert layer_spec.color_spec.name == "Accent"
 
 
 @pytest.mark.parametrize("action,expect", [
