@@ -211,8 +211,8 @@ def test_config_parser_use_web_map_tiles(data, expect):
 
 
 @pytest.mark.parametrize("data,expect", [
-    ({}, True),
-    ({"features": {"example": False}}, False),
+    ({}, False),
+    ({"features": {"example": True}}, True),
 ])
 def test_config_parser_features(data, expect):
     config = forest.config.Config(data)

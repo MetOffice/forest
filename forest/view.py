@@ -17,6 +17,34 @@ class AbstractMapView(ABC):
         pass
 
 
+class MapView(AbstractMapView):
+    """Extend UMView to support color_mapper"""
+    def __init__(self, um_view, color_view):
+        self.um_view = um_view
+        self.color_view = color_view
+
+    @property
+    def image_sources(self):
+        return self.um_view.image_sources
+
+    def add_figure(self, figure):
+        return self.um_view.add_figure(figure)
+
+    def render(self, state):
+        self.color_view.render(state)
+        self.um_view.render(state)
+
+
+class ColorView:
+    """Applies ColorSpec to bokeh.models.LinearColorMapper"""
+    def __init__(self, color_mapper):
+        self.color_mapper = color_mapper
+
+    def render(self, state):
+        if "color_spec" in state:
+            state["color_spec"].apply(self.color_mapper)
+
+
 class UMView(AbstractMapView):
     def __init__(self, loader, color_mapper, use_hover_tool=True):
         self.loader = loader

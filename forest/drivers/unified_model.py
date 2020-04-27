@@ -15,6 +15,7 @@ from forest import (
     view)
 from forest.exceptions import SearchFail, PressuresNotFound
 from forest.drivers import gridded_forecast
+import bokeh.models
 try:
     import iris
 except ImportError:
@@ -51,9 +52,18 @@ class Dataset:
             return Navigator(self.pattern)
 
     def map_view(self, color_mapper):
-        return view.UMView(Loader(self.label,
-                                  self.pattern,
-                                  self.locator), color_mapper)
+        # TODO: Use ColorSpec and unique LinearColorMapper in future
+        if forest.data.FEATURE_FLAGS["multiple_colorbars"]:
+            color_mapper = bokeh.models.LinearColorMapper()
+            color_view = view.ColorView(color_mapper)
+            um_view = view.UMView(Loader(self.label,
+                                         self.pattern,
+                                         self.locator), color_mapper)
+            return view.MapView(um_view, color_view)
+        else:
+            return view.UMView(Loader(self.label,
+                                      self.pattern,
+                                      self.locator), color_mapper)
 
 
 class Navigator:

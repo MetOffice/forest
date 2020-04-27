@@ -1,3 +1,4 @@
+from collections import defaultdict
 try:
     import cartopy
 except ImportError:
@@ -30,6 +31,7 @@ DISPUTED = {
     "ys": []
 }
 AUTO_SHUTDOWN = False
+FEATURE_FLAGS = defaultdict(lambda: False)
 
 def on_server_loaded():
     global DISPUTED
