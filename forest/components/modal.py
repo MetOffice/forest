@@ -100,7 +100,7 @@ class Settings:
     """MapView settings"""
     def __init__(self):
         self.views = {}
-        self.views["color_palette"] = forest.colors.ColorPalette()
+        self.views["color_palette"] = forest.colors.ColorPaletteJS()
         self.views["user_limits"] = forest.colors.UserLimits()
         self.layout = bokeh.layouts.column(
             self.views["color_palette"].layout,
@@ -108,30 +108,24 @@ class Settings:
         )
 
     def render(self, state):
+        """Configure widgets"""
+        parser = StateParser(state)
+        global_props = state.get("colorbar", {})
+        if parser.mode() == "edit":
+            # Get Layer settings
+            props = parser.edit_settings().get("colorbar", {})
+            props.update({
+                "names": global_props.get("names", []),
+                "numbers": global_props.get("numbers", []),
+            })
+        else:
+            props = global_props
+
+        print("DEBUG", props)
         # Populate initial settings with current state
         # TODO: Get this state from stat["layers"] etc.
-        fake_state = {
-            "name": "Accent",
-            "names": state.get("names", []),
-            "number": 3,
-            "numbers": state.get("numbers", []),
-            "reverse": True,
-            "invisible_min": True,
-            "invisible_max": True,
-            "limits": {
-                "origin": "user",
-                "user": {
-                    "low": 0,
-                    "high": 42
-                },
-                "column_data_source": {
-                    "low": 0.1,
-                    "high": 100.1,
-                }
-            }
-        }
-        self.views["color_palette"].render(fake_state)
-        self.views["user_limits"].render(fake_state)
+        self.views["color_palette"].render(props)
+        self.views["user_limits"].render(props)
 
     def settings(self):
         # TODO: Replace with actual UI values, need to extend LayerSpec to
@@ -140,12 +134,44 @@ class Settings:
         for view in self.views.values():
             props.update(view.props())
         return {
-            "color_spec": forest.colors.parse_color_spec(props)
+            "colorbar": props
         }
 
     def connect(self, store):
         store.add_subscriber(self.render)
         return self
+
+
+class StateParser:
+    """Parse state shape
+
+    >>> state = {
+    ...    "layers": {
+    ...         "mode": {
+    ...            "state": "add",  # or edit
+    ...            "index": 0  # optional
+    ...         },
+    ...         "index": {
+    ...             0: {"key": "value"} # layer settings
+    ...         }
+    ...    }
+    ... }
+
+    """
+    def __init__(self, state):
+        self.state = state
+        self._mode = self.state.get("layers", {}).get("mode", {})
+        self._index = self.state.get("layers", {}).get("index", {})
+
+    def mode(self):
+        return self._mode.get("state", "add")
+
+    def edit_index(self):
+        return self._mode["index"]
+
+    def edit_settings(self):
+        index = self.edit_index()
+        return self._index[index]
 
 
 class Layer(Observable):
@@ -210,18 +236,14 @@ class Layer(Observable):
 
     def render(self, state):
         # Configure title
-        mode = state.get("layers", {}).get("mode", {}).get("state", "add")
+        parser = StateParser(state)
+        mode = parser.mode()
         self.div.text = {"edit": "Edit layer"}.get(mode, "Add layer")
 
         # Set name for layer, e.g. layer-0
-        node = state
-        for key in ("layers", "mode"):
-            node = node.get(key, {})
-        mode = node.get("state", "add")
         if mode == "edit":
             # Edit mode
-            index = node["index"]
-            settings = state["layers"]["index"][index]
+            settings = parser.edit_settings()
             self.inputs["name"].value = settings["label"]
             if "dataset" in settings:
                 self.selects["dataset"].value = settings["dataset"]

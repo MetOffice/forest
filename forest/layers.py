@@ -489,6 +489,7 @@ class LayerSpec:
     variable: str = ""
     active: List[int] = field(default_factory=list)
     color_spec: colors.ColorSpec = colors.ColorSpec()
+    colorbar: dict = field(default_factory=dict)
 
     def __post_init__(self):
         if isinstance(self.color_spec, dict):
@@ -549,7 +550,7 @@ class Gallery:
             layer_state.update(state)
             if spec.variable != "":
                 layer_state.update(variable=spec.variable,
-                                   color_spec=spec.color_spec)
+                                   colorbar=spec.colorbar)
             layer.render(layer_state)
 
             used_layers[key].append(layer)

@@ -114,7 +114,12 @@ class ColorSpec:
     high_visible: bool = True
 
     def __post_init__(self):
-        self.number = int(self.number)
+        if self.name == "Palettes":
+            self.name = "Greys"
+        try:
+            self.number = int(self.number)
+        except ValueError:
+            self.number = 256
         self.low = float(self.low)
         self.high = float(self.high)
 
@@ -665,6 +670,69 @@ class ColorMapperView:
             spec = parse_color_spec(props)
         spec.apply(self.color_mapper)
         return
+
+
+class ColorPaletteJS:
+    """Client-side ColorPalette selector"""
+    def __init__(self):
+        self.widths = {
+            "select": 150,
+            "div": 300
+        }
+        # Map palettes to ColumnDataSource
+        names, numbers = [], []
+        for name, palettes in sorted(bokeh.palettes.all_palettes.items()):
+            for number in sorted(palettes.keys()):
+                names.append(name)
+                numbers.append(number)
+        self.source = bokeh.models.ColumnDataSource({
+            "names": names,
+            "numbers": numbers
+        })
+
+        # Wire up select widgets
+        self.selects = {
+            "name": bokeh.models.Select(width=self.widths["select"]),
+            "number": bokeh.models.Select(width=self.widths["select"]),
+        }
+        self.selects["name"].options = ["Please specify"] + list(sorted(set(names)))
+        self.selects["name"].value = "Please specify"
+        self.selects["number"].options = ["Please specify"]
+        self.selects["number"].value = "Please specify"
+        custom_js = bokeh.models.CustomJS(args=dict(
+                source=self.source,
+                select=self.selects["number"]), code="""
+            let name = cb_obj.value
+            let names = source.data["names"]
+            let numbers = source.data["numbers"]
+            let options = ["Please specify"]
+            for (let i=0; i<names.length; i++) {
+                if (names[i] == name) {
+                    options.push(numbers[i].toString())
+                }
+            }
+            select.options = options
+        """)
+        self.selects["name"].js_on_change("value", custom_js)
+        self.layout = bokeh.layouts.column(
+            bokeh.models.Div(text="Color palette:",
+                             width=self.widths["div"]),
+            bokeh.layouts.row(
+                self.selects["name"],
+                self.selects["number"]))
+
+    def props(self):
+        """Useful for aggregating form data"""
+        _props = {}
+        for key, select in self.selects.items():
+            if select.value is not None:
+                _props[key] = select.value
+        return _props
+
+    def render(self, props):
+        for key, select in self.selects.items():
+            if key in props:
+                select.value = str(props[key])
 
 
 class ColorPalette(Observable):
