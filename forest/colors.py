@@ -606,8 +606,8 @@ class UserLimits(Observable):
         _props = {
             "limits": {
                 "origin": {
-                    0: "user",
-                    1: "column_data_source"
+                    0: "column_data_source",
+                    1: "user"
                 }[self.radio_group.active],
                 "user": {},
                 "column_data_source": {},
@@ -657,7 +657,10 @@ class UserLimits(Observable):
 
         # Sync radio group
         origin = props.get("limits", {}).get("origin", "column_data_source")
-        self.radio_group.active = {"user": 1}.get(origin, 0)
+        if origin == "column_data_source":
+            self.radio_group.active = 0
+        else:
+            self.radio_group.active = 1
 
 
 def state_to_props(state):
