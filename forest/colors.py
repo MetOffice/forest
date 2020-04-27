@@ -559,6 +559,32 @@ class UserLimits(Observable):
         origin = {1: "user"}.get(new, "column_data_source")
         self.notify(set_limits_origin(origin))
 
+    def props(self):
+        """Helper to get current state of widgets"""
+        _props = {
+            "limits": {
+                "origin": {
+                    0: "user",
+                    1: "column_data_source"
+                }[self.radio_group.active],
+                "user": {},
+                "column_data_source": {},
+            }
+        }
+
+        # User inputs
+        if self.inputs["high"].value is not None:
+            _props["limits"]["user"]["high"] = self.inputs["high"].value
+        if self.inputs["low"].value is not None:
+            _props["limits"]["user"]["low"] = self.inputs["low"].value
+
+        # ColumnDataSource inputs
+        if self.inputs["source_high"].value is not None:
+            _props["limits"]["column_data_source"]["high"] = self.inputs["source_high"].value
+        if self.inputs["source_low"].value is not None:
+            _props["limits"]["column_data_source"]["low"] = self.inputs["source_low"].value
+        return _props
+
     def render(self, props):
         """Update user-defined limits inputs"""
         for key in ["invisible_min", "invisible_max"]:
@@ -582,6 +608,10 @@ class UserLimits(Observable):
             self.inputs["source_high"].value = str(attrs["high"])
         if "low" in attrs:
             self.inputs["source_low"].value = str(attrs["low"])
+
+        # Sync radio group
+        origin = props.get("limits", {}).get("origin", "column_data_source")
+        self.radio_group.active = {"user": 1}.get(origin, 0)
 
 
 def state_to_props(state):
@@ -664,6 +694,14 @@ class ColorPalette(Observable):
         connect(self, store)
         return self
 
+    def props(self):
+        """Helper to get widget settings"""
+        return {
+            "name": self.dropdowns["names"].label,
+            "number": self.dropdowns["numbers"].label,
+            "reverse": len(self.checkbox.active) == 1
+        }
+
     def on_name(self, attr, old, new):
         """Event-handler when a palette name is selected"""
         self.notify(set_palette_name(new))
@@ -693,7 +731,7 @@ class ColorPalette(Observable):
             values = [str(n) for n in props["numbers"]]
             self.dropdowns["numbers"].menu = list(zip(values, values))
 
-        # Render reverse checkbox state
+        # Render checkbox state
         if spec.reverse:
             self.checkbox.active = [0]
         else:

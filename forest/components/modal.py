@@ -107,19 +107,44 @@ class Settings:
             self.views["user_limits"].layout
         )
 
+    def render(self, state):
+        # Populate initial settings with current state
+        # TODO: Get this state from stat["layers"] etc.
+        fake_state = {
+            "name": "Accent",
+            "names": state.get("names", []),
+            "number": 3,
+            "numbers": state.get("numbers", []),
+            "reverse": True,
+            "invisible_min": True,
+            "invisible_max": True,
+            "limits": {
+                "origin": "user",
+                "user": {
+                    "low": 0,
+                    "high": 42
+                },
+                "column_data_source": {
+                    "low": 0.1,
+                    "high": 100.1,
+                }
+            }
+        }
+        self.views["color_palette"].render(fake_state)
+        self.views["user_limits"].render(fake_state)
+
     def settings(self):
         # TODO: Replace with actual UI values, need to extend LayerSpec to
         #       support ColorSpec or an equivalent pointer to ColorSpec
+        props = {}
+        for view in self.views.values():
+            props.update(view.props())
         return {
-            "color_spec": {
-                "name": "Accent",
-                "number": 3
-            }
+            "color_spec": forest.colors.parse_color_spec(props)
         }
 
     def connect(self, store):
-        self.views["color_palette"].connect(store)
-        self.views["user_limits"].connect(store)
+        store.add_subscriber(self.render)
         return self
 
 
