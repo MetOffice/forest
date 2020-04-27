@@ -44,6 +44,9 @@ def main(argv=None):
                     os.environ,
                     args.variables))
 
+    # Feature toggles
+    data.FEATURE_FLAGS = config.features
+
     # Full screen map
     viewport = config.default_viewport
     x_range, y_range = geo.web_mercator(

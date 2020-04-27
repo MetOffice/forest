@@ -77,7 +77,7 @@ class Config(object):
     @property
     def features(self):
         """Dict of user-defined feature toggles"""
-        d = defaultdict(lambda: True)
+        d = defaultdict(lambda: False)
         d.update(self.data.get("features", {}))
         return d
 

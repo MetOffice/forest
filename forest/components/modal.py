@@ -110,7 +110,12 @@ class Settings:
     def settings(self):
         # TODO: Replace with actual UI values, need to extend LayerSpec to
         #       support ColorSpec or an equivalent pointer to ColorSpec
-        return {}
+        return {
+            "color_spec": {
+                "name": "Accent",
+                "number": 3
+            }
+        }
 
     def connect(self, store):
         self.views["color_palette"].connect(store)

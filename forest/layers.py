@@ -548,7 +548,8 @@ class Gallery:
             layer_state = {}
             layer_state.update(state)
             if spec.variable != "":
-                layer_state.update(variable=spec.variable)
+                layer_state.update(variable=spec.variable,
+                                   color_spec=spec.color_spec)
             layer.render(layer_state)
 
             used_layers[key].append(layer)
