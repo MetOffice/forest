@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import datetime as dt
 import numpy as np
 import bokeh.models
-from forest import geo
+from forest import geo, colors
 from forest.old_state import old_state, unique
 from forest.exceptions import FileNotFound, IndexNotFound
 
@@ -41,8 +41,9 @@ class ColorView:
         self.color_mapper = color_mapper
 
     def render(self, state):
-        if "color_spec" in state:
-            state["color_spec"].apply(self.color_mapper)
+        if "colorbar" in state:
+            spec = colors.parse_color_spec(state["colorbar"])
+            spec.apply(self.color_mapper)
 
 
 class UMView(AbstractMapView):
