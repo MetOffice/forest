@@ -1,42 +1,51 @@
 """Colorbar sub-figure component"""
 import bokeh.plotting
+from forest.colors import colorbar_figure, parse_color_spec
 
 
 class ColorbarUI:
     """Helper to make a figure containing only one colorbar"""
-    def __init__(self, color_mapper):
-        # Dimensions
-        padding = 5
-        margin = 20
-        colorbar_height = 20
-        plot_height = colorbar_height + 30
-        plot_width = 500
+    def __init__(self):
+        n = 1
+        self.figures = []
+        self.color_mappers = []
+        for _ in range(n):
+            figure, color_mapper = self.make_colorbar()
+            self.color_mappers.append(color_mapper)
+            self.figures.append(figure)
+        self.layout = bokeh.layouts.column(*self.figures, name="colorbar")
 
-        # Colorbar
-        self.colorbar = bokeh.models.ColorBar(
-            color_mapper=color_mapper,
-            location=(0, 0),
-            height=colorbar_height,
-            width=int(plot_width - (margin + padding)),
-            padding=padding,
-            orientation="horizontal",
-            major_tick_line_color="black",
-            bar_line_color="black",
-            background_fill_alpha=0.,
-        )
-        self.colorbar.title = ""
+    def connect(self, store):
+        store.add_subscriber(self.render)
 
-        # Figure
-        self.figure = bokeh.plotting.figure(
-            plot_height=plot_height,
-            plot_width=plot_width,
-            toolbar_location=None,
-            min_border=0,
-            background_fill_alpha=0,
-            border_fill_alpha=0,
-            outline_line_color=None,
-        )
-        self.figure.axis.visible = False
-        self.figure.add_layout(self.colorbar, 'center')
+    def render(self, state):
+        """Query state for color_mapper settings"""
+        layers = state.get("layers", {}).get("index", {})
+        specs = []
+        for _, settings in sorted(layers.items()):
+            if "colorbar" in settings:
+                spec = parse_color_spec(settings["colorbar"])
+                specs.append(spec)
 
-        self.layout = self.figure
+        # Balance number of color_mappers
+        missing = len(specs) - len(self.color_mappers)
+        if missing > 0:
+            for _ in range(missing):
+                figure, color_mapper = self.make_colorbar()
+                self.color_mappers.append(color_mapper)
+                self.figures.append(figure)
+
+        # Add/reuse figures and color_mappers
+        for i, spec in enumerate(specs):
+            spec.apply(self.color_mappers[i])
+
+        # Update layout
+        self.layout.children = self.figures[:len(specs)]
+
+    def make_colorbar(self):
+        color_mapper = bokeh.models.LinearColorMapper(
+            palette="Greys256",
+            low=0,
+            high=1)
+        figure = colorbar_figure(color_mapper, plot_width=200)
+        return figure, color_mapper

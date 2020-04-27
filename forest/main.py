@@ -82,9 +82,6 @@ def main(argv=None):
             high=1,
             palette=bokeh.palettes.Plasma[256])
 
-    # Colorbar user interface
-    colorbar_ui = forest.components.ColorbarUI(color_mapper)
-
     # Convert config to datasets
     datasets = {}
     datasets_by_pattern = {}
@@ -184,6 +181,10 @@ def main(argv=None):
         forest.reducer,
         initial_state=initial_state,
         middlewares=middlewares)
+
+    # Colorbar user interface
+    colorbar_ui = forest.components.ColorbarUI()
+    colorbar_ui.connect(store)
 
     # Add time user interface
     time_ui = forest.components.TimeUI()
@@ -398,8 +399,7 @@ def main(argv=None):
         bokeh.layouts.row(time_ui.layout, name="time"))
     for root in navbar.roots:
         document.add_root(root)
-    document.add_root(
-        bokeh.layouts.row(colorbar_ui.layout, name="colorbar"))
+    document.add_root(colorbar_ui.layout)
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
     document.add_root(modal.layout)

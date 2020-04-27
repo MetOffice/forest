@@ -108,6 +108,10 @@ class Settings:
             self.views["user_limits"].layout
         )
 
+        def callback(attr, old, new):
+            print(attr, old, new)
+        self.views["user_limits"].radio_group.on_change("active", callback)
+
     def render(self, state):
         """Configure widgets"""
         parser = StateParser(state)

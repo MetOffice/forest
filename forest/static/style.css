@@ -33,9 +33,13 @@ footer {
     z-index: 5;
     width: 100%;
 }
+.colorbar-parent {
+    position: relative;
+    top: 50px;
+}
 .colorbar {
-    width: 500px;
-    margin: auto;
+    position: absolute;
+    right: 0;
 }
 .time {
     color: black;
