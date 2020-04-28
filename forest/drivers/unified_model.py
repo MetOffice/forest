@@ -212,7 +212,7 @@ class Loader:
         if lons.ndim == 2:
             lats = lats[:, 0]
         values = cube.data[pts]
-        return lons, lats, values, units
+        return lons, lats, values, str(units)  # Needed for tutorial data
 
 
 class Locator(object):
