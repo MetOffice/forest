@@ -772,13 +772,21 @@ class ColorPaletteJS:
         self.selects["name"].on_change("value", self.on_preview)
         self.selects["number"].on_change("value", self.on_preview)
 
+        # Reverse checkbox
+        self.checkboxes = {}
+        self.checkboxes["reverse"] = bokeh.models.CheckboxGroup(
+            labels=["Reverse"],
+            active=[])
+        self.checkboxes["reverse"].on_change("active", self.on_preview)
+
         self.layout = bokeh.layouts.column(
             bokeh.models.Div(text="Color palette:",
                              width=self.widths["div"]),
             self.figure,
             bokeh.layouts.row(
                 self.selects["name"],
-                self.selects["number"]))
+                self.selects["number"]),
+            self.checkboxes["reverse"])
 
     def on_preview(self, attr, old, new):
         spec = ColorSpec(**self.props())
@@ -793,12 +801,17 @@ class ColorPaletteJS:
         for key, select in self.selects.items():
             if select.value is not None:
                 _props[key] = select.value
+        _props["reverse"] = len(self.checkboxes["reverse"].active) == 1
         return _props
 
     def render(self, props):
         for key, select in self.selects.items():
             if key in props:
                 select.value = str(props[key])
+        self.checkboxes["reverse"].active = {
+            True: [0],
+            False: []
+        }[props.get("reverse", False)]
 
 
 class ColorPalette(Observable):
