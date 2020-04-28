@@ -44,6 +44,11 @@ setuptools.setup(
         },
         test_suite="test",
         tests_require=load("requirements-dev.txt"),
+        extras_require={
+            ':python_version == "3.6"': [
+                "dataclasses"
+            ]
+        },
         entry_points={
             'console_scripts': [
                 'forest=forest.cli.main:main',
