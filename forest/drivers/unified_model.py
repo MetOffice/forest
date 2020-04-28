@@ -52,21 +52,8 @@ class Dataset:
             return Navigator(self.pattern)
 
     def map_view(self, color_mapper=None):
-        # TODO: Use ColorSpec and unique LinearColorMapper in future
-        if forest.data.FEATURE_FLAGS["multiple_colorbars"]:
-            color_mapper = bokeh.models.LinearColorMapper(
-                palette="Greys256",
-                low=0,
-                high=1)
-            color_view = view.ColorView(color_mapper)
-            um_view = view.UMView(Loader(self.label,
-                                         self.pattern,
-                                         self.locator), color_mapper)
-            return view.MapView(um_view, color_view)
-        else:
-            return view.UMView(Loader(self.label,
-                                      self.pattern,
-                                      self.locator), color_mapper)
+        loader = Loader(self.label, self.pattern, self.locator)
+        return view.map_view(loader, color_mapper)
 
 
 class Navigator:

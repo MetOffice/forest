@@ -2,9 +2,26 @@ from abc import ABC, abstractmethod
 import datetime as dt
 import numpy as np
 import bokeh.models
+import forest.data
 from forest import geo, colors
 from forest.old_state import old_state, unique
 from forest.exceptions import FileNotFound, IndexNotFound
+
+
+def map_view(loader, color_mapper, use_hover_tool=True):
+    """Convenient method to simplify MapView construction"""
+    if forest.data.FEATURE_FLAGS["multiple_colorbars"]:
+        color_mapper = bokeh.models.LinearColorMapper(
+            palette="Greys256",
+            low=0,
+            high=1)
+        color_view = ColorView(color_mapper)
+        um_view = UMView(loader, color_mapper,
+                         use_hover_tool=use_hover_tool)
+        return MapView(um_view, color_view)
+    else:
+        return UMView(loader, color_mapper,
+                      use_hover_tool=use_hover_tool)
 
 
 class AbstractMapView(ABC):
