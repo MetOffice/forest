@@ -103,14 +103,25 @@ class Settings:
         self.views = {}
         self.views["color_palette"] = forest.colors.ColorPaletteJS()
         self.views["user_limits"] = forest.colors.UserLimits()
+        self.widths = {
+            "div": 300
+        }
+
+        # Preview properties
+        self.preview = forest.colors.Preview()
+        props = forest.colors.Props(views=[
+            self.views["color_palette"],
+            self.views["user_limits"],
+        ])
+        props.add_subscriber(self.preview.render)
+
         self.layout = bokeh.layouts.column(
+            bokeh.models.Div(text="Color palette:",
+                             width=self.widths["div"]),
             self.views["color_palette"].layout,
+            self.preview.figure,
             self.views["user_limits"].layout
         )
-
-        def callback(attr, old, new):
-            print(attr, old, new)
-        self.views["user_limits"].radio_group.on_change("active", callback)
 
     def render(self, state):
         """Configure widgets"""

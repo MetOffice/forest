@@ -511,6 +511,35 @@ class SourceLimits(Observable):
         else:
             return 0, 1
 
+SET_PROPS = "SET_PROPS"
+ON_PREVIEW = "ON_PREVIEW"
+
+
+def set_props(payload):
+    return {"kind": SET_PROPS, "payload": payload}
+
+
+def on_preview():
+    return {"kind": ON_PREVIEW}
+
+
+class Props(Observable):
+    """Adaptor to allow previews
+
+    .. note:: This should be replaced by middleware in the future
+    """
+    def __init__(self, views):
+        self.views = views
+        for view in self.views:
+            view.add_subscriber(self.on_props)
+        super().__init__()
+
+    def on_props(self, action):
+        props = {}
+        for view in self.views:
+            props.update(**view.props())
+        self.notify(set_props(props))
+
 
 class UserLimits(Observable):
     """User controlled color mapper limits"""
@@ -716,12 +745,32 @@ class ColorMapperView:
         return
 
 
-class ColorPaletteJS:
+class Preview:
+    def __init__(self):
+        # Figure to display color bar preview
+        self.color_mapper = bokeh.models.LinearColorMapper(
+            palette="Greys256",
+            low=0,
+            high=1)
+        self.figure = colorbar_figure(self.color_mapper,
+                                      plot_width=320)
+
+    def render(self, action):
+        kind = action["kind"]
+        if kind == SET_PROPS:
+            props = action["payload"]
+            spec = parse_color_spec(props)
+            try:
+                spec.apply(self.color_mapper)
+            except KeyError:
+                pass
+
+
+class ColorPaletteJS(Observable):
     """Client-side ColorPalette selector"""
     def __init__(self):
         self.widths = {
             "select": 140,
-            "div": 300
         }
         # Map palettes to ColumnDataSource
         names, numbers = [], []
@@ -733,14 +782,6 @@ class ColorPaletteJS:
             "names": names,
             "numbers": numbers
         })
-
-        # Figure to display color bar preview
-        self.color_mapper = bokeh.models.LinearColorMapper(
-            palette="Greys256",
-            low=0,
-            high=1)
-        self.figure = colorbar_figure(self.color_mapper,
-                                      plot_width=320)
 
         # Wire up select widgets
         self.selects = {
@@ -767,7 +808,6 @@ class ColorPaletteJS:
         """)
         self.selects["name"].js_on_change("value", custom_js)
 
-
         # Preview figure
         self.selects["name"].on_change("value", self.on_preview)
         self.selects["number"].on_change("value", self.on_preview)
@@ -780,20 +820,15 @@ class ColorPaletteJS:
         self.checkboxes["reverse"].on_change("active", self.on_preview)
 
         self.layout = bokeh.layouts.column(
-            bokeh.models.Div(text="Color palette:",
-                             width=self.widths["div"]),
-            self.figure,
             bokeh.layouts.row(
                 self.selects["name"],
                 self.selects["number"]),
             self.checkboxes["reverse"])
 
+        super().__init__()
+
     def on_preview(self, attr, old, new):
-        spec = ColorSpec(**self.props())
-        try:
-            spec.apply(self.color_mapper)
-        except KeyError:
-            pass
+        self.notify(on_preview())
 
     def props(self):
         """Useful for aggregating form data"""
