@@ -8,9 +8,9 @@ __all__ = [
 
 def autolabel(dropdown):
     """Automatically set Dropdown label on_click"""
-    def callback(attr, old, new):
+    def callback(event):
         for label, _value in dropdown.menu:
-            if new == _value:
+            if event.item == _value:
                 dropdown.label = label
-    dropdown.on_change("value", callback)
+    dropdown.on_click(callback)
     return callback

@@ -821,8 +821,8 @@ class ColorPalette(Observable):
             "names": bokeh.models.Dropdown(label="Palettes"),
             "numbers": bokeh.models.Dropdown(label="N")
         }
-        self.dropdowns["names"].on_change("value", self.on_name)
-        self.dropdowns["numbers"].on_change("value", self.on_number)
+        self.dropdowns["names"].on_click(self.on_name)
+        self.dropdowns["numbers"].on_click(self.on_number)
 
         self.checkbox = bokeh.models.CheckboxGroup(
             labels=["Reverse"],
@@ -849,13 +849,13 @@ class ColorPalette(Observable):
             "reverse": len(self.checkbox.active) == 1
         }
 
-    def on_name(self, attr, old, new):
+    def on_name(self, event):
         """Event-handler when a palette name is selected"""
-        self.notify(set_palette_name(new))
+        self.notify(set_palette_name(event.item))
 
-    def on_number(self, attr, old, new):
+    def on_number(self, event):
         """Event-handler when a palette number is selected"""
-        self.notify(set_palette_number(int(new)))
+        self.notify(set_palette_number(int(event.item)))
 
     def on_reverse(self, attr, old, new):
         """Event-handler when reverse toggle is changed"""
