@@ -110,7 +110,7 @@ INTAKE_TOOLTIPS = [
     ("Member", "@memberid"),
     ('Variable', "@variableid"), ]
 INTAKE_FORMATTERS = {
-    'valid': 'datetime',
+    '@valid': 'datetime',
 }
 
 

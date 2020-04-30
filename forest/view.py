@@ -86,8 +86,8 @@ class UMView(AbstractMapView):
             ("Level", "@level")]
 
         self.formatters = {
-            'valid': 'datetime',
-            'initial': 'datetime'
+            '@valid': 'datetime',
+            '@initial': 'datetime'
         }
 
     @old_state
