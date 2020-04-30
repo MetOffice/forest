@@ -1,90 +1,65 @@
-{% from macros import embed %}
 {% extends base %}
+
+<!-- Note: roots.attname raises ValueError if attname not found
+           see bokeh.embed.util.RenderRoots.__getitem__
+-->
+{% macro safe_embed(name) %}
+    {% for root in roots %}
+        {% if root.name == name %}
+           {{ embed(roots | attr(name)) }}
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+
 {% block postamble %}
 <link rel="stylesheet" href="forest/static/style.css" type="text/css" media="all">
 <script src="forest/static/script.js" charset="utf-8"></script>
 {% endblock %}
+
 {% block contents %}
     <div id="sidenav" class="sidenav">
             <button type="button" onclick="closeId('sidenav')">Close</button>
-        {% for root in roots %}
-            {% if root.name == 'controls' %}
-                {{ embed(roots.controls) | indent(10) }}
-            {% endif %}
-        {% endfor %}
+            {{ safe_embed('controls') }}
     </div>
     <div id="diagrams" class="diagrams">
             <button type="button" onclick="closeId('diagrams')">Close</button>
-            {% for root in roots %}
-                {% if root.name == 'series' %}
-                    {{ embed(roots.series) | indent(10) }}
-                {% endif %}
-            {% endfor %}
+            {{ safe_embed('series') }}
     </div>
 
     <nav>
         <div class="display-inline-block float-left">
-        {% for root in roots %}
-            {% if root.name == 'sidenav_button' %}
-                {{ embed(roots.sidenav_button) | indent(10) }}
-            {% endif %}
-        {% endfor %}
+            {{ safe_embed('sidenav_button') }}
         </div>
         <div class="margin-left-110 display-inline-block float-left">
-        {% for root in roots %}
-            {% if root.name == 'headline' %}
-                {{ embed(roots.headline) | indent(10) }}
-            {% endif %}
-        {% endfor %}
+            {{ safe_embed('headline') }}
         </div>
         <!-- Embed optional button -->
-        {% for root in roots %}
-            <!-- Note: roots.attname raises ValueError if attname not found
-                       see bokeh.embed.util.RenderRoots.__getitem__
-            -->
-            {% if root.name == 'diagrams_button' %}
-                <div class="float-right">
-                {{ embed(roots.diagrams_button) | indent(10) }}
-                </div>
-            {% endif %}
-        {% endfor %}
+        <div class="float-right">
+            {{ safe_embed('diagrams_button') }}
+        </div>
     </nav>
 
     <!-- Add modal container -->
     <div id="modal" class="modal-outer">
-        {% for root in roots %}
-            {% if root.name == 'modal' %}
-                <div class="modal-inner">{{ embed(roots.modal) }}</div>
-            {% endif %}
-        {% endfor %}
+        <div class="modal-inner">
+            {{ safe_embed('modal') }}
+        </div>
     </div>
 
     <!-- Layout figure row -->
     <div id="figures">
-        {% for root in roots %}
-            {% if root.name == 'figures' %}
-                {{ embed(roots.figures) | indent(10) }}
-            {% endif %}
-        {% endfor %}
+        {{ safe_embed('figures') }}
     </div>
 
     <!-- Layout footer widgets -->
     <div id="colorbar-parent" class="colorbar-parent">
         <div id="colorbar" class="colorbar">
-            {% for root in roots %}
-                {% if root.name == 'colorbar' %}
-                    {{ embed(roots.colorbar) | indent(10) }}
-                {% endif %}
-            {% endfor %}
+            {{ safe_embed('colorbar') }}
         </div>
     </div>
     <footer>
         <div id="time" class="time">
-            {% for root in roots %}
-                {% if root.name == 'time' %}
-                    {{ embed(roots.time) | indent(10) }}
-                {% endif %}
-            {% endfor %}
+            {{ safe_embed('time') }}
         </div>
     </footer>
 
@@ -92,10 +67,11 @@
     {% for doc in docs %}
         {% for root in doc.roots %}
             <div class="display-none">
-            {{ embed(root) | indent(10) }}
+            {{ embed(root) }}
             </div>
         {% endfor %}
     {% endfor %}
+
     <script>
 // Re-attach roots if WebSocket request served by different machine
 let reattachRoots = function() {

@@ -136,11 +136,11 @@ def main(argv=None):
             width=50)
     autolabel(dropdown)
 
-    def on_change(attr, old, new):
+    def on_change(event):
         for feature in features:
             feature.glyph.line_color = new
 
-    dropdown.on_change("value", on_change)
+    dropdown.on_click(on_change)
 
     layers_ui = layers.LayersUI()
 
@@ -458,5 +458,5 @@ def add_feature(figure, data, color="black"):
         color=color)
 
 
-if __name__.startswith("bk"):
+if __name__.startswith("bokeh"):
     main()

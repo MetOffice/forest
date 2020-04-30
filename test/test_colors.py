@@ -123,13 +123,15 @@ def test_color_controls():
     color_mapper = bokeh.models.LinearColorMapper()
     controls = colors.ColorMapperView(color_mapper)
     controls.render({"name": "Accent", "number": 3})
-    assert color_mapper.palette == ['#7fc97f', '#beaed4', '#fdc086']
+    assert color_mapper.palette == ('#7fc97f', '#beaed4', '#fdc086')
 
 
 def test_controls_on_name(listener):
+    event = Mock()
+    event.item = 5
     controls = colors.ColorPalette()
     controls.add_subscriber(listener)
-    controls.on_number(None, None, 5)
+    controls.on_number(event)
     listener.assert_called_once_with(colors.set_palette_number(5))
 
 
@@ -182,9 +184,11 @@ def test_palette_numbers(name, expect):
 
 
 def test_controls_on_number(listener):
+    event = Mock()
+    event.item = 5
     controls = colors.ColorPalette()
     controls.add_subscriber(listener)
-    controls.on_number(None, None, 5)
+    controls.on_number(event)
     listener.assert_called_once_with(colors.set_palette_number(5))
 
 
@@ -221,9 +225,9 @@ def test_controls_render_sets_menu():
 
 @pytest.mark.parametrize("props,palette", [
         ({"name": "Accent", "number": 3},
-            ["#7fc97f", "#beaed4", "#fdc086"]),
+            ("#7fc97f", "#beaed4", "#fdc086")),
         ({"name": "Accent", "number": 3, "reverse": True},
-            ["#fdc086", "#beaed4", "#7fc97f"])
+            ("#fdc086", "#beaed4", "#7fc97f"))
     ])
 def test_controls_render_palette(props, palette):
     color_mapper = bokeh.models.LinearColorMapper()
