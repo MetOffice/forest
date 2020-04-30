@@ -458,5 +458,5 @@ def add_feature(figure, data, color="black"):
         color=color)
 
 
-if __name__.startswith("bk"):
+if __name__.startswith("bokeh"):
     main()
