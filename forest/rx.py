@@ -81,3 +81,20 @@ class Stream(Observable):
                 stream.notify(x)
         self.add_subscriber(callback)
         return stream
+
+    @classmethod
+    def combine_latest(cls, *input_streams):
+        output = cls()
+        payload = len(input_streams) * [None]
+
+        def callback(i):
+            def wrapper(x):
+                nonlocal payload
+                payload[i] = x
+                output.notify(tuple(payload))
+            return wrapper
+
+        for i, stream in enumerate(input_streams):
+            stream.add_subscriber(callback(i))
+
+        return output

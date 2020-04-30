@@ -165,7 +165,6 @@ def main(argv=None):
         break
 
     middlewares = [
-        mws.echo,
         keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,
@@ -176,6 +175,7 @@ def main(argv=None):
         presets.middleware,
         layers.middleware,
         navigator,
+        mws.echo,
     ]
     store = redux.Store(
         forest.reducer,
