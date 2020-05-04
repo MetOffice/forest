@@ -6,6 +6,7 @@ import cftime
 from functools import partial
 import scipy.ndimage
 import numpy as np
+import pandas as pd
 try:
     import cf_units
 except ImportError:
@@ -104,3 +105,30 @@ def convert_units(values, old_unit, new_unit):
     if isinstance(values, list):
         values = np.asarray(values)
     return cf_units.Unit(old_unit).convert(values, new_unit)
+
+
+def replace(time, **kwargs):
+    """Swap out year, month, day, hour, minute or second"""
+    if isinstance(time, np.datetime64):
+        return (pd.Timestamp(time).replace(**kwargs)
+                                  .to_datetime64()
+                                  .astype(time.dtype))
+    elif isinstance(time, str):
+        fmt = find_fmt(time)
+        return (pd.Timestamp(time).replace(**kwargs)
+                                  .strftime(fmt))
+    return time.replace(**kwargs)
+
+
+def find_fmt(text):
+    """Determine datetime format from str"""
+    fmts = [
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+    ]
+    for fmt in fmts:
+        try:
+            dt.datetime.strptime(text, fmt)
+            return fmt
+        except ValueError:
+            continue

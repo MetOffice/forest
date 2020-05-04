@@ -4,12 +4,15 @@ import datetime as dt
 import numpy as np
 import bokeh.models
 import bokeh.layouts
-from . import util
 from collections import namedtuple
+from forest import data
 from forest.observe import Observable
 from forest.util import to_datetime as _to_datetime
 from forest.export import export
+from forest.mark import component
+import forest.util
 from typing import List, Any
+import pandas as pd
 
 
 __all__ = [
@@ -19,15 +22,36 @@ __all__ = [
 
 # Message to user when option not available
 UNAVAILABLE = "Please specify"
+UNAVAILABLE_HHMM = "HH:MM"
 
 # Action keys
 SET_VALUE = "SET_VALUE"
 NEXT_VALUE = "NEXT_VALUE"
 PREVIOUS_VALUE = "PREVIOUS_VALUE"
+ON_SELECT = "ON_SELECT"
+SET_HOUR = "SET_HOUR"
+SET_DATE = "SET_DATE"
+
+
+def on_select(text):
+    return {"kind": ON_SELECT, "payload": text}
+
+
+def set_hour(text):
+    return {"kind": SET_HOUR, "payload": text}
+
+
+def set_date(text):
+    return {"kind": SET_DATE, "payload": text}
+
+
+def add_key(key, action):
+    return {"kind": action["kind"],
+            "payload": {"key": key, "value": action["payload"]}}
 
 @export
 def set_value(key, value):
-    return dict(kind=SET_VALUE, payload=locals())
+    return dict(kind=SET_VALUE, payload={"key": key, "value": value})
 
 @export
 def next_valid_time():
@@ -243,15 +267,23 @@ def previous_item(items, item):
     return items[i - 1]
 
 
+class NotFound(Exception):
+    pass
+
 def _index(items: List[Any], item: Any):
     try:
         return items.index(item)
     except ValueError as e:
         # Index of first float within tolerance
-        if any(np.isclose(items, item)):
-            return np.isclose(items, item).argmax()
-        else:
-            raise e
+        try:
+            if any(np.isclose(items, item)):
+                return np.isclose(items, item).argmax()
+            else:
+                raise e
+        except TypeError:
+            print(type(item), type(items), type(items[0]))
+            msg = "{} not in {}".format(item, items)
+            raise NotFound(msg)
 
 
 @export
@@ -276,7 +308,8 @@ class Controls(object):
         self.navigator = navigator
 
     def __call__(self, store, action):
-        if action["kind"] == SET_VALUE:
+        kind = action["kind"]
+        if kind == SET_VALUE:
             key = action["payload"]["key"]
             handlers = {
                 "pressure": self._pressure,
@@ -288,6 +321,8 @@ class Controls(object):
                 yield from handlers[key](store, action)
             else:
                 yield action
+        elif kind in [SET_DATE, SET_HOUR]:
+            yield from calendar_middleware(store, action)
         else:
             yield action
 
@@ -358,6 +393,38 @@ class Controls(object):
         yield set_value("valid_times", valid_times)
 
 
+def calendar_middleware(store, action):
+    """Prevent feedback from calendar widget"""
+    yield action
+    kind = action["kind"]
+    if kind in [SET_DATE, SET_HOUR]:
+        # Add extra action(s) if needed
+        key = action["payload"]["key"]
+        value = action["payload"]["value"]
+
+        # Get current time from state
+        time = store.state.get(key)  # Note: Could be any "time" type
+        if isinstance(value, str):
+            value = pd.Timestamp(value)
+
+        if time is not None:
+            # Compare dates
+            if kind == SET_DATE:
+                new = forest.util.replace(time,
+                                          year=value.year,
+                                          month=value.month,
+                                          day=value.day)
+                yield set_value(key, new)
+
+            # Compare hours
+            elif kind == SET_HOUR:
+                new = forest.util.replace(time,
+                                          hour=value.hour,
+                                          minute=value.minute,
+                                          second=value.second)
+                yield set_value(key, new)
+
+
 @export
 class ControlView:
     """Layout of navigation controls
@@ -366,11 +433,15 @@ class ControlView:
     which in turn perform navigation.
     """
     def __init__(self):
+        if data.FEATURE_FLAGS["calendar"]:
+            TimeView = CalendarClockView
+        else:
+            TimeView = SelectView
         self.views = {}
         self.views["dataset"] = DatasetView()
         self.views["variable"] = DimensionView("variable", "variables", next_previous=False)
-        self.views["initial_time"] = DimensionView("initial_time", "initial_times")
-        self.views["valid_time"] = DimensionView("valid_time", "valid_times")
+        self.views["initial_time"] = DimensionView("initial_time", "initial_times", View=TimeView)
+        self.views["valid_time"] = DimensionView("valid_time", "valid_times", View=TimeView)
         self.views["pressure"] = DimensionView("pressure", "pressures", formatter=self.hpa)
         self.layout = bokeh.layouts.column(
             self.views["dataset"].layout,
@@ -403,6 +474,7 @@ def format_hpa(p):
     return "{}hPa".format(int(p))
 
 
+@component
 class DatasetView(Observable):
     """View to select datasets
 
@@ -452,19 +524,21 @@ class DatasetView(Observable):
                 return label
 
 
+@component
 class DimensionView(Observable):
     """Widgets used to navigate a dimension"""
-    def __init__(self, item_key, items_key, next_previous=True, formatter=str):
-        self.item_key = item_key
-        self.items_key = items_key
-        self.formatter = formatter
-        self._lookup = {}  # Look-up table to convert from label to value
+    def __init__(self, item_key, items_key, next_previous=True, formatter=str,
+                 View=None):
+        if View is None:
+            View = SelectView
+        self.views = {}
+        self.parser = KeyParser(item_key, items_key)
+        self.actions = KeyActions(item_key, items_key)
+        self.translator = Translator(formatter)
         self.next_previous = next_previous
         if self.next_previous:
             # Include next/previous buttons
-            self.select = bokeh.models.Select(
-                width=180)
-            self.select.on_change("value", self.on_select)
+            self.views["select"] = View(width=180)
             self.buttons = {
                 "next": bokeh.models.Button(
                     label="Next",
@@ -477,45 +551,129 @@ class DimensionView(Observable):
             self.buttons["previous"].on_click(self.on_previous)
             self.layout = bokeh.layouts.row(
                 self.buttons["previous"],
-                self.select,
+                self.views["select"].layout,
                 self.buttons["next"],
             )
         else:
             # Without next/previous buttons
-            self.select = bokeh.models.Select(width=350)
-            self.select.on_change("value", self.on_select)
+            self.views["select"] = View(width=350)
             self.layout = bokeh.layouts.row(
-                self.select
+                self.views["select"].layout
             )
+        # Wire up child views
+        self.views["select"].add_subscriber(self.on_select)
         super().__init__()
-
-    def on_select(self, attr, old, new):
-        """Handler for select widget"""
-        if new == UNAVAILABLE:
-            return
-        value = self._lookup.get(new, new)
-        self.notify(set_value(self.item_key, value))
 
     def on_next(self):
         """Handler for next button"""
-        self.notify(next_value(self.item_key, self.items_key))
+        self.notify(self.actions.next_value())
 
     def on_previous(self):
         """Handler for previous button"""
-        self.notify(previous_value(self.item_key, self.items_key))
+        self.notify(self.actions.previous_value())
 
     def connect(self, store):
         """Connect user interactions to the store"""
         self.add_subscriber(store.dispatch)
         store.add_subscriber(self.render)
 
+    def on_select(self, action):
+        kind = action["kind"]
+        if kind in [SET_DATE, SET_HOUR]:
+            action = self.actions.add_item_key(action)
+        elif kind == ON_SELECT:
+            value = self.translator.decode(action["payload"])
+            action = self.actions.set_value(value)
+        self.notify(action)
+
     def render(self, state):
         """Apply state to widgets"""
-        value = state.get(self.item_key)
-        values = state.get(self.items_key, [])
-        option = self.formatter(value)
-        options = [self.formatter(value) for value in values]
-        self._lookup.update(zip(options, values))
+        value = self.parser.item(state)
+        values = self.parser.items(state)
+        option = self.translator.encode(value)
+        options = [self.translator.encode(value) for value in values]
+        self.views["select"].render({
+            "option": option,
+            "options": options
+        })
+        if self.next_previous:
+            disabled = len(values) == 0
+            self.buttons["next"].disabled = disabled
+            self.buttons["previous"].disabled = disabled
+
+
+@component
+class CalendarClockView(Observable):
+    """Allow user to select available date and time"""
+    def __init__(self, width=None):
+        self.widths = {
+            "select": 80,
+            "picker": 90,
+            "row": 190
+        }
+        self.picker = bokeh.models.DatePicker(
+            width=self.widths["picker"])
+        self.picker.on_change("value", self.on_picker)
+        self.select = bokeh.models.Select(
+            width=self.widths["select"])
+        self.select.on_change("value", self.on_select)
+        self.layout = bokeh.layouts.row(
+            self.picker,
+            self.select,
+            width=self.widths["row"])
+        super().__init__()
+
+    def on_select(self, attr, old, new):
+        self.notify(set_hour(new))
+
+    def on_picker(self, attr, old, new):
+        self.notify(set_date(new))
+
+    def render(self, props):
+        """Set selected date"""
+        option = props.get("option")
+        options = props.get("options", [])
+
+        # Map options to timestamps
+        time = pd.Timestamp(option)
+        times = pd.to_datetime(options)
+
+        # Set calendar highlights
+        self.picker.value = str(time.date())
+        self.picker.enabled_dates = [(date, date)
+                                     for date in times.date.astype(str)]
+        fmt = "%H:%M:%S"
+        pts = ((times.year == time.year) &
+               (times.month == time.month) &
+               (times.day == time.day))
+        value = time.strftime(fmt)
+        if self.select.value != value:
+            self.select.value = value
+        values = times[pts].strftime(fmt)
+        if len(set(values) - set(self.select.options)) > 0:
+            self.select.options = sorted(set(values))
+
+
+@component
+class SelectView(Observable):
+    """Select value from menu"""
+    def __init__(self, width=None):
+        self.select = bokeh.models.Select(width=width)
+        self.select.on_change("value", self.on_select)
+        self.layout = self.select
+        super().__init__()
+
+    def on_select(self, attr, old, new):
+        """Handler for select widget"""
+        if new == UNAVAILABLE:
+            return
+        self.notify(on_select(new))
+
+    def render(self, props):
+        """Represent state"""
+        option = props.get("option")
+        options = props.get("options", [])
+
         self.select.options = [UNAVAILABLE] + options
         if option in options:
             self.select.value = option
@@ -525,6 +683,52 @@ class DimensionView(Observable):
         # Deactivate widgets if no options available
         disabled = len(options) == 0
         self.select.disabled = disabled
-        if self.next_previous:
-            self.buttons["next"].disabled = disabled
-            self.buttons["previous"].disabled = disabled
+
+
+class Translator:
+    """Layer to de-couple UI from State"""
+    def __init__(self, formatter):
+        self.formatter = formatter
+        self._lookup = {}  # Look-up table to convert from label to value
+
+    def encode(self, value):
+        """Create a key to represent the value"""
+        key = self.formatter(value)
+        self._lookup[key] = value
+        return key
+
+    def decode(self, key):
+        """Return original value associated with key"""
+        return self._lookup.get(key, key)
+
+
+class KeyParser:
+    """Query state for item/items"""
+    def __init__(self, item_key, items_key):
+        self.item_key = item_key
+        self.items_key = items_key
+
+    def item(self, state):
+        return state.get(self.item_key)
+
+    def items(self, state):
+        return state.get(self.items_key, [])
+
+
+class KeyActions:
+    """Actions with item/items key meta-data"""
+    def __init__(self, item_key, items_key):
+        self.item_key = item_key
+        self.items_key = items_key
+
+    def add_item_key(self, action):
+        return add_key(self.item_key, action)
+
+    def set_value(self, value):
+        return set_value(self.item_key, value)
+
+    def next_value(self):
+        return next_value(self.item_key, self.items_key)
+
+    def previous_value(self):
+        return previous_value(self.item_key, self.items_key)

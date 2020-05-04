@@ -1,6 +1,7 @@
 import pytest
 import unittest
 import unittest.mock
+import cftime
 import datetime as dt
 import numpy as np
 import forest.db.control
@@ -74,7 +75,7 @@ def test_dimension_view_on_select():
     listener = unittest.mock.Mock()
     view = forest.db.control.DimensionView("item", "items")
     view.add_subscriber(listener)
-    view.on_select(None, None, "token")
+    view.views["select"].on_select(None, None, "token")
     listener.assert_called_once_with(db.set_value("item", "token"))
 
 
@@ -162,7 +163,7 @@ def test_dimension_view_render_given_pressure():
             "pressure", "pressures",
             formatter=forest.db.control.format_hpa)
     view.render(state)
-    assert view.select.value == "1000hPa"
+    assert view.views["select"].select.value == "1000hPa"
 
 
 def test_dimension_view_render_sets_pressure_levels():
@@ -172,24 +173,24 @@ def test_dimension_view_render_sets_pressure_levels():
             "pressure", "pressures",
             formatter=forest.db.control.format_hpa)
     view.render(state)
-    assert view.select.options[0] == forest.db.control.UNAVAILABLE
-    assert view.select.options[1:] == ["1000hPa", "950hPa", "850hPa"]
+    assert view.views["select"].select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.views["select"].select.options[1:] == ["1000hPa", "950hPa", "850hPa"]
 
 
 def test_dimension_view_render_valid_times():
     state = {"valid_times": [dt.datetime(2019, 1, 1, 3)]}
     view = forest.db.control.DimensionView("valid_time", "valid_times")
     view.render(state)
-    assert view.select.options[0] == forest.db.control.UNAVAILABLE
-    assert view.select.options[1:] == ["2019-01-01 03:00:00"]
+    assert view.views["select"].select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.views["select"].select.options[1:] == ["2019-01-01 03:00:00"]
 
 
 def test_dimension_view_render_variables():
     state = {"variables": ["mslp"]}
     view = forest.db.control.DimensionView("variable", "variables")
     view.render(state)
-    assert view.select.options[0] == forest.db.control.UNAVAILABLE
-    assert view.select.options[1:] == ["mslp"]
+    assert view.views["select"].select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.views["select"].select.options[1:] == ["mslp"]
 
 
 def test_dimension_view_render_initial_times():
@@ -197,8 +198,8 @@ def test_dimension_view_render_initial_times():
     state = {"initial_times": initial_times}
     view = forest.db.control.DimensionView("initial_time", "initial_times")
     view.render(state)
-    assert view.select.options[0] == forest.db.control.UNAVAILABLE
-    assert view.select.options[1:] == initial_times
+    assert view.views["select"].select.options[0] == forest.db.control.UNAVAILABLE
+    assert view.views["select"].select.options[1:] == initial_times
 
 
 def test_hpa_given_small_pressures():
@@ -213,7 +214,7 @@ def test_hpa_given_small_pressures():
 def test_dimension_view_disabled(state, expect):
     view = forest.db.control.DimensionView("item", "items")
     view.render(state)
-    assert view.select.disabled == expect
+    assert view.views["select"].select.disabled == expect
     assert view.buttons["next"].disabled == expect
     assert view.buttons["previous"].disabled == expect
 
@@ -226,7 +227,7 @@ def test_dimension_view_disabled(state, expect):
 def test_dimension_no_buttons_view_disabled(state, expect):
     view = forest.db.control.DimensionView("item", "items", next_previous=False)
     view.render(state)
-    assert view.select.disabled == expect
+    assert view.views["select"].select.disabled == expect
 
 
 class TestNextPrevious(unittest.TestCase):
