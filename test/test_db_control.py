@@ -1,16 +1,33 @@
 import pytest
 import unittest
 import unittest.mock
+import cftime
 import datetime as dt
 import numpy as np
 import forest.db.control
 from forest import db, redux, rx
 
 
-def test_replace():
-    time = np.datetime64("2020-01-01 00:00:00", "s")
-    result = forest.db.control.replace(time, year=2021)
-    expect = np.datetime64("2021-01-01 00:00:00", "s")
+@pytest.mark.parametrize("given,expect", [
+    pytest.param(
+        dt.datetime(2020, 1, 1),
+        dt.datetime(2021, 1, 1),
+        id="datetime.datetime"),
+    pytest.param(
+        np.datetime64("2020-01-01 00:00:00", "s"),
+        np.datetime64("2021-01-01 00:00:00", "s"),
+        id="datetime64[s]"),
+    pytest.param(
+        "2020-01-01 00:00:00",
+        "2021-01-01 00:00:00",
+        id="str"),
+    pytest.param(
+        cftime.DatetimeGregorian(2020, 1, 1),
+        cftime.DatetimeGregorian(2021, 1, 1),
+        id="cftime.DatetimeGregorian"),
+])
+def test_replace(given, expect):
+    result = forest.db.control.replace(given, year=2021)
     assert result == expect
 
 

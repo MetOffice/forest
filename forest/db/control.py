@@ -402,11 +402,7 @@ def calendar_middleware(store, action):
         value = action["payload"]["value"]
 
         # Get current time from state
-        time = store.state.get(key)
-        is_str = isinstance(time, str)
-        if is_str:
-            fmt = find_fmt(time)
-            time = pd.Timestamp(time)
+        time = store.state.get(key)  # Note: Could be any "time" type
         if isinstance(value, str):
             value = pd.Timestamp(value)
 
@@ -417,8 +413,6 @@ def calendar_middleware(store, action):
                               year=value.year,
                               month=value.month,
                               day=value.day)
-                if is_str:
-                    new = new.strftime(fmt)
                 yield set_value(key, new)
 
             # Compare hours
@@ -427,8 +421,6 @@ def calendar_middleware(store, action):
                               hour=value.hour,
                               minute=value.minute,
                               second=value.second)
-                if is_str:
-                    new = new.strftime(fmt)
                 yield set_value(key, new)
 
 
@@ -438,6 +430,10 @@ def replace(time, **kwargs):
         return (pd.Timestamp(time).replace(**kwargs)
                                   .to_datetime64()
                                   .astype(time.dtype))
+    elif isinstance(time, str):
+        fmt = find_fmt(time)
+        return (pd.Timestamp(time).replace(**kwargs)
+                                  .strftime(fmt))
     return time.replace(**kwargs)
 
 
