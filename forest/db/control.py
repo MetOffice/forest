@@ -10,6 +10,7 @@ from forest import rx, data
 from forest.observe import Observable
 from forest.util import to_datetime as _to_datetime
 from forest.export import export
+from forest.mark import component
 from typing import List, Any
 import pandas as pd
 
@@ -290,11 +291,10 @@ class Navigator(object):
 class Controls(object):
     def __init__(self, navigator):
         self.navigator = navigator
-        self.calendar_middleware = CalendarMiddleware()
 
     def __call__(self, store, action):
 
-        yield from self.calendar_middleware(store, action)
+        yield from calendar_middleware(store, action)
 
         if action["kind"] == SET_VALUE:
             key = action["payload"]["key"]
@@ -392,25 +392,12 @@ def find_fmt(text):
             continue
 
 
-class CalendarMiddleware:
-    def __init__(self):
-        from collections import defaultdict
-        self.actions = defaultdict(list)
-
-    def __call__(self, store, action):
-        """Prevent feedback from calendar widget"""
-        yield action
-        kind = action["kind"]
-        if kind == SET_VALUE:
-            key = action["payload"]["key"]
-            self.actions[key].append(action)
-        elif kind in [SET_DATE, SET_HOUR]:
-            print(self.actions)
-            print(action)
-
-    def _handle(self):
+def calendar_middleware(store, action):
+    """Prevent feedback from calendar widget"""
+    yield action
+    kind = action["kind"]
+    if kind in [SET_DATE, SET_HOUR]:
         # Add extra action(s) if needed
-        kind = action["kind"]
         key = action["payload"]["key"]
         value = action["payload"]["value"]
 
@@ -625,6 +612,7 @@ def set_date(text):
     return {"kind": SET_DATE, "payload": text}
 
 
+@component
 class CalendarClockView(Observable):
     """Allow user to select available date and time"""
     def __init__(self,
