@@ -4,13 +4,13 @@ import datetime as dt
 import numpy as np
 import bokeh.models
 import bokeh.layouts
-from . import util
 from collections import namedtuple
-from forest import rx, data
+from forest import data
 from forest.observe import Observable
 from forest.util import to_datetime as _to_datetime
 from forest.export import export
 from forest.mark import component
+import forest.util
 from typing import List, Any
 import pandas as pd
 
@@ -28,6 +28,21 @@ UNAVAILABLE_HHMM = "HH:MM"
 SET_VALUE = "SET_VALUE"
 NEXT_VALUE = "NEXT_VALUE"
 PREVIOUS_VALUE = "PREVIOUS_VALUE"
+ON_SELECT = "ON_SELECT"
+SET_HOUR = "SET_HOUR"
+SET_DATE = "SET_DATE"
+
+
+def on_select(text):
+    return {"kind": ON_SELECT, "payload": text}
+
+
+def set_hour(text):
+    return {"kind": SET_HOUR, "payload": text}
+
+
+def set_date(text):
+    return {"kind": SET_DATE, "payload": text}
 
 
 def add_key(key, action):
@@ -378,20 +393,6 @@ class Controls(object):
         yield set_value("valid_times", valid_times)
 
 
-def find_fmt(text):
-    """Determine datetime format from str"""
-    fmts = [
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S",
-    ]
-    for fmt in fmts:
-        try:
-            dt.datetime.strptime(text, fmt)
-            return fmt
-        except:
-            continue
-
-
 def calendar_middleware(store, action):
     """Prevent feedback from calendar widget"""
     yield action
@@ -409,32 +410,19 @@ def calendar_middleware(store, action):
         if time is not None:
             # Compare dates
             if kind == SET_DATE:
-                new = replace(time,
-                              year=value.year,
-                              month=value.month,
-                              day=value.day)
+                new = forest.util.replace(time,
+                                          year=value.year,
+                                          month=value.month,
+                                          day=value.day)
                 yield set_value(key, new)
 
             # Compare hours
             elif kind == SET_HOUR:
-                new = replace(time,
-                              hour=value.hour,
-                              minute=value.minute,
-                              second=value.second)
+                new = forest.util.replace(time,
+                                          hour=value.hour,
+                                          minute=value.minute,
+                                          second=value.second)
                 yield set_value(key, new)
-
-
-def replace(time, **kwargs):
-    """Swap out year, month, day, hour, minute or second"""
-    if isinstance(time, np.datetime64):
-        return (pd.Timestamp(time).replace(**kwargs)
-                                  .to_datetime64()
-                                  .astype(time.dtype))
-    elif isinstance(time, str):
-        fmt = find_fmt(time)
-        return (pd.Timestamp(time).replace(**kwargs)
-                                  .strftime(fmt))
-    return time.replace(**kwargs)
 
 
 @export
@@ -612,23 +600,6 @@ class DimensionView(Observable):
             disabled = len(values) == 0
             self.buttons["next"].disabled = disabled
             self.buttons["previous"].disabled = disabled
-
-
-ON_SELECT = "ON_SELECT"
-SET_HOUR = "SET_HOUR"
-SET_DATE = "SET_DATE"
-
-
-def on_select(text):
-    return {"kind": ON_SELECT, "payload": text}
-
-
-def set_hour(text):
-    return {"kind": SET_HOUR, "payload": text}
-
-
-def set_date(text):
-    return {"kind": SET_DATE, "payload": text}
 
 
 @component
