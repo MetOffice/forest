@@ -1,6 +1,7 @@
 """Decorators to mark classes and functions"""
 from unittest.mock import Mock
 from contextlib import contextmanager
+from functools import wraps
 from forest.observe import Observable
 
 
@@ -13,6 +14,7 @@ def component(cls):
 
 def disable_notify(render):
     """Disable self.notify during self.render"""
+    @wraps(render)
     def wrapper(self, *args, **kwargs):
         with disable(self, "notify"):
             return_value = render(self, *args, **kwargs)
