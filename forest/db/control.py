@@ -293,10 +293,8 @@ class Controls(object):
         self.navigator = navigator
 
     def __call__(self, store, action):
-
-        yield from calendar_middleware(store, action)
-
-        if action["kind"] == SET_VALUE:
+        kind = action["kind"]
+        if kind == SET_VALUE:
             key = action["payload"]["key"]
             handlers = {
                 "pressure": self._pressure,
@@ -308,6 +306,8 @@ class Controls(object):
                 yield from handlers[key](store, action)
             else:
                 yield action
+        elif kind in [SET_DATE, SET_HOUR]:
+            yield from calendar_middleware(store, action)
         else:
             yield action
 
@@ -413,27 +413,32 @@ def calendar_middleware(store, action):
         if time is not None:
             # Compare dates
             if kind == SET_DATE:
-                if not ((time.year == value.year) and
-                        (time.month == value.month) and
-                        (time.day == value.day)):
-                    new = time.replace(value.year,
-                                       value.month,
-                                       value.day)
-                    if is_str:
-                        new = new.strftime(fmt)
-                    yield set_value(key, new)
+                new = replace(time,
+                              year=value.year,
+                              month=value.month,
+                              day=value.day)
+                if is_str:
+                    new = new.strftime(fmt)
+                yield set_value(key, new)
 
             # Compare hours
             elif kind == SET_HOUR:
-                if not ((time.hour == value.hour) and
-                        (time.minute == value.minute) and
-                        (time.second == value.second)):
-                    new = time.replace(hour=value.hour,
-                                       minute=value.minute,
-                                       second=value.second)
-                    if is_str:
-                        new = new.strftime(fmt)
-                    yield set_value(key, new)
+                new = replace(time,
+                              hour=value.hour,
+                              minute=value.minute,
+                              second=value.second)
+                if is_str:
+                    new = new.strftime(fmt)
+                yield set_value(key, new)
+
+
+def replace(time, **kwargs):
+    """Swap out year, month, day, hour, minute or second"""
+    if isinstance(time, np.datetime64):
+        return (pd.Timestamp(time).replace(**kwargs)
+                                  .to_datetime64()
+                                  .astype(time.dtype))
+    return time.replace(**kwargs)
 
 
 @export
@@ -485,6 +490,7 @@ def format_hpa(p):
     return "{}hPa".format(int(p))
 
 
+@component
 class DatasetView(Observable):
     """View to select datasets
 
@@ -534,6 +540,7 @@ class DatasetView(Observable):
                 return label
 
 
+@component
 class DimensionView(Observable):
     """Widgets used to navigate a dimension"""
     def __init__(self, item_key, items_key, next_previous=True, formatter=str,
@@ -547,10 +554,7 @@ class DimensionView(Observable):
         self.next_previous = next_previous
         if self.next_previous:
             # Include next/previous buttons
-            self.views["select"] = View(self.parser,
-                                        self.translator,
-                                        self.actions,
-                                        width=180)
+            self.views["select"] = View(width=180)
             self.buttons = {
                 "next": bokeh.models.Button(
                     label="Next",
@@ -568,13 +572,12 @@ class DimensionView(Observable):
             )
         else:
             # Without next/previous buttons
-            self.views["select"] = View(self.parser,
-                                        self.translator,
-                                        self.actions,
-                                        width=350)
+            self.views["select"] = View(width=350)
             self.layout = bokeh.layouts.row(
                 self.views["select"].layout
             )
+        # Wire up child views
+        self.views["select"].add_subscriber(self.on_select)
         super().__init__()
 
     def on_next(self):
@@ -589,19 +592,39 @@ class DimensionView(Observable):
         """Connect user interactions to the store"""
         self.add_subscriber(store.dispatch)
         store.add_subscriber(self.render)
-        self.views["select"].connect(store)
+
+    def on_select(self, action):
+        kind = action["kind"]
+        if kind in [SET_DATE, SET_HOUR]:
+            action = self.actions.add_item_key(action)
+        elif kind == ON_SELECT:
+            value = self.translator.decode(action["payload"])
+            action = self.actions.set_value(value)
+        self.notify(action)
 
     def render(self, state):
         """Apply state to widgets"""
+        value = self.parser.item(state)
         values = self.parser.items(state)
+        option = self.translator.encode(value)
+        options = [self.translator.encode(value) for value in values]
+        self.views["select"].render({
+            "option": option,
+            "options": options
+        })
         if self.next_previous:
             disabled = len(values) == 0
             self.buttons["next"].disabled = disabled
             self.buttons["previous"].disabled = disabled
 
 
+ON_SELECT = "ON_SELECT"
 SET_HOUR = "SET_HOUR"
 SET_DATE = "SET_DATE"
+
+
+def on_select(text):
+    return {"kind": ON_SELECT, "payload": text}
 
 
 def set_hour(text):
@@ -615,15 +638,7 @@ def set_date(text):
 @component
 class CalendarClockView(Observable):
     """Allow user to select available date and time"""
-    def __init__(self,
-                 parser,
-                 translator,
-                 actions,
-                 width=None):
-        self._values = []
-        self.parser = parser
-        self.translator = translator
-        self.actions = actions
+    def __init__(self, width=None):
         self.widths = {
             "select": 80,
             "picker": 90,
@@ -642,26 +657,15 @@ class CalendarClockView(Observable):
         super().__init__()
 
     def on_select(self, attr, old, new):
-        self._values.append(new)
-        action = self.actions.add_item_key(set_hour(new))
-        self.notify(action)
+        self.notify(set_hour(new))
 
     def on_picker(self, attr, old, new):
-        action = self.actions.add_item_key(set_date(new))
-        self.notify(action)
+        self.notify(set_date(new))
 
-    def connect(self, store):
-        """Link component to application state changes"""
-        self.add_subscriber(store.dispatch)
-        store.add_subscriber(self.render)
-        return self
-
-    def render(self, state):
+    def render(self, props):
         """Set selected date"""
-        value = self.parser.item(state)
-        values = self.parser.items(state)
-        option = self.translator.encode(value)
-        options = [self.translator.encode(value) for value in values]
+        option = props.get("option")
+        options = props.get("options", [])
 
         # Map options to timestamps
         time = pd.Timestamp(option)
@@ -683,38 +687,25 @@ class CalendarClockView(Observable):
             self.select.options = sorted(set(values))
 
 
+@component
 class SelectView(Observable):
     """Select value from menu"""
-    def __init__(self,
-                 parser,
-                 translator,
-                 actions,
-                 width):
-        self.parser = parser
-        self.translator = translator
-        self.actions = actions
+    def __init__(self, width=None):
         self.select = bokeh.models.Select(width=width)
         self.select.on_change("value", self.on_select)
         self.layout = self.select
         super().__init__()
 
-    def connect(self, store):
-        self.add_subscriber(store.dispatch)
-        store.add_subscriber(self.render)
-
     def on_select(self, attr, old, new):
         """Handler for select widget"""
         if new == UNAVAILABLE:
             return
-        value = self.translator.decode(new)
-        self.notify(self.actions.set_value(value))
+        self.notify(on_select(new))
 
-    def render(self, state):
+    def render(self, props):
         """Represent state"""
-        value = self.parser.item(state)
-        values = self.parser.items(state)
-        option = self.translator.encode(value)
-        options = [self.translator.encode(value) for value in values]
+        option = props.get("option")
+        options = props.get("options", [])
 
         self.select.options = [UNAVAILABLE] + options
         if option in options:

@@ -7,6 +7,13 @@ import forest.db.control
 from forest import db, redux, rx
 
 
+def test_replace():
+    time = np.datetime64("2020-01-01 00:00:00", "s")
+    result = forest.db.control.replace(time, year=2021)
+    expect = np.datetime64("2021-01-01 00:00:00", "s")
+    assert result == expect
+
+
 def test_reducer_immutable_state():
     """Ensure copy.deepcopy is used to create a new state"""
     previous_state = {"key": ["value"]}
@@ -74,7 +81,7 @@ def test_dimension_view_on_select():
     listener = unittest.mock.Mock()
     view = forest.db.control.DimensionView("item", "items")
     view.add_subscriber(listener)
-    view.on_select(None, None, "token")
+    view.views["select"].on_select(None, None, "token")
     listener.assert_called_once_with(db.set_value("item", "token"))
 
 
