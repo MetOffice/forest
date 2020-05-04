@@ -25,7 +25,10 @@ pool of knowledge
 
 A user interface component typically has a two-way connection
 with the Store, it can both send actions to the store to
-be reduced and receive state updates to render itself.
+be reduced and receive state updates to render itself. While rendering
+it should not be possible to emit new actions. This behaviour is commonly
+referred to as one-way data flow. One-way data flow is enforced by the
+``forest.mark.component`` decorator.
 
 The intention is for all components to connect themselves
 to the store and be responsible for their own wiring. Most components
@@ -50,7 +53,11 @@ update?
 
 .. code:: python
 
+   from forest.mark import component
+
+   @component
    class ReactiveView:
+       """Re-render on state change"""
        ...
        def connect(self, store):
            # Views merely react to state changes
@@ -64,8 +71,18 @@ A simple user interface component should be able to
 send messages to the store as and when a user interacts
 with it.
 
+.. note:: It is good practice to use the ``@component`` decorator
+          to signal intention to  readers of the code
+          and to enforce one-way data flow where necessary
+
+Broadly speaking components connect to the store in either a one-way or
+two-way manner. One-way components send messages to the store and do
+not react to state changes. Two-way components both send messages and
+re-render on state change.
+
 .. code:: python
 
+    @component
     class OneWayUI(Observable):
         # Only sends actions to the store
         def __init__(self):
@@ -84,6 +101,7 @@ respond to state changes by updating its representation.
 
 .. code:: python
 
+    @component
     class TwoWayUI(Observable):
         # Same as OneWayUI but renders on state change
         ...
@@ -116,6 +134,7 @@ when those properties change.
 
     from forest import rx  # minimalist functional reactive programming
 
+    @component
     class EfficientUI(Observable):
         # Only renders when a property changes
 
