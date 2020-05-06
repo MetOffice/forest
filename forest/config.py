@@ -23,11 +23,41 @@ applications.
 import os
 import string
 import yaml
+from dataclasses import dataclass
 from collections import defaultdict
+from collections.abc import Mapping
 from forest.export import export
 
 
 __all__ = []
+
+
+@dataclass
+class PluginSpec:
+    """Data representation of plugin"""
+    entry_point: str
+
+
+class Plugins(Mapping):
+    """Specialist mapping between allowed keys and specs"""
+    def __init__(self, data):
+        allowed = ("feature",)
+        self.data = {}
+        for key, value in data.items():
+            if key in allowed:
+                self.data[key] = PluginSpec(**value)
+            else:
+                msg = f"{key} not in {allowed}"
+                raise Exception(msg)
+
+    def __getitem__(self, *args, **kwargs):
+        return self.data.__getitem__(*args, **kwargs)
+
+    def __len__(self, *args, **kwargs):
+        return self.data.__len__(*args, **kwargs)
+
+    def __iter__(self, *args, **kwargs):
+        return self.data.__iter__(*args, **kwargs)
 
 
 class Viewport:
@@ -68,6 +98,7 @@ class Config(object):
     """
     def __init__(self, data):
         self.data = data
+        self.plugins = Plugins(self.data.get("plugins", {}))
 
     def __repr__(self):
         return "{}({})".format(

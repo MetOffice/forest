@@ -217,3 +217,25 @@ def test_config_parser_use_web_map_tiles(data, expect):
 def test_config_parser_features(data, expect):
     config = forest.config.Config(data)
     assert config.features["example"] == expect
+
+
+def test_config_parser_plugin_entry_points():
+    config = forest.config.Config({
+        "plugins": {
+            "feature": {
+                "entry_point": "module.main"
+            }
+        }
+    })
+    assert config.plugins["feature"].entry_point == "module.main"
+
+
+def test_config_parser_plugin_given_unsupported_key():
+    with pytest.raises(Exception):
+         forest.config.Config({
+            "plugins": {
+                "not_a_key": {
+                    "entry_point": "module.main"
+                }
+            }
+        })

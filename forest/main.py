@@ -16,6 +16,7 @@ from forest import (
         layers,
         db,
         keys,
+        plugin,
         presets,
         redux,
         rx,
@@ -45,7 +46,11 @@ def main(argv=None):
                     args.variables))
 
     # Feature toggles
-    data.FEATURE_FLAGS = config.features
+    if "feature" in config.plugins:
+        features = plugin.call(config.plugins["feature"].entry_point)
+    else:
+        features = config.features
+    data.FEATURE_FLAGS = features
 
     # Full screen map
     viewport = config.default_viewport
