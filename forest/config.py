@@ -23,7 +23,6 @@ applications.
 import os
 import string
 import yaml
-from enum import Enum
 from dataclasses import dataclass
 from collections import defaultdict
 from collections.abc import Mapping
