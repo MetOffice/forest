@@ -23,7 +23,7 @@ forecasts alongside observations.
 .. automodule:: forest.presets
 
 """
-__version__ = '0.16.0'
+__version__ = '0.16.1'
 
 from .config import *
 from . import (
