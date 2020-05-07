@@ -216,7 +216,7 @@ def main(argv=None):
             "profile": "Display Profile"
         }
     available_features = {k: display_names[k]
-                          for k in display_names.keys() if config.features[k]}
+                          for k in display_names.keys() if data.FEATURE_FLAGS[k]}
 
     tools_panel = tools.ToolsPanel(available_features)
     tools_panel.connect(store)
@@ -256,7 +256,7 @@ def main(argv=None):
     controls.connect(store)
 
     # Add support for a modal dialogue
-    if config.features["multiple_colorbars"]:
+    if data.FEATURE_FLAGS["multiple_colorbars"]:
         view = forest.components.modal.Tabbed()
     else:
         view = forest.components.modal.Default()
@@ -327,7 +327,7 @@ def main(argv=None):
         ])
 
     tool_figures = {}
-    if config.features["time_series"]:
+    if data.FEATURE_FLAGS["time_series"]:
         # Series sub-figure widget
         series_figure = bokeh.plotting.figure(
                     plot_width=400,
@@ -351,7 +351,7 @@ def main(argv=None):
 
         tool_figures["series_figure"] = series_figure
 
-    if config.features["profile"]:
+    if data.FEATURE_FLAGS["profile"]:
         # Profile sub-figure widget
         profile_figure = bokeh.plotting.figure(
                     plot_width=300,
