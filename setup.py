@@ -63,7 +63,7 @@ class BuildJSCommand(setuptools.command.build_py.build_py):
     """
     def run(self):
         cwd = os.getcwd()
-        os.chdir("forest/js")
+        os.chdir(os.path.join("forest", "js"))
         if not os.path.exists("node_modules"):
             subprocess.check_call(["npm", "install"])
         subprocess.check_call(["npm", "run", "build"])
