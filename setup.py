@@ -11,6 +11,7 @@ import setuptools.command.install
 
 
 NAME = "forest"
+JS_DIR = os.path.join(os.path.dirname(__file__), NAME, r"js")
 
 
 def find_version():
@@ -63,7 +64,7 @@ class BuildJSCommand(setuptools.command.build_py.build_py):
     """
     def run(self):
         cwd = os.getcwd()
-        os.chdir(os.path.join("forest", "js"))
+        os.chdir(JS_DIR)
         if not os.path.exists("node_modules"):
             subprocess.check_call(["npm", "install"])
         subprocess.check_call(["npm", "run", "build"])
