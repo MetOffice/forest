@@ -1,4 +1,5 @@
 bokeh>=2.0.1 # Port to 2.0.0 in future
+nodejs>=10.13
 datashader
 h5netcdf
 iris
