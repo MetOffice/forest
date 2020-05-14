@@ -1,0 +1,2 @@
+window.forest = require('./forest')
+
