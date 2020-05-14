@@ -8,11 +8,11 @@
     "watch": "jest --watch ./*.test.js",
     "build": "browserify main.js -o ../static/forest-min.js"
   },
-  "author": "",
-  "license": "BSD 3-Clause License",
+  "author": "andrewgryan",
+  "license": "BSD-3-Clause",
   "devDependencies": {
     "browserify": "^16.5.1",
-    "jest": "^25.4.0",
+    "jest": "^26.0.1",
     "redux": "^4.0.5"
   }
 }

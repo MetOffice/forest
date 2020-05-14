@@ -273,6 +273,9 @@ ns.throttledUpdate = throttle(function(source, data) {
 }, 200)
 
 
+ns.helloWorld = () => "Hello, World!"
+
+
 // Populate variable options from dataset value
 ns.link_selects = function(dataset_select, variable_select, source) {
     let label = dataset_select.value;
