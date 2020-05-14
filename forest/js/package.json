@@ -1,0 +1,17 @@
+{
+  "name": "forestjs",
+  "version": "0.0.1",
+  "description": "Helper JS for FOREST Python library",
+  "main": "index.js",
+  "dependencies": {
+    "redux": "^4.0.5"
+  },
+  "devDependencies": {
+    "jest": "^26.0.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "andrewgryan",
+  "license": "BSD-3-Clause"
+}
