@@ -7,10 +7,13 @@
     "redux": "^4.0.5"
   },
   "devDependencies": {
+    "browserify": "^16.5.1",
     "jest": "^26.0.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "watch": "jest --watch ./*.test.js",
+    "build": "browserify main.js -o ../static/forest-min.js"
   },
   "author": "andrewgryan",
   "license": "BSD-3-Clause"
