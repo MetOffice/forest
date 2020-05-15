@@ -301,8 +301,11 @@ class Navigator:
     def valid_times(self, pattern, variable, initial_time):
         # Populates initial_state and used by forest.db.control.Control
         times = self.locator.valid_times()
-        spacing = int(np.floor(len(times) / 200))
-        return times[::spacing]
+        if len(times) > 100:
+            spacing = int(np.floor(len(times) / 200))
+            return times[::spacing]
+        else:
+            return times
 
     def pressures(self, pattern, variable, initial_time):
         return []

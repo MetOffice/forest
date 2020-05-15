@@ -2,6 +2,7 @@
 import copy
 import datetime as dt
 import numpy as np
+import pandas as pd
 import bokeh.models
 import bokeh.layouts
 from collections import namedtuple
@@ -117,7 +118,11 @@ def time_array_equal(x, y):
         return False
     elif (len(x) == 0) or (len(y) == 0):
         return x == y
-    return np.all(_vto_datetime(x) == _vto_datetime(y))
+    try:
+        return np.all(_vto_datetime(x) == _vto_datetime(y))
+    except TypeError:
+        # NOTE: Needed for EarthNetworks DatetimeIndex
+        return np.all(pd.to_datetime(x) == pd.to_datetime(y))
 
 def equal_value(a, b):
     if (a is None) and (b is None):
