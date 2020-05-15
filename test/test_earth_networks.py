@@ -51,8 +51,11 @@ def test_dataset_navigator():
 
 def test_navigator_variables():
     navigator = earth_networks.Navigator([])
-    assert navigator.variables(None) == [
-        "Cloud-ground strike density",
-        "Intra-cloud strike density",
-        "Time since recent flash"
-    ]
+    assert set(navigator.variables(None)) == set([
+        "Strike density (cloud-ground)",
+        "Strike density (intra-cloud)",
+        "Strike density (total)",
+        "Time since flash (cloud-ground)",
+        "Time since flash (intra-cloud)",
+        "Time since flash (total)"
+    ])

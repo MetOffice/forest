@@ -291,9 +291,12 @@ class Navigator:
         self.locator = locator
 
     def variables(self, pattern):
-        return ["Cloud-ground strike density",
-                "Intra-cloud strike density",
-                "Time since recent flash"]
+        labels = []
+        for metric in ("time since flash", "strike density"):
+            for category in ("cloud-ground", "intra-cloud", "total"):
+                label = "{} ({})".format(metric.capitalize(), category)
+                labels.append(label)
+        return labels
 
     def initial_times(self, pattern, variable):
         return [dt.datetime(1970, 1, 1)]
