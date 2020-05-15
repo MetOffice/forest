@@ -94,19 +94,21 @@ def test_view_render_time_since_flash():
         "variable": "Time since flash (cloud-ground)",
         "valid_time": "1970-01-01T00:00:00Z"
     })
-    expect = bokeh.palettes.all_palettes["BuGn"][8]
+    expect = bokeh.palettes.all_palettes["RdGy"][8]
     assert view.color_mappers["image"].palette == expect
 
 
 @pytest.mark.parametrize("variable, expect", [
     pytest.param("Time since flash (intra-cloud)", [
         ('Variable', '@variable'),
-        ('Period start', '@date{%F}'),
+        ('Time window', '@window{00:00:00}'),
+        ('Period start', '@date{%Y-%m-%d %H:%M:%S}'),
         ("Since start", "@image{00:00:00}")
     ], id="time since flash"),
     pytest.param("Strike density (cloud-ground)", [
         ('Variable', '@variable'),
-        ('Period start', '@date{%F}'),
+        ('Time window', '@window{00:00:00}'),
+        ('Period start', '@date{%Y-%m-%d %H:%M:%S}'),
         ('Value', '@image @units'),
     ], id="strike density"),
 ])
@@ -117,10 +119,12 @@ def test_view_tooltips(variable, expect):
 @pytest.mark.parametrize("variable, expect", [
     pytest.param("Time since flash (intra-cloud)", {
         '@date': 'datetime',
+        '@window': 'numeral',
         '@image': 'numeral'
     }, id="time since flash"),
     pytest.param("Strike density (cloud-ground)", {
-        '@date': 'datetime'
+        '@date': 'datetime',
+        '@window': 'numeral'
     }, id="strike density"),
 ])
 def test_view_formatters(variable, expect):
