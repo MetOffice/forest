@@ -78,10 +78,17 @@ def to_datetime(d):
     elif isinstance(d, cftime.DatetimeGregorian):
         return dt.datetime(d.year, d.month, d.day, d.hour, d.minute, d.second)
     elif isinstance(d, str):
-        try:
-            return dt.datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            return dt.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
+        errors = []
+        for fmt in (
+                "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%dT%H:%M:%S",
+                "%Y-%m-%dT%H:%M:%SZ"):
+            try:
+                return dt.datetime.strptime(d, fmt)
+            except ValueError as e:
+                errors.append(e)
+                continue
+        raise Exception(errors)
     elif isinstance(d, np.datetime64):
         return d.astype(dt.datetime)
     else:

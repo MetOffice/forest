@@ -1,4 +1,6 @@
 import pytest
+from unittest.mock import sentinel, Mock
+import bokeh.palettes
 import pandas as pd
 import pandas.testing as pdt
 import datetime as dt
@@ -59,3 +61,76 @@ def test_navigator_variables():
         "Time since flash (intra-cloud)",
         "Time since flash (total)"
     ])
+
+
+def test_view_render_density():
+    locator = Mock(specs=["find"])
+    loader = Mock(specs=["load"])
+    loader.load.return_value = pd.DataFrame({
+        "flash_type": [],
+        "longitude": [],
+        "latitude": [],
+    })
+    view = earth_networks.View(loader, locator)
+    view.render({
+        "variable": "Strike density (cloud-ground)",
+        "valid_time": "1970-01-01T00:00:00Z"
+    })
+    expect = bokeh.palettes.all_palettes["Spectral"][8]
+    assert view.color_mappers["image"].palette == expect
+
+
+def test_view_render_time_since_flash():
+    locator = Mock(specs=["find"])
+    loader = Mock(specs=["load"])
+    loader.load.return_value = pd.DataFrame({
+        "date": [],
+        "flash_type": [],
+        "longitude": [],
+        "latitude": [],
+    })
+    view = earth_networks.View(loader, locator)
+    view.render({
+        "variable": "Time since flash (cloud-ground)",
+        "valid_time": "1970-01-01T00:00:00Z"
+    })
+    expect = bokeh.palettes.all_palettes["BuGn"][8]
+    assert view.color_mappers["image"].palette == expect
+
+
+@pytest.mark.parametrize("variable, expect", [
+    pytest.param("Time since flash (intra-cloud)", [
+        ('Variable', '@variable'),
+        ('Period start', '@date{%F}'),
+        ("Since start", "@image{00:00:00}")
+    ], id="time since flash"),
+    pytest.param("Strike density (cloud-ground)", [
+        ('Variable', '@variable'),
+        ('Period start', '@date{%F}'),
+        ('Value', '@image @units'),
+    ], id="strike density"),
+])
+def test_view_tooltips(variable, expect):
+    assert earth_networks.View.tooltips(variable) == expect
+
+
+@pytest.mark.parametrize("variable, expect", [
+    pytest.param("Time since flash (intra-cloud)", {
+        '@date': 'datetime',
+        '@image': 'numeral'
+    }, id="time since flash"),
+    pytest.param("Strike density (cloud-ground)", {
+        '@date': 'datetime'
+    }, id="strike density"),
+])
+def test_view_formatters(variable, expect):
+    assert earth_networks.View.formatters(variable) == expect
+
+
+def test_view_since_flash():
+    view = earth_networks.View(Mock(), Mock())
+    strike_times = ["2020-01-01T00:00:00Z", "2020-01-01T01:00:00Z"]
+    period_start = "2020-01-01T00:00:00Z"
+    result = view.since_flash(strike_times, period_start)
+    expect = pd.Series([0., 3600.])
+    pdt.assert_series_equal(result, expect)

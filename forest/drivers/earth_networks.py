@@ -46,6 +46,9 @@ class View:
             "flash_type": [],
             "time_since_flash": []
         }
+        self.hover_tools = {
+            "image": []
+        }
         self.color_mappers = {}
         self.color_mappers["image"] = bokeh.models.LinearColorMapper(
             low=0,
@@ -77,11 +80,13 @@ class View:
 
     def image(self, state):
         """Image colored by time since flash or flash density"""
-        date =_to_datetime(state.valid_time)
+        valid_time =_to_datetime(state.valid_time)
 
         # 15 minute/1 hour slice of data?
-        frame = self.get_frame(date)
-        # frame = self.select_date(frame, date)
+        window = dt.timedelta(minutes=60)  # 1 hour window
+        paths = self.locator.find_period(valid_time, window)
+        frame = self.loader.load(paths)
+        frame = self.select_date(frame, valid_time, window)
 
         # Filter intra-cloud/cloud-ground rows
         if "intra-cloud" in state.variable.lower():
@@ -110,9 +115,8 @@ class View:
             # N flashes per pixel
             agg = canvas.points(frame, "x", "y", datashader.count())
         else:
-            # Min time since flash per pixel
-            frame["since_flash"] = self.time_since(frame["date"], date)
-            agg = canvas.points(frame, "x", "y", datashader.min("since_flash"))
+            frame["since_flash"] = self.since_flash(frame["date"], valid_time)
+            agg = canvas.points(frame, "x", "y", datashader.max("since_flash"))
 
         # Note: DataArray objects are not JSON serializable, .values is the
         #       same data cast as a numpy array
@@ -127,11 +131,18 @@ class View:
 
         # Update color_mapper
         if "density" in state.variable.lower():
+            self.color_mappers["image"].palette = bokeh.palettes.all_palettes["Spectral"][8]
             self.color_mappers["image"].low = 0
             self.color_mappers["image"].high = agg.values.max()
         else:
-            self.color_mappers["image"].low = -1 * 60 * 60 # 1hr
-            self.color_mappers["image"].high = 0
+            self.color_mappers["image"].palette = bokeh.palettes.all_palettes["BuGn"][8]
+            self.color_mappers["image"].low = 0
+            self.color_mappers["image"].high = 60 * 60 # 1 hour
+
+        # Update tooltips
+        for hover_tool in self.hover_tools["image"]:
+            hover_tool.tooltips = self.tooltips(state.variable)
+            hover_tool.formatters = self.formatters(state.variable)
 
         if "density" in state.variable.lower():
             units = "events"
@@ -147,8 +158,9 @@ class View:
         }
         meta_data = {
             "variable": [state.variable],
-            "date": [date],
-            "units": [units]
+            "date": [valid_time],
+            "units": [units],
+            "window": [window.total_seconds()]
         }
         data.update(meta_data)
         self.sources["image"].data = data
@@ -160,7 +172,7 @@ class View:
         frame = self.loader.load(paths)
         frame = self.select_date(frame, valid_time)
         frame = frame[:400]  # Limit points
-        frame['time_since_flash'] = self.time_since(frame['date'], valid_time)
+        frame['time_since_flash'] = self.since_flash(frame['date'], valid_time)
         if len(frame) == 0:
             return self.empty_image
         x, y = geo.web_mercator(
@@ -178,24 +190,52 @@ class View:
             "time_since_flash": frame.time_since_flash
         }
 
-    def get_frame(self, valid_time):
-        paths = self.locator.find(valid_time)
-        return self.loader.load(paths)
-
-    def select_date(self, frame, date):
+    def select_date(self, frame, date, window):
         if len(frame) == 0:
             return frame
         frame = frame.set_index('date')
         start = date
-        end = start + dt.timedelta(minutes=60)  # 1 hour window
+        end = start + window
         s = "{:%Y-%m-%dT%H:%M}".format(start)
         e = "{:%Y-%m-%dT%H:%M}".format(end)
         small_frame = frame[s:e].copy()
         return small_frame.reset_index()
 
-    def time_since(self, date_column, date):
+    def since_flash(self, date_column, date):
         """Pandas helper to calculate seconds since valid date"""
-        return (date - date_column).dt.total_seconds()
+        if len(date_column) == 0:
+            return []
+        if isinstance(date, str):
+            date = pd.Timestamp(date)
+        if isinstance(date_column, list):
+            date_column = pd.Series(pd.to_datetime(date_column))
+        return (date_column - date).dt.total_seconds()
+
+    @staticmethod
+    def tooltips(variable):
+        if "density" in variable.lower():
+            return [
+                ('Variable', '@variable'),
+                ('Time window', '@window{00:00:00}'),
+                ('Period start', '@date{%Y-%m-%d %H:%M:%S}'),
+                ('Value', '@image @units')]
+        else:
+            return [
+                ('Variable', '@variable'),
+                ('Time window', '@window{00:00:00}'),
+                ('Period start', '@date{%Y-%m-%d %H:%M:%S}'),
+                ('Since start', '@image{00:00:00}')]
+
+    @staticmethod
+    def formatters(variable):
+        defaults = {
+            "@date": "datetime",
+            "@window": "numeral"
+        }
+        if "density" in variable.lower():
+            return defaults
+        else:
+            return {**defaults, **{'@image': 'numeral'}}
 
     def add_figure(self, figure):
         renderer = figure.cross(
@@ -214,36 +254,31 @@ class View:
             args=dict(source=self.sources["image"]), code="""
             let idx = cb_data.index.image_indices[0]
             if (typeof idx !== 'undefined') {
-                console.log(idx)
                 let number = source.data['image'][0][idx.flat_index]
                 if (typeof number === "undefined") {
                     number = source.data['image'][0][idx.dim1][idx.dim2]
                 }
                 if (isNaN(number)) {
+                    if (typeof window._tooltips === 'undefined') {
+                        // TODO: Remove global variable
+                        window._tooltips = cb_obj.tooltips
+                    }
                     cb_obj.tooltips = [
                         ['Variable', '@variable'],
-                        ['Time', '@date{%H:%M:%S}']
                     ];
                 } else {
-                    cb_obj.tooltips = [
-                        ['Variable', '@variable'],
-                        ['Time', '@date{%H:%M:%S}'],
-                        ['Value', '@image @units']
-                    ];
+                    cb_obj.tooltips = window._tooltips
                 }
             }
         """)
+        variable = "Strike density (cloud-ground)"
         tool = bokeh.models.HoverTool(
-                tooltips=[
-                    ('Variable', '@variable'),
-                    ('Time', '@date{%F}'),
-                    ('Value', '@image @units')],
-                formatters={
-                    '@date': 'datetime'
-                },
+                tooltips=self.tooltips(variable),
+                formatters=self.formatters(variable),
                 renderers=[renderer],
                 callback=custom_js
         )
+        self.hover_tools["image"].append(tool)
         figure.add_tools(tool)
         return renderer
 
@@ -252,9 +287,14 @@ class TimestampLocator:
     """Find files by time stamp"""
     def __init__(self, pattern):
         if pattern is None:
-            self.paths = []
+            paths = []
         else:
-            self.paths = glob.glob(pattern)
+            paths = glob.glob(pattern)
+
+        # TODO: Find better way to reduce data volume
+        if len(paths) > 1000:
+            paths = sorted(paths)[-1000:]
+        self.paths = paths
 
         self.table = {}
         for path in self.paths:
@@ -266,6 +306,9 @@ class TimestampLocator:
         times = [t for t in times if t is not None]
         index = pd.DatetimeIndex(times)
         self._valid_times = index.sort_values()
+
+    def find_period(self, date, window):
+        return self.find(date)  # TODO: implement search window
 
     def find(self, date):
         if date in self.table:
@@ -303,12 +346,7 @@ class Navigator:
 
     def valid_times(self, pattern, variable, initial_time):
         # Populates initial_state and used by forest.db.control.Control
-        times = self.locator.valid_times()
-        if len(times) > 100:
-            spacing = int(np.floor(len(times) / 200))
-            return times[::spacing]
-        else:
-            return times
+        return self.locator.valid_times()
 
     def pressures(self, pattern, variable, initial_time):
         return []
