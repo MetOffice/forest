@@ -130,14 +130,15 @@ class View:
             image[image == 0] = np.ma.masked # Remove pixels with no data
 
         # Update color_mapper
+        color_mapper = self.color_mappers["image"]
         if "density" in state.variable.lower():
-            self.color_mappers["image"].palette = bokeh.palettes.all_palettes["Spectral"][8]
-            self.color_mappers["image"].low = 0
-            self.color_mappers["image"].high = agg.values.max()
+            color_mapper.palette = bokeh.palettes.all_palettes["Spectral"][8]
+            color_mapper.low = 0
+            color_mapper.high = agg.values.max()
         else:
-            self.color_mappers["image"].palette = bokeh.palettes.all_palettes["BuGn"][8]
-            self.color_mappers["image"].low = 0
-            self.color_mappers["image"].high = 60 * 60 # 1 hour
+            color_mapper.palette = bokeh.palettes.all_palettes["RdGy"][8]
+            color_mapper.low = 0
+            color_mapper.high = 60 * 60 # 1 hour
 
         # Update tooltips
         for hover_tool in self.hover_tools["image"]:
@@ -252,6 +253,7 @@ class View:
                      color_mapper=self.color_mappers["image"])
         custom_js = bokeh.models.CustomJS(
             args=dict(source=self.sources["image"]), code="""
+            let variable = source.data['variable'][0]
             let idx = cb_data.index.image_indices[0]
             if (typeof idx !== 'undefined') {
                 let number = source.data['image'][0][idx.flat_index]
@@ -260,14 +262,17 @@ class View:
                 }
                 if (isNaN(number)) {
                     if (typeof window._tooltips === 'undefined') {
+                        window._tooltips = {}
+                    }
+                    if (typeof window._tooltips[variable] === 'undefined') {
                         // TODO: Remove global variable
-                        window._tooltips = cb_obj.tooltips
+                        window._tooltips[variable] = cb_obj.tooltips
                     }
                     cb_obj.tooltips = [
                         ['Variable', '@variable'],
                     ];
                 } else {
-                    cb_obj.tooltips = window._tooltips
+                    cb_obj.tooltips = window._tooltips[variable]
                 }
             }
         """)
