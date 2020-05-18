@@ -2,6 +2,7 @@ import pytest
 import datetime as dt
 import numpy as np
 import pandas as pd
+import cftime
 from forest import db
 from forest.db.control import time_array_equal
 
@@ -66,3 +67,11 @@ def test_valueerror_lengths_must_match():
     b = ["2020-02-01T00:00:00Z", "2020-02-02T00:00:00Z", "2020-02-03T00:00:00Z"]
     with pytest.raises(ValueError):
         pd.to_datetime(a) == pd.to_datetime(b)
+
+
+def test_time_array_equal_mixed_types():
+    left = [cftime.DatetimeGregorian(2020, 1, 1),
+            cftime.DatetimeGregorian(2020, 1, 2),
+            cftime.DatetimeGregorian(2020, 1, 3)]
+    right = pd.date_range("2020-01-01", periods=3)
+    assert time_array_equal(left, right) == True

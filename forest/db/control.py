@@ -121,13 +121,17 @@ def time_array_equal(x, y):
     else:
         if len(x) != len(y):
             return False
-        try:
-            left, right = _vto_datetime(x), _vto_datetime(y)
-        except TypeError:
-            # NOTE: Needed for EarthNetworks DatetimeIndex
-            left, right = pd.to_datetime(x), pd.to_datetime(y)
+        left = _as_datetime_array(x)
+        right = _as_datetime_array(x)
         return np.all(left == right)
 
+def _as_datetime_array(x):
+    """Either vectorized _to_datetime or pd.to_datetime"""
+    try:
+        return _vto_datetime(x)
+    except TypeError:
+        # NOTE: Needed for EarthNetworks DatetimeIndex
+        return pd.to_datetime(x)
 
 def equal_value(a, b):
     if (a is None) and (b is None):
