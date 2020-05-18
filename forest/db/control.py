@@ -118,11 +118,16 @@ def time_array_equal(x, y):
         return False
     elif (len(x) == 0) or (len(y) == 0):
         return x == y
-    try:
-        return np.all(_vto_datetime(x) == _vto_datetime(y))
-    except TypeError:
-        # NOTE: Needed for EarthNetworks DatetimeIndex
-        return np.all(pd.to_datetime(x) == pd.to_datetime(y))
+    else:
+        if len(x) != len(y):
+            return False
+        try:
+            left, right = _vto_datetime(x), _vto_datetime(y)
+        except TypeError:
+            # NOTE: Needed for EarthNetworks DatetimeIndex
+            left, right = pd.to_datetime(x), pd.to_datetime(y)
+        return np.all(left == right)
+
 
 def equal_value(a, b):
     if (a is None) and (b is None):

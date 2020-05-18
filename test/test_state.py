@@ -1,7 +1,9 @@
 import pytest
 import datetime as dt
 import numpy as np
+import pandas as pd
 from forest import db
+from forest.db.control import time_array_equal
 
 
 @pytest.mark.parametrize("left,right,expect", [
@@ -35,8 +37,32 @@ from forest import db
         (db.State(), db.State(variables=["a", "b"]), False),
         (db.State(variables=["a", "b"]), db.State(variables=["a", "b"]), True),
         (db.State(variables=np.array(["a", "b"])),
-            db.State(variables=["a", "b"]), True),
+            db.State(variables=["a", "b"]), True)
         ])
 def test_equality_and_not_equality(left, right, expect):
     assert (left == right) == expect
     assert (left != right) == (not expect)
+
+
+def test_state_equality_valueerror_lengths_must_match():
+    """should return False if lengths do not match"""
+    valid_times = (
+        pd.date_range("2020-01-01", periods=2),
+        pd.date_range("2020-01-01", periods=3),
+    )
+    left = db.State(valid_times=valid_times[0])
+    right = db.State(valid_times=valid_times[1])
+    assert (left == right) == False
+
+
+def test_time_array_equal():
+    left = pd.date_range("2020-01-01", periods=2)
+    right = pd.date_range("2020-01-01", periods=3)
+    assert time_array_equal(left, right) == False
+
+
+def test_valueerror_lengths_must_match():
+    a = ["2020-01-01T00:00:00Z"]
+    b = ["2020-02-01T00:00:00Z", "2020-02-02T00:00:00Z", "2020-02-03T00:00:00Z"]
+    with pytest.raises(ValueError):
+        pd.to_datetime(a) == pd.to_datetime(b)
