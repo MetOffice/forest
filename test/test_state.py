@@ -69,9 +69,19 @@ def test_valueerror_lengths_must_match():
         pd.to_datetime(a) == pd.to_datetime(b)
 
 
-def test_time_array_equal_mixed_types():
-    left = [cftime.DatetimeGregorian(2020, 1, 1),
-            cftime.DatetimeGregorian(2020, 1, 2),
-            cftime.DatetimeGregorian(2020, 1, 3)]
-    right = pd.date_range("2020-01-01", periods=3)
-    assert time_array_equal(left, right) == True
+@pytest.mark.parametrize("left,right,expect", [
+    pytest.param([cftime.DatetimeGregorian(2020, 1, 1),
+                  cftime.DatetimeGregorian(2020, 1, 2),
+                  cftime.DatetimeGregorian(2020, 1, 3)],
+                 pd.date_range("2020-01-01", periods=3),
+                 True,
+                 id="gregorian/pandas same values"),
+    pytest.param([cftime.DatetimeGregorian(2020, 2, 1),
+                  cftime.DatetimeGregorian(2020, 2, 2),
+                  cftime.DatetimeGregorian(2020, 2, 3)],
+                 pd.date_range("2020-01-01", periods=3),
+                 False,
+                 id="gregorian/pandas same length different values"),
+])
+def test_time_array_equal_mixed_types(left, right, expect):
+    assert time_array_equal(left, right) == expect

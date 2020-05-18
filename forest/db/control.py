@@ -122,7 +122,7 @@ def time_array_equal(x, y):
         if len(x) != len(y):
             return False
         left = _as_datetime_array(x)
-        right = _as_datetime_array(x)
+        right = _as_datetime_array(y)
         return np.all(left == right)
 
 def _as_datetime_array(x):
