@@ -5,6 +5,8 @@ except ImportError:
     pass
 import netCDF4
 import jinja2
+import numpy as np
+import pandas as pd
 from .connection import Connection
 
 
@@ -373,10 +375,22 @@ class Database(Connection):
 
     def valid_times(self, pattern, variable, initial_time):
         """Valid times associated with search criteria"""
+        initial_time = self.sanitize_time(initial_time)
+        query = self.valid_times_query(pattern, variable, initial_time)
+        self.cursor.execute(query, dict(
+            variable=variable,
+            pattern=pattern,
+            initial_time=initial_time))
+        rows = self.cursor.fetchall()
+        return [time for time, in rows]
+
+    @staticmethod
+    def valid_times_query(pattern, variable, initial_time):
+        """Valid times SQL query syntax"""
         # Note: SQL injection possible if not properly escaped
         #       use ? and :name syntax in template
         environment = jinja2.Environment(extensions=['jinja2.ext.do'])
-        query = environment.from_string("""
+        return environment.from_string("""
             {% set EQNS = [] %}
             {% if initial_time is not none %}
                {% do EQNS.append('file.reference = :initial_time') %}
@@ -402,6 +416,24 @@ class Database(Connection):
             initial_time=initial_time,
             variable=variable,
             pattern=pattern)
+
+    @staticmethod
+    def sanitize_time(value):
+        """Query-compatible equivalent of value"""
+        fmt = "%Y-%m-%d %H:%M:%S"
+        if value is None:
+            return value
+        elif isinstance(value, str):
+            return value
+        elif isinstance(value, np.datetime64):
+            return pd.to_datetime(str(value)).strftime(fmt)
+        else:
+            return value.strftime(fmt)
+
+    def pressures(self, pattern=None, variable=None, initial_time=None):
+        """Select pressures from database"""
+        initial_time = self.sanitize_time(initial_time)
+        query = self.pressures_query(pattern, variable, initial_time)
         self.cursor.execute(query, dict(
             variable=variable,
             pattern=pattern,
@@ -409,12 +441,12 @@ class Database(Connection):
         rows = self.cursor.fetchall()
         return [time for time, in rows]
 
-    def pressures(self, pattern=None, variable=None, initial_time=None):
-        """Select pressures from database"""
+    @staticmethod
+    def pressures_query(pattern, variable, initial_time):
         # Note: SQL injection possible if not properly escaped
         #       use ? and :name syntax in template
         environment = jinja2.Environment(extensions=['jinja2.ext.do'])
-        query = environment.from_string("""
+        return environment.from_string("""
             {% set EQNS = [] %}
             {% if variable is not none %}
                {% do EQNS.append('v.name = :variable') %}
@@ -445,12 +477,6 @@ class Database(Connection):
             variable=variable,
             pattern=pattern,
             initial_time=initial_time)
-        self.cursor.execute(query, dict(
-            variable=variable,
-            pattern=pattern,
-            initial_time=initial_time))
-        rows = self.cursor.fetchall()
-        return [time for time, in rows]
 
     def fetch_times(self, path, variable):
         """Helper method to find times related to a variable"""
