@@ -371,10 +371,7 @@ class Database(Connection):
                 (SELECT id FROM pressure WHERE value=:pressure AND i=:i))
         """, dict(path=path, variable=variable, pressure=pressure, i=i))
 
-    def valid_times(self,
-                    pattern=None,
-                    variable=None,
-                    initial_time=None):
+    def valid_times(self, pattern, variable, initial_time):
         """Valid times associated with search criteria"""
         # Note: SQL injection possible if not properly escaped
         #       use ? and :name syntax in template

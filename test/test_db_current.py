@@ -120,7 +120,8 @@ class TestDatabase(unittest.TestCase):
                 ("file_1.nc", "var_b", "2019-01-01 02:00:00", 0),
                 ("file_2.nc", "var_b", "2019-01-01 03:00:00", 0)]:
             self.database.insert_time(path, variable, time, i)
-        result = self.database.valid_times()
+        pattern, variable, initial_time = None, None, None
+        result = self.database.valid_times(pattern, variable, initial_time)
         expect = [
             "2019-01-01 00:00:00",
             "2019-01-01 01:00:00",
@@ -135,7 +136,8 @@ class TestDatabase(unittest.TestCase):
                 ("file_1.nc", "var_b", "2019-01-01 02:00:00", 0),
                 ("file_2.nc", "var_b", "2019-01-01 03:00:00", 0)]:
             self.database.insert_time(path, variable, time, i)
-        result = self.database.valid_times(variable="var_b")
+        pattern, variable, initial_time = None, "var_b", None
+        result = self.database.valid_times(pattern, variable, initial_time)
         expect = ["2019-01-01 02:00:00", "2019-01-01 03:00:00"]
         self.assertEqual(expect, result)
 
@@ -146,7 +148,8 @@ class TestDatabase(unittest.TestCase):
                 ("file_1.nc", "2019-01-01 02:00:00", 0),
                 ("file_2.nc", "2019-01-01 03:00:00", 0)]:
             self.database.insert_time(path, self.variable, time, i)
-        result = self.database.valid_times(pattern="*_1.nc")
+        pattern, variable, initial_time = "*_1.nc", None, None
+        result = self.database.valid_times(pattern, variable, initial_time)
         expect = ["2019-01-01 01:00:00", "2019-01-01 02:00:00"]
         self.assertEqual(expect, result)
 
@@ -157,9 +160,8 @@ class TestDatabase(unittest.TestCase):
                 ("file_1.nc", "var_b", "2019-01-01 02:00:00", 0),
                 ("file_2.nc", "var_b", "2019-01-01 03:00:00", 0)]:
             self.database.insert_time(path, variable, time, i)
-        result = self.database.valid_times(
-            pattern="*_1.nc",
-            variable="var_b")
+        pattern, variable, initial_time = "*_1.nc", "var_b", None
+        result = self.database.valid_times(pattern, variable, initial_time)
         expect = ["2019-01-01 02:00:00"]
         self.assertEqual(expect, result)
 
@@ -177,7 +179,8 @@ class TestDatabase(unittest.TestCase):
             self.database.insert_file_name(path, initial)
             for i, time in enumerate(times):
                 self.database.insert_time(path, self.variable, time, i)
-        result = self.database.valid_times(initial_time="2019-01-01 00:00:00")
+        pattern, variable, initial_time = None, None, "2019-01-01 00:00:00"
+        result = self.database.valid_times(pattern, variable, initial_time)
         expect = [
             "2019-01-01 03:00:00",
             "2019-01-01 06:00:00"]
@@ -200,9 +203,8 @@ class TestDatabase(unittest.TestCase):
             self.database.insert_file_name(path, initial)
             for i, (variable, time) in enumerate(items):
                 self.database.insert_time(path, variable, time, i)
-        result = self.database.valid_times(
-            variable="y",
-            initial_time="2019-01-01 00:00:00")
+        pattern, variable, initial_time = None, "y", "2019-01-01 00:00:00"
+        result = self.database.valid_times(pattern, variable, initial_time)
         expect = [
             "2019-01-01 06:00:00",
             "2019-01-01 09:00:00"]

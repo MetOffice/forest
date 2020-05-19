@@ -27,7 +27,7 @@ def _assert_query_and_params(db, expected_query, expected_params):
 def test_Database_valid_times__defaults():
     db = _create_db()
 
-    valid_times = db.valid_times()
+    valid_times = db.valid_times(None, None, None)
 
     _assert_query_and_params(db, 'SELECT time.value FROM time',
                              {'pattern': None, 'variable': None,
