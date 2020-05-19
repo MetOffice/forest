@@ -181,10 +181,7 @@ def initial_state(navigator, pattern=None):
         return state
     initial_time = max(initial_times)
     state["initial_time"] = initial_time
-    valid_times = navigator.valid_times(
-        variable=variable,
-        pattern=pattern,
-        initial_time=initial_time)
+    valid_times = navigator.valid_times(pattern, variable, initial_time)
     state["valid_times"] = valid_times
     if len(valid_times) > 0:
         state["valid_time"] = min(valid_times)
@@ -359,13 +356,12 @@ class Controls(object):
         yield set_value("initial_times", initial_times)
 
         # Set valid_times if pattern, variable and initial_time present
-        kwargs = {
-            "pattern": pattern,
-            "variable": store.state.get("variable"),
-            "initial_time": store.state.get("initial_time"),
-        }
-        if all(kwargs[k] is not None for k in ["variable", "initial_time"]):
-            valid_times = self.navigator.valid_times(**kwargs)
+        variable = store.state.get("variable")
+        initial_time = store.state.get("initial_time")
+        if all(value is not None for value in [variable, initial_time]):
+            valid_times = self.navigator.valid_times(pattern,
+                                                     variable,
+                                                     initial_time)
             yield set_value("valid_times", valid_times)
 
     def _variable(self, store, action):
