@@ -39,7 +39,7 @@ def sql_sanitize_time(*labels):
 
     >>> @sql_sanitize_time("b", "c")
     ... def method(self, a, b, c=None, d=False):
-    ...     # b and c will be coverted to a str compatible with SQL queries
+    ...     # b and c will be converted to a str compatible with SQL queries
     ...     pass
 
     """
