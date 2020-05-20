@@ -3,6 +3,7 @@ from functools import lru_cache
 import numpy as np
 from .connection import Connection
 from forest.exceptions import SearchFail
+from forest import mark
 
 
 __all__ = [
@@ -17,6 +18,7 @@ class Locator(Connection):
         self.connection = connection
         self.cursor = self.connection.cursor()
 
+    @mark.sql_sanitize_time("initial_time", "valid_time")
     def locate(
             self,
             pattern,
@@ -66,6 +68,7 @@ class Locator(Connection):
                     return path, (ti, pi)
         raise SearchFail("Could not locate: {}".format(pattern))
 
+    @mark.sql_sanitize_time("initial_time", "valid_time")
     @lru_cache()
     def file_names(self, pattern, variable, initial_time, valid_time):
         self.cursor.execute("""

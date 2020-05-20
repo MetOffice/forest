@@ -6,6 +6,7 @@ import numpy as np
 import re
 
 import forest.db.database as database
+import forest.mark
 
 
 def _create_db():
@@ -203,5 +204,5 @@ def test_Database_valid_times_given_datetime_like_objects(initial_time):
     pytest.param(cftime.DatetimeGregorian(2020, 1, 1), id="cftime"),
     pytest.param(np.datetime64("2020-01-01", "ns"), id="np.datetime64"),
 ])
-def test_Database_sanitize_datetime_like_objects(time):
-    assert database.Database.sanitize_time(time) == "2020-01-01 00:00:00"
+def test_sanitize_datetime_like_objects(time):
+    assert forest.mark.sanitize_time(time) == "2020-01-01 00:00:00"

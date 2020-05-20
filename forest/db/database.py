@@ -8,6 +8,7 @@ import jinja2
 import numpy as np
 import pandas as pd
 from .connection import Connection
+from forest import mark
 
 
 __all__ = [
@@ -373,9 +374,9 @@ class Database(Connection):
                 (SELECT id FROM pressure WHERE value=:pressure AND i=:i))
         """, dict(path=path, variable=variable, pressure=pressure, i=i))
 
+    @mark.sql_sanitize_time("initial_time")
     def valid_times(self, pattern, variable, initial_time):
         """Valid times associated with search criteria"""
-        initial_time = self.sanitize_time(initial_time)
         query = self.valid_times_query(pattern, variable, initial_time)
         self.cursor.execute(query, dict(
             variable=variable,
@@ -417,22 +418,9 @@ class Database(Connection):
             variable=variable,
             pattern=pattern)
 
-    @staticmethod
-    def sanitize_time(value):
-        """Query-compatible equivalent of value"""
-        fmt = "%Y-%m-%d %H:%M:%S"
-        if value is None:
-            return value
-        elif isinstance(value, str):
-            return value
-        elif isinstance(value, np.datetime64):
-            return pd.to_datetime(str(value)).strftime(fmt)
-        else:
-            return value.strftime(fmt)
-
+    @mark.sql_sanitize_time("initial_time")
     def pressures(self, pattern=None, variable=None, initial_time=None):
         """Select pressures from database"""
-        initial_time = self.sanitize_time(initial_time)
         query = self.pressures_query(pattern, variable, initial_time)
         self.cursor.execute(query, dict(
             variable=variable,
