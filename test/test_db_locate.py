@@ -1,8 +1,32 @@
+import pytest
 import unittest
+from unittest.mock import Mock, sentinel
 import sqlite3
 import datetime as dt
+import cftime
+import numpy as np
+import pandas as pd
 from forest import db
 from forest.exceptions import SearchFail
+
+
+@pytest.mark.parametrize("time", [
+    pytest.param("2020-01-01 00:00:00", id="str"),
+    pytest.param(dt.datetime(2020, 1, 1), id="datetime"),
+    pytest.param(cftime.DatetimeGregorian(2020, 1, 1), id="cftime"),
+    pytest.param(np.datetime64("2020-01-01 00:00:00", "ns"), id="numpy"),
+    pytest.param(pd.Timestamp("2020-01-01 00:00:00"), id="pandas"),
+])
+def test_locator_file_names_supports_datetime_types(time):
+    path = "file.nc"
+    variable = "variable"
+    database = db.Database.connect(":memory:")
+    database.insert_file_name(path, "2020-01-01 00:00:00")
+    database.insert_time(path, variable, "2020-01-01 00:00:00", 0)
+    locator = db.Locator(database.connection)
+    result = locator.file_names(path, variable, time, time)
+    expect = [path]
+    assert expect == result
 
 
 class TestLocate(unittest.TestCase):
