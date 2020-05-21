@@ -10,10 +10,10 @@ from functools import lru_cache
 from forest.exceptions import FileNotFound, IndexNotFound
 from forest.old_state import old_state, unique
 import forest.util
+import forest.map_view
 from forest import (
         geo,
-        locate,
-        view)
+        locate)
 
 
 ENGINE = "h5netcdf"
@@ -39,7 +39,7 @@ class Dataset:
 
     def map_view(self, color_mapper):
         loader = Loader(self.locator)
-        return view.map_view(loader, color_mapper, use_hover_tool=False)
+        return forest.map_view.map_view(loader, color_mapper, use_hover_tool=False)
 
 
 class Database:

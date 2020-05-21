@@ -12,7 +12,7 @@ import cftime
 
 import glob
 from forest import geo
-from forest.view import UMView
+from forest.map_view import UMView
 from forest.util import to_datetime as _to_datetime
 
 

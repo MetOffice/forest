@@ -18,7 +18,7 @@ try:
 except ModuleNotFoundError:
     intake = None
 
-import forest.view
+import forest.map_view
 from forest import geo, util
 from forest.drivers import gridded_forecast
 
@@ -35,7 +35,7 @@ class Dataset:
 
     def map_view(self, color_mapper):
         loader = IntakeLoader(self.pattern)
-        view = forest.view.UMView(loader, color_mapper)
+        view = forest.map_view.UMView(loader, color_mapper)
         view.set_hover_properties(INTAKE_TOOLTIPS, INTAKE_FORMATTERS)
         return view
 
