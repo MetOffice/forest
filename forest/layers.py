@@ -19,7 +19,6 @@ from forest.redux import Action, State, Store
 from forest.observe import Observable
 from forest import colors
 import forest.drivers
-import forest.view
 
 
 ADD_LAYER = "LAYERS_ADD_LAYER"

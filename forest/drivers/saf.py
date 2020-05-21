@@ -23,7 +23,7 @@ import xarray
 import numpy as np
 from forest.drivers.gridded_forecast import empty_image, coordinates
 import forest.util
-from forest import geo, view
+from forest import geo, map_view
 from functools import lru_cache
 
 
@@ -46,7 +46,7 @@ class Dataset:
     def map_view(self, color_mapper):
         """Construct view"""
         loader = Loader(self.locator, self.label)
-        return view.UMView(loader, color_mapper)
+        return map_view.UMView(loader, color_mapper)
 
 
 class Loader:

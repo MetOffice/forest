@@ -7,7 +7,7 @@ import glob
 import re
 import datetime as dt
 import numpy as np
-import forest.view
+import forest.map_view
 from forest import geo
 from forest.util import timeout_cache
 from forest.drivers.gridded_forecast import _to_datetime
@@ -31,7 +31,7 @@ class Dataset:
         return Navigator(self.pattern)
 
     def map_view(self, color_mapper):
-        view = forest.view.NearCast(NearCast(self.pattern), color_mapper)
+        view = forest.map_view.NearCast(NearCast(self.pattern), color_mapper)
         view.set_hover_properties(NEARCAST_TOOLTIPS)
         return view
 

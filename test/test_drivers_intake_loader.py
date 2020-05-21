@@ -1,6 +1,6 @@
 import bokeh.models
 import forest.drivers
-import forest.view
+import forest.map_view
 
 
 def test_dataset_navigator():
@@ -16,6 +16,6 @@ def test_dataset_map_view():
     })
     color_mapper = bokeh.models.ColorMapper()
     map_view = dataset.map_view(color_mapper)
-    assert isinstance(map_view, forest.view.UMView)
+    assert isinstance(map_view, forest.map_view.UMView)
     assert map_view.tooltips == forest.drivers.intake_loader.INTAKE_TOOLTIPS
     assert map_view.formatters == forest.drivers.intake_loader.INTAKE_FORMATTERS

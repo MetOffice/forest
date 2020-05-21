@@ -8,11 +8,11 @@ import datetime as dt
 import numpy as np
 import netCDF4
 import forest.util
+import forest.map_view
 from forest import (
     db,
     disk,
-    geo,
-    view)
+    geo)
 from forest.exceptions import SearchFail, PressuresNotFound
 from forest.drivers import gridded_forecast
 import bokeh.models
@@ -53,7 +53,7 @@ class Dataset:
 
     def map_view(self, color_mapper=None):
         loader = Loader(self.label, self.pattern, self.locator)
-        return view.map_view(loader, color_mapper)
+        return forest.map_view.map_view(loader, color_mapper)
 
 
 class Navigator:

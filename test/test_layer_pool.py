@@ -4,7 +4,6 @@ import bokeh.models
 import bokeh.plotting
 import forest.drivers
 import forest.layers
-import forest.view
 
 
 @pytest.fixture
