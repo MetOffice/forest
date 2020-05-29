@@ -9,11 +9,10 @@ arrays in the ``forest.redux.Store`` a service is provided to load the arrays
 from key pieces of information. The key information is stored in the application
 state to allow reproduction at a later date.
 
-
-.. autoclass:: NullNavigator
+.. autoclass:: NavigatorServiceLocator
    :members:
 
-.. autoclass:: NavigatorServiceLocator
+.. autoclass:: NullNavigator
    :members:
 
 """
@@ -50,6 +49,7 @@ class NavigatorServiceLocator:
     """De-couples client-code from Navigator construction
 
     .. note:: This service locator is accessed as ``forest.services.navigation``
+              module level constant
 
     Configured at run-time by calling ``add_dataset(key, dataset)``
 
