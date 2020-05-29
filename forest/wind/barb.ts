@@ -74,8 +74,8 @@ export namespace Barb {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = XYGlyph.Props & LineVector & FillVector & {
-    u: p.DistanceSpec
-    v: p.DistanceSpec
+    u: p.NumberSpec
+    v: p.NumberSpec
     barb_dimension: p.Property<RadiusDimension>
   }
 
@@ -96,8 +96,8 @@ export class Barb extends XYGlyph {
 
     this.mixins(['line', 'fill'])
     this.define<Barb.Props>({
-      u: [ p.DistanceSpec,    { units: "screen", value: 0 } ],
-      v: [ p.DistanceSpec,    { units: "screen", value: 0 } ],
+      u: [ p.NumberSpec,    { value: 0 } ],
+      v: [ p.NumberSpec,    { value: 0 } ],
       barb_dimension: [ p.RadiusDimension, 'x' ],
     })
   }
