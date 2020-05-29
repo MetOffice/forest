@@ -22,6 +22,8 @@ forecasts alongside observations.
 
 .. automodule:: forest.presets
 
+.. automodule:: forest.services
+
 """
 __version__ = '0.17.4'
 
