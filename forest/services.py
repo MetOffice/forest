@@ -3,8 +3,13 @@ Services
 ========
 
 Application wide services to de-couple components. For example, components
-need access to navigation to populate dropdown menus and widgets. Datasets
-dimensions are often represented by large arrays, instead of storing the
+need access to navigation to populate dropdown menus and widgets.
+
+
+Navigation
+----------
+
+Datasets dimensions are often represented by large arrays, instead of storing the
 arrays in the ``forest.redux.Store`` a service is provided to load the arrays
 from key pieces of information. The key information is stored in the application
 state to allow reproduction at a later date.
