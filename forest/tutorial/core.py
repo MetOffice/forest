@@ -13,10 +13,28 @@ UM_FILE = "unified_model.nc"
 DB_FILE = "database.db"
 RDT_FILE = "rdt_201904171245.json"
 EIDA50_FILE = "eida50_20190417.nc"
+FILE_NAMES = {
+    "NAME": [
+        "NAME/Fields_grid1_C1_T1_200810080100.txt",
+        "NAME/Fields_grid1_C1_T2_200810080200.txt",
+        "NAME/Fields_grid1_C1_T3_200810080300.txt",
+        "NAME/Fields_grid1_C1_T4_200810080400.txt",
+        "NAME/Fields_grid1_C1_T5_200810080500.txt",
+        "NAME/Fields_grid1_C1_T6_200810080600.txt",
+        "NAME/Fields_grid1_C1_T7_200810080700.txt",
+        "NAME/Fields_grid1_C1_T8_200810080800.txt",
+        "NAME/Fields_grid1_C1_T9_200810080900.txt",
+        "NAME/Fields_grid1_C1_T10_200810081000.txt",
+        "NAME/Fields_grid1_C1_T11_200810081100.txt",
+        "NAME/Fields_grid1_C1_T12_200810081200.txt",
+    ]
+}
 
 
 def build_all(build_dir):
     """Build sample files"""
+    for file_name in FILE_NAMES["NAME"]:
+        build_file(build_dir, file_name)
     for builder in [
             build_um_config,
             build_multi_config,
@@ -38,6 +56,12 @@ def build_eida50(build_dir):
 def build_file(directory, file_name):
     src = os.path.join(SOURCE_DIR, file_name)
     dst = os.path.join(directory, file_name)
+    dst_dir = os.path.dirname(dst)
+    if dst_dir != "":
+        if not os.path.exists(dst_dir):
+            print(f"making: {dst_dir}")
+            os.makedirs(dst_dir)
+
     print("copying: {} to {}".format(src, dst))
     shutil.copy2(src, dst)
 
