@@ -62,14 +62,14 @@ def _is_valid_cube(cube):
 
 
 # TODO: This logic should move to a "Group" concept.
-def _load(pattern):
+def _load(pattern, is_valid_cube=_is_valid_cube):
     """Return all the valid gridded forecast cubes that can be loaded
     from the given filename pattern."""
     cubes = iris.load(pattern)
 
     # Ensure that we only retain cubes that meet our entry criteria
     # for "gridded forecast"
-    cubes = list(filter(_is_valid_cube, cubes))
+    cubes = list(filter(is_valid_cube, cubes))
     assert len(cubes) > 0
 
     # Find all the names with duplicates
@@ -91,26 +91,29 @@ def _load(pattern):
 
 class Dataset:
     """High-level class to relate navigators, loaders and views"""
-    def __init__(self, label=None, pattern=None, **kwargs):
+    def __init__(self, label=None, pattern=None,
+                 is_valid_cube=_is_valid_cube,
+                 **kwargs):
         self._label = label
         self.pattern = pattern
         if pattern is not None:
             self._paths = glob.glob(pattern)
         else:
             self._paths = []
+        self.is_valid_cube = is_valid_cube
 
     def navigator(self):
         """Construct navigator"""
-        return Navigator(self._paths)
+        return Navigator(self._paths, self.is_valid_cube)
 
     def map_view(self, color_mapper):
         """Construct view"""
-        return UMView(ImageLoader(self._label, self._paths), color_mapper)
+        return UMView(ImageLoader(self._label, self._paths, self.is_valid_cube), color_mapper)
 
 class ImageLoader:
-    def __init__(self, label, pattern):
+    def __init__(self, label, pattern, is_valid_cube=_is_valid_cube):
         self._label = label
-        self._cubes = _load(pattern)
+        self._cubes = _load(pattern, is_valid_cube)
 
     def image(self, state):
         cube = self._cubes[state.variable]
@@ -131,8 +134,8 @@ class ImageLoader:
 
 
 class Navigator:
-    def __init__(self, paths):
-        self._cubes = _load(paths)
+    def __init__(self, paths, is_valid_cube=_is_valid_cube):
+        self._cubes = _load(paths, is_valid_cube)
 
     def variables(self, pattern):
         return list(self._cubes.keys())
