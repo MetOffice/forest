@@ -93,6 +93,7 @@ class Dataset:
     """High-level class to relate navigators, loaders and views"""
     def __init__(self, label=None, pattern=None,
                  is_valid_cube=_is_valid_cube,
+                 image_loader_class=None,
                  **kwargs):
         self._label = label
         self.pattern = pattern
@@ -101,6 +102,9 @@ class Dataset:
         else:
             self._paths = []
         self.is_valid_cube = is_valid_cube
+        if image_loader_class is None:
+            image_loader_class = ImageLoader
+        self.image_loader_class = image_loader_class
 
     def navigator(self):
         """Construct navigator"""
@@ -108,7 +112,10 @@ class Dataset:
 
     def map_view(self, color_mapper):
         """Construct view"""
-        return UMView(ImageLoader(self._label, self._paths, self.is_valid_cube), color_mapper)
+        return UMView(self.image_loader_class(self._label,
+                                              self._paths,
+                                              self.is_valid_cube),
+                      color_mapper)
 
 class ImageLoader:
     def __init__(self, label, pattern, is_valid_cube=_is_valid_cube):
@@ -118,9 +125,7 @@ class ImageLoader:
     def image(self, state):
         cube = self._cubes[state.variable]
         valid_datetime = _to_datetime(state.valid_time)
-        print(cube.coord('time'), valid_datetime)
-        # cube = cube.extract(iris.Constraint(time=valid_datetime))
-        cube = cube[0]
+        cube = self.select_image(cube, valid_datetime)
         if cube is None:
             data = empty_image()
         else:
@@ -133,6 +138,10 @@ class ImageLoader:
                 'units': [str(cube.units)]
             })
         return data
+
+    @staticmethod
+    def select_image(cube, valid_datetime):
+        return cube.extract(iris.Constraint(time=valid_datetime))
 
 
 class Navigator:
