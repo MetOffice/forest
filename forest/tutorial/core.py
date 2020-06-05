@@ -20,7 +20,7 @@ class ConfigBuilder:
 
 
 SOURCE_DIR = os.path.dirname(__file__)
-CONFIG_FILE_BUILDERS = {
+BUILDERS = {
     "name": ConfigBuilder("name-config.yaml", """
 files:
     - label: NAME
@@ -58,7 +58,7 @@ def build_all(build_dir):
     for file_name in FILE_NAMES["NAME"]:
         build_file(build_dir, file_name)
 
-    for key, builder in CONFIG_FILE_BUILDERS.items():
+    for key, builder in BUILDERS.items():
         builder.build(build_dir)
 
     for builder in [

@@ -122,7 +122,7 @@ def test_build_all_builds_config_file(tmpdir):
 def test_build_name_config_file(tmpdir):
     build_dir = str(tmpdir)
     forest.tutorial.build_all(build_dir)
-    builder = forest.tutorial.CONFIG_FILE_BUILDERS["name"]
+    builder = forest.tutorial.BUILDERS["name"]
     path = str(tmpdir / builder.file_name)
     with open(path) as stream:
         result = yaml.safe_load(stream)
