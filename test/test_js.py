@@ -1,3 +1,4 @@
+import pytest
 import os
 import subprocess
 
@@ -5,6 +6,7 @@ import subprocess
 JS_DIR = os.path.join(os.path.dirname(__file__), "../forest/js")
 
 
+@pytest.mark.skip()
 def test_forestjs():
     cwd = os.getcwd()
     os.chdir(JS_DIR)
