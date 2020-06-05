@@ -118,6 +118,7 @@ class ImageLoader:
     def image(self, state):
         cube = self._cubes[state.variable]
         valid_datetime = _to_datetime(state.valid_time)
+        print(cube.coord('time'), valid_datetime)
         cube = cube.extract(iris.Constraint(time=valid_datetime))
         if cube is None:
             data = empty_image()
