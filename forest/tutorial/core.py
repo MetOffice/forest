@@ -6,7 +6,29 @@ import numpy as np
 import forest.db
 
 
+class ConfigBuilder:
+    """Build a config file"""
+    def __init__(self, file_name, content):
+        self.file_name = file_name
+        self.content = content
+
+    def build(self, build_dir):
+        full_path = os.path.join(build_dir, self.file_name)
+        print(f"writing: {full_path}")
+        with open(full_path, "w") as stream:
+            stream.write(self.content)
+
+
 SOURCE_DIR = os.path.dirname(__file__)
+CONFIG_FILE_BUILDERS = {
+    "name": ConfigBuilder("name-config.yaml", """
+files:
+    - label: NAME
+      pattern: 'NAME/*.txt'
+      file_type: 'gridded_forecast'
+
+""")
+}
 MULTI_CFG_FILE = "multi-config.yaml"
 UM_CFG_FILE = "um-config.yaml"
 UM_FILE = "unified_model.nc"
@@ -35,6 +57,10 @@ def build_all(build_dir):
     """Build sample files"""
     for file_name in FILE_NAMES["NAME"]:
         build_file(build_dir, file_name)
+
+    for key, builder in CONFIG_FILE_BUILDERS.items():
+        builder.build(build_dir)
+
     for builder in [
             build_um_config,
             build_multi_config,
