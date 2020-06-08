@@ -62,9 +62,12 @@ def _is_valid_cube(cube):
 
 
 # TODO: This logic should move to a "Group" concept.
-def _load(pattern, is_valid_cube=_is_valid_cube):
+def _load(pattern, is_valid_cube=None):
     """Return all the valid gridded forecast cubes that can be loaded
     from the given filename pattern."""
+    if is_valid_cube is None:
+        is_valid_cube = _is_valid_cube
+
     cubes = iris.load(pattern)
 
     # Ensure that we only retain cubes that meet our entry criteria
@@ -91,41 +94,41 @@ def _load(pattern, is_valid_cube=_is_valid_cube):
 
 class Dataset:
     """High-level class to relate navigators, loaders and views"""
-    def __init__(self, label=None, pattern=None,
-                 is_valid_cube=_is_valid_cube,
-                 image_loader_class=None,
-                 **kwargs):
+    def __init__(self, label=None, pattern=None, **kwargs):
         self._label = label
         self.pattern = pattern
         if pattern is not None:
             self._paths = glob.glob(pattern)
         else:
             self._paths = []
-        self.is_valid_cube = is_valid_cube
-        if image_loader_class is None:
-            image_loader_class = ImageLoader
-        self.image_loader_class = image_loader_class
 
     def navigator(self):
         """Construct navigator"""
-        return Navigator(self._paths, self.is_valid_cube)
+        cube_dict = _load(self._paths, _is_valid_cube)
+        return Navigator(cube_dict)
 
     def map_view(self, color_mapper):
         """Construct view"""
-        return UMView(self.image_loader_class(self._label,
-                                              self._paths,
-                                              self.is_valid_cube),
-                      color_mapper)
+        return UMView(self.image_loader(), color_mapper)
+
+    def image_loader(self):
+        """Construct ImageLoader"""
+        cube_dict = _load(self._paths, _is_valid_cube)
+        return ImageLoader(self._label, cube_dict)
+
 
 class ImageLoader:
-    def __init__(self, label, pattern, is_valid_cube=_is_valid_cube):
+    def __init__(self, label, cube_dict,
+                 extract_cube=None):
         self._label = label
-        self._cubes = _load(pattern, is_valid_cube)
+        self._cubes = cube_dict
+        if extract_cube is not None:
+            self.extract_cube = extract_cube
 
     def image(self, state):
         cube = self._cubes[state.variable]
         valid_datetime = _to_datetime(state.valid_time)
-        cube = self.select_image(cube, valid_datetime)
+        cube = self.extract_cube(cube, valid_datetime)
         if cube is None:
             data = empty_image()
         else:
@@ -140,13 +143,14 @@ class ImageLoader:
         return data
 
     @staticmethod
-    def select_image(cube, valid_datetime):
+    def extract_cube(cube, valid_datetime):
+        """Extract 2D image slice from cube"""
         return cube.extract(iris.Constraint(time=valid_datetime))
 
 
 class Navigator:
-    def __init__(self, paths, is_valid_cube=_is_valid_cube):
-        self._cubes = _load(paths, is_valid_cube)
+    def __init__(self, cube_dict):
+        self._cubes = cube_dict
 
     def variables(self, pattern):
         return list(self._cubes.keys())
