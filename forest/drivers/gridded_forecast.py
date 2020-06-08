@@ -62,9 +62,12 @@ def _is_valid_cube(cube):
 
 
 # TODO: This logic should move to a "Group" concept.
-def _load(pattern, is_valid_cube=_is_valid_cube):
+def _load(pattern, is_valid_cube=None):
     """Return all the valid gridded forecast cubes that can be loaded
     from the given filename pattern."""
+    if is_valid_cube is None:
+        is_valid_cube = _is_valid_cube
+
     cubes = iris.load(pattern)
 
     # Ensure that we only retain cubes that meet our entry criteria
@@ -110,22 +113,21 @@ class Dataset:
 
     def image_loader(self):
         """Construct ImageLoader"""
-        return ImageLoader(self._label, self._paths)
+        cube_dict = _load(self._paths, _is_valid_cube)
+        return ImageLoader(self._label, cube_dict)
 
 
 class ImageLoader:
-    def __init__(self, label, pattern,
-                 is_valid_cube=_is_valid_cube,
+    def __init__(self, label, cube_dict,
                  extract_cube=None):
         self._label = label
-        self._cubes = _load(pattern, is_valid_cube)
+        self._cubes = cube_dict
         if extract_cube is not None:
             self.extract_cube = extract_cube
 
     def image(self, state):
         cube = self._cubes[state.variable]
         valid_datetime = _to_datetime(state.valid_time)
-        print(self.extract_cube)
         cube = self.extract_cube(cube, valid_datetime)
         if cube is None:
             data = empty_image()

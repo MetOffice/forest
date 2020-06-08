@@ -19,8 +19,8 @@ class Dataset(_Dataset):
         return Navigator(cube_dict)
 
     def image_loader(self):
-        return ImageLoader(self._label, self._paths,
-                           is_valid_cube=is_valid_cube,
+        cube_dict = _load(self._paths, is_valid_cube)
+        return ImageLoader(self._label, cube_dict,
                            extract_cube=extract_cube)
 
 
