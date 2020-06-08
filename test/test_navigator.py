@@ -68,13 +68,14 @@ def test_Navigator_pressures():
 
 
 @patch('forest.drivers.gridded_forecast.Navigator')
+@patch('forest.drivers.gridded_forecast._load')
 @patch('forest.drivers.gridded_forecast.glob.glob')
-def test_drivers__get_dataset_from__griddedforecast(glob, navigator_cls):
+def test_drivers__get_dataset_from__griddedforecast(glob, _load, navigator_cls):
     navigator_cls.return_value = sentinel.navigator
-    glob.return_value = sentinel.paths
+    _load.return_value = sentinel.cubes
 
     dataset = forest.drivers.gridded_forecast.Dataset("gridded_forecast", sentinel.settings)
     navigator = dataset.navigator()
 
-    navigator_cls.assert_called_once_with(sentinel.paths)
+    navigator_cls.assert_called_once_with(sentinel.cubes)
     assert navigator == sentinel.navigator

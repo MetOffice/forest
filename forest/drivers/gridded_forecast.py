@@ -62,14 +62,17 @@ def _is_valid_cube(cube):
 
 
 # TODO: This logic should move to a "Group" concept.
-def _load(pattern):
+def _load(pattern, is_valid_cube=None):
     """Return all the valid gridded forecast cubes that can be loaded
     from the given filename pattern."""
+    if is_valid_cube is None:
+        is_valid_cube = _is_valid_cube
+
     cubes = iris.load(pattern)
 
     # Ensure that we only retain cubes that meet our entry criteria
     # for "gridded forecast"
-    cubes = list(filter(_is_valid_cube, cubes))
+    cubes = list(filter(is_valid_cube, cubes))
     assert len(cubes) > 0
 
     # Find all the names with duplicates
@@ -101,21 +104,31 @@ class Dataset:
 
     def navigator(self):
         """Construct navigator"""
-        return Navigator(self._paths)
+        cube_dict = _load(self._paths, _is_valid_cube)
+        return Navigator(cube_dict)
 
     def map_view(self, color_mapper):
         """Construct view"""
-        return UMView(ImageLoader(self._label, self._paths), color_mapper)
+        return UMView(self.image_loader(), color_mapper)
+
+    def image_loader(self):
+        """Construct ImageLoader"""
+        cube_dict = _load(self._paths, _is_valid_cube)
+        return ImageLoader(self._label, cube_dict)
+
 
 class ImageLoader:
-    def __init__(self, label, pattern):
+    def __init__(self, label, cube_dict,
+                 extract_cube=None):
         self._label = label
-        self._cubes = _load(pattern)
+        self._cubes = cube_dict
+        if extract_cube is not None:
+            self.extract_cube = extract_cube
 
     def image(self, state):
         cube = self._cubes[state.variable]
         valid_datetime = _to_datetime(state.valid_time)
-        cube = cube.extract(iris.Constraint(time=valid_datetime))
+        cube = self.extract_cube(cube, valid_datetime)
         if cube is None:
             data = empty_image()
         else:
@@ -129,10 +142,15 @@ class ImageLoader:
             })
         return data
 
+    @staticmethod
+    def extract_cube(cube, valid_datetime):
+        """Extract 2D image slice from cube"""
+        return cube.extract(iris.Constraint(time=valid_datetime))
+
 
 class Navigator:
-    def __init__(self, paths):
-        self._cubes = _load(paths)
+    def __init__(self, cube_dict):
+        self._cubes = cube_dict
 
     def variables(self, pattern):
         return list(self._cubes.keys())

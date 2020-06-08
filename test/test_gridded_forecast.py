@@ -142,11 +142,8 @@ class Test_load(unittest.TestCase):
 
 
 class Test_ImageLoader(unittest.TestCase):
-    @patch('forest.drivers.gridded_forecast._load')
-    def test_init(self, load):
-        load.return_value = sentinel.cubes
-        result = gridded_forecast.ImageLoader(sentinel.label, sentinel.pattern)
-        load.assert_called_once_with(sentinel.pattern)
+    def test_init(self):
+        result = gridded_forecast.ImageLoader(sentinel.label, sentinel.cubes)
         self.assertEqual(result._label, sentinel.label)
         self.assertEqual(result._cubes, sentinel.cubes)
 
@@ -154,18 +151,17 @@ class Test_ImageLoader(unittest.TestCase):
     @patch('iris.Constraint')
     @patch('forest.drivers.gridded_forecast._to_datetime')
     def test_empty(self, to_datetime, constraint, empty_image):
-        # To avoid re-testing the constructor, just make a fake ImageLoader
-        # instance.
         original_cube = Mock()
         original_cube.extract.return_value = None
-        image_loader = Mock(_cubes={'foo': original_cube})
+        image_loader = gridded_forecast.ImageLoader(sentinel.label,
+                                                    {'foo': original_cube})
 
         to_datetime.return_value = sentinel.valid_datetime
         constraint.return_value = sentinel.constraint
         empty_image.return_value = sentinel.empty_image
 
-        result = gridded_forecast.ImageLoader.image(
-            image_loader, Mock(variable='foo', valid_time=sentinel.valid))
+        result = image_loader.image(
+            Mock(variable='foo', valid_time=sentinel.valid))
 
         to_datetime.assert_called_once_with(sentinel.valid)
         constraint.assert_called_once_with(time=sentinel.valid_datetime)
@@ -177,26 +173,26 @@ class Test_ImageLoader(unittest.TestCase):
     @patch('iris.Constraint')
     @patch('forest.drivers.gridded_forecast._to_datetime')
     def test_image(self, to_datetime, constraint, stretch_image, coordinates):
-        # To avoid re-testing the constructor, just make a fake ImageLoader
-        # instance.
         cube = Mock()
         cube.coord.side_effect = [Mock(points=sentinel.longitudes),
                                   Mock(points=sentinel.latitudes)]
         cube.units.__str__ = lambda self: 'my-units'
         original_cube = Mock()
         original_cube.extract.return_value = cube
-        image_loader = Mock(_cubes={'foo': original_cube}, _label='my-label')
+        image_loader = gridded_forecast.ImageLoader('my-label',
+                                                    {'foo': original_cube})
 
         to_datetime.return_value = sentinel.valid_datetime
         constraint.return_value = sentinel.constraint
         stretch_image.return_value = {'stretched_image': True}
         coordinates.return_value = {'coordinates': True}
 
-        result = gridded_forecast.ImageLoader.image(
-            image_loader, Mock(variable='foo', valid_time=sentinel.valid,
-                               initial_time=sentinel.initial,
-                               pressures=sentinel.pressures,
-                               pressure=sentinel.pressure))
+        state = Mock(variable='foo',
+                     valid_time=sentinel.valid,
+                     initial_time=sentinel.initial,
+                     pressures=sentinel.pressures,
+                     pressure=sentinel.pressure)
+        result = image_loader.image(state)
 
         self.assertEqual(cube.coord.mock_calls, [call('longitude'),
                                                  call('latitude')])
@@ -210,11 +206,8 @@ class Test_ImageLoader(unittest.TestCase):
 
 
 class Test_Navigator(unittest.TestCase):
-    @patch('forest.drivers.gridded_forecast._load')
-    def test_init(self, load):
-        load.return_value = sentinel.cubes
-        result = gridded_forecast.Navigator(sentinel.paths)
-        load.assert_called_once_with(sentinel.paths)
+    def test_init(self):
+        result = gridded_forecast.Navigator(sentinel.cubes)
         self.assertEqual(result._cubes, sentinel.cubes)
 
     def test_variables(self):
