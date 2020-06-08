@@ -2,6 +2,7 @@
 Sample data should be available to let users/developers build
 extensions easily
 """
+import pytest
 import os
 import netCDF4
 import sqlite3
@@ -14,10 +15,17 @@ def test_parse_args_build_dir():
     assert args.build_dir == "build"
 
 
-def test_main_calls_build_all_with_build_dir(tmpdir):
+@pytest.mark.parametrize("file_names", [
+    pytest.param(forest.tutorial.RDT_FILE, id="Rapid developing thunderstorms"),
+    pytest.param(forest.tutorial.FILE_NAMES["NAME"], id="NAME dispersion data"),
+])
+def test_main_calls_build_all_with_build_dir(tmpdir, file_names):
+    if isinstance(file_names, str):
+        file_names = [file_names]
     build_dir = str(tmpdir)
     forest.tutorial.main.main([build_dir])
-    assert os.path.exists(os.path.join(build_dir, forest.tutorial.RDT_FILE))
+    for file_name in file_names:
+        assert os.path.exists(os.path.join(build_dir, file_name)), file_name
 
 
 def test_rdt_file_name():
@@ -106,6 +114,23 @@ def test_build_all_builds_config_file(tmpdir):
             "pattern": "rdt*.json",
             "locator": "file_system",
             "file_type": "rdt"
+        }]
+    }
+    assert expect == result
+
+
+def test_build_name_config_file(tmpdir):
+    build_dir = str(tmpdir)
+    forest.tutorial.build_all(build_dir)
+    builder = forest.tutorial.BUILDERS["name"]
+    path = str(tmpdir / builder.file_name)
+    with open(path) as stream:
+        result = yaml.safe_load(stream)
+    expect = {
+        "files": [{
+            "label": "NAME",
+            "pattern": "NAME/*.txt",
+            "file_type": "gridded_forecast"
         }]
     }
     assert expect == result

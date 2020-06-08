@@ -1,0 +1,54 @@
+ NAME III (version 6.5)                                          
+ Run name:                   Training Example 1
+ Run time:                   30/09/2015 15:20:04.640 UTC+01:00
+ Met data:                   Single Site Flow.Met Station
+ Start of release:           08/10/2008 00:00 UTC
+ End of release:             08/10/2008 06:00 UTC
+ Source strength:            100.0000 g / s
+ Release location:           3.4700W   50.7300N
+ Release height:             150.000m agl +/- 0.000m
+ Run duration:               12hr 0min
+ X grid origin:                -6.445000    
+ Y grid origin:                 47.75500    
+ X grid size:                         120
+ Y grid size:                         120
+ X grid resolution:            5.0000001E-02
+ Y grid resolution:            5.0000001E-02
+ Number of preliminary cols:            4
+ Number of field cols:                  1
+ 
+ Fields:
+                        ,                        ,                        ,                        ,                    Tracer,
+                        ,                        ,                        ,                        ,                     Req 1,
+                        ,                        ,                        ,                        ,         Air Concentration,
+                        ,                        ,                        ,                        ,                    Tracer,
+                        ,                        ,                        ,                        ,                   g / m^3,
+                        ,                        ,                        ,                        ,               All sources,
+                        ,                        ,                        ,                        ,     No ensemble averaging,
+                        ,                        ,                        ,                        ,          1hr 0min average,
+                        ,                        ,                        ,                        ,   No horizontal averaging,
+                        ,                        ,                        ,                        ,     No vertical averaging,
+                        ,                        ,                        ,                        ,                          ,
+                        ,                        ,                        ,                        ,                          ,
+                        ,                        ,                        ,                        ,                          ,
+                        ,                        ,                        ,                        ,      08/10/2008 01:00 UTC,
+                        ,                        ,                        ,                        ,        Z = 50.00000 m agl,
+                        ,                        ,                        ,                        ,                          ,
+                 X Index,                 Y Index,            X (Lat-Long),            Y (Lat-Long),                          ,
+                      61,                      60,               -3.445000,                50.70500,             1.3790168E-07,
+                      62,                      60,               -3.395000,                50.70500,             2.0133648E-06,
+                      62,                      61,               -3.395000,                50.75500,             2.7613094E-08,
+                      63,                      60,               -3.345000,                50.70500,             2.7856131E-06,
+                      63,                      61,               -3.345000,                50.75500,             1.6567857E-07,
+                      64,                      60,               -3.295000,                50.70500,             2.6477114E-06,
+                      64,                      61,               -3.295000,                50.75500,             1.1045238E-07,
+                      65,                      59,               -3.245000,                50.65500,             2.7550627E-08,
+                      65,                      60,               -3.245000,                50.70500,             2.5098093E-06,
+                      65,                      61,               -3.245000,                50.75500,             8.2839279E-08,
+                      66,                      60,               -3.195000,                50.70500,             1.6548194E-06,
+                      66,                      61,               -3.195000,                50.75500,             8.2839279E-08,
+                      67,                      59,               -3.145000,                50.65500,             2.7550627E-08,
+                      67,                      60,               -3.145000,                50.70500,             6.8950828E-07,
+                      67,                      61,               -3.145000,                50.75500,             1.1045238E-07,
+                      68,                      60,               -3.095000,                50.70500,             1.6548204E-07,
+                      68,                      61,               -3.095000,                50.75500,             2.7613094E-08,
