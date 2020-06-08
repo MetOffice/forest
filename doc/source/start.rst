@@ -64,6 +64,39 @@ run the following command inside a shell prompt
   ~: forest --show unified_model.nc
 
 
+Example - Atmospheric dispersion modelling
+------------------------------------------
+
+FOREST can be easily configured to view NAME outputs. The
+tutorial ships with a configuration file and a directory containing
+NAME text files. These files are compatible with the ``name.py`` driver
+builtin to FOREST.
+
+.. code-block:: yaml
+
+   # contents of name-config.yaml
+   files:
+       - label: NAME
+         pattern: 'NAME/*.txt'
+         file_type: 'name'
+
+To launch FOREST with NAME settings run the following command. A browser
+tab will be launched by the ``--show`` flag.
+
+.. code-block:: bash
+
+   forest --show --config-file name-config.yaml
+
+Once FOREST launches it is then possible to customize the color palette(s)
+and limits, map backgrounds etc. to settings suitable to illustrate plumes
+of contaminants.
+
+.. image:: name-animation.gif
+
+.. note:: The NAME driver can be invoked with the ``--file-type=name`` command
+          line option when running without a config file
+
+
 Example - Rapidly developing thunderstorms
 ------------------------------------------
 
