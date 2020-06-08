@@ -5,20 +5,23 @@ from functools import partial
 import iris
 import datetime as dt
 import forest.util
+from forest.drivers.gridded_forecast import _load
 from forest.drivers.gridded_forecast import Dataset as _Dataset
 from forest.drivers.gridded_forecast import Navigator as _Navigator
+from forest.drivers.gridded_forecast import ImageLoader
 
 
 class Dataset(_Dataset):
     """Provide dataset specific functionality"""
-    def __init__(self, **kwargs):
-        super().__init__(is_valid_cube=is_valid_cube,
-                         extract_cube=extract_cube,
-                         **kwargs)
-
     def navigator(self):
         """Construct a Navigator"""
-        return Navigator(self._paths, self.is_valid_cube)
+        cube_dict = _load(self._paths, is_valid_cube)
+        return Navigator(cube_dict)
+
+    def image_loader(self):
+        return ImageLoader(self._label, self._paths,
+                           is_valid_cube=is_valid_cube,
+                           extract_cube=extract_cube)
 
 
 class Navigator(_Navigator):

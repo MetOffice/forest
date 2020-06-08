@@ -91,29 +91,26 @@ def _load(pattern, is_valid_cube=_is_valid_cube):
 
 class Dataset:
     """High-level class to relate navigators, loaders and views"""
-    def __init__(self, label=None, pattern=None,
-                 is_valid_cube=_is_valid_cube,
-                 extract_cube=None,
-                 **kwargs):
+    def __init__(self, label=None, pattern=None, **kwargs):
         self._label = label
         self.pattern = pattern
         if pattern is not None:
             self._paths = glob.glob(pattern)
         else:
             self._paths = []
-        self.is_valid_cube = is_valid_cube
-        self.extract_cube = extract_cube
 
     def navigator(self):
         """Construct navigator"""
-        return Navigator(self._paths, self.is_valid_cube)
+        cube_dict = _load(self._paths, _is_valid_cube)
+        return Navigator(cube_dict)
 
     def map_view(self, color_mapper):
         """Construct view"""
-        return UMView(ImageLoader(self._label, self._paths,
-                                  is_valid_cube=self.is_valid_cube,
-                                  extract_cube=self.extract_cube),
-                      color_mapper)
+        return UMView(self.image_loader(), color_mapper)
+
+    def image_loader(self):
+        """Construct ImageLoader"""
+        return ImageLoader(self._label, self._paths)
 
 
 class ImageLoader:
@@ -150,8 +147,8 @@ class ImageLoader:
 
 
 class Navigator:
-    def __init__(self, paths, is_valid_cube=_is_valid_cube):
-        self._cubes = _load(paths, is_valid_cube)
+    def __init__(self, cube_dict):
+        self._cubes = cube_dict
 
     def variables(self, pattern):
         return list(self._cubes.keys())
