@@ -93,7 +93,7 @@ class Dataset:
     """High-level class to relate navigators, loaders and views"""
     def __init__(self, label=None, pattern=None,
                  is_valid_cube=_is_valid_cube,
-                 image_loader_class=None,
+                 extract_cube=None,
                  **kwargs):
         self._label = label
         self.pattern = pattern
@@ -102,9 +102,7 @@ class Dataset:
         else:
             self._paths = []
         self.is_valid_cube = is_valid_cube
-        if image_loader_class is None:
-            image_loader_class = ImageLoader
-        self.image_loader_class = image_loader_class
+        self.extract_cube = extract_cube
 
     def navigator(self):
         """Construct navigator"""
@@ -112,20 +110,26 @@ class Dataset:
 
     def map_view(self, color_mapper):
         """Construct view"""
-        return UMView(self.image_loader_class(self._label,
-                                              self._paths,
-                                              self.is_valid_cube),
+        return UMView(ImageLoader(self._label, self._paths,
+                                  is_valid_cube=self.is_valid_cube,
+                                  extract_cube=self.extract_cube),
                       color_mapper)
 
+
 class ImageLoader:
-    def __init__(self, label, pattern, is_valid_cube=_is_valid_cube):
+    def __init__(self, label, pattern,
+                 is_valid_cube=_is_valid_cube,
+                 extract_cube=None):
         self._label = label
         self._cubes = _load(pattern, is_valid_cube)
+        if extract_cube is not None:
+            self.extract_cube = extract_cube
 
     def image(self, state):
         cube = self._cubes[state.variable]
         valid_datetime = _to_datetime(state.valid_time)
-        cube = self.select_image(cube, valid_datetime)
+        print(self.extract_cube)
+        cube = self.extract_cube(cube, valid_datetime)
         if cube is None:
             data = empty_image()
         else:
@@ -140,7 +144,8 @@ class ImageLoader:
         return data
 
     @staticmethod
-    def select_image(cube, valid_datetime):
+    def extract_cube(cube, valid_datetime):
+        """Extract 2D image slice from cube"""
         return cube.extract(iris.Constraint(time=valid_datetime))
 
 
