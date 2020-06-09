@@ -58,7 +58,10 @@ class NearCast(object):
             return self.empty_image
 
         try:
-            imageData = self.get_grib2_data(paths[0], state.valid_time, state.variable, state.pressure)
+            imageData = self.get_grib2_data(paths[0],
+                                            state.valid_time,
+                                            state.variable,
+                                            state.pressure)
         except ValueError:
             # TODO: Fix this properly
             return self.empty_image
@@ -71,8 +74,9 @@ class NearCast(object):
         return data
 
     def load_image(self, imageData):
-        return geo.stretch_image(
-                imageData["longitude"], imageData["latitude"], imageData["data"])
+        return geo.stretch_image(imageData["longitude"],
+                                 imageData["latitude"],
+                                 imageData["data"])
 
     def get_grib2_data(self, path, valid_time, variable, pressure):
         cache = {}
@@ -135,7 +139,8 @@ class Navigator:
     def _valid_times(variable, path):
         messages = pg.index(path, "name")
         for message in messages.select(name=variable):
-            validTime = "{0:8d}{1:04d}".format(message["validityDate"], message["validityTime"])
+            validTime = "{0:8d}{1:04d}".format(message["validityDate"],
+                                               message["validityTime"])
             yield dt.datetime.strptime(validTime, "%Y%m%d%H%M")
         messages.close()
 
