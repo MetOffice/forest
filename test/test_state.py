@@ -85,3 +85,9 @@ def test_valueerror_lengths_must_match():
 ])
 def test_time_array_equal_mixed_types(left, right, expect):
     assert time_array_equal(left, right) == expect
+
+
+
+def test_dataclass_state():
+    import forest.state
+    forest.state.State()

@@ -6,6 +6,9 @@ forecasts alongside observations.
 
 .. automodule:: forest.redux
 
+.. automodule:: forest.state
+    :members:
+
 .. automodule:: forest.rx
 
 .. automodule:: forest.observe

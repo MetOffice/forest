@@ -26,6 +26,7 @@ import forest.components
 from forest.components import tiles
 import forest.config as cfg
 import forest.middlewares as mws
+import forest.state
 from forest.db.util import autolabel
 
 
@@ -186,6 +187,9 @@ def main(argv=None):
         forest.reducer,
         initial_state=initial_state,
         middlewares=middlewares)
+
+    # Map dict to dataclass State
+    store.add_subscriber(forest.state.State.from_dict)
 
     # Colorbar user interface
     colorbar_ui = forest.components.ColorbarUI()
