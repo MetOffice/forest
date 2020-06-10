@@ -153,6 +153,24 @@ class Tools:
 
 
 @dataclass
+class Presets:
+    """Re-usable layer settings
+
+    Presets are cooked up once and re-used anywhere, they can also
+    be tweaked on the fly and instantly made available to all layers
+    using them. They can also be serialised to disk to store/re-load
+    them as needed
+
+    :param active: currently chosen preset
+    :param labels: map index to label
+    :param meta: data used by user interface
+    """
+    active: int = 0
+    labels: dict = field(default_factory=dict)
+    meta: dict = field(default_factory=dict)
+
+
+@dataclass
 class State:
     """Application State container
 
@@ -179,6 +197,7 @@ class State:
     :type tools: Tools
     :param position: Used by tools to determine geographic position
     :type position: Position
+    :param presets: Save colorbar settings for later re-use
     """
 
     pattern: str = ""
@@ -197,6 +216,7 @@ class State:
     tile: Tile = field(default_factory=Tile)
     tools: Tools = field(default_factory=Tools)
     position: Position = field(default_factory=Position)
+    presets: Presets = field(default_factory=Presets)
 
     def __post_init__(self):
         """Type-checking"""
@@ -210,8 +230,12 @@ class State:
             self.position = Position(**self.position)
         if isinstance(self.layers, dict):
             self.layers = Layers(**self.layers)
+        if isinstance(self.presets, dict):
+            self.presets = Presets(**self.presets)
 
     @classmethod
     def from_dict(cls, data):
         """Factory method to simplify conversion from dict to dataclass"""
-        return cls(**data)
+        obj = cls(**data)
+        print(f"presets: {obj.presets}")
+        return obj
