@@ -268,7 +268,7 @@ class State:
             self.presets = Presets(**self.presets)
 
     @classmethod
-    def from_dict(cls, data: dict) -> State:
+    def from_dict(cls, data: dict):
         """Factory method to convert from dict to State
 
         :returns: State instance
@@ -276,7 +276,7 @@ class State:
         """
         return cls(**data)
 
-    def to_dict(self) -> dict:
+    def to_dict(self):
         """Map to dict representation of State
 
         :returns: dictionary containing nested state data
