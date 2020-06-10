@@ -117,3 +117,5 @@ def test_dataclass_state_default():
     assert state.layers.active == []
     assert state.layers.mode.state == "add"
     assert state.layers.mode.index == 0
+    assert state.position.x == 0
+    assert state.position.y == 0

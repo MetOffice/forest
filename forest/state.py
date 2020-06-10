@@ -129,6 +129,17 @@ class Tile:
 
 
 @dataclass
+class Position:
+    """X/Y position in WebMercator coordinates related to user interaction
+
+    :param x: x-coordinate of tap event
+    :param y: y-coordinate of tap event
+    """
+    x: float = 0.
+    y: float = 0.
+
+
+@dataclass
 class Tools:
     """Flags to specify active tools
 
@@ -164,6 +175,8 @@ class State:
     :type tile: Tile
     :param tools: Turn profile/time_series on/off
     :type tools: Tools
+    :param position: Used by tools to determine geographic position
+    :type position: Position
     """
 
     pattern: str = ""
@@ -181,6 +194,7 @@ class State:
     dimension: dict = field(default_factory=dict)  # TODO: Find code using it
     tile: Tile = field(default_factory=Tile)
     tools: Tools = field(default_factory=Tools)
+    position: Position = field(default_factory=Position)
 
     def __post_init__(self):
         """Type-checking"""
@@ -190,6 +204,8 @@ class State:
             self.tile = Tile(**self.tile)
         if isinstance(self.tools, dict):
             self.tools = Tools(**self.tools)
+        if isinstance(self.position, dict):
+            self.position = Position(**self.position)
         if isinstance(self.layers, dict):
             self.layers = Layers(**self.layers)
 
