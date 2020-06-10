@@ -268,10 +268,19 @@ class State:
 
     @classmethod
     def from_dict(cls, data):
-        """Factory method to simplify conversion from dict to dataclass"""
+        """Factory method to simplify conversion from dict to dataclass
+
+        :returns: State instance
+        :rtype: State
+        """
         obj = cls(**data)
         print(f"presets: {obj.presets}")
         return obj
 
     def to_dict(self):
+        """Map to dict representation of State
+
+        :returns: dictionary containing nested state data
+        :rtype: dict
+        """
         return asdict(self)
