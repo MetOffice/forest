@@ -1,6 +1,6 @@
 <h1 align="center">
   <a href="https://forest-informaticslab.readthedocs.io/en/latest/" style="display: block; margin: 0 auto;">
-   <img src="https://raw.githubusercontent.com/informatics-lab/forest/master/forest-logo-small.png"
+   <img src="https://raw.githubusercontent.com/MetOffice/forest/master/forest-logo-small.png"
         style="max-width: 40%;" alt="FOREST"></a>
 </h1>
 
@@ -8,8 +8,8 @@
   Forecast and Observation Research and Evaluation Survey Tool
   </span>
 
-[![Build Status](https://travis-ci.com/informatics-lab/forest.svg?branch=master)](https://travis-ci.com/informatics-lab/forest)
-[![Coverage Status](https://coveralls.io/repos/github/informatics-lab/forest/badge.svg?branch=master)](https://coveralls.io/github/informatics-lab/forest?branch=master)
+[![Build Status](https://travis-ci.com/MetOffice/forest.svg?branch=master)](https://travis-ci.com/MetOffice/forest)
+[![Coverage Status](https://coveralls.io/repos/github/MetOffice/forest/badge.svg?branch=master)](https://coveralls.io/github/MetOffice/forest?branch=master)
 [![Docs Latest](https://img.shields.io/badge/docs-latest-blue)](https://forest-informaticslab.readthedocs.io/en/latest/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/forest.svg)](https://anaconda.org/conda-forge/forest)
 
@@ -31,7 +31,7 @@ quickly become an invaluable resource over time.
 
 ## Get in touch
 
-As FOREST is a small code base with a small but dedicated team of developers we have fewer ways to communicate than larger projects. In any case we are very happy to hear from you and always appreciate help wherever we can find it. If you have suggestions for improvements, bugs that need reporting or sage advice to developers feel free to open/comment on [issues](https://github.com/informatics-lab/forest/issues).
+As FOREST is a small code base with a small but dedicated team of developers we have fewer ways to communicate than larger projects. In any case we are very happy to hear from you and always appreciate help wherever we can find it. If you have suggestions for improvements, bugs that need reporting or sage advice to developers feel free to open/comment on [issues](https://github.com/MetOffice/forest/issues).
 
 ## Contributor instructions
 
