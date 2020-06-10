@@ -1,4 +1,5 @@
 import os
+import json
 import yaml
 import sqlite3
 import pytest
@@ -7,9 +8,11 @@ from forest import main
 
 
 def test_main_given_rdt_files(tmp_path):
-    rdt_file = tmp_path / "file.json"
-    with rdt_file.open("w"):
-        pass
+    rdt_file = tmp_path / "file_202001010000.json"
+    with rdt_file.open("w") as stream:
+        json.dump({
+            "features": {}
+        }, stream)
     main.main(argv=["--file-type", "rdt", str(rdt_file)])
 
 

@@ -21,13 +21,13 @@ from forest import colors
 import forest.drivers
 
 
-ADD_LAYER = "LAYERS_ADD_LAYER"
+ADD_LAYER = "LAYERS_ADD_LAYER"  # NOTE: Not used any more
 SAVE_LAYER = "LAYERS_SAVE_LAYER"
 ON_ADD = "LAYERS_ON_ADD"
 ON_EDIT = "LAYERS_ON_EDIT"
 ON_CLOSE = "LAYERS_ON_CLOSE"
 ON_SAVE = "LAYERS_ON_SAVE"
-ON_REMOVE = "LAYERS_ON_REMOVE"
+ON_REMOVE = "LAYERS_ON_REMOVE"  # NOTE: Not used any more
 ON_BUTTON_GROUP = "LAYERS_ON_BUTTON_GROUP"
 SET_FIGURES = "LAYERS_SET_FIGURES"
 SET_ACTIVE = "LAYERS_SET_ACTIVE"
@@ -37,6 +37,7 @@ def set_figures(n: int) -> Action:
     return {"kind": SET_FIGURES, "payload": n}
 
 
+# NOTE: Not used any more
 def add_layer(name) -> Action:
     return {"kind": ADD_LAYER, "payload": name}
 
@@ -125,9 +126,9 @@ def reducer(state: State, action: Action) -> State:
     state = copy.deepcopy(state)
     kind = action["kind"]
     if kind in [
-            ADD_LAYER,
+            ADD_LAYER,  # NOTE: Not used any more
             SET_FIGURES,
-            ON_REMOVE]:
+            ON_REMOVE]:  # NOTE: Not used any more
         layers = state.get("layers", {})
         state["layers"] = _layers_reducer(layers, action)
     elif kind == ON_ADD:
@@ -178,11 +179,13 @@ def _layers_reducer(state, action):
     if kind == SET_FIGURES:
         state["figures"] = action["payload"]
 
+    # NOTE: Not used any more
     elif kind == ADD_LAYER:
         labels = state.get("labels", [])
         labels.append(action["payload"])
         state["labels"] = labels
 
+    # NOTE: Not used anymore
     elif kind == ON_REMOVE:
         labels = state.get("labels", [])
         state["labels"] = labels[:-1]
