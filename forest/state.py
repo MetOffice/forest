@@ -10,6 +10,30 @@ Expressing data structure as a nested hierarchy of types allows readers
 of the code to understand how state is organised. It also allows for
 type-checking to simplify functions that manipulate state.
 
+State can be generated programmatically, converted to/from dict
+to be compatible with reducers and to make it easier to serialize.
+
+>>> state = forest.state.State()
+>>> state.colorbar.name
+'Viridis'
+
+Converting to/from dict can be achieved
+using :meth:`State.to_dict` and :meth:`State.from_dict`
+
+>>> s1 = forest.state.State()
+>>> d = s1.to_dict()
+>>> type(d)
+<class 'dict'>
+>>> s2 = forest.state.State.from_dict(d)
+>>> s1 == s2
+True
+
+The only aspect to be aware of while mapping to/from dict is that
+:class:`State` implements default values for missing entries.
+
+.. note:: State structure may change in future releases, backwards
+          compatibility is not guaranteed
+
 """
 import datetime as dt
 import bokeh.palettes
