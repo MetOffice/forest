@@ -26,7 +26,6 @@ import forest.components
 from forest.components import tiles
 import forest.config as cfg
 import forest.middlewares as mws
-import forest.state
 from forest.db.util import autolabel
 
 
@@ -170,16 +169,7 @@ def main(argv=None):
         initial_state = db.initial_state(navigator, pattern=pattern)
         break
 
-
-    def to_from_state(store, action):
-        # Check round-trip dict -> State -> dict is compatible with app
-        state = forest.state.State.from_dict(store.state)
-        store.state = state.to_dict()
-        yield action
-
-
     middlewares = [
-        to_from_state,  # Replace store.state with to_dict(from_dict(state))
         keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,
@@ -196,9 +186,6 @@ def main(argv=None):
         forest.reducer,
         initial_state=initial_state,
         middlewares=middlewares)
-
-    # Map dict to dataclass State
-    store.add_subscriber(forest.state.State.from_dict)
 
     # Colorbar user interface
     colorbar_ui = forest.components.ColorbarUI()
