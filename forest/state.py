@@ -2,13 +2,13 @@
 Application state
 -----------------
 
-Although the general design pattern of a redux store is defined by pure
-reducer functions, engineers need documentation to extend and understand
-:class:`State`.
+Although the state in a redux store is defined by reducer functions,
+engineers need documentation to extend and understand :class:`State`. Python
+dataclasses are a natural fit to make state self-describing.
 
-Expressing state as a nested hierarchy of types allows readers of the code
-to understand how data is organised. It also allows for type-checking to
-simplify functions that manipulate state.
+Expressing data structure as a nested hierarchy of types allows readers
+of the code to understand how state is organised. It also allows for
+type-checking to simplify functions that manipulate state.
 
 """
 import datetime as dt
