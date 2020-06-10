@@ -231,6 +231,7 @@ class State:
     :param position: Used by tools to determine geographic position
     :type position: Position
     :param presets: Save colorbar settings for later re-use
+    :type presets: Presets
     """
 
     pattern: str = ""
@@ -267,17 +268,15 @@ class State:
             self.presets = Presets(**self.presets)
 
     @classmethod
-    def from_dict(cls, data):
-        """Factory method to simplify conversion from dict to dataclass
+    def from_dict(cls, data: dict) -> State:
+        """Factory method to convert from dict to State
 
         :returns: State instance
         :rtype: State
         """
-        obj = cls(**data)
-        print(f"presets: {obj.presets}")
-        return obj
+        return cls(**data)
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         """Map to dict representation of State
 
         :returns: dictionary containing nested state data
