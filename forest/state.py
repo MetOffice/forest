@@ -167,8 +167,8 @@ class Tile:
 class Position:
     """X/Y position in WebMercator coordinates related to user interaction
 
-    :param x: x-coordinate of tap event
-    :param y: y-coordinate of tap event
+    :param x: coordinate of tap event
+    :param y: coordinate of tap event
     """
     x: float = 0.
     y: float = 0.
@@ -179,7 +179,9 @@ class Tools:
     """Flags to specify active tools
 
     :param time_series: Turn time series widget on/off
+    :type time_series: bool
     :param profile: Turn profile widget on/off
+    :type time_series: bool
     """
     time_series: bool = False
     profile: bool = False
@@ -195,8 +197,11 @@ class Presets:
     them as needed
 
     :param active: currently chosen preset
+    :type active: int
     :param labels: map index to label
+    :type active: dict
     :param meta: data used by user interface
+    :type active: dict
     """
     active: int = 0
     labels: dict = field(default_factory=dict)
