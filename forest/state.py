@@ -54,7 +54,9 @@ class ColorbarLimits:
 
 @dataclass
 class Colorbar:
-    """Colorbar settings
+    """
+    Colorbar settings allow users to change palettes and limits
+    based on data or user-specified limits
 
     :param name: bokeh palette name
     :param number: bokeh palette number
@@ -82,7 +84,11 @@ class Colorbar:
 
 @dataclass
 class LayerMode:
-    """User-interface layout data
+    """Data to control UI presented to user
+
+    Contains meta-data to indicate whether a layer is being edited or added. If
+    the layer is being edited an index can be used to specify settings to
+    overwrite.
 
     :param state: Edit mode, either 'edit' or 'add'
     :param index: Index of layer being edited
@@ -93,7 +99,7 @@ class LayerMode:
 
 @dataclass
 class Layers:
-    """Layer-specific settings
+    """Layer settings
 
     :param index: Map layer index to settings
     :param active: List of active layers
