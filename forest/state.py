@@ -66,9 +66,9 @@ class Colorbar:
     :param invisible_min: hide/show values below minimum
     :param invisible_max: hide/show values above maximum
     """
-    name: str = ""
+    name: str = "Viridis"
     names: list = field(default_factory=list)
-    number: int = 0
+    number: int = 256
     numbers: list = field(default_factory=list)
     limits: ColorbarLimits = field(default_factory=ColorbarLimits)
     low: float = 0.
@@ -93,7 +93,7 @@ class LayerMode:
     :param state: Edit mode, either 'edit' or 'add'
     :param index: Index of layer being edited
     """
-    state: str = ""
+    state: str = "add"
     index: int = 0
 
 
@@ -124,7 +124,7 @@ class Tile:
     :param labels: Turn overlay labels on/off
     :type labels: bool
     """
-    name: str = ""
+    name: str = "Open street map"
     labels: bool = False
 
 
@@ -174,10 +174,11 @@ class State:
     initial_times: list = field(default_factory=list)
     valid_time: dt.datetime = dt.datetime(1970, 1, 1)
     valid_times: list = field(default_factory=list)
+    pressure: float = 0.
     pressures: list = field(default_factory=list)
     colorbar: Colorbar = field(default_factory=Colorbar)
     layers: Layers = field(default_factory=Layers)
-    dimension: dict = field(default_factory=dict)
+    dimension: dict = field(default_factory=dict)  # TODO: Find code using it
     tile: Tile = field(default_factory=Tile)
     tools: Tools = field(default_factory=Tools)
 
