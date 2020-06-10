@@ -101,11 +101,13 @@ class LayerMode:
 class Layers:
     """Layer settings
 
+    :param figures: Number of figures to display
     :param index: Map layer index to settings
     :param active: List of active layers
     :param mode: Edit/new mode to define UI
     :type mode: LayerMode
     """
+    figures: int = 1
     index: dict = field(default_factory=dict)
     active: list = field(default_factory=list)
     mode: LayerMode = field(default_factory=LayerMode)

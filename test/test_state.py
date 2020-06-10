@@ -113,6 +113,7 @@ def test_dataclass_state_default():
     assert state.tile.labels == False
     assert state.tools.profile == False
     assert state.tools.time_series == False
+    assert state.layers.figures == 1
     assert state.layers.index == {}
     assert state.layers.active == []
     assert state.layers.mode.state == "add"
