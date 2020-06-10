@@ -170,7 +170,16 @@ def main(argv=None):
         initial_state = db.initial_state(navigator, pattern=pattern)
         break
 
+
+    def to_from_state(store, action):
+        # Check round-trip dict -> State -> dict is compatible with app
+        state = forest.state.State.from_dict(store.state)
+        store.state = state.to_dict()
+        yield action
+
+
     middlewares = [
+        to_from_state,  # Replace store.state with to_dict(from_dict(state))
         keys.navigate,
         db.InverseCoordinate("pressure"),
         db.next_previous,

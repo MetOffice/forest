@@ -12,7 +12,8 @@ type-checking to simplify functions that manipulate state.
 
 """
 import datetime as dt
-from dataclasses import dataclass, field
+import bokeh.palettes
+from dataclasses import dataclass, field, asdict
 
 
 @dataclass
@@ -52,6 +53,14 @@ class ColorbarLimits:
             self.user = Limits(**self.user)
 
 
+def _names_factory():
+    return list(sorted(bokeh.palettes.all_palettes.keys()))
+
+
+def _numbers_factory():
+    return list(sorted(bokeh.palettes.all_palettes["Viridis"].keys()))
+
+
 @dataclass
 class Colorbar:
     """
@@ -67,9 +76,9 @@ class Colorbar:
     :param invisible_max: hide/show values above maximum
     """
     name: str = "Viridis"
-    names: list = field(default_factory=list)
+    names: list = field(default_factory=_names_factory)
     number: int = 256
-    numbers: list = field(default_factory=list)
+    numbers: list = field(default_factory=_numbers_factory)
     limits: ColorbarLimits = field(default_factory=ColorbarLimits)
     low: float = 0.
     high: float = 1.
@@ -239,3 +248,6 @@ class State:
         obj = cls(**data)
         print(f"presets: {obj.presets}")
         return obj
+
+    def to_dict(self):
+        return asdict(self)

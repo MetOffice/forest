@@ -3,6 +3,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import cftime
+import bokeh.palettes
 import forest.state
 from forest import db
 from forest.db.control import time_array_equal
@@ -90,8 +91,12 @@ def test_time_array_equal_mixed_types(left, right, expect):
 
 def test_dataclass_state_default():
     state = forest.state.State()
+    names = list(sorted(bokeh.palettes.all_palettes.keys()))
+    numbers = list(sorted(bokeh.palettes.all_palettes["Viridis"].keys()))
     assert state.colorbar.name == "Viridis"
+    assert state.colorbar.names == names
     assert state.colorbar.number == 256
+    assert state.colorbar.numbers == numbers
     assert state.colorbar.reverse == False
     assert state.colorbar.invisible_min == False
     assert state.colorbar.invisible_max == False
