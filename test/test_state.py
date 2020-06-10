@@ -120,4 +120,6 @@ def test_dataclass_state_default():
     assert state.layers.mode.index == 0
     assert state.position.x == 0
     assert state.position.y == 0
-    assert state.presets is not None
+    assert state.presets.active == 0
+    assert state.presets.labels == {}
+    assert state.presets.meta == {}
