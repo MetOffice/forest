@@ -28,8 +28,12 @@ using :meth:`State.to_dict` and :meth:`State.from_dict`
 >>> s1 == s2
 True
 
-The only aspect to be aware of while mapping to/from dict is that
-:class:`State` implements default values for missing entries.
+The only caveat to be aware of while mapping to/from dict is that
+:class:`State` implements default values for missing entries. A
+default State is not equal to an empty dict.
+
+>>> forest.state.State().to_dict() == {}
+False
 
 .. note:: State structure may change in future releases, backwards
           compatibility is not guaranteed
