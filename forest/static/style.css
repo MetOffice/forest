@@ -20,7 +20,7 @@ h3 {
 /* Navigation */
 nav {
     color: black;
-    background-color: #F1F1F1;
+    background-color: rgba(255, 255, 255, 0.9);
     box-shadow: 0px 2px 4px -2px rgba(0, 0, 0, 0.7);
     position: fixed;
     top: 0;
@@ -43,7 +43,7 @@ footer {
 }
 .time {
     color: black;
-    background-color: #F1F1F1;
+    background-color: rgba(255, 255, 255, 0.9);
     box-shadow: 0px -2px 4px -2px rgba(0, 0, 0, 0.7);
 }
 
@@ -55,10 +55,9 @@ footer {
     z-index: 6;
     top: 0;
     right: 0;
-    background-color: #333;
     overflow-x: hidden;
     transition: 0.2s;
-    background-color: #F1F1F1;
+    background-color: rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.7);
 }
 
@@ -73,7 +72,7 @@ footer {
     bacground-color: #333;
     overflow-x: hidden;
     transition: 0.2s;
-    background-color: #F1F1F1;
+    background-color: rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.7);
 }
 
@@ -132,7 +131,35 @@ footer {
     transform: translate(-50%, -50%);
     margin: auto;
     padding: 0.5rem;
-    background-color: #F1F1F1;
+    background-color: rgba(255, 255, 255, 0.9);
     border-radius: 0.2rem;
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5);
+}
+
+
+
+/**
+ *  Animation controls
+ */
+.animate {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 100;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 0.4rem;
+    box-shadow: 0 0 8px gray;
+    padding: 0.4rem;
+}
+.animate-drag {
+    text-align: center;
+    line-height: 0.5em;
+    cursor: move;
+}
+.dot {
+    height: 3px;
+    width: 3px;
+    background-color: black;
+    border-radius: 50%;
+    display: inline-block;
 }

@@ -145,23 +145,6 @@ class TimeUI(Observable):
 
         self.source.selected.on_change('indices', self.on_selected)
 
-        # Band to highlight valid times
-        self.band_source = bokeh.models.ColumnDataSource(dict(
-            base=[-1, 1],
-            upper=[0, 0],
-            lower=[0, 0]
-        ))
-        band = bokeh.models.Band(
-            dimension='width',
-            base='base',
-            lower='lower',
-            upper='upper',
-            fill_color='grey',
-            fill_alpha=0.2,
-            source=self.band_source
-        )
-        self.figure.add_layout(band)
-
         # Controls
         self.buttons = {
             "play": bokeh.models.Button(label="Play",
@@ -290,16 +273,3 @@ class TimeUI(Observable):
         # Title
         time = self._axis.datetimes[index]
         self.figure.title.text = f"{time:%A %d %B %Y %H:%M}"
-
-        # Band
-        if len(times) > 0:
-            upper = [max(times), max(times)]
-            lower = [min(times), min(times)]
-        else:
-            upper = [0, 0]
-            lower = [0, 0]
-        self.band_source.data = dict(
-            base=[-1, 1],
-            upper=upper,
-            lower=lower
-        )

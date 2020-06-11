@@ -52,6 +52,16 @@
         {{ safe_embed('figures') }}
     </div>
 
+    <!-- movable div -->
+    <div id="animate" class="animate">
+        <div id="animate-drag" class="animate-drag">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+            {{ safe_embed('animate') }}
+    </div>
+
     <!-- Layout footer widgets -->
     <div id="colorbar-parent" class="colorbar-parent">
         <div id="colorbar" class="colorbar">
@@ -72,6 +82,49 @@
             </div>
         {% endfor %}
     {% endfor %}
+
+    <script charset="utf-8">
+        let dragElement = function(els) {
+            var current = {x: 0, y: 0}
+            var last = {x: 0, y: 0}
+
+            let moveDragElement = function(e) {
+                e = e || window.event;
+                e.preventDefault();
+
+                // Calculate new cursor position
+                current.x = last.x - e.clientX;
+                current.y = last.y - e.clientY;
+                last.x = e.clientX;
+                last.y = e.clientY;
+
+                // Set element's new position
+                let el = els.moveElement;
+                el.style.top = (el.offsetTop - current.y) + "px";
+                el.style.left = (el.offsetLeft - current.x) + "px";
+            }
+
+            let closeDragElement = function() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+
+            els.grabElement.onmousedown = function(e) {
+                e = e || window.event;
+                e.preventDefault();
+
+                last.x = e.clientX;
+                last.y = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = moveDragElement;
+            }
+        }
+
+        dragElement({
+           moveElement: document.getElementById("animate"),
+           grabElement: document.getElementById("animate-drag"),
+        })
+    </script>
 
     <script>
 // Re-attach roots if WebSocket request served by different machine

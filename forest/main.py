@@ -24,7 +24,7 @@ from forest import (
         parse_args)
 import forest.app
 import forest.components
-from forest.components import tiles, html_ready
+from forest.components import animate, tiles, html_ready
 import forest.config as cfg
 import forest.middlewares as mws
 from forest.db.util import autolabel
@@ -196,6 +196,10 @@ def main(argv=None):
     component = forest.components.TimeUI()
     component.layout = bokeh.layouts.row(component.layout, name="time")
     app.add_component(component)
+
+    # Visualise animation settings
+    animate_view = animate.View(time_ui.figure)
+    animate_view.connect(store)
 
     # Connect MapView orchestration to store
     opacity_slider = forest.layers.OpacitySlider()
@@ -391,6 +395,16 @@ def main(argv=None):
             tabs,
             name="controls")
 
+    # Client-side animation controls
+    animate_controls = animate.Controls()
+    animate_controls.connect(store)
+    valid_times = store.state.get("valid_times", [])
+    if len(valid_times) > 0:
+        action = animate.set_animate(min(valid_times),
+                                     max(valid_times),
+                                     "pause")
+        store.dispatch(action.to_dict())
+
     # Add key press support
     key_press = keys.KeyPress()
     key_press.add_subscriber(store.dispatch)
@@ -415,6 +429,7 @@ def main(argv=None):
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
     document.add_root(modal.layout)
+    document.add_root(animate_controls.layout)
 
 
 class Navbar:
