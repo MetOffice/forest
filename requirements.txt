@@ -6,6 +6,6 @@ iris
 intake
 intake-esm
 pygrib
-libwebp=1.0.2  # Pin to prevent Travis issue
+libwebp==1.0.2  # Pin to prevent Travis issue
 xarray
 geojson
