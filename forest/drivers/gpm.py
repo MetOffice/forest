@@ -27,7 +27,7 @@ class Dataset:
         return Navigator(self.pattern, self.locator)
 
     def map_view(self, color_mapper):
-        return forest.map_view.UMView(_Loader(self.pattern,
+        return forest.map_view.ImageView(_Loader(self.pattern,
                                           self.locator),
                                   color_mapper,
                                   use_hover_tool=False)
@@ -100,7 +100,7 @@ class Navigator:
 
 
 class _Loader:
-    """Compatible with forest.map_view.UMView"""
+    """Compatible with forest.map_view.ImageView"""
     def __init__(self, pattern, locator):
         self.pattern = pattern
         self.locator = locator

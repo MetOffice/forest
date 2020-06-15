@@ -19,7 +19,7 @@ except ModuleNotFoundError:
 
 import glob
 from forest import geo
-from forest.map_view import UMView
+from forest.map_view import ImageView
 from forest.util import to_datetime as _to_datetime
 
 
@@ -104,7 +104,7 @@ class Dataset:
 
     def map_view(self, color_mapper):
         """Construct view"""
-        return UMView(ImageLoader(self._label, self._paths), color_mapper)
+        return ImageView(ImageLoader(self._label, self._paths), color_mapper)
 
 class ImageLoader:
     def __init__(self, label, pattern):

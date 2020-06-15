@@ -19,7 +19,7 @@ def navigator():
 
 def test_dataset_map_view(dataset):
     color_mapper = bokeh.models.ColorMapper()
-    assert isinstance(dataset.map_view(color_mapper), forest.map_view.UMView)
+    assert isinstance(dataset.map_view(color_mapper), forest.map_view.ImageView)
 
 
 def test_dataset_navigator(dataset):

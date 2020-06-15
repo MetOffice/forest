@@ -46,7 +46,7 @@ class Dataset:
     def map_view(self, color_mapper):
         """Construct view"""
         loader = Loader(self.locator, self.label)
-        return map_view.UMView(loader, color_mapper)
+        return map_view.ImageView(loader, color_mapper)
 
 
 class Loader:
