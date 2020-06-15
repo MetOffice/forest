@@ -12,7 +12,7 @@ import cftime
 
 import glob
 from forest import geo
-from forest.map_view import UMView
+from forest.map_view import ImageView
 from forest.util import to_datetime as _to_datetime
 
 
@@ -109,7 +109,7 @@ class Dataset:
 
     def map_view(self, color_mapper):
         """Construct view"""
-        return UMView(self.image_loader(), color_mapper)
+        return ImageView(self.image_loader(), color_mapper)
 
     def image_loader(self):
         """Construct ImageLoader"""

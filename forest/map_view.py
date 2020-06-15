@@ -16,11 +16,11 @@ def map_view(loader, color_mapper, use_hover_tool=True):
             low=0,
             high=1)
         color_view = ColorView(color_mapper)
-        um_view = UMView(loader, color_mapper,
+        um_view = ImageView(loader, color_mapper,
                          use_hover_tool=use_hover_tool)
         return MapView(um_view, color_view)
     else:
-        return UMView(loader, color_mapper,
+        return ImageView(loader, color_mapper,
                       use_hover_tool=use_hover_tool)
 
 
@@ -35,7 +35,7 @@ class AbstractMapView(ABC):
 
 
 class MapView(AbstractMapView):
-    """Extend UMView to support color_mapper"""
+    """Extend ImageView to support color_mapper"""
     def __init__(self, um_view, color_view):
         self.um_view = um_view
         self.color_view = color_view
@@ -63,7 +63,7 @@ class ColorView:
             spec.apply(self.color_mapper)
 
 
-class UMView(AbstractMapView):
+class ImageView(AbstractMapView):
     def __init__(self, loader, color_mapper, use_hover_tool=True):
         self.loader = loader
         self.color_mapper = color_mapper
