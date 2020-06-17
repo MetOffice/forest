@@ -3,6 +3,21 @@ Component to detect page-loaded event
 """
 import forest.actions
 import forest.state
+from forest.observe import Observable
+
+
+class HTMLReady(Observable):
+    def __init__(self, hidden_button):
+        self.hidden_button = hidden_button
+        self.hidden_button.on_click(self.on_click)
+        super().__init__()
+
+    def connect(self, store):
+        self.add_subscriber(store.dispatch)
+
+    def on_click(self):
+        # TODO: Remove action.to_dict() when Actions are supported
+        self.notify(forest.actions.html_loaded().to_dict())
 
 
 def reducer(state, action):
@@ -11,7 +26,7 @@ def reducer(state, action):
         try:
             action = forest.actions.Action.from_dict(action)
         except TypeError:
-            # TODO: Remove when Action is fully supported
+            # TODO: Remove try/except when Actions are supported
             return state
     if isinstance(state, dict):
         state = forest.state.State.from_dict(state)

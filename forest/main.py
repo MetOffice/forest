@@ -23,7 +23,7 @@ from forest import (
         navigate,
         parse_args)
 import forest.components
-from forest.components import tiles
+from forest.components import tiles, html_ready
 import forest.config as cfg
 import forest.middlewares as mws
 from forest.db.util import autolabel
@@ -386,10 +386,13 @@ def main(argv=None):
             tabs,
             name="controls")
 
-
     # Add key press support
     key_press = keys.KeyPress()
     key_press.add_subscriber(store.dispatch)
+
+    # Add HTML ready support
+    obj = html_ready.HTMLReady(key_press.hidden_button)
+    obj.connect(store)
 
     document = bokeh.plotting.curdoc()
     document.title = "FOREST"

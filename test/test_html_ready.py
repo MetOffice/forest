@@ -8,7 +8,7 @@ def test_reducer():
     action = forest.actions.html_loaded()
     state = forest.reducer(state, action.to_dict())
     state = forest.state.State.from_dict(state)
-    assert state.bokeh.html_loaded == True
+    assert state.bokeh.html_loaded == True  # noqa: E712
 
 
 def test_action():
