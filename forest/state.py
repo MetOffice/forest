@@ -45,6 +45,20 @@ from dataclasses import dataclass, field, asdict
 
 
 @dataclass
+class Bokeh:
+    """Additional bokeh state
+
+    Image streaming behaves inconsistently when data is streamed before
+    the DOM is ready, ``image_shape[t] is undefined`` errors are triggered
+    in the compiled JS
+
+    .. note:: HTML loaded is merely convenience and may be unnecessary in
+              future bokeh releases
+    """
+    html_loaded: bool = False
+
+
+@dataclass
 class Limits:
     """
     Color map extent, high and low represent upper and lower limits
@@ -241,6 +255,8 @@ class State:
     :type position: Position
     :param presets: Save colorbar settings for later re-use
     :type presets: Presets
+    :param bokeh: Additional bokeh state
+    :type bokeh: Bokeh
     """
 
     pattern: str = ""
@@ -260,9 +276,12 @@ class State:
     tools: Tools = field(default_factory=Tools)
     position: Position = field(default_factory=Position)
     presets: Presets = field(default_factory=Presets)
+    bokeh: Bokeh = field(default_factory=Bokeh)
 
     def __post_init__(self):
         """Type-checking"""
+        if isinstance(self.bokeh, dict):
+            self.bokeh = Bokeh(**self.bokeh)
         if isinstance(self.colorbar, dict):
             self.colorbar = Colorbar(**self.colorbar)
         if isinstance(self.tile, dict):
