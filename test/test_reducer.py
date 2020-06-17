@@ -1,6 +1,6 @@
 import pytest
 import forest
-import forest.state
+from forest.state import State
 
 
 @pytest.mark.parametrize("state,action,expect", [
@@ -44,5 +44,5 @@ import forest.state
     )
 ])
 def test_reducer(state, action, expect):
-    expect = forest.state.State.from_dict(expect).to_dict()
-    assert forest.reducer(state, action) == expect
+    result = forest.reducer(state, action)
+    assert State.from_dict(result) == State.from_dict(expect)
