@@ -9,6 +9,7 @@ from forest import (
     presets,
     dimension)
 from forest.components import (
+    html_ready,
     tiles)
 
 
@@ -21,4 +22,5 @@ reducer = redux.combine_reducers(
             colors.limits_reducer,
             presets.reducer,
             tiles.reducer,
-            dimension.reducer)
+            dimension.reducer,
+            html_ready.reducer)
