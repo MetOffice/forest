@@ -189,7 +189,7 @@ class Position:
     :param y: coordinate of tap event
     """
     x: float = 0.
-    y: float = 0.
+    y: float = -1e9  # South pole
 
 
 @dataclass

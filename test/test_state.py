@@ -93,14 +93,14 @@ def test_dataclass_state_default():
     state = forest.state.State()
     names = list(sorted(bokeh.palettes.all_palettes.keys()))
     numbers = list(sorted(bokeh.palettes.all_palettes["Viridis"].keys()))
-    assert state.bokeh.html_loaded == False
+    assert state.bokeh.html_loaded == False  # noqa: E712
     assert state.colorbar.name == "Viridis"
     assert state.colorbar.names == names
     assert state.colorbar.number == 256
     assert state.colorbar.numbers == numbers
-    assert state.colorbar.reverse == False
-    assert state.colorbar.invisible_min == False
-    assert state.colorbar.invisible_max == False
+    assert state.colorbar.reverse == False  # noqa: E712
+    assert state.colorbar.invisible_min == False  # noqa: E712
+    assert state.colorbar.invisible_max == False  # noqa: E712
     assert state.colorbar.limits.origin == "column_data_source"
     assert state.colorbar.limits.user.low == 0
     assert state.colorbar.limits.user.high == 1
@@ -116,16 +116,16 @@ def test_dataclass_state_default():
     assert state.valid_times == []
     assert state.pressures == []
     assert state.tile.name == "Open street map"
-    assert state.tile.labels == False
-    assert state.tools.profile == False
-    assert state.tools.time_series == False
+    assert state.tile.labels == False  # noqa: E712
+    assert state.tools.profile == False  # noqa: E712
+    assert state.tools.time_series == False  # noqa: E712
     assert state.layers.figures == 1
     assert state.layers.index == {}
     assert state.layers.active == []
     assert state.layers.mode.state == "add"
     assert state.layers.mode.index == 0
     assert state.position.x == 0
-    assert state.position.y == 0
+    assert state.position.y == -1e9
     assert state.presets.active == 0
     assert state.presets.labels == {}
     assert state.presets.meta == {}
