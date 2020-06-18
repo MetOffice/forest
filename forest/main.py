@@ -22,6 +22,7 @@ from forest import (
         rx,
         navigate,
         parse_args)
+import forest.app
 import forest.components
 from forest.components import tiles, html_ready
 import forest.config as cfg
@@ -187,13 +188,16 @@ def main(argv=None):
         initial_state=initial_state,
         middlewares=middlewares)
 
+    app = forest.app.Application()
+
     # Colorbar user interface
-    colorbar_ui = forest.components.ColorbarUI()
-    colorbar_ui.connect(store)
+    component = forest.components.ColorbarUI()
+    app.add_component(component)
 
     # Add time user interface
-    time_ui = forest.components.TimeUI()
-    time_ui.connect(store)
+    component = forest.components.TimeUI()
+    component.layout = bokeh.layouts.row(component.layout, name="time")
+    app.add_component(component)
 
     # Connect MapView orchestration to store
     opacity_slider = forest.layers.OpacitySlider()
@@ -262,6 +266,9 @@ def main(argv=None):
         view = forest.components.modal.Default()
     modal = forest.components.Modal(view=view)
     modal.connect(store)
+
+    # Connect components to Store
+    app.connect(store)
 
     # Set default time series visibility
     store.dispatch(tools.on_toggle_tool("time_series", False))
@@ -403,11 +410,10 @@ def main(argv=None):
             tool_layout.layout,
             width=400,
             name="series"))
-    document.add_root(
-        bokeh.layouts.row(time_ui.layout, name="time"))
     for root in navbar.roots:
         document.add_root(root)
-    document.add_root(colorbar_ui.layout)
+    for root in app.roots:
+        document.add_root(root)
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
     document.add_root(modal.layout)
