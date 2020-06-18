@@ -33,3 +33,7 @@ def no_action():
 
 def html_loaded():
     return Action(HTML_LOADED)
+
+
+def set_valid_times(times):
+    return Action("SET_VALUE", {"key": "valid_times", "value": times})
