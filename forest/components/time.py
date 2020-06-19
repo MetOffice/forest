@@ -43,6 +43,62 @@ class _Axis:
         return str(_to_datetime(t))
 
 
+def play_js(source):
+    """Play algorithm"""
+    return bokeh.models.CustomJS(args=dict(source=source), code="""
+        // Simple JS animation
+        console.log('Play');
+        window.playing = true;
+        var interval = 500;
+        let nextFrame = function() {
+            if (window.playing) {
+                if (source.selected.indices.length > 0) {
+                    let i = source.selected.indices[0];
+                    let n = source.data['x'].length;
+                    source.selected.indices = [(i + 1) % n];
+                    source.change.emit();
+                }
+                setTimeout(nextFrame, interval);
+            }
+        };
+        setTimeout(nextFrame, interval);
+    """)
+
+
+def play_js_limits(source, limits):
+    """Play algorithm"""
+    return bokeh.models.CustomJS(args=dict(source=source,
+                                           limits=limits), code="""
+        console.log('Play');
+        window.playing = true;
+        var interval = 500;
+        let nextFrame = function() {
+            if (window.playing) {
+                if (limits.get_length() == 0) {
+                    return
+                }
+                let start = limits.data["start"][0]
+                let end = limits.data["end"][0]
+                if (source.selected.indices.length > 0) {
+                    // Choose next index
+                    let i = source.selected.indices[0];
+                    let x = source.data["x"];
+                    for (let j=1; j<x.length; j++) {
+                        let k = (i + j) % x.length;
+                        if ((x[k] >= start) && (x[k] <= end)) {
+                            console.log(k)
+                            source.selected.indices = [k];
+                            source.change.emit();
+                            break
+                        }
+                    }
+                }
+                setTimeout(nextFrame, interval);
+            }
+        };
+        setTimeout(nextFrame, interval);
+    """)
+
 
 class TimeUI(Observable):
     """Allow navigation through time"""
@@ -160,24 +216,15 @@ class TimeUI(Observable):
         }
 
         # Play JS
-        custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""
-            // Simple JS animation
-            console.log('Play');
-            window.playing = true;
-            var interval = 500;
-            let nextFrame = function() {
-                if (window.playing) {
-                    if (source.selected.indices.length > 0) {
-                        let i = source.selected.indices[0];
-                        let n = source.data['x'].length;
-                        source.selected.indices = [(i + 1) % n];
-                        source.change.emit();
-                    }
-                    setTimeout(nextFrame, interval);
-                }
-            };
-            setTimeout(nextFrame, interval);
-        """)
+        if False:
+            custom_js = play_js(self.source)
+        else:
+            import datetime as dt
+            limits = bokeh.models.ColumnDataSource({
+                "start": [dt.datetime(2008, 10, 8, 1)],
+                "end": [dt.datetime(2008, 10, 8, 4)]
+            })
+            custom_js = play_js_limits(self.source, limits)
         self.buttons["play"].js_on_click(custom_js)
 
         # Pause behaviour
