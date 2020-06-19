@@ -369,9 +369,10 @@ def main(argv=None):
         tool_figures["profile_figure"] = profile_figure
 
     # connect argo map tap tool to the state
-    for map_view in map_views.values():
-        if hasattr(map_view, "connect"):
-            map_view.connect(store)
+    for dataset in datasets.values():
+        if hasattr(dataset, "map_view"):
+            if hasattr(dataset.map_view, "connect"):
+                dataset.map_view.connect(store)
 
     tool_layout = tools.ToolLayout(**tool_figures)
     tool_layout.connect(store)
