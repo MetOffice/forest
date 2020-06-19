@@ -22,11 +22,27 @@ from forest import (
         rx,
         navigate,
         parse_args)
+import forest.app
 import forest.components
 from forest.components import tiles, html_ready
 import forest.config as cfg
 import forest.middlewares as mws
 from forest.db.util import autolabel
+
+
+def map_figure(x_range, y_range):
+    """Adjust Figure settings to present web map tiles"""
+    figure = bokeh.plotting.figure(
+        x_range=x_range,
+        y_range=y_range,
+        x_axis_type="mercator",
+        y_axis_type="mercator",
+        active_scroll="wheel_zoom")
+    figure.axis.visible = False
+    figure.toolbar.logo = None
+    figure.toolbar_location = None
+    figure.min_border = 0
+    return figure
 
 
 def main(argv=None):
@@ -57,28 +73,11 @@ def main(argv=None):
     x_range, y_range = geo.web_mercator(
         viewport.lon_range,
         viewport.lat_range)
-    figure = bokeh.plotting.figure(
-        x_range=x_range,
-        y_range=y_range,
-        x_axis_type="mercator",
-        y_axis_type="mercator",
-        active_scroll="wheel_zoom")
-
+    figure = map_figure(x_range, y_range)
     figures = [figure]
     for _ in range(2):
-        f = bokeh.plotting.figure(
-            x_range=figure.x_range,
-            y_range=figure.y_range,
-            x_axis_type="mercator",
-            y_axis_type="mercator",
-            active_scroll="wheel_zoom")
+        f = map_figure(figure.x_range, figure.y_range)
         figures.append(f)
-
-    for f in figures:
-        f.axis.visible = False
-        f.toolbar.logo = None
-        f.toolbar_location = None
-        f.min_border = 0
 
     figure_row = layers.FigureRow(figures)
 
@@ -187,13 +186,16 @@ def main(argv=None):
         initial_state=initial_state,
         middlewares=middlewares)
 
+    app = forest.app.Application()
+
     # Colorbar user interface
-    colorbar_ui = forest.components.ColorbarUI()
-    colorbar_ui.connect(store)
+    component = forest.components.ColorbarUI()
+    app.add_component(component)
 
     # Add time user interface
-    time_ui = forest.components.TimeUI()
-    time_ui.connect(store)
+    component = forest.components.TimeUI()
+    component.layout = bokeh.layouts.row(component.layout, name="time")
+    app.add_component(component)
 
     # Connect MapView orchestration to store
     opacity_slider = forest.layers.OpacitySlider()
@@ -262,6 +264,9 @@ def main(argv=None):
         view = forest.components.modal.Default()
     modal = forest.components.Modal(view=view)
     modal.connect(store)
+
+    # Connect components to Store
+    app.connect(store)
 
     # Set default time series visibility
     store.dispatch(tools.on_toggle_tool("time_series", False))
@@ -403,11 +408,10 @@ def main(argv=None):
             tool_layout.layout,
             width=400,
             name="series"))
-    document.add_root(
-        bokeh.layouts.row(time_ui.layout, name="time"))
     for root in navbar.roots:
         document.add_root(root)
-    document.add_root(colorbar_ui.layout)
+    for root in app.roots:
+        document.add_root(root)
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
     document.add_root(modal.layout)
