@@ -37,3 +37,7 @@ def html_loaded():
 
 def set_valid_times(times):
     return Action("SET_VALUE", {"key": "valid_times", "value": times})
+
+
+def set_valid_time(time):
+    return Action("SET_VALUE", {"key": "valid_time", "value": time})

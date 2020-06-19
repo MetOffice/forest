@@ -30,6 +30,21 @@ import forest.middlewares as mws
 from forest.db.util import autolabel
 
 
+def map_figure(x_range, y_range):
+    """Adjust Figure settings to present web map tiles"""
+    figure = bokeh.plotting.figure(
+        x_range=x_range,
+        y_range=y_range,
+        x_axis_type="mercator",
+        y_axis_type="mercator",
+        active_scroll="wheel_zoom")
+    figure.axis.visible = False
+    figure.toolbar.logo = None
+    figure.toolbar_location = None
+    figure.min_border = 0
+    return figure
+
+
 def main(argv=None):
 
     args = parse_args.parse_args(argv)
@@ -58,28 +73,11 @@ def main(argv=None):
     x_range, y_range = geo.web_mercator(
         viewport.lon_range,
         viewport.lat_range)
-    figure = bokeh.plotting.figure(
-        x_range=x_range,
-        y_range=y_range,
-        x_axis_type="mercator",
-        y_axis_type="mercator",
-        active_scroll="wheel_zoom")
-
+    figure = map_figure(x_range, y_range)
     figures = [figure]
     for _ in range(2):
-        f = bokeh.plotting.figure(
-            x_range=figure.x_range,
-            y_range=figure.y_range,
-            x_axis_type="mercator",
-            y_axis_type="mercator",
-            active_scroll="wheel_zoom")
+        f = map_figure(figure.x_range, figure.y_range)
         figures.append(f)
-
-    for f in figures:
-        f.axis.visible = False
-        f.toolbar.logo = None
-        f.toolbar_location = None
-        f.min_border = 0
 
     figure_row = layers.FigureRow(figures)
 

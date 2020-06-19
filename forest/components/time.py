@@ -239,7 +239,8 @@ class TimeUI(Observable):
                 self.buttons["next"],
                 sizing_mode="stretch_width"
             ),
-            sizing_mode="stretch_width")
+            sizing_mode="stretch_width",
+            name="time")
 
         super().__init__()
 
