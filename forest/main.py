@@ -198,8 +198,8 @@ def main(argv=None):
     app.add_component(component)
 
     # Visualise animation settings
-    animate_view = animate.View(time_ui.figure)
-    animate_view.connect(store)
+    component = animate.View(component.figure)  # TODO: hoist TimeUI.figure
+    app.add_component(component)
 
     # Connect MapView orchestration to store
     opacity_slider = forest.layers.OpacitySlider()
@@ -269,6 +269,10 @@ def main(argv=None):
     modal = forest.components.Modal(view=view)
     modal.connect(store)
 
+    # Client-side animation controls
+    component = animate.Controls()
+    app.add_component(component)
+
     # Connect components to Store
     app.connect(store)
 
@@ -303,6 +307,14 @@ def main(argv=None):
     if config.use_web_map_tiles:
         store.dispatch(tiles.set_tile(tiles.STAMEN_TERRAIN))
         store.dispatch(tiles.set_label_visible(True))
+
+    # Set default animation window
+    valid_times = store.state.get("valid_times", [])
+    if len(valid_times) > 0:
+        action = animate.set_animate(min(valid_times),
+                                     max(valid_times),
+                                     "pause")
+        store.dispatch(action.to_dict())
 
     # Organise controls/settings
     layouts = {}
@@ -395,16 +407,6 @@ def main(argv=None):
             tabs,
             name="controls")
 
-    # Client-side animation controls
-    animate_controls = animate.Controls()
-    animate_controls.connect(store)
-    valid_times = store.state.get("valid_times", [])
-    if len(valid_times) > 0:
-        action = animate.set_animate(min(valid_times),
-                                     max(valid_times),
-                                     "pause")
-        store.dispatch(action.to_dict())
-
     # Add key press support
     key_press = keys.KeyPress()
     key_press.add_subscriber(store.dispatch)
@@ -429,7 +431,6 @@ def main(argv=None):
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
     document.add_root(modal.layout)
-    document.add_root(animate_controls.layout)
 
 
 class Navbar:
