@@ -197,10 +197,6 @@ def main(argv=None):
     component.layout = bokeh.layouts.row(component.layout, name="time")
     app.add_component(component)
 
-    # Visualise animation settings
-    component = animate.View(component.figure)  # TODO: hoist TimeUI.figure
-    app.add_component(component)
-
     # Connect MapView orchestration to store
     opacity_slider = forest.layers.OpacitySlider()
     source_limits = colors.SourceLimits().connect(store)

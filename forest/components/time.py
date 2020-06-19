@@ -5,6 +5,7 @@ from forest.util import to_datetime as _to_datetime
 import forest.db.control
 import bokeh.plotting
 import numpy as np
+from forest.components import animate
 
 
 class _Axis:
@@ -100,14 +101,9 @@ def play_js_limits(source, limits):
     """)
 
 
-class TimeUI(Observable):
-    """Allow navigation through time"""
+class TimeUI:
+    """Parent class for UI components"""
     def __init__(self):
-        self._axis = _Axis()
-        self.source = bokeh.models.ColumnDataSource(dict(
-            x=[],
-            y=[],
-        ))
         self.figure = bokeh.plotting.figure(
             plot_height=80,
             plot_width=800,
@@ -119,19 +115,6 @@ class TimeUI(Observable):
         active_scroll = bokeh.models.WheelZoomTool(dimensions='width')
         self.figure.add_tools(active_scroll)
         self.figure.toolbar.active_scroll = active_scroll
-
-        renderer = self.figure.square(x="x", y="y", source=self.source,
-                      fill_color='black',
-                      line_color='black')
-        renderer.selection_glyph = bokeh.models.Square(
-            fill_color="red",
-            line_color="red")
-        renderer.nonselection_glyph = bokeh.models.Square(
-            fill_color="black",
-            line_color="black",
-            fill_alpha=0.2,
-            line_alpha=0.2,
-        )
 
         # X-axis formatter breakpoints
         formatter = self.figure.xaxis[0].formatter
@@ -147,6 +130,50 @@ class TimeUI(Observable):
         self.figure.xaxis.fixed_location = 0
         self.figure.title.text = "Select time"
         self.figure.title.align = "center"
+
+        # Column data sources
+        self.source = bokeh.models.ColumnDataSource(dict(
+            x=[],
+            y=[],
+        ))
+        self.limits = bokeh.models.ColumnDataSource({
+            "start": [],
+            "end": []
+        })
+        if False:
+            play_custom_js = play_js(self.source)
+        else:
+            play_custom_js = play_js_limits(self.source, self.limits)
+
+        self.components = {
+            "timeui": _TimeUI(self.figure, self.source, play_custom_js),
+            "view": animate.View(self.figure, self.limits)
+        }
+        self.layout = self.components["timeui"].layout
+
+    def connect(self, store):
+        self.components["timeui"].connect(store)
+        self.components["view"].connect(store)
+
+
+class _TimeUI(Observable):
+    """Allow navigation through time"""
+    def __init__(self, figure, source, play_custom_js):
+        self._axis = _Axis()
+        self.figure = figure
+        self.source = source
+        renderer = self.figure.square(x="x", y="y", source=self.source,
+                                      fill_color='black',
+                                      line_color='black')
+        renderer.selection_glyph = bokeh.models.Square(
+            fill_color="red",
+            line_color="red")
+        renderer.nonselection_glyph = bokeh.models.Square(
+            fill_color="black",
+            line_color="black",
+            fill_alpha=0.2,
+            line_alpha=0.2,
+        )
 
         # Hover interaction
         hover_tool = bokeh.models.HoverTool(tooltips=None)
@@ -216,16 +243,7 @@ class TimeUI(Observable):
         }
 
         # Play JS
-        if False:
-            custom_js = play_js(self.source)
-        else:
-            import datetime as dt
-            limits = bokeh.models.ColumnDataSource({
-                "start": [dt.datetime(2008, 10, 8, 1)],
-                "end": [dt.datetime(2008, 10, 8, 4)]
-            })
-            custom_js = play_js_limits(self.source, limits)
-        self.buttons["play"].js_on_click(custom_js)
+        self.buttons["play"].js_on_click(play_custom_js)
 
         # Pause behaviour
         custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""

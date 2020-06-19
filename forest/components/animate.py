@@ -45,8 +45,9 @@ def reducer(state, action):
 
 
 class View:
-    def __init__(self, figure):
+    def __init__(self, figure, limits):
         self.figure = figure
+        self.limits = limits
         self.spans = {
             "start": bokeh.models.Span(
                 dimension="height",
@@ -107,6 +108,12 @@ class View:
             upper=upper,
             lower=lower
         )
+
+        # Limits
+        self.limits.data = {
+            "start": [state.animate.start],
+            "end": [state.animate.end],
+        }
 
 
 class Controls(Observable):
