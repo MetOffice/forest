@@ -87,7 +87,6 @@ def play_js_limits(source, limits):
                     for (let j=1; j<x.length; j++) {
                         let k = (i + j) % x.length;
                         if ((x[k] >= start) && (x[k] <= end)) {
-                            console.log(k)
                             source.selected.indices = [k];
                             source.change.emit();
                             break
@@ -297,7 +296,6 @@ class _TimeUI(Observable):
         if len(new) > 0:
             i = new[0]
             value = self._axis.value(i)
-            print(value, self.source.data["x"][i])
             self.notify(forest.db.control.set_value('valid_time', value))
 
     def connect(self, store):
