@@ -134,7 +134,7 @@ class Controls(Observable):
         self.buttons = Buttons(width=width)
         self.layout = bokeh.layouts.column(
             bokeh.models.Div(
-                text="<h2>Playback settings</h2>",
+                text="<h3>Playback settings</h3>",
                 width=width - 10),
             self.pickers["start"].layout,
             self.pickers["end"].layout,
@@ -228,19 +228,14 @@ class DateTimePicker:
 class Buttons(Observable):
     def __init__(self, width=None):
         self.buttons = {
-            "play": bokeh.models.Button(label="Save"),
-            "pause": bokeh.models.Button(label="Cancel"),
+            "play": bokeh.models.Button(label="Apply settings",
+                                        width=width - 10),
         }
         self.buttons["play"].on_click(self.on_play)
-        self.buttons["pause"].on_click(self.on_pause)
         self.layout = bokeh.layouts.row(
             self.buttons["play"],
-            self.buttons["pause"],
             width=width)
         super().__init__()
 
     def on_play(self, event):
         self.notify(on_play())
-
-    def on_pause(self, event):
-        self.notify(on_pause())
