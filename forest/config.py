@@ -24,13 +24,33 @@ import os
 import string
 import yaml
 import forest.state
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import defaultdict
 from collections.abc import Mapping
 from forest.export import export
 
 
 __all__ = []
+
+
+@dataclass
+class Figures:
+    ui: bool = True
+    maximum: int = 3
+
+
+@dataclass
+class Defaults:
+    figures: Figures = field(default_factory=Figures)
+    viewport: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        if isinstance(self.figures, dict):
+            self.figures = Figures(**self.figures)
+
+    @classmethod
+    def from_dict(cls, values):
+        return cls(**values)
 
 
 @dataclass
@@ -126,6 +146,10 @@ class Config(object):
                   connection is not available
         """
         return self.data.get("use_web_map_tiles", True)
+
+    @property
+    def defaults(self):
+        return Defaults.from_dict(self.data.get("defaults", {}))
 
     @property
     def default_viewport(self):

@@ -204,14 +204,15 @@ def _connect(view, store):
 
 class FigureUI(Observable):
     """Controls how many figures are currently displayed"""
-    def __init__(self):
+    def __init__(self, max_figures=3):
+        self.max_figures = max_figures
         self.labels = [
             "Single figure",
             "Side by side",
-            "3 way comparison"]
+            "3 way comparison"][:self.max_figures]
         self.select = bokeh.models.Select(
             options=self.labels,
-            value="Single figure",
+            value=self.labels[0],
             width=350,
         )
         self.select.on_change("value", self.on_change)
@@ -222,7 +223,7 @@ class FigureUI(Observable):
 
     def on_change(self, attr, old, new):
         """Emit action to set number of figures in state"""
-        n = self.labels.index(new) + 1 # Select 0-indexed
+        n = self.labels.index(new) + 1  # Select 0-indexed
         self.notify(set_figures(n))
 
 

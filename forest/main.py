@@ -186,8 +186,9 @@ def main(argv=None):
     tap_listener.connect(store)
 
     # Connect figure controls/views
-    figure_ui = layers.FigureUI()
-    figure_ui.add_subscriber(store.dispatch)
+    if config.defaults.figures.ui:
+        figure_ui = layers.FigureUI(config.defaults.figures.maximum)
+        figure_ui.add_subscriber(store.dispatch)
     figure_row.connect(store)
 
     # Tiling picker
@@ -260,14 +261,18 @@ def main(argv=None):
 
     # Organise controls/settings
     layouts = {}
-    layouts["controls"] = [
-        bokeh.models.Div(text="Layout:"),
-        figure_ui.layout,
+    layouts["controls"] = []
+    if config.defaults.figures.ui:
+        layouts["controls"] += [
+                bokeh.models.Div(text="Layout:"),
+                figure_ui.layout]
+    layouts["controls"] += [
         bokeh.models.Div(text="Navigate:"),
         controls.layout,
         bokeh.models.Div(text="Compare:"),
         layers_ui.layout
     ]
+
     layouts["settings"] = [
         border_ui.layout,
         opacity_slider.layout,
