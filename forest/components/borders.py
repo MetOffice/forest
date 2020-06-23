@@ -5,6 +5,7 @@ import forest.actions
 from forest import data
 from forest.observe import Observable
 from forest.state import State
+from forest.mark import component
 
 
 class View:
@@ -63,6 +64,7 @@ class View:
             renderer.glyph.line_color = state.borders.line_color
 
 
+@component
 class UI(Observable):
     def __init__(self):
         self.checkbox = bokeh.models.CheckboxGroup(
@@ -71,11 +73,11 @@ class UI(Observable):
                 width=135)
         self.checkbox.on_change("active", self.on_checkbox)
         self._please_specify = "Select color"
+        self._colors = ["black", "white"]
+        self._options = [self._please_specify] + [color.capitalize()
+                                                  for color in self._colors]
         self.select = bokeh.models.Select(
-                options=[
-                    self._please_specify,
-                    "Black",
-                    "White"],
+                options=self._options,
                 width=100)
         self.select.on_change("value", self.on_select)
         self.layout = bokeh.layouts.row(self.checkbox,
@@ -93,7 +95,12 @@ class UI(Observable):
             self.checkbox.active = [0]
         else:
             self.checkbox.active = []
-        self.select.value = state.borders.line_color
+
+        # Find/set value
+        for option in self._options:
+            if state.borders.line_color.lower() == option.lower():
+                self.select.value = option
+                break
 
     def on_checkbox(self, attr, old, new):
         action = forest.actions.set_borders_visible(len(new) == 1)
