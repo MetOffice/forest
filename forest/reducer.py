@@ -23,10 +23,13 @@ def state_reducer(state, action):
         except TypeError:
             # TODO: Support Action throughout codebase
             return state
+    # Reduce state
+    state = copy.deepcopy(state)
     if action.kind == actions.SET_STATE:
-        return copy.deepcopy(action.payload)
-    else:
-        return state
+        state = copy.deepcopy(action.payload)
+    elif action.kind == actions.UPDATE_STATE:
+        state.update(action.payload)
+    return state
 
 
 reducer = redux.combine_reducers(

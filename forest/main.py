@@ -155,19 +155,13 @@ def main(argv=None):
         bokeh.layouts.column(div),
         bokeh.layouts.column(dropdown))
 
-
     # Add optional sub-navigators
     sub_navigators = {
-        key: dataset.navigator() for key, dataset in datasets_by_pattern.items()
+        key: dataset.navigator()
+        for key, dataset in datasets_by_pattern.items()
         if hasattr(dataset, "navigator")
     }
     navigator = navigate.Navigator(sub_navigators)
-
-    # Pre-select menu choices (if any)
-    initial_state = {}
-    for pattern, _ in sub_navigators.items():
-        initial_state = db.initial_state(navigator, pattern=pattern)
-        break
 
     middlewares = [
         keys.navigate,
@@ -184,7 +178,6 @@ def main(argv=None):
     ]
     store = redux.Store(
         forest.reducer,
-        initial_state=initial_state,
         middlewares=middlewares)
 
     app = forest.app.Application()
@@ -271,6 +264,12 @@ def main(argv=None):
 
     # Set initial state
     store.dispatch(forest.actions.set_state(config.state).to_dict())
+
+    # Pre-select menu choices (if any)
+    for pattern, _ in sub_navigators.items():
+        state = db.initial_state(navigator, pattern=pattern)
+        store.dispatch(forest.actions.update_state(state).to_dict())
+        break
 
     # Set default time series visibility
     store.dispatch(tools.on_toggle_tool("time_series", False))
