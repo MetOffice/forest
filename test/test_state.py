@@ -94,6 +94,8 @@ def test_dataclass_state_default():
     names = list(sorted(bokeh.palettes.all_palettes.keys()))
     numbers = list(sorted(bokeh.palettes.all_palettes["Viridis"].keys()))
     assert state.bokeh.html_loaded == False  # noqa: E712
+    assert state.borders.line_color == "black"
+    assert state.borders.visible == False  # noqa: E712
     assert state.colorbar.name == "Viridis"
     assert state.colorbar.names == names
     assert state.colorbar.number == 256
