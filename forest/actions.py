@@ -25,10 +25,15 @@ class Action:
 
 HTML_LOADED = "BOKEH_HTML_LOADED"
 NO_ACTION = "NO_ACTION"
+SET_STATE = "SET_STATE"
 
 
 def no_action():
     return {"kind": NO_ACTION}
+
+
+def set_state(state):
+    return Action(SET_STATE, state)
 
 
 def html_loaded():

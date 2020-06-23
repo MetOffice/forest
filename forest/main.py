@@ -23,6 +23,7 @@ from forest import (
         navigate,
         parse_args)
 import forest.app
+import forest.actions
 import forest.components
 from forest.components import tiles, html_ready
 import forest.config as cfg
@@ -268,6 +269,9 @@ def main(argv=None):
     # Connect components to Store
     app.connect(store)
 
+    # Set initial state
+    store.dispatch(forest.actions.set_state(config.state).to_dict())
+
     # Set default time series visibility
     store.dispatch(tools.on_toggle_tool("time_series", False))
 
@@ -294,11 +298,6 @@ def main(argv=None):
         pattern = label_to_pattern[label]
         values = navigator.variables(pattern)
         store.dispatch(dimension.set_variables(label, values))
-
-    # Select web map tiling
-    if config.use_web_map_tiles:
-        store.dispatch(tiles.set_tile(tiles.STAMEN_TERRAIN))
-        store.dispatch(tiles.set_label_visible(True))
 
     # Organise controls/settings
     layouts = {}

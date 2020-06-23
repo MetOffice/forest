@@ -259,9 +259,9 @@ class State:
     :type bokeh: Bokeh
     """
 
-    pattern: str = ""
+    pattern: str = None  # TODO: Support empty str as default
     patterns: list = field(default_factory=list)
-    variable: str = ""
+    variable: str = None  # TODO: Support empty str as default
     variables: list = field(default_factory=list)
     initial_time: dt.datetime = dt.datetime(1970, 1, 1)
     initial_times: list = field(default_factory=list)

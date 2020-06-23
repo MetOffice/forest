@@ -1,5 +1,7 @@
 """Reducer"""
+import copy
 from forest import (
+    actions,
     redux,
     db,
     layers,
@@ -13,6 +15,20 @@ from forest.components import (
     tiles)
 
 
+def state_reducer(state, action):
+    """Set State"""
+    if isinstance(action, dict):
+        try:
+            action = actions.Action.from_dict(action)
+        except TypeError:
+            # TODO: Support Action throughout codebase
+            return state
+    if action.kind == actions.SET_STATE:
+        return copy.deepcopy(action.payload)
+    else:
+        return state
+
+
 reducer = redux.combine_reducers(
             db.reducer,
             layers.reducer,
@@ -23,4 +39,5 @@ reducer = redux.combine_reducers(
             presets.reducer,
             tiles.reducer,
             dimension.reducer,
-            html_ready.reducer)
+            html_ready.reducer,
+            state_reducer)

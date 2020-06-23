@@ -106,7 +106,7 @@ def test_dataclass_state_default():
     assert state.colorbar.limits.user.high == 1
     assert state.colorbar.limits.column_data_source.low == 0
     assert state.colorbar.limits.column_data_source.high == 1
-    assert state.pattern == ""
+    assert state.pattern is None
     assert state.variable == ""
     assert state.initial_time == dt.datetime(1970, 1, 1)
     assert state.valid_time == dt.datetime(1970, 1, 1)
