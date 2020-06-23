@@ -23,6 +23,7 @@ applications.
 import os
 import string
 import yaml
+import forest.state
 from dataclasses import dataclass
 from collections import defaultdict
 from collections.abc import Mapping
@@ -99,6 +100,7 @@ class Config(object):
     def __init__(self, data):
         self.data = data
         self.plugins = Plugins(self.data.get("plugins", {}))
+        self.state = forest.state.State.from_dict(self.data.get("state", {}))
 
     def __repr__(self):
         return "{}({})".format(

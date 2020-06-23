@@ -41,7 +41,12 @@ from forest.state import State
             }
         },
         id="save_layer"
-    )
+    ),
+    pytest.param(
+        {},
+        forest.actions.set_state({"tile": {"name": "Wikimedia"}}).to_dict(),
+        {"tile": {"name": "Wikimedia"}},
+        id="set_state")
 ])
 def test_reducer(state, action, expect):
     result = forest.reducer(state, action)

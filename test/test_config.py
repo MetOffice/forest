@@ -239,3 +239,10 @@ def test_config_parser_plugin_given_unsupported_key():
                 }
             }
         })
+
+
+def test_config_default_state():
+    config = forest.config.Config({
+        "state": {}
+    })
+    assert config.state == forest.state.State.from_dict({})
