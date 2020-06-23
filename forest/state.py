@@ -169,6 +169,19 @@ class Layers:
 
 
 @dataclass
+class Borders:
+    """Cartopy border overlay settings
+
+    :param line_color: Color of coastlines and country borders
+    :type line_color: str
+    :param visible: Turn all lines on/off
+    :type visible: bool
+    """
+    line_color: str = "black"
+    visible: bool = False
+
+
+@dataclass
 class Tile:
     """Web map tiling user-settings
 
@@ -255,6 +268,8 @@ class State:
     :type position: Position
     :param presets: Save colorbar settings for later re-use
     :type presets: Presets
+    :param borders: Cartopy coastline, lakes and border settings
+    :type borders: Borders
     :param bokeh: Additional bokeh state
     :type bokeh: Bokeh
     """
@@ -276,12 +291,15 @@ class State:
     tools: Tools = field(default_factory=Tools)
     position: Position = field(default_factory=Position)
     presets: Presets = field(default_factory=Presets)
+    borders: Borders = field(default_factory=Borders)
     bokeh: Bokeh = field(default_factory=Bokeh)
 
     def __post_init__(self):
         """Type-checking"""
         if isinstance(self.bokeh, dict):
             self.bokeh = Bokeh(**self.bokeh)
+        if isinstance(self.borders, dict):
+            self.borders = Borders(**self.borders)
         if isinstance(self.colorbar, dict):
             self.colorbar = Colorbar(**self.colorbar)
         if isinstance(self.tile, dict):

@@ -25,12 +25,22 @@ class Action:
 
 HTML_LOADED = "BOKEH_HTML_LOADED"
 NO_ACTION = "NO_ACTION"
+SET_BORDERS_VISIBLE = "SET_BORDERS_VISIBLE"
+SET_BORDERS_LINE_COLOR = "SET_BORDERS_LINE_COLOR"
 SET_STATE = "SET_STATE"
 UPDATE_STATE = "UPDATE_STATE"
 
 
 def no_action():
     return {"kind": NO_ACTION}
+
+
+def set_borders_visible(flag):
+    return Action(SET_BORDERS_VISIBLE, flag)
+
+
+def set_borders_line_color(color):
+    return Action(SET_BORDERS_LINE_COLOR, color)
 
 
 def set_state(state):

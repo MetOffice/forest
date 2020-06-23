@@ -25,6 +25,7 @@ from forest import (
 import forest.app
 import forest.actions
 import forest.components
+import forest.components.borders
 from forest.components import tiles, html_ready
 import forest.config as cfg
 import forest.middlewares as mws
@@ -132,6 +133,14 @@ def main(argv=None):
         middlewares=middlewares)
 
     app = forest.app.Application()
+
+    # Coastlines, borders, lakes and disputed borders
+    view = forest.components.borders.View()
+    for figure in figures:
+        view.add_figure(figure)
+    view.connect(store)
+    border_ui = forest.components.borders.UI()
+    border_ui.connect(store)
 
     # Colorbar user interface
     component = forest.components.ColorbarUI()
@@ -260,7 +269,7 @@ def main(argv=None):
         layers_ui.layout
     ]
     layouts["settings"] = [
-        # border_row,
+        border_ui.layout,
         opacity_slider.layout,
         preset_ui.layout,
         color_palette.layout,
