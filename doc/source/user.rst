@@ -60,4 +60,6 @@ Would be equivalent to the following file
      - label: RDT
        pattern: /some/dir/file.json
 
+.. seealso:: :mod:`forest.config` for the latest config file syntax
+
 
