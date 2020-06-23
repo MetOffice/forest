@@ -1,63 +1,94 @@
 """User-defined border overlays"""
 import bokeh.models
+import bokeh.layouts
+import forest.actions
+from forest import data
+from forest.observe import Observable
 
 
-class Component:
-    def __init__(self):
+class View:
+    def __init__(self, figures):
+        self.sources = {
+            "borders": bokeh.models.ColumnDataSource(data.BORDERS),
+            "coastlines": bokeh.models.ColumnDataSource(data.COASTLINES),
+            "disputed": bokeh.models.ColumnDataSource(data.DISPUTED),
+            "lakes": bokeh.models.ColumnDataSource(data.LAKES),
+        }
+        self.renderers = {
+            "all": [],
+            "coastline": []
+        }
+        for figure in figures:
+            self.add_figure(figure)
+
+    def add_figure(self, figure):
         # Lakes
-        for figure in figures:
-            add_feature(figure, data.LAKES, color="lightblue")
+        renderer = figure.multi_line(xs="xs",
+                                     ys="ys",
+                                     source=self.sources["lakes"],
+                                     color="lightblue")
+        self.renderers["all"].append(renderer)
 
-        features = []
-        for figure in figures:
-            features += [
-                add_feature(figure, data.COASTLINES),
-                add_feature(figure, data.BORDERS)]
+        # Coastline
+        renderer = figure.multi_line(xs="xs",
+                                     ys="ys",
+                                     source=self.sources["coastlines"],
+                                     color="black")
+        self.renderers["coastline"].append(renderer)
+        self.renderers["all"].append(renderer)
+
+        # Borders
+        renderer = figure.multi_line(xs="xs",
+                                     ys="ys",
+                                     source=self.sources["borders"],
+                                     color="black")
+        self.renderers["coastline"].append(renderer)
+        self.renderers["all"].append(renderer)
 
         # Disputed borders
-        for figure in figures:
-            add_feature(figure, data.DISPUTED, color="red")
+        renderer = figure.multi_line(xs="xs",
+                                     ys="ys",
+                                     source=self.sources["disputed"],
+                                     color="red")
+        self.renderers["all"].append(renderer)
 
-        toggle = bokeh.models.CheckboxGroup(
+    def connect(self, store):
+        store.add_subscriber(self.render)
+
+    def render(self, state):
+        for renderer in self.renderers["all"]:
+            renderer.visible = state.borders.visible
+        for renderer in self.renderers["coastline"]:
+            renderer.glyph.line_color = state.borders.line_color
+
+
+class UI(Observable):
+    def __init__(self):
+        self.checkbox = bokeh.models.CheckboxGroup(
                 labels=["Coastlines"],
                 active=[0],
                 width=135)
-
-        def on_change(attr, old, new):
-            if len(new) == 1:
-                for feature in features:
-                    feature.visible = True
-            else:
-                for feature in features:
-                    feature.visible = False
-
-        toggle.on_change("active", on_change)
-
-        dropdown = bokeh.models.Dropdown(
-                label="Color",
-                menu=[
-                    ("Black", "black"),
-                    ("White", "white")],
+        self.checkbox.on_change("active", self.on_checkbox)
+        self._please_specify = "Select color"
+        self.select = bokeh.models.Select(
+                options=[
+                    self._please_specify,
+                    "Black",
+                    "White"],
                 width=50)
-        autolabel(dropdown)
+        self.select.on_change("value", self.on_select)
+        self.layout = bokeh.layouts.row(self.checkbox,
+                                        self.select)
+        super().__init__()
 
-        def on_change(event):
-            for feature in features:
-                feature.glyph.line_color = new
+    def connect(self, store):
+        self.add_subscriber(store.dispatch)
 
-        dropdown.on_click(on_change)
+    def on_checkbox(self, attr, old, new):
+        action = forest.actions.set_borders_visible(len(new) == 1)
+        self.notify(action)
 
-        div = bokeh.models.Div(text="", width=10)
-        border_row = bokeh.layouts.row(
-            bokeh.layouts.column(toggle),
-            bokeh.layouts.column(div),
-            bokeh.layouts.column(dropdown))
-
-
-def add_feature(figure, data, color="black"):
-    source = bokeh.models.ColumnDataSource(data)
-    return figure.multi_line(
-        xs="xs",
-        ys="ys",
-        source=source,
-        color=color)
+    def on_select(self, attr, old, new):
+        if new.lower() != self._please_specify.lower():
+            action = forest.actions.set_coastline_color(new.lower())
+            self.notify(action)
