@@ -104,56 +104,7 @@ def main(argv=None):
         datasets_by_pattern[group.pattern] = dataset
         label_to_pattern[group.label] = group.pattern
 
-    # Lakes
-    for figure in figures:
-        add_feature(figure, data.LAKES, color="lightblue")
-
-    features = []
-    for figure in figures:
-        features += [
-            add_feature(figure, data.COASTLINES),
-            add_feature(figure, data.BORDERS)]
-
-    # Disputed borders
-    for figure in figures:
-        add_feature(figure, data.DISPUTED, color="red")
-
-    toggle = bokeh.models.CheckboxGroup(
-            labels=["Coastlines"],
-            active=[0],
-            width=135)
-
-    def on_change(attr, old, new):
-        if len(new) == 1:
-            for feature in features:
-                feature.visible = True
-        else:
-            for feature in features:
-                feature.visible = False
-
-    toggle.on_change("active", on_change)
-
-    dropdown = bokeh.models.Dropdown(
-            label="Color",
-            menu=[
-                ("Black", "black"),
-                ("White", "white")],
-            width=50)
-    autolabel(dropdown)
-
-    def on_change(event):
-        for feature in features:
-            feature.glyph.line_color = new
-
-    dropdown.on_click(on_change)
-
     layers_ui = layers.LayersUI()
-
-    div = bokeh.models.Div(text="", width=10)
-    border_row = bokeh.layouts.row(
-        bokeh.layouts.column(toggle),
-        bokeh.layouts.column(div),
-        bokeh.layouts.column(dropdown))
 
     # Add optional sub-navigators
     sub_navigators = {
@@ -309,7 +260,7 @@ def main(argv=None):
         layers_ui.layout
     ]
     layouts["settings"] = [
-        border_row,
+        # border_row,
         opacity_slider.layout,
         preset_ui.layout,
         color_palette.layout,
@@ -457,15 +408,6 @@ class Navbar:
 
 def any_none(obj, attrs):
     return any([getattr(obj, x) is None for x in attrs])
-
-
-def add_feature(figure, data, color="black"):
-    source = bokeh.models.ColumnDataSource(data)
-    return figure.multi_line(
-        xs="xs",
-        ys="ys",
-        source=source,
-        color=color)
 
 
 if __name__.startswith("bokeh"):
