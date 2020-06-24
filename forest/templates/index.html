@@ -13,6 +13,9 @@
 
 {% block postamble %}
 <link rel="stylesheet" href="forest/static/style.css" type="text/css" media="all">
+
+<link rel="stylesheet" href="forest/static/font-awesome/css/all.css" type="text/css" media="all">
+
 <script src="forest/static/script.js" charset="utf-8"></script>
 <script src="forest/static/forest-min.js" charset="utf-8"></script>
 {% endblock %}
@@ -27,7 +30,8 @@
             {{ safe_embed('series') }}
     </div>
 
-    <nav>
+    <div class="flex-container">
+    <nav class="flex-nav">
         <div class="display-inline-block float-left">
             {{ safe_embed('sidenav_button') }}
         </div>
@@ -40,15 +44,9 @@
         </div>
     </nav>
 
-    <!-- Add modal container -->
-    <div id="modal" class="modal-outer">
-        <div class="modal-inner">
-            {{ safe_embed('modal') }}
-        </div>
-    </div>
-
     <!-- Layout figure row -->
-    <div id="figures">
+    <div id="figures" class="flex-figures" style="position:relative;">
+        <i class="fa fa-expand fa-2x full-screen-icon" id="full-screen-icon"></i>
         {{ safe_embed('figures') }}
     </div>
 
@@ -58,11 +56,19 @@
             {{ safe_embed('colorbar') }}
         </div>
     </div>
-    <footer>
+    <footer class="flex-footer">
         <div id="time" class="time">
             {{ safe_embed('time') }}
         </div>
     </footer>
+    </div>
+
+    <!-- Add modal container -->
+    <div id="modal" class="modal-outer">
+        <div class="modal-inner">
+            {{ safe_embed('modal') }}
+        </div>
+    </div>
 
     <!-- Bokeh document roots -->
     {% for doc in docs %}
@@ -72,6 +78,31 @@
             </div>
         {% endfor %}
     {% endfor %}
+
+    <script charset="utf-8">
+        let elIcon = document.getElementById("full-screen-icon")
+        elIcon.addEventListener("click", () => {
+            let elExpand = document.getElementById("figures")
+            if (document.fullscreenElement) {
+                document.exitFullscreen()
+            } else {
+                elExpand.requestFullscreen()
+            }
+        })
+
+        // Style button given full screen state
+        document.addEventListener("fullscreenchange", () => {
+            // Event fired before document.fullScreenElement update
+            // hence use of ! to negate falsy null
+            if (!document.fullscreenElement) {
+                elIcon.classList.remove("fa-compress")
+                elIcon.classList.add("fa-expand")
+            } else {
+                elIcon.classList.remove("fa-expand")
+                elIcon.classList.add("fa-compress")
+            }
+        })
+    </script>
 
     <script>
 // Re-attach roots if WebSocket request served by different machine
