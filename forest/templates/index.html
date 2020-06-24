@@ -85,10 +85,19 @@
             let elExpand = document.getElementById("figures")
             if (document.fullscreenElement) {
                 document.exitFullscreen()
+            } else {
+                elExpand.requestFullscreen()
+            }
+        })
+
+        // Style button given full screen state
+        document.addEventListener("fullscreenchange", () => {
+            // Event fired before document.fullScreenElement update
+            // hence use of ! to negate falsy null
+            if (!document.fullscreenElement) {
                 elIcon.classList.remove("fa-compress")
                 elIcon.classList.add("fa-expand")
             } else {
-                elExpand.requestFullscreen()
                 elIcon.classList.remove("fa-expand")
                 elIcon.classList.add("fa-compress")
             }
