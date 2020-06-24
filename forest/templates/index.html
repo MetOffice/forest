@@ -46,8 +46,8 @@
     </nav>
 
     <!-- Layout figure row -->
-    <div id="figures" class="flex-figures" style="position:relative; border: 1px solid red;">
-        <i class="fa fa-expand fa-2x full-screen-icon"></i>
+    <div id="figures" class="flex-figures" style="position:relative;">
+        <i class="fa fa-expand fa-2x full-screen-icon" id="full-screen-icon"></i>
         {{ safe_embed('figures') }}
     </div>
 
@@ -79,6 +79,22 @@
             </div>
         {% endfor %}
     {% endfor %}
+
+    <script charset="utf-8">
+        let elIcon = document.getElementById("full-screen-icon")
+        elIcon.addEventListener("click", () => {
+            let elExpand = document.getElementById("figures")
+            if (document.fullscreenElement) {
+                document.exitFullscreen()
+                elIcon.classList.remove("fa-compress")
+                elIcon.classList.add("fa-expand")
+            } else {
+                elExpand.requestFullscreen()
+                elIcon.classList.remove("fa-expand")
+                elIcon.classList.add("fa-compress")
+            }
+        })
+    </script>
 
     <script>
 // Re-attach roots if WebSocket request served by different machine
