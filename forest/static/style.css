@@ -49,6 +49,14 @@ h3 {
     top: 0;
     left: 0;
 }
+.margin-left-1em {
+    margin-left: 1em;
+}
+.panel-title-container {
+    overflow: hidden;
+    padding: 10px;
+    font-size: 1.5em;
+}
 .settings-icon {
     margin: 10px;
     z-index: 4;
