@@ -65,10 +65,8 @@ h3 {
 .close-icon:hover {
     color: rgba(255, 0, 0, 0.8);
 }
-.panel-title {
+.font-family-helvetica {
     font-family: Helvetica, Arial, sans-serif;
-    font-size: 18pt;
-    font-weight: 100;
 }
 
 /* Navigation */
