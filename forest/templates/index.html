@@ -21,16 +21,8 @@
 {% endblock %}
 
 {% block contents %}
-    <div id="sidenav" class="sidenav">
-            <button type="button" onclick="closeId('sidenav')">Close</button>
-            {{ safe_embed('controls') }}
-    </div>
-    <div id="diagrams" class="diagrams">
-            <button type="button" onclick="closeId('diagrams')">Close</button>
-            {{ safe_embed('series') }}
-    </div>
-
     <div class="flex-container">
+    <!--
     <nav class="flex-nav">
         <div class="display-inline-block float-left">
             {{ safe_embed('sidenav_button') }}
@@ -38,15 +30,37 @@
         <div class="margin-left-110 display-inline-block float-left">
             {{ safe_embed('headline') }}
         </div>
-        <!-- Embed optional button -->
+        <!- - Embed optional button - ->
         <div class="float-right">
             {{ safe_embed('diagrams_button') }}
         </div>
     </nav>
+    -->
 
     <!-- Layout figure row -->
     <div id="figures" class="flex-figures" style="position:relative;">
-        <i class="fa fa-expand fa-2x full-screen-icon" id="full-screen-icon"></i>
+        <i class="fa fa-expand fa-2x settings-icon abs-top-right" id="full-screen-icon"></i>
+
+        <!-- Control panel drawer -->
+        <div id="sidenav" class="sidenav abs-top-left">
+                <div class="panel-title-container">
+                    <span class="font-family-helvetica">Controls</span><span class="float-right close-icon"><i class="fas fa-window-close" onclick="closeId('sidenav')"></i></span>
+                </div>
+                {{ safe_embed('controls') }}
+        </div>
+
+        <!-- Diagram drawer -->
+        <div id="diagrams" class="diagrams abs-top-right">
+                <div class="panel-title-container">
+                    <span class="close-icon"><i class="fas fa-window-close" onclick="closeId('diagrams')"></i></span><span class="margin-left-1em font-family-helvetica">Analysis</span>
+                </div>
+                {{ safe_embed('series') }}
+        </div>
+
+        <div class="abs-top-left" style="z-index:4;">
+            <i class="fa fa-cog fa-2x settings-icon" id="settings-icon"></i>
+            <i class="fa fa-chart-line fa-2x settings-icon" id="diagrams-icon"></i>
+        </div>
         {{ safe_embed('figures') }}
     </div>
 
@@ -80,27 +94,48 @@
     {% endfor %}
 
     <script charset="utf-8">
+
+        // Settings icon
+        let elSettings = document.getElementById("settings-icon")
+        elSettings.addEventListener("click", () => {
+            openId("sidenav", "370px")
+        })
+
+        // Diagrams icon
+        let elDiagrams = document.getElementById("diagrams-icon")
+        elDiagrams.addEventListener("click", () => {
+            openId("diagrams")
+        })
+
+        // Full screen icon
         let elIcon = document.getElementById("full-screen-icon")
         elIcon.addEventListener("click", () => {
             let elExpand = document.getElementById("figures")
-            if (document.fullscreenElement) {
-                document.exitFullscreen()
+            if (getFullscreenElement()) {
+                closeFullscreen()
             } else {
-                elExpand.requestFullscreen()
+                openFullscreen(elExpand)
             }
         })
 
         // Style button given full screen state
-        document.addEventListener("fullscreenchange", () => {
-            // Event fired before document.fullScreenElement update
-            // hence use of ! to negate falsy null
-            if (!document.fullscreenElement) {
-                elIcon.classList.remove("fa-compress")
-                elIcon.classList.add("fa-expand")
-            } else {
-                elIcon.classList.remove("fa-expand")
-                elIcon.classList.add("fa-compress")
-            }
+        let events = [
+                "fullscreenchange",
+                "mozfullscreenchange",
+                "webkitfullscreenchange",
+                "msfullscreenchange"]
+        events.forEach((event) => {
+            document.addEventListener(event, () => {
+                // Event fired before document.fullScreenElement update
+                // hence use of ! to negate falsy null
+                if (!getFullscreenElement()) {
+                    elIcon.classList.remove("fa-compress")
+                    elIcon.classList.add("fa-expand")
+                } else {
+                    elIcon.classList.remove("fa-expand")
+                    elIcon.classList.add("fa-compress")
+                }
+            })
         })
     </script>
 
