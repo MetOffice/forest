@@ -44,7 +44,7 @@
 
     <!-- Layout figure row -->
     <div id="figures" class="flex-figures" style="position:relative;">
-        <i class="fa fa-expand fa-2x full-screen-icon" id="full-screen-icon"></i>
+        <i class="fa fa-expand fa-2x settings-icon abs-top-right" id="full-screen-icon"></i>
         <div id="sidenav" class="sidenav">
                 <div style="position:relative; overflow:hidden;">
                     <span class="panel-title">Controls</span>
@@ -54,9 +54,9 @@
                 </div>
                 {{ safe_embed('controls') }}
         </div>
-        <div class="abs-left" style="z-index:4;">
+        <div class="abs-top-left" style="z-index:4;">
             <i class="fa fa-cog fa-2x settings-icon" id="settings-icon"></i>
-            <i class="fa fa-chart-line fa-2x settings-icon" id="settings-icon"></i>
+            <i class="fa fa-chart-line fa-2x settings-icon" id="diagrams-icon"></i>
         </div>
         {{ safe_embed('figures') }}
     </div>

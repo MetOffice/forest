@@ -39,16 +39,12 @@ h3 {
     display: flex;
     flex: 0 1;
 }
-.full-screen-icon {
+.abs-top-right {
     position: absolute;
     top: 0;
     right: 0;
-    margin: 10px;
-    z-index: 20;
-    cursor: pointer;
-    color: rgba(0, 0, 0, 0.7);
 }
-.abs-left {
+.abs-top-left {
     position: absolute;
     top: 0;
     left: 0;
