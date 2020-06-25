@@ -14,6 +14,8 @@ import numpy as np
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Iterable, List
+import forest.mark
+import forest.state
 from forest import rx
 from forest.redux import Action, State, Store
 from forest.observe import Observable
@@ -202,16 +204,18 @@ def _connect(view, store):
     stream.map(lambda props: view.render(*props))
 
 
+@forest.mark.component
 class FigureUI(Observable):
     """Controls how many figures are currently displayed"""
-    def __init__(self):
+    def __init__(self, max_figures=3):
+        self.max_figures = max_figures
         self.labels = [
             "Single figure",
             "Side by side",
-            "3 way comparison"]
+            "3 way comparison"][:self.max_figures]
         self.select = bokeh.models.Select(
             options=self.labels,
-            value="Single figure",
+            value=self.labels[0],
             width=350,
         )
         self.select.on_change("value", self.on_change)
@@ -220,9 +224,19 @@ class FigureUI(Observable):
         )
         super().__init__()
 
+    def connect(self, store):
+        self.add_subscriber(store.dispatch)
+        store.add_subscriber(self.render)
+
+    def render(self, state):
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict(state)
+        i = state.layers.figures - 1
+        self.select.value = self.labels[i]
+
     def on_change(self, attr, old, new):
         """Emit action to set number of figures in state"""
-        n = self.labels.index(new) + 1 # Select 0-indexed
+        n = self.labels.index(new) + 1  # Select 0-indexed
         self.notify(set_figures(n))
 
 
