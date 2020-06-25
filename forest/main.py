@@ -188,7 +188,7 @@ def main(argv=None):
     # Connect figure controls/views
     if config.defaults.figures.ui:
         figure_ui = layers.FigureUI(config.defaults.figures.maximum)
-        figure_ui.add_subscriber(store.dispatch)
+        figure_ui.connect(store)
     figure_row.connect(store)
 
     # Tiling picker
