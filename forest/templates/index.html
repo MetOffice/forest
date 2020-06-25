@@ -102,24 +102,31 @@
         let elIcon = document.getElementById("full-screen-icon")
         elIcon.addEventListener("click", () => {
             let elExpand = document.getElementById("figures")
-            if (document.fullscreenElement) {
-                document.exitFullscreen()
+            if (getFullscreenElement()) {
+                closeFullscreen()
             } else {
-                elExpand.requestFullscreen()
+                openFullscreen(elExpand)
             }
         })
 
         // Style button given full screen state
-        document.addEventListener("fullscreenchange", () => {
-            // Event fired before document.fullScreenElement update
-            // hence use of ! to negate falsy null
-            if (!document.fullscreenElement) {
-                elIcon.classList.remove("fa-compress")
-                elIcon.classList.add("fa-expand")
-            } else {
-                elIcon.classList.remove("fa-expand")
-                elIcon.classList.add("fa-compress")
-            }
+        let events = [
+                "fullscreenchange",
+                "mozfullscreenchange",
+                "webkitfullscreenchange",
+                "msfullscreenchange"]
+        events.forEach((event) => {
+            document.addEventListener(event, () => {
+                // Event fired before document.fullScreenElement update
+                // hence use of ! to negate falsy null
+                if (!getFullscreenElement()) {
+                    elIcon.classList.remove("fa-compress")
+                    elIcon.classList.add("fa-expand")
+                } else {
+                    elIcon.classList.remove("fa-expand")
+                    elIcon.classList.add("fa-compress")
+                }
+            })
         })
     </script>
 
