@@ -147,9 +147,10 @@ def main(argv=None):
     app.add_component(component)
 
     # Add time user interface
-    component = forest.components.TimeUI()
-    component.layout = bokeh.layouts.row(component.layout, name="time")
-    app.add_component(component)
+    if config.defaults.timeui:
+        component = forest.components.TimeUI()
+        component.layout = bokeh.layouts.row(component.layout, name="time")
+        app.add_component(component)
 
     # Connect MapView orchestration to store
     opacity_slider = forest.layers.OpacitySlider()

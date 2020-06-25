@@ -42,11 +42,16 @@ class Figures:
 @dataclass
 class Defaults:
     figures: Figures = field(default_factory=Figures)
+    timeui: bool = True
     viewport: dict = field(default_factory=dict)
 
     def __post_init__(self):
-        if isinstance(self.figures, dict):
-            self.figures = Figures(**self.figures)
+        self._assign("figures", Figures)
+
+    def _assign(self, att_name, cls):
+        if isinstance(getattr(self, att_name), dict):
+            obj = cls(**getattr(self, att_name))
+            setattr(self, att_name, obj)
 
     @classmethod
     def from_dict(cls, values):
