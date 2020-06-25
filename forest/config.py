@@ -43,6 +43,7 @@ class Figures:
 class Defaults:
     figures: Figures = field(default_factory=Figures)
     timeui: bool = True
+    presetui: bool = True
     viewport: dict = field(default_factory=dict)
 
     def __post_init__(self):

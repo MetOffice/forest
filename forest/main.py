@@ -207,7 +207,8 @@ def main(argv=None):
     user_limits = colors.UserLimits().connect(store)
 
     # Preset
-    preset_ui = presets.PresetUI().connect(store)
+    if config.defaults.presetui:
+        preset_ui = presets.PresetUI().connect(store)
 
     # Connect navigation controls
     controls = db.ControlView()
@@ -277,11 +278,12 @@ def main(argv=None):
     layouts["settings"] = [
         border_ui.layout,
         opacity_slider.layout,
-        preset_ui.layout,
         color_palette.layout,
         user_limits.layout,
         bokeh.models.Div(text="Tiles:"),
     ]
+    if config.defaults.presetui:
+        layouts["settings"].insert(2, preset_ui.layout)
     if config.use_web_map_tiles:
         layouts["settings"].append(tile_picker.layout)
 
