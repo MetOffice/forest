@@ -48,6 +48,38 @@ h3 {
     cursor: pointer;
     color: rgba(0, 0, 0, 0.7);
 }
+.abs-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.settings-icon {
+    margin: 10px;
+    z-index: 4;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.6);
+}
+.settings-icon:hover {
+    color: black;
+}
+.close-icon {
+    float: right;
+    margin: 10px;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.8);
+    font-size: 18pt;
+}
+.close-icon:hover {
+    color: rgba(255, 0, 0, 0.8);
+}
+.panel-title {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 18pt;
+    font-weight: 100;
+    position: absolute;
+    bottom: 0;
+    margin-bottom: 10px;
+}
 
 /* Navigation */
 nav {
@@ -95,8 +127,8 @@ footer {
 .sidenav {
     height: 100%;
     width: 0;
-    position: fixed;
-    z-index: 6;
+    position: absolute;
+    z-index: 5;
     top: 0;
     left: 0;
     bacground-color: #333;

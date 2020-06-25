@@ -21,16 +21,13 @@
 {% endblock %}
 
 {% block contents %}
-    <div id="sidenav" class="sidenav">
-            <button type="button" onclick="closeId('sidenav')">Close</button>
-            {{ safe_embed('controls') }}
-    </div>
     <div id="diagrams" class="diagrams">
             <button type="button" onclick="closeId('diagrams')">Close</button>
             {{ safe_embed('series') }}
     </div>
 
     <div class="flex-container">
+    <!--
     <nav class="flex-nav">
         <div class="display-inline-block float-left">
             {{ safe_embed('sidenav_button') }}
@@ -38,15 +35,29 @@
         <div class="margin-left-110 display-inline-block float-left">
             {{ safe_embed('headline') }}
         </div>
-        <!-- Embed optional button -->
+        <!- - Embed optional button - ->
         <div class="float-right">
             {{ safe_embed('diagrams_button') }}
         </div>
     </nav>
+    -->
 
     <!-- Layout figure row -->
     <div id="figures" class="flex-figures" style="position:relative;">
         <i class="fa fa-expand fa-2x full-screen-icon" id="full-screen-icon"></i>
+        <div id="sidenav" class="sidenav">
+                <div style="position:relative; overflow:hidden;">
+                    <span class="panel-title">Controls</span>
+                    <span class="close-icon">
+                        <i class="fas fa-window-close" onclick="closeId('sidenav')"></i>
+                    </span>
+                </div>
+                {{ safe_embed('controls') }}
+        </div>
+        <div class="abs-left" style="z-index:4;">
+            <i class="fa fa-cog fa-2x settings-icon" id="settings-icon"></i>
+            <i class="fa fa-chart-line fa-2x settings-icon" id="settings-icon"></i>
+        </div>
         {{ safe_embed('figures') }}
     </div>
 
@@ -80,6 +91,14 @@
     {% endfor %}
 
     <script charset="utf-8">
+
+        // Settings icon
+        let elSettings = document.getElementById("settings-icon")
+        elSettings.addEventListener("click", () => {
+            openId("sidenav", "370px")
+        })
+
+        // Full screen icon
         let elIcon = document.getElementById("full-screen-icon")
         elIcon.addEventListener("click", () => {
             let elExpand = document.getElementById("figures")
