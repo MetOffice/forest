@@ -59,11 +59,8 @@ h3 {
     color: black;
 }
 .close-icon {
-    float: right;
-    margin: 10px;
     cursor: pointer;
     color: rgba(0, 0, 0, 0.8);
-    font-size: 18pt;
 }
 .close-icon:hover {
     color: rgba(255, 0, 0, 0.8);
@@ -72,9 +69,6 @@ h3 {
     font-family: Helvetica, Arial, sans-serif;
     font-size: 18pt;
     font-weight: 100;
-    position: absolute;
-    bottom: 0;
-    margin-bottom: 10px;
 }
 
 /* Navigation */
@@ -108,14 +102,10 @@ footer {
 .diagrams {
     height: 100%;
     width: 0;
-    position: fixed;
-    z-index: 6;
-    top: 0;
-    right: 0;
-    background-color: #333;
+    z-index: 5;
     overflow-x: hidden;
     transition: 0.2s;
-    background-color: #F1F1F1;
+    background-color: white;
     box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.7);
 }
 
@@ -123,11 +113,7 @@ footer {
 .sidenav {
     height: 100%;
     width: 0;
-    position: absolute;
     z-index: 5;
-    top: 0;
-    left: 0;
-    bacground-color: #333;
     overflow-x: hidden;
     transition: 0.2s;
     background-color: white;
