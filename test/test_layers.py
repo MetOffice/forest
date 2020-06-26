@@ -110,26 +110,34 @@ def test_reducer_save_layer():
 
 
 def test_reducer_remove_layer():
-    index = 42
+    row_index = 0
+    layer_index = 42
     state = {
         "layers": {
             "index": {
-                index: {
+                layer_index: {
                     "key": "value"
                 }
             }
         }
     }
-    action = layers.on_close(index)
+    action = layers.on_close(row_index)
     state = layers.reducer(state, action)
     assert state["layers"]["index"] == {}
 
 
 def test_reducer_on_edit():
-    i = 42
-    action = layers.on_edit(i)
-    state = layers.reducer({}, action)
-    assert state["layers"]["mode"]["index"] == i
+    row_index = 0
+    layer_index = 42
+    action = layers.on_edit(row_index)
+    state = layers.reducer({
+        "layers": {
+            "index": {
+                layer_index: {}
+            }
+        }
+    }, action)
+    assert state["layers"]["mode"]["index"] == layer_index
     assert state["layers"]["mode"]["state"] == "edit"
 
 
@@ -140,11 +148,17 @@ def test_reducer_on_add():
 
 
 def test_reducer_set_active():
-    index = 42
+    row_index = 1
     active = [0, 2]
-    action = layers.set_active(index, active)
-    state = layers.reducer({}, action)
-    assert state["layers"]["index"][index]["active"] == active
+    action = layers.set_active(row_index, active)
+    state = layers.reducer({
+        "layers": {"index": {
+            13: {},
+            42: {},
+            96: {}
+        }}
+    }, action)
+    assert state["layers"]["index"][42]["active"] == active
 
 
 def test_layersui_render_sets_button_groups():
