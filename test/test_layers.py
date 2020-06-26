@@ -4,6 +4,7 @@ import bokeh.plotting
 import numpy as np
 import forest.layers
 import forest.colors
+import forest.state
 from forest import layers, redux
 
 
@@ -79,11 +80,11 @@ def test_figure_dropdown(listener):
 
 @pytest.mark.parametrize("state,actions,expect", [
     ({}, layers.set_figures(3), {"figures": 3}),
-    ({}, layers.add_layer("Name"), {"labels": ["Name"]}),
-    ({}, layers.set_active(0, []), {"index": {0: {"active": []}}}),
-    ({}, layers.set_active(1, []), {"index": {1: {"active": []}}}),
     ({"layers": {"index": {0: {"active": []}}}}, layers.set_active(0, [0]),
-                {"index": {0: {"active": [0]}}}),
+     {"index": {0: {"active": [0]}}}),
+    pytest.param({"layers": {"index": {1: {"active": []}}}},
+                 layers.set_active(0, [0]),
+                 {"index": {1: {"active": [0]}}}, id="row to layer index"),
 ])
 def test_reducer(state, actions, expect):
     if isinstance(actions, dict):
@@ -91,7 +92,7 @@ def test_reducer(state, actions, expect):
     for action in actions:
         state = layers.reducer(state, action)
     result = state["layers"]
-    assert result == expect
+    assert result == forest.state.State(layers=expect).layers.to_dict()
 
 
 def test_reducer_save_layer():

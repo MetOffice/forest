@@ -21,9 +21,9 @@ from forest.redux import Action, State, Store
 from forest.observe import Observable
 from forest import colors
 import forest.drivers
+import forest.mark
 
 
-ADD_LAYER = "LAYERS_ADD_LAYER"  # NOTE: Not used any more
 SAVE_LAYER = "LAYERS_SAVE_LAYER"
 ON_ADD = "LAYERS_ON_ADD"
 ON_EDIT = "LAYERS_ON_EDIT"
@@ -37,11 +37,6 @@ SET_ACTIVE = "LAYERS_SET_ACTIVE"
 
 def set_figures(n: int) -> Action:
     return {"kind": SET_FIGURES, "payload": n}
-
-
-# NOTE: Not used any more
-def add_layer(name) -> Action:
-    return {"kind": ADD_LAYER, "payload": name}
 
 
 def save_layer(index, settings) -> Action:
@@ -127,12 +122,11 @@ def reducer(state: State, action: Action) -> State:
     """Combine state and action to produce new state"""
     state = copy.deepcopy(state)
     kind = action["kind"]
-    if kind in [
-            ADD_LAYER,  # NOTE: Not used any more
-            SET_FIGURES,
-            ON_REMOVE]:  # NOTE: Not used any more
-        layers = state.get("layers", {})
-        state["layers"] = _layers_reducer(layers, action)
+    if kind == SET_FIGURES:
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict(state)
+        state.layers.figures = action["payload"]
+        return state.to_dict()
     elif kind == ON_ADD:
         # Traverse/build tree
         node = state
@@ -142,11 +136,14 @@ def reducer(state: State, action: Action) -> State:
         node.update({"state": "add"})
     elif kind == ON_CLOSE:
         # Traverse/build tree
-        index = action["payload"]
-        node = state
-        for key in ("layers", "index"):
-            node = node.get(key, {})
-        del node[index]
+        row_index = action["payload"]
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict(state)
+        try:
+            layer_index = sorted(state.layers.index.keys())[row_index]
+            del state.layers.index[layer_index]
+        except IndexError:
+            pass
     elif kind == ON_EDIT:
         # Traverse/build tree
         index = action["payload"]
@@ -166,32 +163,17 @@ def reducer(state: State, action: Action) -> State:
         node.update(settings)
     elif kind == SET_ACTIVE:
         # Traverse/build tree
-        index = action["payload"]["row_index"]
-        settings = {"active": action["payload"]["active"]}
-        node = state
-        for key in ("layers", "index", index):
-            node[key] = node.get(key, {})
-            node = node[key]
-        node.update(settings)
-    return state
-
-
-def _layers_reducer(state, action):
-    kind = action["kind"]
-    if kind == SET_FIGURES:
-        state["figures"] = action["payload"]
-
-    # NOTE: Not used any more
-    elif kind == ADD_LAYER:
-        labels = state.get("labels", [])
-        labels.append(action["payload"])
-        state["labels"] = labels
-
-    # NOTE: Not used anymore
-    elif kind == ON_REMOVE:
-        labels = state.get("labels", [])
-        state["labels"] = labels[:-1]
-
+        active = action["payload"]["active"]
+        row_index = action["payload"]["row_index"]
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict(state)
+        row_to_layer = sorted(state.layers.index.keys())
+        try:
+            index = row_to_layer[row_index]
+            state.layers.index[index]["active"] = active
+        except IndexError:
+            pass
+        return state.to_dict()
     return state
 
 
@@ -318,6 +300,7 @@ class OpacitySlider:
         return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
 
 
+@forest.mark.component
 class LayersUI(Observable):
     """Collection of user interface components to manage layers"""
     def __init__(self):
@@ -370,10 +353,10 @@ class LayersUI(Observable):
         )
 
     def parse_layers(self, state):
-        node = state
-        for key in ("layers", "index"):
-            node = node.get(key, {})
-        return [value for _, value in sorted(node.items())]
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict(state)
+        print(state.layers.index)
+        return [value for _, value in sorted(state.layers.index.items())]
 
     def render(self, layers, figure_index):
         """Display latest application state in user interface

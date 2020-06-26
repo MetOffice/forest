@@ -170,6 +170,9 @@ class Layers:
         if isinstance(self.mode, dict):
             self.mode = LayerMode(**self.mode)
 
+    def to_dict(self):
+        return asdict(self)
+
 
 @dataclass
 class Borders:
