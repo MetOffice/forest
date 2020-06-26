@@ -1,5 +1,6 @@
 """Colorbar sub-figure component"""
 import bokeh.plotting
+import forest.state
 from forest.colors import colorbar_figure, parse_color_spec
 
 
@@ -20,12 +21,7 @@ class ColorbarUI:
 
     def render(self, state):
         """Query state for color_mapper settings"""
-        layers = state.get("layers", {}).get("index", {})
-        specs = []
-        for _, settings in sorted(layers.items()):
-            if "colorbar" in settings:
-                spec = parse_color_spec(settings["colorbar"])
-                specs.append(spec)
+        specs = self.parse_specs(state)
 
         # Balance number of color_mappers
         missing = len(specs) - len(self.color_mappers)
@@ -42,10 +38,25 @@ class ColorbarUI:
         # Update layout
         self.layout.children = self.figures[:len(specs)]
 
+    def parse_specs(self, state):
+        """Parse colorbar specifications from application state"""
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict(state)
+        specs = []
+
+        spec = parse_color_spec(state.colorbar.to_dict())
+        specs.append(spec)
+
+        for _, settings in sorted(state.layers.index.items()):
+            if "colorbar" in settings:
+                spec = parse_color_spec(settings["colorbar"])
+                specs.append(spec)
+        return specs
+
     def make_colorbar(self):
         color_mapper = bokeh.models.LinearColorMapper(
             palette="Greys256",
             low=0,
             high=1)
-        figure = colorbar_figure(color_mapper, plot_width=200)
+        figure = colorbar_figure(color_mapper, plot_width=250)
         return figure, color_mapper

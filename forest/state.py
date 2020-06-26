@@ -132,6 +132,9 @@ class Colorbar:
         if isinstance(self.limits, dict):
             self.limits = ColorbarLimits(**self.limits)
 
+    def to_dict(self):
+        return asdict(self)
+
 
 @dataclass
 class LayerMode:
