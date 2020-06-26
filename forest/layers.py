@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Iterable, List
 import forest.mark
 import forest.state
+import forest.actions
 from forest import rx
 from forest.redux import Action, State, Store
 from forest.observe import Observable
@@ -122,40 +123,44 @@ def reducer(state: State, action: Action) -> State:
     state = copy.deepcopy(state)
     if isinstance(state, dict):
         state = forest.state.State.from_dict(state)
+    if isinstance(action, dict):
+        try:
+            action = forest.actions.Action.from_dict(action)
+        except TypeError:
+            return state.to_dict()
 
-    kind = action["kind"]
-    if kind == SET_FIGURES:
-        state.layers.figures = action["payload"]
+    if action.kind == SET_FIGURES:
+        state.layers.figures = action.payload
 
-    elif kind == ON_ADD:
+    elif action.kind == ON_ADD:
         state.layers.mode.state = "add"
 
-    elif kind == ON_CLOSE:
-        row_index = action["payload"]
+    elif action.kind == ON_CLOSE:
+        row_index = action.payload
         try:
             layer_index = sorted(state.layers.index.keys())[row_index]
             del state.layers.index[layer_index]
         except IndexError:
             pass
 
-    elif kind == ON_EDIT:
-        row_index = action["payload"]
+    elif action.kind == ON_EDIT:
+        row_index = action.payload
         layer_index = sorted(state.layers.index.keys())[row_index]
         state.layers.mode.state = "edit"
         state.layers.mode.index = layer_index
 
-    elif kind == SAVE_LAYER:
+    elif action.kind == SAVE_LAYER:
         # NOTE: Layer index is stored in payload
-        layer_index = action["payload"]["index"]
-        settings = action["payload"]["settings"]
+        layer_index = action.payload["index"]
+        settings = action.payload["settings"]
         if layer_index in state.layers.index:
             state.layers.index[layer_index].update(settings)
         else:
             state.layers.index[layer_index] = settings
 
-    elif kind == SET_ACTIVE:
-        active = action["payload"]["active"]
-        row_index = action["payload"]["row_index"]
+    elif action.kind == SET_ACTIVE:
+        active = action.payload["active"]
+        row_index = action.payload["row_index"]
         row_to_layer = sorted(state.layers.index.keys())
         try:
             layer_index = row_to_layer[row_index]
