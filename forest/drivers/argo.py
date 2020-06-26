@@ -1,3 +1,4 @@
+import glob
 import copy
 import bokeh.models
 import bokeh.palettes
@@ -49,15 +50,19 @@ def set_profile_ids(i, profile_ids) -> Action:
 class Dataset:
     def __init__(self, pattern=None, **kwargs):
         self.pattern = pattern
+        if pattern is None:
+            self.paths = []
+        else:
+            self.paths = glob.glob(pattern)
 
     def navigator(self):
         return Navigator()
 
     def map_view(self, color_mapper):
-        return MapView(self.pattern, color_mapper)
+        return MapView(self.paths[0], color_mapper)
 
     def profile_view(self, figure):
-        return ProfileView(self.pattern, figure)
+        return ProfileView(self.paths[0], figure)
 
 
 class Navigator:
@@ -68,7 +73,7 @@ class Navigator:
         return []
 
     def variables(self, *args, **kwargs):
-        return []
+        return ["temperature",]
 
     def pressures(self, *args, **kwargs):
         return []
@@ -82,7 +87,6 @@ class MapView(Observable):
             self.lons = dataset.variables["LONGITUDE"][:]
             self.lats = dataset.variables["LATITUDE"][:]
             self.surf_temp = dataset.variables["TEMP"][:, 0].data
-            print("Surface Temp", self.surf_temp)
         self.source = bokeh.models.ColumnDataSource({
             "x": [],
             "y": [],
@@ -92,17 +96,11 @@ class MapView(Observable):
         self.color_mapper.low = np.amin(self.surf_temp)
         self.color_mapper.high = np.amax(self.surf_temp)
 
-        # tap events never happen for some reason...
-        self.source.on_event("tap", self.callback)
-        # however selected.indices does change on the data source on a tap
+        # selected indices changes on the data source on a tap
         self.source.selected.on_change("indices", self.update_profile_ids)
         super().__init__()
 
-    def callback(self, event):
-        print("hit argo.MapView.callback: ", event)
-
     def update_profile_ids(self, a, o, n):
-        print(a, o, n)
         with netCDF4.Dataset(self.path) as dataset:
             plat_ids = []
             for i in n:
@@ -113,8 +111,8 @@ class MapView(Observable):
 
     def add_figure(self, figure):
         # Tap event listener
-        renderer = figure.circle(x="x", y="y", size=10, 
-                                 color={'field': 'surf_temp', 
+        renderer = figure.circle(x="x", y="y", size=10,
+                                 color={'field': 'surf_temp',
                                         'transform': self.color_mapper},
                                  source=self.source)
         figure.add_tools(bokeh.models.TapTool(renderers=[renderer]))
@@ -149,8 +147,6 @@ class ProfileView:
         if "profile_ids" in state:
             if len(state["profile_ids"]["indices"]) != 0:
                 profile_index = state["profile_ids"]["indices"][0]
-                print("render profile for platform ",
-                      state["profile_ids"]["ids"][0])
 
                 # Read data from file, here for now, but might be better off
                 # somewhere else.
