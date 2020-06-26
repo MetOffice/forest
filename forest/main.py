@@ -3,6 +3,7 @@ import bokeh.models
 import bokeh.events
 import bokeh.colors
 import os
+import datetime as dt
 from forest import _profile as profile
 from forest import (
         drivers,
@@ -23,6 +24,7 @@ from forest import (
         navigate,
         parse_args)
 import forest.app
+import forest.state
 import forest.actions
 import forest.components
 import forest.components.borders
@@ -133,6 +135,7 @@ def main(argv=None):
         middlewares=middlewares)
 
     app = forest.app.Application()
+    app.add_component(Title())
 
     # Coastlines, borders, lakes and disputed borders
     view = forest.components.borders.View()
@@ -381,6 +384,22 @@ def main(argv=None):
     document.add_root(figure_row.layout)
     document.add_root(key_press.hidden_button)
     document.add_root(modal.layout)
+
+
+class Title:
+    """Simple title"""
+    def __init__(self):
+        self.div = bokeh.models.Div(text="")
+        self.layout = bokeh.layouts.row(self.div, name="title")
+
+    def connect(self, store):
+        store.add_subscriber(self.render)
+
+    def render(self, state):
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict(state)
+        if isinstance(state.valid_time, dt.datetime):
+            self.div.text = f"{state.valid_time:%A %d %B %Y %H:%M}"
 
 
 class Navbar:

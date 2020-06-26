@@ -60,12 +60,18 @@
         <div class="abs-top-left" style="z-index:4;">
             <i class="fa fa-cog fa-2x settings-icon" id="settings-icon"></i>
             <i class="fa fa-chart-line fa-2x settings-icon" id="diagrams-icon"></i>
+            <i class="fa fa-book-open fa-2x settings-icon" id="info-icon"></i>
         </div>
         {{ safe_embed('figures') }}
 
         <!-- Colorbars -->
         <div class="abs-bottom-middle z-index-5">
             {{ safe_embed('colorbar') }}
+        </div>
+
+        <!-- Title -->
+        <div id="info" class="font-family-helvetica abs-top-middle z-index-5 display-none title">
+            {{ safe_embed('title') }}
         </div>
     </div>
     <footer class="flex-footer">
@@ -103,6 +109,17 @@
         let elDiagrams = document.getElementById("diagrams-icon")
         elDiagrams.addEventListener("click", () => {
             openId("diagrams")
+        })
+
+        // Title icon
+        let elTitle = document.getElementById("info-icon")
+        elTitle.addEventListener("click", () => {
+            let el = document.getElementById("info")
+            if (el.style.display == "none") {
+                el.style.display = "block"
+            } else {
+                el.style.display = "none"
+            }
         })
 
         // Full screen icon
