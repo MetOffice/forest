@@ -49,6 +49,15 @@ h3 {
     top: 0;
     left: 0;
 }
+.abs-bottom-middle {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%);
+}
+.z-index-5 {
+    z-index: 5;
+}
 .margin-left-1em {
     margin-left: 1em;
 }
@@ -88,14 +97,6 @@ nav {
 footer {
     z-index: 5;
     width: 100%;
-}
-.colorbar-parent {
-    position: relative;
-    top: 50px;
-}
-.colorbar {
-    position: absolute;
-    right: 0;
 }
 .time {
     color: black;
