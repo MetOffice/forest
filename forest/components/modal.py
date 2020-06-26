@@ -3,6 +3,7 @@ import bokeh.layouts
 import forest.colors
 from forest.observe import Observable
 from forest import layers
+import forest.state
 
 
 class Modal:
@@ -114,15 +115,20 @@ class Settings:
 
     def render(self, state):
         """Configure widgets"""
-        parser = StateParser(state)
-        global_props = state.get("colorbar", {})
-        if parser.mode() == "edit":
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict(state)
+        global_props = state.colorbar.to_dict()
+        if state.layers.mode.state == "edit":
             # Get Layer settings
-            props = parser.edit_settings().get("colorbar", {})
-            props.update({
-                "names": global_props.get("names", []),
-                "numbers": global_props.get("numbers", []),
-            })
+            i = state.layers.mode.index
+            if i in state.layers.index:
+                props = state.layers.index[i].get("colorbar", {})
+                props.update({
+                    "names": global_props.get("names", []),
+                    "numbers": global_props.get("numbers", []),
+                })
+            else:
+                props = global_props
         else:
             props = global_props
 
@@ -144,38 +150,6 @@ class Settings:
     def connect(self, store):
         store.add_subscriber(self.render)
         return self
-
-
-class StateParser:
-    """Parse state shape
-
-    >>> state = {
-    ...    "layers": {
-    ...         "mode": {
-    ...            "state": "add",  # or edit
-    ...            "index": 0  # optional
-    ...         },
-    ...         "index": {
-    ...             0: {"key": "value"} # layer settings
-    ...         }
-    ...    }
-    ... }
-
-    """
-    def __init__(self, state):
-        self.state = state
-        self._mode = self.state.get("layers", {}).get("mode", {})
-        self._index = self.state.get("layers", {}).get("index", {})
-
-    def mode(self):
-        return self._mode.get("state", "add")
-
-    def edit_index(self):
-        return self._mode["index"]
-
-    def edit_settings(self):
-        index = self.edit_index()
-        return self._index[index]
 
 
 class Layer(Observable):
@@ -240,19 +214,22 @@ class Layer(Observable):
 
     def render(self, state):
         # Configure title
-        parser = StateParser(state)
-        mode = parser.mode()
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict(state)
+        mode = state.layers.mode.state
         self.div.text = {"edit": "Edit layer"}.get(mode, "Add layer")
 
         # Set name for layer, e.g. layer-0
         if mode == "edit":
             # Edit mode
-            settings = parser.edit_settings()
-            self.inputs["name"].value = settings["label"]
-            if "dataset" in settings:
-                self.selects["dataset"].value = settings["dataset"]
-            if "variable" in settings:
-                self.selects["variable"].value = settings["variable"]
+            i = state.layers.mode.index
+            if i in state.layers.index:
+                settings = state.layers.index[i]
+                self.inputs["name"].value = settings["label"]
+                if "dataset" in settings:
+                    self.selects["dataset"].value = settings["dataset"]
+                if "variable" in settings:
+                    self.selects["variable"].value = settings["variable"]
         else:
             # Add mode
             self.inputs["name"].value = "layer-0"
@@ -263,7 +240,7 @@ class Layer(Observable):
         # Configure dimension(s) source
         variables = []
         for label in datasets:
-            texts = (state.get("dimension", {})
+            texts = (state.dimension
                           .get(label, {})
                           .get("variables", []))
             variables.append(texts)
@@ -279,7 +256,7 @@ class Layer(Observable):
                 self.selects["dataset"].value = self.selects["dataset"].options[0]
 
     def to_props(self, state):
-        return [name for name, _ in state.get("patterns", [])]
+        return [name for name, _ in state.patterns]
 
     def settings(self):
         # Send settings to forest.layers to process
