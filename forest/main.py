@@ -26,6 +26,7 @@ import forest.app
 import forest.actions
 import forest.components
 import forest.components.borders
+import forest.components.title
 from forest.components import tiles, html_ready
 import forest.config as cfg
 import forest.middlewares as mws
@@ -133,6 +134,7 @@ def main(argv=None):
         middlewares=middlewares)
 
     app = forest.app.Application()
+    app.add_component(forest.components.title.Title())
 
     # Coastlines, borders, lakes and disputed borders
     view = forest.components.borders.View()
