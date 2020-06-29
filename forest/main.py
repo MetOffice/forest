@@ -279,6 +279,7 @@ def main(argv=None):
     ]
 
     layouts["settings"] = [
+        bokeh.models.Div(text="Borders, coastlines and lakes:"),
         border_ui.layout,
         opacity_slider.layout,
     ]
