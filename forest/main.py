@@ -201,12 +201,13 @@ def main(argv=None):
             tile_picker.add_figure(figure)
         tile_picker.connect(store)
 
-    # Connect color palette controls
-    colors.ColorMapperView(color_mapper).connect(store)
-    color_palette = colors.ColorPalette().connect(store)
+    if not data.FEATURE_FLAGS["multiple_colorbars"]:
+        # Connect color palette controls
+        colors.ColorMapperView(color_mapper).connect(store)
+        color_palette = colors.ColorPalette().connect(store)
 
-    # Connect limit controllers to store
-    user_limits = colors.UserLimits().connect(store)
+        # Connect limit controllers to store
+        user_limits = colors.UserLimits().connect(store)
 
     # Preset
     if config.defaults.presetui:
@@ -280,13 +281,14 @@ def main(argv=None):
     layouts["settings"] = [
         border_ui.layout,
         opacity_slider.layout,
-        color_palette.layout,
-        user_limits.layout,
-        bokeh.models.Div(text="Tiles:"),
     ]
+    if not data.FEATURE_FLAGS["multiple_colorbars"]:
+        layouts["settings"].append(color_palette.layout)
+        layouts["settings"].append(user_limits.layout)
     if config.defaults.presetui:
-        layouts["settings"].insert(2, preset_ui.layout)
+        layouts["settings"].append(preset_ui.layout)
     if config.use_web_map_tiles:
+        layouts["settings"].append(bokeh.models.Div(text="Tiles:"))
         layouts["settings"].append(tile_picker.layout)
 
     tabs = bokeh.models.Tabs(tabs=[
