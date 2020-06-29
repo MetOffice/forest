@@ -108,7 +108,13 @@
         // Diagrams icon
         let elDiagrams = document.getElementById("diagrams-icon")
         elDiagrams.addEventListener("click", () => {
-            openId("diagrams")
+            let el = document.getElementById("diagrams")
+            let width = "400px"
+            if (el.style.width !== width) {
+                el.style.width = width
+            } else {
+                el.style.width = "0"
+            }
         })
 
         // Title icon
