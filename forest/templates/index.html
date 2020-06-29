@@ -70,7 +70,7 @@
         </div>
 
         <!-- Title -->
-        <div id="info" class="font-family-helvetica abs-top-middle z-index-5 display-none title">
+        <div id="info" class="font-family-helvetica abs-top-middle z-index-5 title">
             {{ safe_embed('title') }}
         </div>
     </div>
@@ -115,10 +115,12 @@
         let elTitle = document.getElementById("info-icon")
         elTitle.addEventListener("click", () => {
             let el = document.getElementById("info")
-            if (el.style.display == "none") {
-                el.style.display = "block"
-            } else {
+            if (el.style.display === "") {
                 el.style.display = "none"
+            } else if (el.style.display === "block") {
+                el.style.display = "none"
+            } else {
+                el.style.display = "block"
             }
         })
 

@@ -77,9 +77,12 @@ h3 {
 }
 .settings-icon {
     margin: 10px;
+    padding: 10px;
     z-index: 4;
     cursor: pointer;
     color: rgba(0, 0, 0, 0.6);
+    background-color: white;
+    border-radius: 50%;
 }
 .settings-icon:hover {
     color: black;
