@@ -139,10 +139,14 @@ class Navigator:
     @staticmethod
     def _valid_times(variable, path):
         messages = pg.index(path, "name")
-        for message in messages.select(name=variable):
-            validTime = "{0:8d}{1:04d}".format(message["validityDate"],
-                                               message["validityTime"])
-            yield dt.datetime.strptime(validTime, "%Y%m%d%H%M")
+        try:
+            for message in messages.select(name=variable):
+                validTime = "{0:8d}{1:04d}".format(message["validityDate"],
+                                                   message["validityTime"])
+                yield dt.datetime.strptime(validTime, "%Y%m%d%H%M")
+        except ValueError:
+            # messages.select(name=variable) raises ValueError if not found
+            pass
         messages.close()
 
     def pressures(self, pattern, variable, initial_time):
@@ -152,8 +156,12 @@ class Navigator:
     @staticmethod
     def _pressures(variable, path):
         messages = pg.index(path, "name")
-        for message in messages.select(name=variable):
-            yield message["scaledValueOfFirstFixedSurface"]
+        try:
+            for message in messages.select(name=variable):
+                yield message["scaledValueOfFirstFixedSurface"]
+        except ValueError:
+            # messages.select(name=variable) raises ValueError if not found
+            pass
         messages.close()
 
     def _dim(self, method, variable, initial_time):
