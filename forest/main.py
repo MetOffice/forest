@@ -23,7 +23,6 @@ from forest import (
         navigate,
         parse_args)
 import forest.app
-import forest.state
 import forest.actions
 import forest.components
 import forest.components.borders
