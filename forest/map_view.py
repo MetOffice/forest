@@ -17,11 +17,11 @@ def map_view(loader, color_mapper, use_hover_tool=True):
             high=1)
         color_view = ColorView(color_mapper)
         um_view = ImageView(loader, color_mapper,
-                         use_hover_tool=use_hover_tool)
+                            use_hover_tool=use_hover_tool)
         return MapView(um_view, color_view)
     else:
         return ImageView(loader, color_mapper,
-                      use_hover_tool=use_hover_tool)
+                         use_hover_tool=use_hover_tool)
 
 
 class AbstractMapView(ABC):

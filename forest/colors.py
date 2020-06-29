@@ -137,8 +137,6 @@ def colorbar_figure(color_mapper, plot_width=500):
     figure.add_layout(colorbar, 'center')
     return figure
 
-
-
 @dataclass
 class ColorSpec:
     """Specifies color mapper settings"""
@@ -288,6 +286,7 @@ def set_invisible_min(flag):
     """Action to mask out data below colour bar limits"""
     return {"kind": SET_INVISIBLE, "payload": {"invisible_min": flag}}
 
+
 def set_invisible_max(flag):
     """Action to mask out data below colour bar limits"""
     return {"kind": SET_INVISIBLE, "payload": {"invisible_max": flag}}
@@ -426,6 +425,7 @@ def palettes(store, action):
 def middleware():
     previous = None
     seen = False
+
     def call(store, action):
         nonlocal previous, seen
         if not seen:

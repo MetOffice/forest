@@ -1,6 +1,7 @@
 """Colorbar sub-figure component"""
 import bokeh.plotting
 import forest.state
+import forest.data
 from forest.colors import colorbar_figure, parse_color_spec
 
 
@@ -42,15 +43,14 @@ class ColorbarUI:
         """Parse colorbar specifications from application state"""
         if isinstance(state, dict):
             state = forest.state.State.from_dict(state)
-        specs = []
-
-        spec = parse_color_spec(state.colorbar.to_dict())
-        specs.append(spec)
-
-        for _, settings in sorted(state.layers.index.items()):
-            if "colorbar" in settings:
-                spec = parse_color_spec(settings["colorbar"])
-                specs.append(spec)
+        if forest.data.FEATURE_FLAGS["multiple_colorbars"]:
+            specs = []
+            for _, settings in sorted(state.layers.index.items()):
+                if "colorbar" in settings:
+                    spec = parse_color_spec(settings["colorbar"])
+                    specs.append(spec)
+        else:
+            specs = [parse_color_spec(state.colorbar.to_dict())]
         return specs
 
     def make_colorbar(self):
