@@ -41,14 +41,6 @@
     <div id="figures" class="flex-figures" style="position:relative;">
         <i class="fa fa-expand fa-2x settings-icon abs-top-right" id="full-screen-icon"></i>
 
-        <!-- Control panel drawer -->
-        <div id="sidenav" class="sidenav abs-top-left">
-                <div class="panel-title-container">
-                    <span class="font-family-helvetica">Controls</span><span class="float-right close-icon"><i class="fas fa-window-close" onclick="closeId('sidenav')"></i></span>
-                </div>
-                {{ safe_embed('controls') }}
-        </div>
-
         <!-- Diagram drawer -->
         <div id="diagrams" class="diagrams abs-top-right">
                 <div class="panel-title-container">
@@ -61,6 +53,11 @@
             <i class="fa fa-cog fa-2x settings-icon" id="settings-icon"></i>
             <i class="fa fa-chart-line fa-2x settings-icon" id="diagrams-icon"></i>
             <i class="fa fa-book-open fa-2x settings-icon" id="info-icon"></i>
+
+            <!-- Control panel drawer -->
+            <div id="sidenav" class="panel panel-close">
+                    {{ safe_embed('controls') }}
+            </div>
         </div>
         {{ safe_embed('figures') }}
 
@@ -102,7 +99,14 @@
         // Settings icon
         let elSettings = document.getElementById("settings-icon")
         elSettings.addEventListener("click", () => {
-            openId("sidenav", "370px")
+            let el = document.getElementById("sidenav")
+            if (el.classList.contains("panel-open")) {
+                el.classList.remove("panel-open")
+                el.classList.add("panel-close")
+            } else {
+                el.classList.add("panel-open")
+                el.classList.remove("panel-close")
+            }
         })
 
         // Diagrams icon
