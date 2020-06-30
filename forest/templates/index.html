@@ -70,19 +70,20 @@
         <div id="info" class="font-family-helvetica abs-top-middle z-index-5 title">
             {{ safe_embed('title') }}
         </div>
+
+        <!-- Add modal container -->
+        <div id="modal" class="modal-outer">
+            <div class="modal-inner">
+                {{ safe_embed('modal') }}
+            </div>
+        </div>
+
     </div>
     <footer class="flex-footer">
         <div id="time" class="time">
             {{ safe_embed('time') }}
         </div>
     </footer>
-    </div>
-
-    <!-- Add modal container -->
-    <div id="modal" class="modal-outer">
-        <div class="modal-inner">
-            {{ safe_embed('modal') }}
-        </div>
     </div>
 
     <!-- Bokeh document roots -->
