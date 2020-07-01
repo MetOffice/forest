@@ -56,7 +56,8 @@
 
             <!-- Control panel drawer -->
             <div id="sidenav" class="panel panel-close">
-                    {{ safe_embed('controls') }}
+                <div id="controls-container" class="display-block">{{ safe_embed('controls') }}</div>
+                <div id="modal-container" class="display-none">{{ safe_embed('modal') }}</div>
             </div>
         </div>
         {{ safe_embed('figures') }}
@@ -69,13 +70,6 @@
         <!-- Title -->
         <div id="info" class="font-family-helvetica abs-top-middle z-index-5 title">
             {{ safe_embed('title') }}
-        </div>
-
-        <!-- Add modal container -->
-        <div id="modal" class="modal-outer">
-            <div class="modal-inner">
-                {{ safe_embed('modal') }}
-            </div>
         </div>
 
     </div>

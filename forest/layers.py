@@ -314,10 +314,7 @@ class LayersUI(Observable):
             "close": [],
             "add": bokeh.models.Button(label="New layer", width=110),
         }
-        custom_js = bokeh.models.CustomJS(code="""
-            let el = document.getElementById("modal");
-            el.style.visibility = "visible";
-        """)
+        custom_js = bokeh.models.CustomJS(code="openModal()")
         self.buttons["add"].js_on_click(custom_js)
         self.buttons["add"].on_click(self.on_add)
         self.columns = {
@@ -417,10 +414,7 @@ class LayersUI(Observable):
 
         # Edit button
         edit_button = bokeh.models.Button(label="Edit", width=widths["button"])
-        custom_js = bokeh.models.CustomJS(code="""
-            let el = document.getElementById("modal");
-            el.style.visibility = "visible";
-        """)
+        custom_js = bokeh.models.CustomJS(code="openModal()")
         edit_button.js_on_click(custom_js)
         edit_button.on_click(self.on_edit(row_index))
         self.buttons["edit"].append(edit_button)
