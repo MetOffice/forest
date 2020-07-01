@@ -8,6 +8,32 @@ let closeId = function(id) {
     document.getElementById(id).style.width = "0";
 }
 
+/* Switch to/from "modal" context */
+function openModal() {
+    let els = {
+        controls: document.getElementById('controls-container'),
+        modal: document.getElementById('modal-container')
+    }
+    if (els.controls.classList.contains('display-block')) {
+        els.controls.classList.remove('display-block')
+        els.controls.classList.add('display-none')
+        els.modal.classList.remove('display-none')
+        els.modal.classList.add('display-block')
+    }
+}
+function closeModal() {
+    let els = {
+        controls: document.getElementById('controls-container'),
+        modal: document.getElementById('modal-container')
+    }
+    if (els.modal.classList.contains('display-block')) {
+        els.modal.classList.remove('display-block')
+        els.modal.classList.add('display-none')
+        els.controls.classList.remove('display-none')
+        els.controls.classList.add('display-block')
+    }
+}
+
 // Cross-browser full screen
 function openFullscreen(el) {
     if (el.requestFullscreen) {

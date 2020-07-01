@@ -74,13 +74,10 @@ class SaveEdit(Observable):
         self.views = views
         buttons = (
             bokeh.models.Button(label="Save"),
-            bokeh.models.Button(label="Exit"))
+            bokeh.models.Button(label="Back"))
         buttons[0].on_click(self.on_save)
         for button in buttons:
-            custom_js = bokeh.models.CustomJS(code="""
-                let el = document.getElementById("modal");
-                el.style.visibility = "hidden";
-            """)
+            custom_js = bokeh.models.CustomJS(code="closeModal()")
             button.js_on_click(custom_js)
         self.layout = bokeh.layouts.row(*buttons, sizing_mode="stretch_width")
         super().__init__()
@@ -94,7 +91,6 @@ class SaveEdit(Observable):
         settings = {}
         for view in self.views:
             settings.update(view.settings())
-        print("DEBUG", settings)
         self.notify(layers.on_save(settings))
 
 
