@@ -45,6 +45,9 @@ class Dataset:
         else:
             self.locator = Locator.pattern(self.pattern)
 
+    def sync(self):
+        print(f"sync: {self.label} {self.pattern}")
+
     def navigator(self):
         if self.use_database:
             return self.database

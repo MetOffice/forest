@@ -3,14 +3,15 @@ import forest.cli.main
 import forest.data as data
 
 
-class DatabaseCallback:
-    """Process to synchronize databases"""
-    def __init__(self, file_groups):
-        self.file_groups = file_groups
+class DatasetSyncCallback:
+    """Process to synchronize datasets"""
+    def __init__(self, datasets):
+        self.datasets = datasets
 
     def __call__(self):
-        for group in self.file_groups:
-            print(group)
+        for dataset in self.datasets:
+            if hasattr(dataset, "sync"):
+                dataset.sync()
 
 
 def on_server_loaded(server_context):
@@ -21,7 +22,7 @@ def on_server_loaded(server_context):
     config = forest.main.configure(argv)
     interval_ms = 15 * 60 * 1000  # 15 minutes in miliseconds
     interval_ms = 60 * 1000  # 1 minute in miliseconds
-    callback = DatabaseCallback(config.file_groups)
+    callback = DatasetSyncCallback(config.datasets)
     server_context.add_periodic_callback(callback, interval_ms)
 
 

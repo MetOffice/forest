@@ -23,6 +23,7 @@ applications.
 import os
 import string
 import yaml
+import forest.drivers
 import forest.state
 from dataclasses import dataclass, field
 from collections import defaultdict
@@ -246,6 +247,18 @@ class Config(object):
     def file_groups(self):
         return [FileGroup(**data)
                 for data in self.data["files"]]
+
+    @property
+    def datasets(self):
+        for group in self.file_groups:
+            settings = {
+                "label": group.label,
+                "pattern": group.pattern,
+                "locator": group.locator,
+                "database_path": group.database_path,
+                "directory": group.directory
+            }
+            yield forest.drivers.get_dataset(group.file_type, settings)
 
 
 class FileGroup(object):

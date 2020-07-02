@@ -96,15 +96,7 @@ def main(argv=None):
     datasets = {}
     datasets_by_pattern = {}
     label_to_pattern = {}
-    for group in config.file_groups:
-        settings = {
-            "label": group.label,
-            "pattern": group.pattern,
-            "locator": group.locator,
-            "database_path": group.database_path,
-            "directory": group.directory
-        }
-        dataset = drivers.get_dataset(group.file_type, settings)
+    for group, dataset in zip(config.file_groups, config.datasets):
         datasets[group.label] = dataset
         datasets_by_pattern[group.pattern] = dataset
         label_to_pattern[group.label] = group.pattern
