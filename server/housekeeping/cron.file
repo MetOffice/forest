@@ -1,1 +1,0 @@
-*/15 * * * * /home/ec2-user/forest/server/housekeeping/update-database-cron.sh > /home/ec2-user/update-database.log 2>&1

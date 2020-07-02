@@ -48,11 +48,9 @@ def map_figure(x_range, y_range):
     return figure
 
 
-def main(argv=None):
-
+def configure(argv=None):
     args = parse_args.parse_args(argv)
     data.AUTO_SHUTDOWN = args.auto_shutdown
-    
     if len(args.files) > 0:
         if args.config_file is not None:
             raise Exception('--config-file and [FILE [FILE ...]] not compatible')
@@ -63,6 +61,11 @@ def main(argv=None):
                 variables=cfg.combine_variables(
                     os.environ,
                     args.variables))
+    return config
+
+
+def main(argv=None):
+    config = configure(argv=argv)
 
     # Feature toggles
     if "feature" in config.plugins:
@@ -93,15 +96,7 @@ def main(argv=None):
     datasets = {}
     datasets_by_pattern = {}
     label_to_pattern = {}
-    for group in config.file_groups:
-        settings = {
-            "label": group.label,
-            "pattern": group.pattern,
-            "locator": group.locator,
-            "database_path": group.database_path,
-            "directory": group.directory
-        }
-        dataset = drivers.get_dataset(group.file_type, settings)
+    for group, dataset in zip(config.file_groups, config.datasets):
         datasets[group.label] = dataset
         datasets_by_pattern[group.pattern] = dataset
         label_to_pattern[group.label] = group.pattern
