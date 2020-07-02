@@ -21,7 +21,6 @@ def on_server_loaded(server_context):
     _, argv = forest.cli.main.parse_args()
     config = forest.main.configure(argv)
     interval_ms = 15 * 60 * 1000  # 15 minutes in miliseconds
-    interval_ms = 5 * 1000  # 5 seconds in miliseconds
     callback = DatasetSyncCallback(list(config.datasets))
     server_context.add_periodic_callback(callback, interval_ms)
 
