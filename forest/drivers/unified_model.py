@@ -7,6 +7,8 @@ import fnmatch
 import datetime as dt
 import numpy as np
 import netCDF4
+import sqlite3
+import forest.db
 import forest.util
 import forest.map_view
 from forest import (
@@ -27,6 +29,51 @@ class NotFound(Exception):
     pass
 
 
+class Sync:
+    """Process to synchronize SQL database"""
+    def __init__(self, database_path, pattern, directory):
+        self.database_path = database_path
+        self.pattern = pattern
+        self.directory = directory
+
+    def __call__(self):
+        print(f"sync: {self.database_path} {self.pattern} {self.directory}")
+
+        # Find S3 objects
+        paths = glob.glob(self.full_path(self.pattern))
+        s3_names = [os.path.basename(path) for path in paths]
+
+        # Find names in database
+        connection = sqlite3.connect(self.database_path)
+        cursor = connection.cursor()
+        query = "SELECT name FROM file WHERE name GLOB :pattern;"
+        sql_names = []
+        for row in cursor.execute(query, {"pattern": self.pattern}):
+            path, = row
+            sql_names.append(os.path.basename(path))
+        connection.close()
+
+        # Find extra files
+        extra_names = set(s3_names) - set(sql_names)
+        extra_paths = [self.full_path(name) for name in extra_names]
+
+        # Add NetCDF files to database
+        if len(extra_paths) > 0:
+            print("connecting to: {}".format(self.database_path))
+            with forest.db.Database.connect(self.database_path) as database:
+                for path in extra_paths:
+                    print("inserting: '{}'".format(path))
+                    database.insert_netcdf(path)
+            print("finished")
+
+    def full_path(self, name):
+        """Prepend directory if available"""
+        if self.directory is None:
+            return name
+        else:
+            return os.path.join(self.directory, name)
+
+
 class Dataset:
     def __init__(self,
                  label=None,
@@ -39,14 +86,14 @@ class Dataset:
         self.pattern = pattern
         self.use_database = locator == "database"
         if self.use_database:
+            self.sync = Sync(database_path,
+                             pattern,
+                             directory)
             self.database = db.get_database(database_path)
             self.locator = db.Locator(self.database.connection,
                                       directory=directory)
         else:
             self.locator = Locator.pattern(self.pattern)
-
-    def sync(self):
-        print(f"sync: {self.label} {self.pattern}")
 
     def navigator(self):
         if self.use_database:
