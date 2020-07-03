@@ -26,7 +26,10 @@ class HealthDB:
         return cls(sqlite3.connect(path_or_memory))
 
     def checked_files(self, pattern):
-        """Files that are in the database"""
+        """Files that are in the database
+
+        :returns files: either successfully processed or marked as OSError
+        """
         return sorted(set(self.files(pattern)) |
                       set(self.error_files(pattern)))
 
