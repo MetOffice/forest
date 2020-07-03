@@ -9,6 +9,7 @@ import numpy as np
 import netCDF4
 import sqlite3
 import forest.db
+import forest.db.health
 import forest.util
 import forest.map_view
 from forest import (
@@ -45,12 +46,9 @@ class Sync:
 
         # Find names in database
         connection = sqlite3.connect(self.database_path)
-        cursor = connection.cursor()
-        query = "SELECT name FROM file WHERE name GLOB :pattern;"
-        sql_names = []
-        for row in cursor.execute(query, {"pattern": self.pattern}):
-            path, = row
-            sql_names.append(os.path.basename(path))
+        health_db = forest.db.health.HealthDB(connection)
+        sql_names = [os.path.basename(path)
+                     for path in health_db.checked_files(self.pattern)]
         connection.close()
 
         # Find extra files
@@ -61,12 +59,14 @@ class Sync:
         if len(extra_paths) > 0:
             print("connecting to: {}".format(self.database_path))
             with forest.db.Database.connect(self.database_path) as database:
+                health_db = forest.db.health.HealthDB(database.connection)
                 for path in extra_paths:
                     print("inserting: '{}'".format(path))
                     try:
                         database.insert_netcdf(path)
                     except OSError as e:
                         # S3 Glacier objects inaccessible via goofys
+                        health_db.insert_error(path, e, dt.datetime.now())
                         print(e)
                         print(f"skip file: {path}")
                         continue
