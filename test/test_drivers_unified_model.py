@@ -9,6 +9,25 @@ import netCDF4
 import iris
 
 
+def test_sync_skips_oserror(tmpdir):
+    """Files stored in S3 Glacier are inaccessible via goofys"""
+    database_path = str(tmpdir / "file.db")
+    connection = sqlite3.connect(database_path)
+    connection.close()
+    file_name = str(tmpdir / "file.nc")
+    with open(file_name, "w"):
+        # Simulate NetCDF files stored in S3 Glacier
+        pass
+    settings = {
+        "locator": "database",
+        "pattern": file_name,
+        "directory": str(tmpdir),
+        "database_path": database_path
+    }
+    dataset = forest.drivers.get_dataset("unified_model", settings)
+    dataset.sync()
+
+
 def test_dataset_loader_pattern():
     settings = {
         "pattern": "*.nc",

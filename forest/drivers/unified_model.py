@@ -63,7 +63,13 @@ class Sync:
             with forest.db.Database.connect(self.database_path) as database:
                 for path in extra_paths:
                     print("inserting: '{}'".format(path))
-                    database.insert_netcdf(path)
+                    try:
+                        database.insert_netcdf(path)
+                    except OSError as e:
+                        # S3 Glacier objects inaccessible via goofys
+                        print(e)
+                        print(f"skip file: {path}")
+                        continue
             print("finished")
 
     def full_path(self, name):
