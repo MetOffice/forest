@@ -12,6 +12,7 @@ import forest.db
 import forest.db.health
 import forest.util
 import forest.map_view
+from forest.bases import Reusable
 from forest import (
     db,
     disk,
@@ -110,6 +111,40 @@ class Dataset:
     def map_view(self, color_mapper=None):
         loader = Loader(self.label, self.pattern, self.locator)
         return forest.map_view.map_view(loader, color_mapper)
+
+    def profile_view(self, figure):
+        return ProfileView(figure)
+
+    def series_view(self, figure):
+        return SeriesView(figure)
+
+
+class ProfileView(Reusable):
+    def __init__(self, figure):
+        self.figure = figure
+
+    def prepare(self):
+        print(f"{self.__class__.__name__}.prepare()")
+
+    def reset(self):
+        print(f"{self.__class__.__name__}.reset()")
+
+    def render(self, state):
+        print(f"{self.__class__.__name__}.render()")
+
+
+class SeriesView(Reusable):
+    def __init__(self, figure):
+        self.figure = figure
+
+    def prepare(self):
+        print(f"{self.__class__.__name__}.prepare()")
+
+    def reset(self):
+        print(f"{self.__class__.__name__}.reset()")
+
+    def render(self, state):
+        print(f"{self.__class__.__name__}.render()")
 
 
 class Navigator:

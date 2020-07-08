@@ -30,6 +30,7 @@ import forest.components.title
 from forest.components import tiles, html_ready
 import forest.config as cfg
 import forest.middlewares as mws
+import forest.gallery
 from forest.db.util import autolabel
 
 
@@ -308,17 +309,10 @@ def main(argv=None):
                     border_fill_alpha=0)
         series_figure.toolbar.logo = None
 
-        series_view = series.SeriesView.from_groups(
-                series_figure,
-                config.file_groups)
-        series_view.add_subscriber(store.dispatch)
-        series_args = (rx.Stream()
-                    .listen_to(store)
-                    .map(series.select_args)
-                    .filter(lambda x: x is not None)
-                    .distinct())
-        series_args.map(lambda a: series_view.render(*a))
-        series_args.map(print)  # Note: map(print) creates None stream
+        # Series view(s)
+        _gallery = forest.gallery.Gallery.series_view(series_figure,
+                                                      datasets)
+        _gallery.connect(store)
 
         tool_figures["series_figure"] = series_figure
 
@@ -332,19 +326,12 @@ def main(argv=None):
         profile_figure.toolbar.logo = None
         profile_figure.y_range.flipped = True
 
-        profile_view = profile.ProfileView.from_groups(
-                profile_figure,
-                config.file_groups)
-        profile_view.add_subscriber(store.dispatch)
-        profile_args = (rx.Stream()
-                    .listen_to(store)
-                    .map(profile.select_args)
-                    .filter(lambda x: x is not None)
-                    .distinct())
-        profile_args.map(lambda a: profile_view.render(*a))
-        profile_args.map(print)  # Note: map(print) creates None stream
-
         tool_figures["profile_figure"] = profile_figure
+
+        # Profile view(s)
+        _gallery = forest.gallery.Gallery.profile_view(profile_figure,
+                                                       datasets)
+        _gallery.connect(store)
 
     tool_layout = tools.ToolLayout(**tool_figures)
     tool_layout.connect(store)
