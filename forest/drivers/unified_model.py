@@ -145,6 +145,10 @@ class ProfileView(Reusable):
 
     def render_id(self, state, layer_id):
         print(f"{self.__class__.__name__}.render({layer_id})")
+        lons, lats = geo.plate_carree(state.position.x,
+                                      state.position.y)
+        print(lons, lats)
+
         self.source.data = {
             "x": [0, 1, 2],
             "y": [0, layer_id, 2 * layer_id],
