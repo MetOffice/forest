@@ -286,27 +286,27 @@ def test_gallery_render():
     pools["Dataset"].acquire.assert_called_once_with()
 
 
-def test_layer_mute():
+def test_layer_reset():
     map_view = Mock()
     map_view.image_sources = [sentinel.source]
     source_limits = Mock(spec=["add_source", "remove_source"])
     layer = layers.Layer(map_view,
                          sentinel.visible,
                          source_limits)
-    layer.mute()
+    layer.reset()
     source_limits.add_source.assert_called_once_with(sentinel.source)
     source_limits.remove_source.assert_called_once_with(sentinel.source)
 
 
-def test_layer_unmute():
+def test_layer_prepare():
     map_view = Mock()
     map_view.image_sources = [sentinel.source]
     source_limits = Mock(spec=["add_source", "remove_source"])
     layer = layers.Layer(map_view,
                          sentinel.visible,
                          source_limits)
-    layer.unmute()
-    # One call during __init__ and one during unmute()
+    layer.prepare()
+    # One call during __init__ and one during prepare()
     calls = [call(sentinel.source),
              call(sentinel.source)]
     source_limits.add_source.assert_has_calls(calls)

@@ -528,7 +528,7 @@ class Gallery:
             layer = self.pools[key].acquire()
 
             # Unmute layer
-            layer.unmute()
+            layer.prepare()
 
             # Update figure visibility
             layer.active = spec.active
@@ -545,7 +545,7 @@ class Gallery:
 
         # Mute unused layers
         for pool in self.pools.values():
-            pool.map(lambda layer: layer.mute())
+            pool.map(lambda layer: layer.reset())
 
         # Return used layers to pool(s)
         for key, layers in used_layers.items():
@@ -568,20 +568,16 @@ class Layer(Reusable):
     def render(self, state):
         self.map_view.render(state)
 
-    def mute(self):
+    def reset(self):
         self.active = []
         if self.source_limits is not None:
             for source in self.image_sources:
                 self.source_limits.remove_source(source)
 
-    reset = mute
-
-    def unmute(self):
+    def prepare(self):
         if self.source_limits is not None:
             for source in self.image_sources:
                 self.source_limits.add_source(source)
-
-    prepare = unmute
 
     @property
     def active(self):
