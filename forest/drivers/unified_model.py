@@ -143,7 +143,7 @@ class ProfileView(Reusable):
             "y": []
         }
 
-    def render(self, state, layer_id):
+    def render_id(self, state, layer_id):
         print(f"{self.__class__.__name__}.render({layer_id})")
         self.source.data = {
             "x": [0, 1, 2],
@@ -175,7 +175,7 @@ class SeriesView(Reusable):
             "y": []
         }
 
-    def render(self, state, layer_id):
+    def render_id(self, state, layer_id):
         print(f"{self.__class__.__name__}.render({layer_id})")
         self.source.data = {
             "x": [0, 1, 2],

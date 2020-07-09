@@ -12,6 +12,16 @@ class Gallery:
         self.scaling_groups = scaling_groups
 
     @classmethod
+    def map_view(cls, datasets, factory_class):
+        """MapView orchestration"""
+        groups = {}
+        for label, dataset in datasets.items():
+            if hasattr(dataset, "map_view"):
+                factory = factory_class(dataset)
+                groups[label] = ScalingGroup(ReusablePool(factory))
+        return cls(groups)
+
+    @classmethod
     def profile_view(cls, datasets, figure):
         return cls._view(datasets, figure, "profile_view")
 
@@ -47,6 +57,6 @@ class Gallery:
             uids = layers[key]
             scaling_group.scale_to(len(uids))
             for view, uid in zip(scaling_group.instances, uids):
-                view.render(state, uid)
+                view.render_id(state, uid)
 
         print(layers)

@@ -157,7 +157,7 @@ def main(argv=None):
                                           figures,
                                           source_limits,
                                           opacity_slider)
-    gallery = forest.layers.Gallery.from_datasets(datasets, factory_class)
+    gallery = forest.gallery.Gallery.map_view(datasets, factory_class)
     gallery.connect(store)
 
     # Connect layers controls
