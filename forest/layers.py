@@ -552,6 +552,7 @@ class Gallery:
             for layer in layers:
                 pool.release(layer)
 
+
 class Layer:
     """Facade to ease API"""
     def __init__(self, map_view, visible, source_limits):
@@ -614,7 +615,6 @@ class Factory:
     def __call__(self):
         """Complex construction"""
         self._calls += 1
-        print("Factory.__call__: {}".format(self._calls))
         try:
             map_view = self.dataset.map_view(self.color_mapper)
         except TypeError:

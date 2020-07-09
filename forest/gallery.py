@@ -13,19 +13,19 @@ class Gallery:
 
     @classmethod
     def profile_view(cls, datasets, figure):
-        return cls._from_dataset(datasets, figure, "profile_view")
+        return cls._view(datasets, figure, "profile_view")
 
     @classmethod
     def series_view(cls, datasets, figure):
-        return cls._from_dataset(datasets, figure, "series_view")
+        return cls._view(datasets, figure, "series_view")
 
     @classmethod
-    def _from_dataset(cls, datasets, figure, method):
+    def _view(cls, datasets, figure, method_name):
         groups = {}
         for label, dataset in datasets.items():
-            if not hasattr(dataset, method):
+            if not hasattr(dataset, method_name):
                 continue
-            factory = partial(getattr(dataset, method), figure)
+            factory = partial(getattr(dataset, method_name), figure)
             groups[label] = ScalingGroup(ReusablePool(factory))
         return cls(groups)
 
