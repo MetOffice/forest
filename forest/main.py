@@ -310,8 +310,8 @@ def main(argv=None):
         series_figure.toolbar.logo = None
 
         # Series view(s)
-        _gallery = forest.gallery.Gallery.series_view(series_figure,
-                                                      datasets)
+        _gallery = forest.gallery.Gallery.series_view(datasets,
+                                                      series_figure)
         _gallery.connect(store)
 
         tool_figures["series_figure"] = series_figure
@@ -329,8 +329,8 @@ def main(argv=None):
         tool_figures["profile_figure"] = profile_figure
 
         # Profile view(s)
-        _gallery = forest.gallery.Gallery.profile_view(profile_figure,
-                                                       datasets)
+        _gallery = forest.gallery.Gallery.profile_view(datasets,
+                                                       profile_figure)
         _gallery.connect(store)
 
     tool_layout = tools.ToolLayout(**tool_figures)

@@ -122,29 +122,65 @@ class Dataset:
 class ProfileView(Reusable):
     def __init__(self, figure):
         self.figure = figure
+        self.source = bokeh.models.ColumnDataSource({
+            "x": [],
+            "y": []
+        })
+        self.renderers = [
+            self.figure.line(x="x", y="y", source=self.source),
+            self.figure.circle(x="x", y="y", source=self.source),
+        ]
 
     def prepare(self):
-        print(f"{self.__class__.__name__}.prepare()")
+        for renderer in self.renderers:
+            renderer.visible = True
 
     def reset(self):
-        print(f"{self.__class__.__name__}.reset()")
+        for renderer in self.renderers:
+            renderer.visible = False
+        self.source.data = {
+            "x": [],
+            "y": []
+        }
 
-    def render(self, state):
-        print(f"{self.__class__.__name__}.render()")
+    def render(self, state, layer_id):
+        print(f"{self.__class__.__name__}.render({layer_id})")
+        self.source.data = {
+            "x": [0, 1, 2],
+            "y": [0, layer_id, 2 * layer_id],
+        }
 
 
 class SeriesView(Reusable):
     def __init__(self, figure):
         self.figure = figure
+        self.source = bokeh.models.ColumnDataSource({
+            "x": [],
+            "y": []
+        })
+        self.renderers = [
+            self.figure.line(x="x", y="y", source=self.source),
+            self.figure.circle(x="x", y="y", source=self.source),
+        ]
 
     def prepare(self):
-        print(f"{self.__class__.__name__}.prepare()")
+        for renderer in self.renderers:
+            renderer.visible = True
 
     def reset(self):
-        print(f"{self.__class__.__name__}.reset()")
+        for renderer in self.renderers:
+            renderer.visible = False
+        self.source.data = {
+            "x": [],
+            "y": []
+        }
 
-    def render(self, state):
-        print(f"{self.__class__.__name__}.render()")
+    def render(self, state, layer_id):
+        print(f"{self.__class__.__name__}.render({layer_id})")
+        self.source.data = {
+            "x": [0, 1, 2],
+            "y": [0, layer_id, 2 * layer_id],
+        }
 
 
 class Navigator:
