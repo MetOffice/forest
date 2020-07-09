@@ -266,26 +266,6 @@ def test_visible_render():
     assert renderers[2].visible == True
 
 
-def test_gallery_render():
-    state = {
-        "layers": {
-            "index": {
-                42: {
-                    "dataset": "Dataset",
-                    "variable": "Variable",
-                    "active": [0]
-                }
-            }
-        }
-    }
-    pools = {
-        "Dataset": Mock()
-    }
-    gallery = layers.Gallery(pools)
-    gallery.render(state)
-    pools["Dataset"].acquire.assert_called_once_with()
-
-
 def test_layer_reset():
     map_view = Mock()
     map_view.image_sources = [sentinel.source]
