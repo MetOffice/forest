@@ -309,10 +309,9 @@ def main(argv=None):
                     border_fill_alpha=0)
         series_figure.toolbar.logo = None
 
-        # Series view(s)
-        _gallery = forest.gallery.Gallery.series_view(datasets,
-                                                      series_figure)
-        _gallery.connect(store)
+        gallery = forest.gallery.Gallery.series_view(datasets,
+                                                     series_figure)
+        gallery.connect(store)
 
         tool_figures["series_figure"] = series_figure
 
@@ -326,12 +325,11 @@ def main(argv=None):
         profile_figure.toolbar.logo = None
         profile_figure.y_range.flipped = True
 
-        tool_figures["profile_figure"] = profile_figure
+        gallery = forest.gallery.Gallery.profile_view(datasets,
+                                                      profile_figure)
+        gallery.connect(store)
 
-        # Profile view(s)
-        _gallery = forest.gallery.Gallery.profile_view(datasets,
-                                                       profile_figure)
-        _gallery.connect(store)
+        tool_figures["profile_figure"] = profile_figure
 
     tool_layout = tools.ToolLayout(**tool_figures)
     tool_layout.connect(store)
