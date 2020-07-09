@@ -21,6 +21,7 @@ from forest import rx
 from forest.redux import Action, State, Store
 from forest.observe import Observable
 from forest import colors
+from forest.bases import Reusable
 import forest.drivers
 import forest.mark
 
@@ -553,7 +554,7 @@ class Gallery:
                 pool.release(layer)
 
 
-class Layer:
+class Layer(Reusable):
     """Facade to ease API"""
     def __init__(self, map_view, visible, source_limits):
         self.map_view = map_view
@@ -573,10 +574,14 @@ class Layer:
             for source in self.image_sources:
                 self.source_limits.remove_source(source)
 
+    reset = mute
+
     def unmute(self):
         if self.source_limits is not None:
             for source in self.image_sources:
                 self.source_limits.add_source(source)
+
+    prepare = unmute
 
     @property
     def active(self):
