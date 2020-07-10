@@ -21,6 +21,7 @@ from forest import rx
 from forest.redux import Action, State, Store
 from forest.observe import Observable
 from forest import colors
+from forest.bases import Reusable
 import forest.drivers
 import forest.mark
 
@@ -483,76 +484,7 @@ class LayerSpec:
             self.color_spec = colors.ColorSpec(**self.color_spec)
 
 
-class Gallery:
-    """Orchestration layer for MapViews"""
-    def __init__(self, pools):
-        self.pools = pools
-        self.lock = False
-
-    @classmethod
-    def from_datasets(cls, datasets, factory_class):
-        """Convenient constructor"""
-        pools = {}
-        for label, dataset in datasets.items():
-            if hasattr(dataset, "map_view"):
-                pools[label] = Pool(factory_class(dataset))
-        return cls(pools)
-
-    def connect(self, store):
-        store.add_subscriber(self.render)
-
-    def render(self, state):
-        # Note: lock used to ignore state changes while building layers
-        #       e.g. source limit events
-        if not self.lock:
-            self.lock = True
-            self.render_specs(self.parse_specs(state), state)
-            self.lock = False
-
-    def parse_specs(self, state):
-        # Parse application state
-        node = state
-        for key in ("layers", "index"):
-            node = node.get(key, {})
-        return [LayerSpec(**kwargs) for _, kwargs in sorted(node.items())]
-
-    def render_specs(self, specs, state):
-        # Dynamically build/use layers from object pools
-        used_layers = defaultdict(list)
-        for spec in specs:
-            if spec.dataset == "":
-                continue
-
-            key = spec.dataset
-            layer = self.pools[key].acquire()
-
-            # Unmute layer
-            layer.unmute()
-
-            # Update figure visibility
-            layer.active = spec.active
-
-            # Layer-specific state
-            layer_state = {}
-            layer_state.update(state)
-            if spec.variable != "":
-                layer_state.update(variable=spec.variable,
-                                   colorbar=spec.colorbar)
-            layer.render(layer_state)
-
-            used_layers[key].append(layer)
-
-        # Mute unused layers
-        for pool in self.pools.values():
-            pool.map(lambda layer: layer.mute())
-
-        # Return used layers to pool(s)
-        for key, layers in used_layers.items():
-            pool = self.pools[key]
-            for layer in layers:
-                pool.release(layer)
-
-class Layer:
+class Layer(Reusable):
     """Facade to ease API"""
     def __init__(self, map_view, visible, source_limits):
         self.map_view = map_view
@@ -563,27 +495,36 @@ class Layer:
             for source in self.image_sources:
                 self.source_limits.add_source(source)
 
-    def render(self, state):
-        self.map_view.render(state)
+    def render_id(self, state, layer_id):
+        """Render layer settings"""
+        if isinstance(state, dict):
+            state = forest.state.State.from_dict()
 
-    def mute(self):
+        if layer_id in state.layers.index:
+            spec = LayerSpec(**state.layers.index[layer_id])
+            if spec.dataset == "":
+                return
+
+            self.visible.active = spec.active
+
+            # Layer-specific state
+            layer_state = {}
+            layer_state.update(state.to_dict())
+            if spec.variable != "":
+                layer_state.update(variable=spec.variable,
+                                   colorbar=spec.colorbar)
+            self.map_view.render(layer_state)
+
+    def reset(self):
         self.active = []
         if self.source_limits is not None:
             for source in self.image_sources:
                 self.source_limits.remove_source(source)
 
-    def unmute(self):
+    def prepare(self):
         if self.source_limits is not None:
             for source in self.image_sources:
                 self.source_limits.add_source(source)
-
-    @property
-    def active(self):
-        return self.visible.active
-
-    @active.setter
-    def active(self, value):
-        self.visible.active = value
 
 
 def factory(*args):
@@ -614,7 +555,6 @@ class Factory:
     def __call__(self):
         """Complex construction"""
         self._calls += 1
-        print("Factory.__call__: {}".format(self._calls))
         try:
             map_view = self.dataset.map_view(self.color_mapper)
         except TypeError:
@@ -649,28 +589,3 @@ class Visible:
         for i in range(len(self.renderers)):
             self.renderers[i].visible = i in indices
         self._active = indices
-
-
-class Pool:
-    """Manage reusable objects
-
-    :param factory: function to create new objects
-    """
-    def __init__(self, factory):
-        self.factory = factory
-        self.reusables = deque()
-
-    def map(self, func):
-        """Apply function to objects inside pool"""
-        for reusable in self.reusables:
-            func(reusable)
-
-    def acquire(self):
-        """Select or create an object"""
-        if len(self.reusables) == 0:
-            self.reusables.appendleft(self.factory())
-        return self.reusables.pop()
-
-    def release(self, reusable):
-        """Return object to Pool"""
-        self.reusables.appendleft(reusable)

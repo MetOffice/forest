@@ -12,6 +12,8 @@ import forest.db
 import forest.db.health
 import forest.util
 import forest.map_view
+import forest._profile
+from forest.bases import Reusable
 from forest import (
     db,
     disk,
@@ -111,6 +113,86 @@ class Dataset:
         loader = Loader(self.label, self.pattern, self.locator)
         return forest.map_view.map_view(loader, color_mapper)
 
+    def profile_view(self, figure):
+        loader = Loader(self.label, self.pattern, self.locator)
+        return ProfileView(figure, loader)
+
+    def series_view(self, figure):
+        return SeriesView(figure)
+
+
+class ProfileView(Reusable):
+    def __init__(self, figure, loader):
+        self.figure = figure
+        self.loader = loader
+        self.source = bokeh.models.ColumnDataSource({
+            "x": [],
+            "y": []
+        })
+        self.renderers = [
+            self.figure.line(x="x", y="y", source=self.source),
+            self.figure.circle(x="x", y="y", source=self.source),
+        ]
+
+    def prepare(self):
+        for renderer in self.renderers:
+            renderer.visible = True
+
+    def reset(self):
+        for renderer in self.renderers:
+            renderer.visible = False
+        self.source.data = {
+            "x": [],
+            "y": []
+        }
+
+    def render_id(self, state, layer_id):
+        print(f"{self.__class__.__name__}.render({layer_id})")
+        lons, lats = geo.plate_carree(state.position.x,
+                                      state.position.y)
+        lon_0 = lons[0]
+        lat_0 = lats[0]
+        self.source.data = self.loader.profile(
+            state.pattern,
+            state.layers.index[layer_id]["variable"],
+            state.initial_time,
+            state.valid_time,
+            state.pressure,
+            lon_0,
+            lat_0)
+
+
+class SeriesView(Reusable):
+    def __init__(self, figure):
+        self.figure = figure
+        self.source = bokeh.models.ColumnDataSource({
+            "x": [],
+            "y": []
+        })
+        self.renderers = [
+            self.figure.line(x="x", y="y", source=self.source),
+            self.figure.circle(x="x", y="y", source=self.source),
+        ]
+
+    def prepare(self):
+        for renderer in self.renderers:
+            renderer.visible = True
+
+    def reset(self):
+        for renderer in self.renderers:
+            renderer.visible = False
+        self.source.data = {
+            "x": [],
+            "y": []
+        }
+
+    def render_id(self, state, layer_id):
+        print(f"{self.__class__.__name__}.render({layer_id})")
+        self.source.data = {
+            "x": [0, 1, 2],
+            "y": [0, layer_id, 2 * layer_id],
+        }
+
 
 class Navigator:
     def __init__(self, pattern):
@@ -167,6 +249,49 @@ class Loader:
                                                  state.pressures,
                                                  state.pressure))
         return data
+
+    def profile(self,
+                pattern,
+                variable,
+                initial_time,
+                valid_time,
+                pressure,
+                lon_0,
+                lat_0):
+        """Load Profile from file"""
+        try:
+            path, _ = self.locator.locate(
+                pattern,
+                variable,
+                initial_time,
+                valid_time,
+                pressure)
+        except SearchFail:
+            return {
+                "x": [],
+                "y": []
+            }
+
+        with xarray.open_dataset(path, engine="h5netcdf") as nc:
+            data_array = nc[variable]
+            print(data_array.shape)
+            lons = np.ma.masked_invalid(data_array.longitude)
+            lats = np.ma.masked_invalid(data_array.latitude)
+            i = np.argmin(np.abs(lons - lon_0))
+            j = np.argmin(np.abs(lats - lat_0))
+
+            # Generalised profile slice needed
+            y = np.ma.masked_invalid(data_array.dim0)
+            x = np.ma.masked_invalid(data_array[:, i, j])
+
+            # Convert NaN to masked
+            x = np.ma.masked_array(x, mask=np.isnan(x))
+            y = np.ma.masked_array(y, mask=np.isnan(y))
+
+        return {
+            "x": x,
+            "y": y,
+        }
 
     @lru_cache(maxsize=100)
     def _input_output(self, pattern, variable, initial_time, valid_time,
