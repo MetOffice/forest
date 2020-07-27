@@ -27,6 +27,7 @@ existing behaviour.
 
 """
 import copy
+import queue
 from functools import wraps
 from forest.observe import Observable
 from forest.export import export
@@ -85,7 +86,7 @@ class Store(Observable):
         self.state = initial_state if initial_state is not None else {}
         self.middlewares = middlewares
         self.in_progress = False
-        self.queue = []
+        self.queue = queue.Queue()
         super().__init__()
 
     def dispatch(self, action):
@@ -95,20 +96,17 @@ class Store(Observable):
         """
         if self.in_progress:
             # Add asynchronous action to backlog
-            self.queue.append(action)
+            self.queue.put(action)
             return
 
         # Synchronous processing
-        self.in_progress = True
         self.sync_process(action)
 
         # Process backlog
-        actions = list(self.queue)
-        self.queue = []
-        for action in actions:
-            self.sync_process(action)
-
-        self.in_progress = False
+        while not self.queue.empty():
+            next_action = self.queue.get()
+            self.sync_process(next_action)
+            self.queue.task_done()
 
     def sync_process(self, action):
         """Pass action through middleware/reducer pipeline"""
@@ -117,7 +115,9 @@ class Store(Observable):
             actions = self.bind(middleware, self, actions)
         for _action in actions:
             self.state = self.reducer(self.state, _action)
+            self.in_progress = True
             self.notify(self.state)
+            self.in_progress = False
 
     @staticmethod
     def pure(action):
