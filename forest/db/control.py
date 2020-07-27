@@ -267,13 +267,13 @@ def next_previous(store, action):
 
 
 def next_item(items, item):
-    items = list(sorted(items))
+    items = list(sorted(set(items)))
     i = _index(items, item)
     return items[(i + 1) % len(items)]
 
 
 def previous_item(items, item):
-    items = list(sorted(items))
+    items = list(sorted(set(items)))
     i = _index(items, item)
     return items[i - 1]
 
