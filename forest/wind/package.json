@@ -4,6 +4,7 @@
   "description": "Wind barb plots",
   "main": "index.js",
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "build": "tsc",
     "test": "mocha dist/**.spec.js"
   },
@@ -28,8 +29,12 @@
     "@types/sinon": "^5.0.5",
     "bokehjs": "^1.0.1",
     "chai": "^4.2.0",
+    "minimist": "^1.2.5",
     "mocha": "^5.2.0",
     "sinon": "^7.1.1"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "resolutions": {
+    "minimist": "^1.2.5"
+  }
 }
