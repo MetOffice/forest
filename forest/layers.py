@@ -347,7 +347,6 @@ class LayersUI(Observable):
     def parse_layers(self, state):
         if isinstance(state, dict):
             state = forest.state.State.from_dict(state)
-        print(state.layers.index)
         return [value for _, value in sorted(state.layers.index.items())]
 
     def render(self, layers, figure_index):

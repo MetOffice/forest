@@ -1,4 +1,5 @@
 """Time navigation component"""
+import forest.mark
 from forest import rx
 from forest.observe import Observable
 from forest.util import to_datetime as _to_datetime
@@ -43,7 +44,7 @@ class _Axis:
         return str(_to_datetime(t))
 
 
-
+@forest.mark.component
 class TimeUI(Observable):
     """Allow navigation through time"""
     def __init__(self):
@@ -249,7 +250,6 @@ class TimeUI(Observable):
         if len(new) > 0:
             i = new[0]
             value = self._axis.value(i)
-            print(value, self.source.data["x"][i])
             self.notify(forest.db.control.set_value('valid_time', value))
 
     def connect(self, store):

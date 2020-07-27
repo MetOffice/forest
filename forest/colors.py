@@ -96,6 +96,7 @@ import bokeh.palettes
 import bokeh.colors
 import bokeh.layouts
 import numpy as np
+import forest.mark
 from forest.observe import Observable
 from forest.rx import Stream
 from forest.db.util import autolabel
@@ -512,6 +513,7 @@ class SourceLimits(Observable):
             return 0, 1
 
 
+@forest.mark.component
 class UserLimits(Observable):
     """User controlled color mapper limits"""
     def __init__(self):

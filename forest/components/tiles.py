@@ -1,6 +1,7 @@
 """Select web map tiling services to show map"""
 import copy
 import bokeh.models
+import forest.mark
 from forest.observe import Observable
 from forest.redux import Action, State
 
@@ -101,6 +102,7 @@ def reducer(state: State, action: Action) -> State:
     return state
 
 
+@forest.mark.component
 class TilePicker(Observable):
     """Web map tile selector"""
     def __init__(self):
