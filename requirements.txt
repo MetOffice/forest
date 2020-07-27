@@ -1,6 +1,6 @@
 bokeh>=2.0.1 # Port to 2.0.0 in future
 nodejs>=10.13
-datashader
+datashader>=0.11.0
 h5netcdf
 iris
 intake
