@@ -375,7 +375,8 @@ class StartupTasks:
         if isinstance(action, dict):
             try:
                 action = forest.actions.Action.from_dict(action)
-            except ValueError:
+            except TypeError:
+                yield action
                 return
 
         if action.kind == forest.actions.HTML_LOADED:
