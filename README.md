@@ -29,6 +29,15 @@ should address all of the most common issues, frequently asked questions, develo
 guides, tutorials, api references. They are a work in progress but should
 quickly become an invaluable resource over time.
 
+### Lite implementation
+
+FOREST uses Bokeh's Tornado server and websocket connection to provide interactive plotting. An alternative architecture has
+been developed which uses a RESTful API and a JS front-end to make client-side interactions smoother.
+
+[FOREST Lite](https://github.com/MetOffice/forest-lite)
+
+The benefit of this approach is a stateless and scalable server-side. It is a work in progress and by no means a drop in replacement for FOREST.
+
 ## Get in touch
 
 As FOREST is a small code base with a small but dedicated team of developers we have fewer ways to communicate than larger projects. In any case we are very happy to hear from you and always appreciate help wherever we can find it. If you have suggestions for improvements, bugs that need reporting or sage advice to developers feel free to open/comment on [issues](https://github.com/MetOffice/forest/issues).
