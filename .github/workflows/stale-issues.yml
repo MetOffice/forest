@@ -15,3 +15,4 @@ jobs:
           stale-pr-message: 'Message to comment on stale PRs. If none provided, will not mark PRs stale'
           days-before-stale: 30
           days-before-close: 5
+          operations-per-run: 1000
