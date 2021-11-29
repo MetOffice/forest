@@ -25,7 +25,7 @@ BUILDERS = {
 files:
     - label: NAME
       pattern: 'NAME/*.txt'
-      file_type: 'gridded_forecast'
+      file_type: 'name'
 
 """)
 }
