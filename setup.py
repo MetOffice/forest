@@ -90,7 +90,8 @@ setuptools.setup(
                 "templates/index.html",
                 "static/*",
                 "tutorial/*.json",
-                "tutorial/*.nc"
+                "tutorial/*.nc",
+                "tutorial/NAME/*.txt"
             ]
         },
         test_suite="test",
