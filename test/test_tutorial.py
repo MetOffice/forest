@@ -130,7 +130,7 @@ def test_build_name_config_file(tmpdir):
         "files": [{
             "label": "NAME",
             "pattern": "NAME/*.txt",
-            "file_type": "gridded_forecast"
+            "file_type": "name"
         }]
     }
     assert expect == result
