@@ -1,11 +1,15 @@
-bokeh>=2.0.1 # Port to 2.0.0 in future
+bokeh
 nodejs>=10.13
-datashader>=0.11.0
+datashader
 h5netcdf
-iris
+iris=2
 intake
 intake-esm
 pygrib
-libwebp==1.0.2  # Pin to prevent Travis issue
 xarray
 geojson
+pyyaml
+pandas
+cftime
+scipy
+netCDF4
