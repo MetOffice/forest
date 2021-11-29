@@ -15,7 +15,7 @@ SERVER_CONFIG = os.path.join(os.path.dirname(__file__),
 ])
 def test_server_config(label, settings):
     with open(SERVER_CONFIG) as stream:
-        data = yaml.load(stream)
+        data = yaml.safe_load(stream)
     labels = [ds["label"] for ds in data["files"]]
     assert label in labels
     for dataset in data["files"]:
