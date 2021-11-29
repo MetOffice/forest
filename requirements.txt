@@ -2,7 +2,7 @@ bokeh
 nodejs>=10.13
 datashader
 h5netcdf
-iris=2
+iris<3
 intake
 intake-esm
 pygrib
