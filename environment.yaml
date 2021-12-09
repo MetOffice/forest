@@ -1,0 +1,21 @@
+name: forestdev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - nodejs[version='>=10.13']
+  - cftime
+  - h5netcdf
+  - datashader
+  - intake-esm
+  - pygrib
+  - xarray
+  - bokeh
+  - netcdf4
+  - pyyaml
+  - geojson
+  - iris[version='<3']
+  - intake
+  - scipy
+  - pandas
+
