@@ -52,13 +52,14 @@ def coordinates(valid_time, initial_time, pressures, pressure):
 def _is_valid_cube(cube):
     """Return True if, and only if, the cube meets our criteria for a
     'gridded forecast'."""
-    dim_names = [coord.name() for coord in cube.dim_coords]
-    return (2 <= cube.ndim <= 3
-            and len(cube.dim_coords) == cube.ndim
-            and (dim_names == ['time', 'latitude', 'longitude'] or
-                 (dim_names == ['latitude', 'longitude'] and
-                  len(cube.coords('time')) == 1))
-            and len(cube.coords('forecast_reference_time')) == 1)
+    return True
+    # dim_names = [coord.name() for coord in cube.dim_coords]
+    # return (2 <= cube.ndim <= 3
+    #         and len(cube.dim_coords) == cube.ndim
+    #         and (dim_names == ['time', 'latitude', 'longitude'] or
+    #              (dim_names == ['latitude', 'longitude'] and
+    #               len(cube.coords('time')) == 1))
+    #         and len(cube.coords('forecast_reference_time')) == 1)
 
 
 # TODO: This logic should move to a "Group" concept.
@@ -132,8 +133,11 @@ class ImageLoader:
         if cube is None:
             data = empty_image()
         else:
-            data = geo.stretch_image(cube.coord('longitude').points,
-                                     cube.coord('latitude').points, cube.data)
+            lons = cube.coord('longitude').points
+            lats = cube.coord('latitude').points
+            values = cube.data
+            lons, values = self.rollbabyroll(lons, values)
+            data = geo.stretch_image(lons, lats, values)
             data.update(coordinates(state.valid_time, state.initial_time,
                                     state.pressures, state.pressure))
             data.update({
@@ -143,9 +147,23 @@ class ImageLoader:
         return data
 
     @staticmethod
+    def rollbabyroll(lons, values):
+        if np.any(lons > 180.0):
+            shift_by = np.sum(lons > 180.0)
+            lons[lons > 180.0] -= 360.
+            lons = np.roll(lons, shift_by)
+            values = np.roll(values, shift_by, axis=1)
+        return lons, values
+
+    @staticmethod
     def extract_cube(cube, valid_datetime):
         """Extract 2D image slice from cube"""
-        return cube.extract(iris.Constraint(time=valid_datetime))
+        scube = cube[0]
+        lons = scube.coord('longitude')
+        # Roll input data into [-180, 180] range
+        
+        return scube.intersection(grid_longitude=(0, 360))
+        # return cube.extract(iris.Constraint(time=valid_datetime))
 
 
 class Navigator:
@@ -156,12 +174,14 @@ class Navigator:
         return list(self._cubes.keys())
 
     def initial_times(self, pattern, variable=None):
-        return list({cube.coord('forecast_reference_time').cell(0).point
-                     for cube in self._cubes.values()})
+        return [datetime.now()]
+        # return list({cube.coord('forecast_reference_time').cell(0).point
+        #              for cube in self._cubes.values()})
 
     def valid_times(self, pattern, variable, initial_time):
-        cube = self._cubes[variable]
-        return [cell.point for cell in cube.coord('time').cells()]
+        return [datetime.now()]
+        # cube = self._cubes[variable]
+        # return [cell.point for cell in cube.coord('time').cells()]
 
     def pressures(self, pattern, variable, initial_time):
         cube = self._cubes[variable]
