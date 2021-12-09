@@ -28,6 +28,16 @@ try:
 except ModuleNotFoundError:
     datashader = None
 
+def mercator_width():
+    x_min, _ = cartopy.crs.Mercator.GOOGLE.transform_point(-180.0, 0, cartopy.crs.PlateCarree())
+    x_max, _ = cartopy.crs.Mercator.GOOGLE.transform_point(180., 0, cartopy.crs.PlateCarree())
+    return x_max - x_min
+
+X_MAX = mercator_width()
+
+print("-------- X_MAX ---------")
+print(X_MAX)
+
 def stretch_image(lons, lats, values,
                   plot_height=None,
                   plot_width=None):
@@ -57,6 +67,21 @@ def stretch_image(lons, lats, values,
     else:
         raise Exception("Either 1D or 2D lons/lats")
 
+    print("------NOT HOT--------")
+    print(f"lons   = {lons}")
+    print(f"gx.min = {gx.min()}")
+    print(f"gx.max = {gx.max()}")
+
+    # HOTFIX: Dateline unwrapping 🎅
+    if np.any(lons > 180.0):
+        print("HOTFIX! WE GOT A HOTFIX OVER HERE!!")
+        gx[lons > 180.0] += X_MAX
+
+    print("------HOT--------")
+    print(f"lons   = {lons}")
+    print(f"gx.min = {gx.min()}")
+    print(f"gx.max = {gx.max()}")
+
     if datashader:
         x_range = (gx.min(), gx.max())
         y_range = (gy.min(), gy.max())
@@ -78,6 +103,11 @@ def stretch_image(lons, lats, values,
         # 2D image extent
         dw = gx.max() - gx.min()
         dh = gy.max() - gy.min()
+    print("--------- geo.py ----------")
+    print(f"x  = {x}")
+    print(f"y  = {y}")
+    print(f"dw = {dw}")
+    print(f"dh = {dh}")
     return {
         "x": [x],
         "y": [y],

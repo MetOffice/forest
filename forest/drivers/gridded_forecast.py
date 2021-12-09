@@ -136,7 +136,7 @@ class ImageLoader:
             lons = cube.coord('longitude').points
             lats = cube.coord('latitude').points
             values = cube.data
-            lons, values = self.rollbabyroll(lons, values)
+            # lons, values = self.rollbabyroll(lons, values)
             data = geo.stretch_image(lons, lats, values)
             data.update(coordinates(state.valid_time, state.initial_time,
                                     state.pressures, state.pressure))
