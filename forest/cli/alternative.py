@@ -41,9 +41,7 @@ def view(
         bokeh_args.append("--show")
     command = bokeh_args + ["--args"] + forest_args
     typer.secho(" ".join(command), fg=typer.colors.CYAN)
-    retcode = subprocess.call(command)
-    if retcode == 0:
-        typer.launch("http://localhost:5006")
+    return subprocess.call(command)
 
 
 @app.command()
@@ -51,3 +49,24 @@ def ctl():
     """Control a collection of data sources"""
     typer.secho("Launching Bokeh...", fg=typer.colors.MAGENTA)
     subprocess.call(["bokeh", "-h"])
+
+
+@app.command()
+def tutorial():
+    """Generate tutorial files"""
+    typer.secho("TUTORIAL", fg=typer.colors.GREEN)
+
+
+@app.command()
+def db(database: Path, files: List[Path]):
+    """Generate database to accelerate big data navigation"""
+    typer.secho("DATABASE", fg=typer.colors.GREEN)
+    import forest.db.database
+
+    typer.secho(str(database), fg=typer.colors.YELLOW)
+    with forest.db.database.Database.connect(str(database)) as handle:
+        for path in files:
+            typer.secho(str(path), fg=typer.colors.YELLOW)
+            handle.insert_netcdf(str(path))
+
+    typer.secho("sqlite3 {}".format(str(database)), fg=typer.colors.YELLOW)
