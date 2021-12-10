@@ -4,8 +4,9 @@ FOREST command line application
 from pathlib import Path
 import typer
 import subprocess
-from typing import List, Optional
+from typing import List
 import forest.db.main
+import forest.tutorial.main
 
 APP_NAME = "forest"
 BOKEH_APP_PATH = Path(__file__).resolve().parent.parent
@@ -57,10 +58,7 @@ def ctl():
     subprocess.call(["bokeh", "-h"])
 
 
-@app.command()
-def tutorial():
-    """Generate tutorial files"""
-    typer.secho("TUTORIAL", fg=typer.colors.GREEN)
+app.command(name="tutorial")(forest.tutorial.main.main)
 
 
 app.command(name="db")(forest.db.main.main)

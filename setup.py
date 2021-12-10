@@ -105,8 +105,6 @@ setuptools.setup(
     entry_points={
         "console_scripts": [
             "forest=forest.cli.alternative:app",
-            "forestdb=forest.db.main:main",
-            "forest-tutorial=forest.tutorial.main:main",
         ]
     },
 )

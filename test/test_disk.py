@@ -7,8 +7,9 @@ import fnmatch
 import pytest
 import forest.drivers
 from forest.drivers import unified_model
-from forest import disk, tutorial
+from forest import disk
 from forest.exceptions import SearchFail
+import forest.tutorial.core
 
 
 class TestLocatorScalability(unittest.TestCase):
@@ -49,7 +50,7 @@ class TestLocator(unittest.TestCase):
         pattern = self.path
         times = [dt.datetime(2019, 1, 1), dt.datetime(2019, 1, 2)]
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = tutorial.UM(dataset)
+            um = forest.tutorial.core.UM(dataset)
             dataset.createDimension("longitude", 1)
             dataset.createDimension("latitude", 1)
             var = um.times("time", length=len(times), dim_name="dim0")
@@ -79,7 +80,7 @@ class TestLocator(unittest.TestCase):
         times = [dt.datetime(2019, 1, 2), dt.datetime(2019, 1, 2, 3)]
         pressures = [1000, 950, 850]
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = tutorial.UM(dataset)
+            um = forest.tutorial.core.UM(dataset)
             dataset.createDimension("longitude", 1)
             dataset.createDimension("latitude", 1)
             var = um.times("time", length=len(times))
@@ -109,7 +110,7 @@ class TestLocator(unittest.TestCase):
         future = dt.datetime(2019, 1, 4)
         pressures = [1000, 950, 850]
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = tutorial.UM(dataset)
+            um = forest.tutorial.core.UM(dataset)
             dataset.createDimension("longitude", 1)
             dataset.createDimension("latitude", 1)
             var = um.times("time", length=len(times))
@@ -134,7 +135,7 @@ class TestLocator(unittest.TestCase):
     def test_initial_time_given_forecast_reference_time(self):
         time = dt.datetime(2019, 1, 1, 12)
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = tutorial.UM(dataset)
+            um = forest.tutorial.core.UM(dataset)
             um.forecast_reference_time(time)
         result = unified_model.read_initial_time(self.path)
         expect = time
@@ -147,7 +148,7 @@ class TestLocator(unittest.TestCase):
             "time_1": [dt.datetime(2019, 1, 1, 3)],
         }
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = tutorial.UM(dataset)
+            um = forest.tutorial.core.UM(dataset)
             for name, values in times.items():
                 var = um.times(name, length=len(values))
                 var[:] = netCDF4.date2num(values, units=var.units)
@@ -167,7 +168,7 @@ class TestLocator(unittest.TestCase):
 
     def test_pressure_axis_given_time_pressure_lon_lat_dimensions(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = tutorial.UM(dataset)
+            um = forest.tutorial.core.UM(dataset)
             dims = ("time_1", "pressure_0", "longitude", "latitude")
             for dim in dims:
                 dataset.createDimension(dim, 1)
@@ -179,7 +180,7 @@ class TestLocator(unittest.TestCase):
     def test_pressure_axis_given_dim0_format(self):
         coordinates = "forecast_period_1 forecast_reference_time pressure time"
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = tutorial.UM(dataset)
+            um = forest.tutorial.core.UM(dataset)
             dims = ("dim0", "longitude", "latitude")
             for dim in dims:
                 dataset.createDimension(dim, 1)
@@ -190,7 +191,7 @@ class TestLocator(unittest.TestCase):
 
     def test_time_axis_given_time_pressure_lon_lat_dimensions(self):
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = tutorial.UM(dataset)
+            um = forest.tutorial.core.UM(dataset)
             dims = ("time_1", "pressure_0", "longitude", "latitude")
             for dim in dims:
                 dataset.createDimension(dim, 1)
@@ -202,7 +203,7 @@ class TestLocator(unittest.TestCase):
     def test_time_axis_given_dim0_format(self):
         coordinates = "forecast_period_1 forecast_reference_time pressure time"
         with netCDF4.Dataset(self.path, "w") as dataset:
-            um = tutorial.UM(dataset)
+            um = forest.tutorial.core.UM(dataset)
             dims = ("dim0", "longitude", "latitude")
             for dim in dims:
                 dataset.createDimension(dim, 1)
