@@ -29,13 +29,12 @@ def edit():
 
 
 @app.command()
-def view(files: List[Path]):
+def view(files: List[Path], driver: str = "gridded_forecast"):
     """Quickly browse file(s)"""
     typer.echo(files)
     typer.secho("Launching Bokeh...", fg=typer.colors.MAGENTA)
-    command = ["bokeh", "serve", str(BOKEH_APP_PATH), "--args"] + [
-        str(f) for f in files
-    ]
+    forest_args = ["--file-type", driver] + [str(f) for f in files]
+    command = ["bokeh", "serve", str(BOKEH_APP_PATH), "--args"] + forest_args
     typer.secho(" ".join(command), fg=typer.colors.MAGENTA)
     subprocess.call(command)
 

@@ -3,13 +3,11 @@ import bokeh.models
 import bokeh.events
 import bokeh.colors
 import os
-from forest import _profile as profile
+from forest.reducer import reducer
 from forest import (
-    drivers,
     dimension,
     screen,
     tools,
-    series,
     data,
     geo,
     colors,
@@ -19,7 +17,6 @@ from forest import (
     plugin,
     presets,
     redux,
-    rx,
     navigate,
     parse_args,
 )
@@ -28,11 +25,10 @@ import forest.actions
 import forest.components
 import forest.components.borders
 import forest.components.title
-from forest.components import tiles, html_ready
+from forest.components import html_ready
 import forest.config as cfg
 import forest.middlewares as mws
 import forest.gallery
-from forest.db.util import autolabel
 
 
 def map_figure(x_range, y_range):
@@ -125,7 +121,7 @@ def main(argv=None):
         navigator,
         mws.echo,
     ]
-    store = redux.Store(forest.reducer, middlewares=middlewares)
+    store = redux.Store(reducer, middlewares=middlewares)
 
     app = forest.app.Application()
     app.add_component(forest.components.title.Title())
