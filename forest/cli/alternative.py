@@ -5,6 +5,7 @@ from pathlib import Path
 import typer
 import subprocess
 from typing import List
+import forest.db.main
 
 APP_NAME = "forest"
 BOKEH_APP_PATH = Path(__file__).resolve().parent.parent
@@ -57,15 +58,4 @@ def tutorial():
     typer.secho("TUTORIAL", fg=typer.colors.GREEN)
 
 
-@app.command()
-def db(database: Path, files: List[Path]):
-    """Generate database to accelerate big data navigation"""
-    typer.secho("import libraries", fg=typer.colors.MAGENTA)
-    import forest.db.database
-
-    typer.secho(f"open: {database}", fg=typer.colors.CYAN)
-    with forest.db.database.Database.connect(str(database)) as handle:
-        for path in files:
-            typer.secho(f"insert records: {path}", fg=typer.colors.YELLOW)
-            handle.insert_netcdf(str(path))
-    typer.secho(f"close: {database}", fg=typer.colors.CYAN)
+app.command(name="db")(forest.db.main.main)
