@@ -8,7 +8,8 @@ import datetime as dt
 import numpy as np
 import netCDF4
 import sqlite3
-import forest.db
+import forest.db.database
+import forest.db.locate
 import forest.db.health
 import forest.util
 import forest.map_view
@@ -65,7 +66,9 @@ class Sync:
         # Add NetCDF files to database
         if len(extra_paths) > 0:
             print("connecting to: {}".format(self.database_path))
-            with forest.db.Database.connect(self.database_path) as database:
+            with forest.db.database.Database.connect(
+                self.database_path
+            ) as database:
                 health_db = forest.db.health.HealthDB(database.connection)
                 for path in extra_paths:
                     print("inserting: '{}'".format(path))
@@ -103,7 +106,7 @@ class Dataset:
         if self.use_database:
             self.sync = Sync(database_path, pattern, directory)
             self.database = db.get_database(database_path)
-            self.locator = db.Locator(
+            self.locator = forest.db.locate.Locator(
                 self.database.connection, directory=directory
             )
         else:

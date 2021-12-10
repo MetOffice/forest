@@ -1,7 +1,8 @@
 import unittest.mock
-from unittest.mock import Mock, sentinel
+from unittest.mock import Mock
 import pytest
-from forest import colors, main, redux, db
+from forest import colors, redux
+import forest.db.control
 import bokeh.models
 import numpy as np
 
@@ -351,13 +352,15 @@ def test_render_called_once_with_two_identical_settings():
 
 def test_render_called_once_with_non_relevant_settings():
     """Render should only happen when relevant state changes"""
-    store = redux.Store(redux.combine_reducers(db.reducer, colors.reducer))
+    store = redux.Store(
+        redux.combine_reducers(forest.db.control.reducer, colors.reducer)
+    )
     controls = colors.ColorPalette()
     controls.render = unittest.mock.Mock()
     controls.connect(store)
     for action in [
         colors.set_palette_name("Accent"),
-        db.set_value("variable", "air_temperature"),
+        forest.db.control.set_value("variable", "air_temperature"),
     ]:
         store.dispatch(action)
     controls.render.assert_called_once()

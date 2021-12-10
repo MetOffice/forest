@@ -1,14 +1,14 @@
 import unittest
 import datetime as dt
 import sqlite3
-from forest import db
+import forest.db.database
 
 
 class TestDatabase(unittest.TestCase):
     def setUp(self):
         self.connection = sqlite3.connect(":memory:")
         self.cursor = self.connection.cursor()
-        self.database = db.Database(self.connection)
+        self.database = forest.db.database.Database(self.connection)
         self.path = "file.nc"
         self.variable = "temperature"
 
@@ -18,8 +18,8 @@ class TestDatabase(unittest.TestCase):
 
     def test_database_opened_twice_on_same_connection(self):
         """Should create table if not exists"""
-        db.Database(self.connection)
-        db.Database(self.connection)
+        forest.db.database.Database(self.connection)
+        forest.db.database.Database(self.connection)
 
     def test_file_names_given_no_files_returns_empty_list(self):
         result = self.database.file_names()
@@ -444,7 +444,7 @@ class TestDatabase(unittest.TestCase):
 
 class TestCoordinateDB(unittest.TestCase):
     def setUp(self):
-        self.database = db.CoordinateDB.connect(":memory:")
+        self.database = forest.db.database.CoordinateDB.connect(":memory:")
 
     def tearDown(self):
         self.database.close()

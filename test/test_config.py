@@ -1,9 +1,8 @@
 import pytest
 import unittest
-import pytest
 import yaml
 import os
-import forest
+import forest.config
 
 
 SERVER_CONFIG = os.path.join(
@@ -64,7 +63,7 @@ def test_config_template_substitution(tmpdir):
 class TestIntegration(unittest.TestCase):
     def setUp(self):
         path = os.path.join(os.path.dirname(__file__), "../forest/config.yaml")
-        self.config = forest.load_config(path)
+        self.config = forest.config.load_config(path)
 
     def test_load_server_config_first_group(self):
         result = self.config.file_groups[0]
@@ -117,7 +116,7 @@ class TestConfig(unittest.TestCase):
         data = {"files": [{"label": "EIDA50", "pattern": "~/cache/*.nc"}]}
         with open(self.path, "w") as stream:
             yaml.dump(data, stream)
-        result = forest.load_config(self.path).data
+        result = forest.config.load_config(self.path).data
         expect = data
         self.assertEqual(expect, result)
 
@@ -125,12 +124,12 @@ class TestConfig(unittest.TestCase):
         data = {"files": []}
         with open(self.path, "w") as stream:
             yaml.dump(data, stream)
-        config = forest.load_config(self.path)
+        config = forest.config.load_config(self.path)
         result = config.patterns
         expect = []
         self.assertEqual(expect, result)
 
-    def test_patterns(self):
+    def test_patterns_given_wildcard(self):
         config = forest.config.Config(
             {"files": [{"label": "Name", "pattern": "*.nc"}]}
         )

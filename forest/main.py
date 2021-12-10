@@ -12,7 +12,6 @@ from forest import (
     geo,
     colors,
     layers,
-    db,
     keys,
     plugin,
     presets,
@@ -20,6 +19,7 @@ from forest import (
     navigate,
     parse_args,
 )
+import forest.db.control
 import forest.app
 import forest.actions
 import forest.components
@@ -110,9 +110,11 @@ def main(argv=None):
 
     middlewares = [
         keys.navigate,
-        db.InverseCoordinate("pressure"),
-        db.next_previous,
-        db.Controls(navigator),  # TODO: Deprecate this middleware
+        forest.db.control.InverseCoordinate("pressure"),
+        forest.db.control.next_previous,
+        forest.db.control.Controls(
+            navigator
+        ),  # TODO: Deprecate this middleware
         colors.palettes,
         colors.middleware(),
         presets.Middleware(presets.proxy_storage(config.presets_file)),
@@ -206,7 +208,7 @@ def main(argv=None):
         preset_ui = presets.PresetUI().connect(store)
 
     # Connect navigation controls
-    controls = db.ControlView()
+    controls = forest.db.control.ControlView()
     controls.connect(store)
 
     # Add support for a modal dialogue
@@ -225,7 +227,7 @@ def main(argv=None):
 
     # Pre-select menu choices (if any)
     for pattern, _ in sub_navigators.items():
-        state = db.initial_state(navigator, pattern=pattern)
+        state = forest.db.control.initial_state(navigator, pattern=pattern)
         store.dispatch(forest.actions.update_state(state).to_dict())
         break
 
@@ -236,7 +238,7 @@ def main(argv=None):
     store.dispatch(tools.on_toggle_tool("profile", False))
 
     # Set top-level navigation
-    store.dispatch(db.set_value("patterns", config.patterns))
+    store.dispatch(forest.db.control.set_value("patterns", config.patterns))
 
     # Pre-select first map_view layer
     for label, dataset in datasets.items():

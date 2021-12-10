@@ -3,7 +3,7 @@ import shutil
 import datetime as dt
 import netCDF4
 import numpy as np
-import forest.db
+import forest.db.database
 
 
 class ConfigBuilder:
@@ -175,7 +175,7 @@ def build_database(build_dir):
     if not os.path.exists(um_path):
         build_um(build_dir)
     print("building: {}".format(db_path))
-    database = forest.db.Database.connect(db_path)
+    database = forest.db.database.Database.connect(db_path)
     database.insert_netcdf(um_path)
     database.close()
 

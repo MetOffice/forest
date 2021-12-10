@@ -1,11 +1,6 @@
 import functools
 import os
 
-# from .control import *
-# from .database import *
-# from .locate import *
-# from .util import *
-
 
 @functools.lru_cache(maxsize=None)
 def get_database(database_path):

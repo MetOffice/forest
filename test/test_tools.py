@@ -1,9 +1,8 @@
-from collections import defaultdict
 import pytest
 import unittest
 import unittest.mock
-import bokeh
-from forest import tools, db, redux
+from forest import tools, redux
+import forest.db.control
 
 
 def test_tool_toggle_reducer():
@@ -28,18 +27,18 @@ def test_tool_toggle_reducer_immutable_state():
             [tools.on_toggle_tool("profile", False)],
             {"tools": {"profile": False}},
         ),
-        ([db.set_value("key", "value")], {"key": "value"}),
+        ([forest.db.control.set_value("key", "value")], {"key": "value"}),
         (
             [
                 tools.on_toggle_tool("time_series", False),
-                db.set_value("key", "value"),
+                forest.db.control.set_value("key", "value"),
             ],
             {"key": "value", "tools": {"time_series": False}},
         ),
     ],
 )
 def test_combine_reducers(actions, expect):
-    reducer = redux.combine_reducers(tools.reducer, db.reducer)
+    reducer = redux.combine_reducers(tools.reducer, forest.db.control.reducer)
     state = {}
     for action in actions:
         state = reducer(state, action)

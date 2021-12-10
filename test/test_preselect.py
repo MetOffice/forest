@@ -1,10 +1,11 @@
 import unittest
-from forest import db
+import forest.db.control
+import forest.db.database
 
 
 class TestInitialState(unittest.TestCase):
     def setUp(self):
-        self.database = db.Database.connect(":memory:")
+        self.database = forest.db.database.Database.connect(":memory:")
 
     def tearDown(self):
         self.database.close()
@@ -55,14 +56,14 @@ class TestInitialState(unittest.TestCase):
         path = "file.nc"
         variable = "relative_humidity"
         self.database.insert_variable(path, variable)
-        state = db.initial_state(self.database, pattern="*.nc")
+        state = forest.db.control.initial_state(self.database, pattern="*.nc")
         result = state["variable"]
         expect = variable
         self.assertEqual(expect, result)
 
     def test_initial_state(self):
         self.make_database()
-        state = db.initial_state(self.database)
+        state = forest.db.control.initial_state(self.database)
         self.assertEqual(
             state["initial_times"],
             [
