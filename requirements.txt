@@ -12,4 +12,5 @@ pyyaml
 pandas
 cftime
 scipy
+typer
 netCDF4
