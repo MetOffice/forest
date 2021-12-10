@@ -9,6 +9,7 @@ node_modules
 *.egg-info
 .coverage
 doc/build
+build
 apps/ux-improvements/static/css
 apps/ux-improvements/static/js
 apps/ux-improvements/node_modules
