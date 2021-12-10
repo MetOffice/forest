@@ -667,10 +667,6 @@ def getRDT(path, lev, type):
                     datalist = [i for i in itertools.repeat('-', npts)]
                     mydict_tp[k].extend(datalist)
 
-                # Some records seem to have missing values
-                if len(datalist) != npts:
-                    pdb.set_trace()
-
             lats = getDataOnly(ncds.variables['LatTrajCellCG'][i, :])
             lons = getDataOnly(ncds.variables['LonTrajCellCG'][i, :])
             x, y = geo.web_mercator(lons, lats)

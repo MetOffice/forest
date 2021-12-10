@@ -18,7 +18,7 @@ from forest import (
     db,
     disk,
     geo)
-from forest.exceptions import SearchFail, PressuresNotFound
+from forest.exceptions import SearchFail, PressuresNotFound, InitialTimeNotFound
 from forest.drivers import gridded_forecast
 import bokeh.models
 try:
