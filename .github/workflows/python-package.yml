@@ -26,7 +26,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        $CONDA/bin/conda install --file requirements.txt --file requirements-dev.txt -y
+        $CONDA/bin/conda install -c conda-forge --file requirements.txt --file requirements-dev.txt -y
         # Install package
         pip install -e .
         echo $?
