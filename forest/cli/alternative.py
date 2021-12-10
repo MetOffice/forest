@@ -29,14 +29,21 @@ def edit():
 
 
 @app.command()
-def view(files: List[Path], driver: str = "gridded_forecast"):
+def view(
+    files: List[Path], driver: str = "gridded_forecast", open_tab: bool = True
+):
     """Quickly browse file(s)"""
     typer.echo(files)
     typer.secho("Launching Bokeh...", fg=typer.colors.MAGENTA)
     forest_args = ["--file-type", driver] + [str(f) for f in files]
-    command = ["bokeh", "serve", str(BOKEH_APP_PATH), "--args"] + forest_args
-    typer.secho(" ".join(command), fg=typer.colors.MAGENTA)
-    subprocess.call(command)
+    bokeh_args = ["bokeh", "serve", str(BOKEH_APP_PATH)]
+    if open_tab:
+        bokeh_args.append("--show")
+    command = bokeh_args + ["--args"] + forest_args
+    typer.secho(" ".join(command), fg=typer.colors.CYAN)
+    retcode = subprocess.call(command)
+    if retcode == 0:
+        typer.launch("http://localhost:5006")
 
 
 @app.command()
