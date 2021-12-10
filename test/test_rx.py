@@ -20,7 +20,4 @@ def test_distinct_given_false_comparator():
     stream.notify(sentinel.first)
     stream.notify(sentinel.second)
     assert listener.call_count == 2, "listener should only be called twice"
-    listener.assert_has_calls([
-        call(sentinel.first),
-        call(sentinel.second)
-    ])
+    listener.assert_has_calls([call(sentinel.first), call(sentinel.second)])

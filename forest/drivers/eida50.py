@@ -11,17 +11,15 @@ from forest.exceptions import FileNotFound, IndexNotFound
 from forest.old_state import old_state, unique
 import forest.util
 import forest.map_view
-from forest import (
-        geo,
-        locate)
+from forest import geo, locate
 
 
 ENGINE = "h5netcdf"
-MIN_DATETIME64 = np.datetime64('0001-01-01T00:00:00.000000')
+MIN_DATETIME64 = np.datetime64("0001-01-01T00:00:00.000000")
 
 
 def _natargmax(arr):
-    """ Find the arg max when an array contains NaT's"""
+    """Find the arg max when an array contains NaT's"""
     no_nats = np.where(np.isnat(arr), MIN_DATETIME64, arr)
     return np.argmax(no_nats)
 
@@ -39,11 +37,14 @@ class Dataset:
 
     def map_view(self, color_mapper):
         loader = Loader(self.locator)
-        return forest.map_view.map_view(loader, color_mapper, use_hover_tool=False)
+        return forest.map_view.map_view(
+            loader, color_mapper, use_hover_tool=False
+        )
 
 
 class Database:
     """Meta-data store for EIDA50 dataset"""
+
     def __init__(self, path=":memory:"):
         self.fmt = "%Y-%m-%d %H:%M:%S"
         self.path = path
@@ -131,6 +132,7 @@ class Database:
 
 class Locator:
     """Locate EIDA50 satellite images"""
+
     def __init__(self, pattern, database):
         self.pattern = pattern
         self._glob = forest.util.cached_glob(dt.timedelta(minutes=15))
@@ -161,8 +163,9 @@ class Locator:
 
         # Combine database/timestamp information
         arrays = [
-            np.array(database_times, dtype='datetime64[s]'),
-            np.array(filename_times, dtype='datetime64[s]')]
+            np.array(database_times, dtype="datetime64[s]"),
+            np.array(filename_times, dtype="datetime64[s]"),
+        ]
         return np.unique(np.concatenate(arrays))
 
     def find(self, paths, date):
@@ -176,7 +179,7 @@ class Locator:
         # Load times from database
         if path in self.database.fetch_paths():
             times = self.database.fetch_times(path)
-            times = np.array(times, dtype='datetime64[s]')
+            times = np.array(times, dtype="datetime64[s]")
         else:
             times = self.load_time_axis(path)  # datetime64[s]
 
@@ -191,37 +194,36 @@ class Locator:
     def load_time_axis(path):
         with xarray.open_dataset(path, engine=ENGINE) as nc:
             values = nc["time"]
-        return np.array(values, dtype='datetime64[s]')
+        return np.array(values, dtype="datetime64[s]")
 
     def find_file(self, paths, user_date):
-        """"Find file likely to contain user supplied date
+        """ "Find file likely to contain user supplied date
 
         .. note:: Search based on timestamp only
 
         .. warning:: Not suitable for searching unparsable file names
         """
         if isinstance(user_date, (dt.datetime, str)):
-            user_date = np.datetime64(user_date, 's')
-        dates = np.array([
-            self.parse_date(path) for path in paths],
-            dtype='datetime64[s]')
+            user_date = np.datetime64(user_date, "s")
+        dates = np.array(
+            [self.parse_date(path) for path in paths], dtype="datetime64[s]"
+        )
         mask = ~(dates <= user_date)
         if mask.all():
             msg = "No file for {}".format(user_date)
             raise FileNotFound(msg)
-        before_dates = np.ma.array(
-                dates, mask=mask, dtype='datetime64[s]')
-        i =  _natargmax(before_dates.filled())
+        before_dates = np.ma.array(dates, mask=mask, dtype="datetime64[s]")
+        i = _natargmax(before_dates.filled())
         return paths[i]
 
     @staticmethod
     def find_index(times, time, length):
         """Search for index inside array of datetime64[s] values"""
-        dtype = 'datetime64[s]'
+        dtype = "datetime64[s]"
         if isinstance(times, list):
             times = np.asarray(times, dtype=dtype)
         if isinstance(time, (dt.datetime, str)):
-            time = np.datetime64(time, 's')
+            time = np.datetime64(time, "s")
         bounds = locate.bounds(times, length)
         inside = locate.in_bounds(bounds, time)
         valid_times = np.ma.array(times, mask=~inside)
@@ -234,8 +236,9 @@ class Locator:
     def parse_date(path):
         """Parse timestamp into datetime or None"""
         for regex, fmt in [
-                (r"([0-9]{8})\.nc", "%Y%m%d"),
-                (r"([0-9]{8}T[0-9]{4}Z)\.nc", "%Y%m%dT%H%MZ")]:
+            (r"([0-9]{8})\.nc", "%Y%m%d"),
+            (r"([0-9]{8}T[0-9]{4}Z)\.nc", "%Y%m%dT%H%MZ"),
+        ]:
             groups = re.search(regex, path)
             if groups is None:
                 continue
@@ -246,13 +249,7 @@ class Locator:
 class Loader:
     def __init__(self, locator):
         self.locator = locator
-        self.empty_image = {
-            "x": [],
-            "y": [],
-            "dw": [],
-            "dh": [],
-            "image": []
-        }
+        self.empty_image = {"x": [], "y": [], "dw": [], "dh": [], "image": []}
         self.cache = {}
         paths = self.locator.glob()
         if len(paths) > 0:
@@ -292,13 +289,17 @@ class Loader:
         # Use datashader to coarsify images from 4.4km to 8.8km grid
         scale = 2
         return geo.stretch_image(
-                lons, lats, values,
-                plot_width=int(values.shape[1] / scale),
-                plot_height=int(values.shape[0] / scale))
+            lons,
+            lats,
+            values,
+            plot_width=int(values.shape[1] / scale),
+            plot_height=int(values.shape[0] / scale),
+        )
 
 
 class Navigator:
     """Facade to map Navigator API to Locator"""
+
     def __init__(self, locator, database):
         self.locator = locator
         self.database = database
@@ -306,10 +307,10 @@ class Navigator:
     def __call__(self, store, action):
         """Middleware interface"""
         import forest.db.control
+
         kind = action["kind"]
         if kind == forest.db.control.SET_VALUE:
-            key, time = (action["payload"]["key"],
-                         action["payload"]["value"])
+            key, time = (action["payload"]["key"], action["payload"]["value"])
             if key == "valid_time":
                 # Detect missing file
                 paths = self.locator.glob()
@@ -323,7 +324,8 @@ class Navigator:
                 database_times = self._times()
                 if len(store_times) != len(database_times):
                     yield forest.db.control.set_value(
-                        "valid_times", database_times)
+                        "valid_times", database_times
+                    )
         yield action
 
     def variables(self, pattern):
@@ -343,7 +345,7 @@ class Navigator:
         """
         paths = self.locator.glob()
         datetimes = self.locator.all_times(paths)
-        return np.array(datetimes, dtype='datetime64[s]')
+        return np.array(datetimes, dtype="datetime64[s]")
 
     def pressures(self, pattern, variable, initial_time):
         return []

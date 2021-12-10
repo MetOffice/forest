@@ -55,6 +55,7 @@ class Bokeh:
     .. note:: HTML loaded is merely convenience and may be unnecessary in
               future bokeh releases
     """
+
     html_loaded: bool = False
 
 
@@ -69,8 +70,9 @@ class Limits:
     :param high: upper limit
     :type high: float
     """
-    low: float = 0.
-    high: float = 1.
+
+    low: float = 0.0
+    high: float = 1.0
 
 
 @dataclass
@@ -84,6 +86,7 @@ class ColorbarLimits:
     :param user: user limits
     :type user: Limits
     """
+
     origin: str = "column_data_source"
     column_data_source: Limits = field(default_factory=Limits)
     user: Limits = field(default_factory=Limits)
@@ -117,13 +120,14 @@ class Colorbar:
     :param invisible_min: hide/show values below minimum
     :param invisible_max: hide/show values above maximum
     """
+
     name: str = "Viridis"
     names: list = field(default_factory=_names_factory)
     number: int = 256
     numbers: list = field(default_factory=_numbers_factory)
     limits: ColorbarLimits = field(default_factory=ColorbarLimits)
-    low: float = 0.
-    high: float = 1.
+    low: float = 0.0
+    high: float = 1.0
     reverse: bool = False
     invisible_min: bool = False
     invisible_max: bool = False
@@ -147,6 +151,7 @@ class LayerMode:
     :param state: Edit mode, either 'edit' or 'add'
     :param index: Index of layer being edited
     """
+
     state: str = "add"
     index: int = 0
 
@@ -161,6 +166,7 @@ class Layers:
     :param mode: Edit/new mode to define UI
     :type mode: LayerMode
     """
+
     figures: int = 1
     index: dict = field(default_factory=dict)
     active: list = field(default_factory=list)
@@ -183,6 +189,7 @@ class Borders:
     :param visible: Turn all lines on/off
     :type visible: bool
     """
+
     line_color: str = "black"
     visible: bool = False
 
@@ -196,6 +203,7 @@ class Tile:
     :param labels: Turn overlay labels on/off
     :type labels: bool
     """
+
     name: str = "Open street map"
     labels: bool = False
 
@@ -207,7 +215,8 @@ class Position:
     :param x: coordinate of tap event
     :param y: coordinate of tap event
     """
-    x: float = 0.
+
+    x: float = 0.0
     y: float = -1e9  # South pole
 
 
@@ -220,6 +229,7 @@ class Tools:
     :param profile: Turn profile widget on/off
     :type time_series: bool
     """
+
     time_series: bool = False
     profile: bool = False
 
@@ -240,6 +250,7 @@ class Presets:
     :param meta: data used by user interface
     :type active: dict
     """
+
     active: int = 0
     labels: dict = field(default_factory=dict)
     meta: dict = field(default_factory=dict)
@@ -288,7 +299,7 @@ class State:
     initial_times: list = field(default_factory=list)
     valid_time: dt.datetime = dt.datetime(1970, 1, 1)
     valid_times: list = field(default_factory=list)
-    pressure: float = 0.
+    pressure: float = 0.0
     pressures: list = field(default_factory=list)
     colorbar: Colorbar = field(default_factory=Colorbar)
     layers: Layers = field(default_factory=Layers)

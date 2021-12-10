@@ -11,25 +11,36 @@ class TestInitialState(unittest.TestCase):
 
     def make_database(self):
         structure = [
-            ("file_0.nc", "2019-01-01 00:00:00", [
-                ("air_temperature", {
-                    "time": ["2019-01-01 01:00:02"],
-                    "pressure": [750]
-                }),
-                ("relative_humidity", {
-                    "time": ["2019-01-01 01:30:00"],
-                    "pressure": [850]
-                })
-            ]),
-            ("file_1.nc", "2019-01-01 12:00:00", [
-                ("air_temperature", {
-                    "time": [
-                        "2019-01-01 12:00:02",
-                        "2019-01-01 13:00:02"
-                    ],
-                    "pressure": [1000, 950]
-                })
-            ])
+            (
+                "file_0.nc",
+                "2019-01-01 00:00:00",
+                [
+                    (
+                        "air_temperature",
+                        {"time": ["2019-01-01 01:00:02"], "pressure": [750]},
+                    ),
+                    (
+                        "relative_humidity",
+                        {"time": ["2019-01-01 01:30:00"], "pressure": [850]},
+                    ),
+                ],
+            ),
+            (
+                "file_1.nc",
+                "2019-01-01 12:00:00",
+                [
+                    (
+                        "air_temperature",
+                        {
+                            "time": [
+                                "2019-01-01 12:00:02",
+                                "2019-01-01 13:00:02",
+                            ],
+                            "pressure": [1000, 950],
+                        },
+                    )
+                ],
+            ),
         ]
         for path, initial_time, variables in structure:
             self.database.insert_file_name(path, initial_time)
@@ -52,18 +63,18 @@ class TestInitialState(unittest.TestCase):
     def test_initial_state(self):
         self.make_database()
         state = db.initial_state(self.database)
-        self.assertEqual(state["initial_times"], [
-            "2019-01-01 00:00:00",
-            "2019-01-01 12:00:00",
-        ])
+        self.assertEqual(
+            state["initial_times"],
+            [
+                "2019-01-01 00:00:00",
+                "2019-01-01 12:00:00",
+            ],
+        )
         self.assertEqual(state["initial_time"], "2019-01-01 12:00:00")
-        self.assertEqual(state["valid_times"], [
-            "2019-01-01 12:00:02",
-            "2019-01-01 13:00:02"
-        ])
+        self.assertEqual(
+            state["valid_times"],
+            ["2019-01-01 12:00:02", "2019-01-01 13:00:02"],
+        )
         self.assertEqual(state["valid_time"], "2019-01-01 12:00:02")
-        self.assertEqual(state["pressures"], [
-            1000,
-            950
-        ])
+        self.assertEqual(state["pressures"], [1000, 950])
         self.assertEqual(state["pressure"], 1000)

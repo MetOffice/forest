@@ -20,10 +20,16 @@ def test_layer_spec_given_dict():
     assert layer_spec.color_spec.name == "Accent"
 
 
-@pytest.mark.parametrize("action,expect", [
-    ({"kind": "ANY"}, [{"kind": "ANY"}]),
-    (layers.on_button_group(0, [0, 1, 2]), [layers.set_active(0, [0, 1, 2])]),
-])
+@pytest.mark.parametrize(
+    "action,expect",
+    [
+        ({"kind": "ANY"}, [{"kind": "ANY"}]),
+        (
+            layers.on_button_group(0, [0, 1, 2]),
+            [layers.set_active(0, [0, 1, 2])],
+        ),
+    ],
+)
 def test_middleware(action, expect):
     store = redux.Store(layers.reducer)
     result = list(layers.middleware(store, action))
@@ -33,14 +39,7 @@ def test_middleware(action, expect):
 def test_middleware_on_save_given_add():
     mode = "add"
     index = 42
-    initial_state = {
-        "layers": {
-            "mode": {"state": mode},
-            "index": {
-                index: {}
-            }
-        }
-    }
+    initial_state = {"layers": {"mode": {"state": mode}, "index": {index: {}}}}
     store = redux.Store(layers.reducer, initial_state=initial_state)
     action = layers.on_save({})
     expect = layers.save_layer(index + 1, {})
@@ -52,12 +51,7 @@ def test_middleware_on_save_given_edit():
     mode = "edit"
     index = 5
     initial_state = {
-        "layers": {
-            "mode": {"state": mode, "index": index},
-            "index": {
-                0: {}
-            }
-        }
+        "layers": {"mode": {"state": mode, "index": index}, "index": {0: {}}}
     }
     store = redux.Store(layers.reducer, initial_state=initial_state)
     action = layers.on_save({})
@@ -78,14 +72,23 @@ def test_figure_dropdown(listener):
     listener.assert_called_once_with(layers.set_figures(1))
 
 
-@pytest.mark.parametrize("state,actions,expect", [
-    ({}, layers.set_figures(3), {"figures": 3}),
-    ({"layers": {"index": {0: {"active": []}}}}, layers.set_active(0, [0]),
-     {"index": {0: {"active": [0]}}}),
-    pytest.param({"layers": {"index": {1: {"active": []}}}},
-                 layers.set_active(0, [0]),
-                 {"index": {1: {"active": [0]}}}, id="row to layer index"),
-])
+@pytest.mark.parametrize(
+    "state,actions,expect",
+    [
+        ({}, layers.set_figures(3), {"figures": 3}),
+        (
+            {"layers": {"index": {0: {"active": []}}}},
+            layers.set_active(0, [0]),
+            {"index": {0: {"active": [0]}}},
+        ),
+        pytest.param(
+            {"layers": {"index": {1: {"active": []}}}},
+            layers.set_active(0, [0]),
+            {"index": {1: {"active": [0]}}},
+            id="row to layer index",
+        ),
+    ],
+)
 def test_reducer(state, actions, expect):
     if isinstance(actions, dict):
         actions = [actions]
@@ -100,9 +103,9 @@ def test_reducer_save_layer():
     label = "Label"
     dataset = "Dataset"
     variable = "Variable"
-    action = layers.save_layer(i, {"label": label,
-                                   "dataset": dataset,
-                                   "variable": variable})
+    action = layers.save_layer(
+        i, {"label": label, "dataset": dataset, "variable": variable}
+    )
     state = layers.reducer({}, action)
     assert state["layers"]["index"][i]["label"] == label
     assert state["layers"]["index"][i]["dataset"] == dataset
@@ -112,15 +115,7 @@ def test_reducer_save_layer():
 def test_reducer_remove_layer():
     row_index = 0
     layer_index = 42
-    state = {
-        "layers": {
-            "index": {
-                layer_index: {
-                    "key": "value"
-                }
-            }
-        }
-    }
+    state = {"layers": {"index": {layer_index: {"key": "value"}}}}
     action = layers.on_close(row_index)
     state = layers.reducer(state, action)
     assert state["layers"]["index"] == {}
@@ -130,13 +125,7 @@ def test_reducer_on_edit():
     row_index = 0
     layer_index = 42
     action = layers.on_edit(row_index)
-    state = layers.reducer({
-        "layers": {
-            "index": {
-                layer_index: {}
-            }
-        }
-    }, action)
+    state = layers.reducer({"layers": {"index": {layer_index: {}}}}, action)
     assert state["layers"]["mode"]["index"] == layer_index
     assert state["layers"]["mode"]["state"] == "edit"
 
@@ -151,13 +140,9 @@ def test_reducer_set_active():
     row_index = 1
     active = [0, 2]
     action = layers.set_active(row_index, active)
-    state = layers.reducer({
-        "layers": {"index": {
-            13: {},
-            42: {},
-            96: {}
-        }}
-    }, action)
+    state = layers.reducer(
+        {"layers": {"index": {13: {}, 42: {}, 96: {}}}}, action
+    )
     assert state["layers"]["index"][42]["active"] == active
 
 
@@ -165,12 +150,7 @@ def test_layersui_render_sets_button_groups():
     state = {
         "layers": {
             "figures": 3,
-            "index": {
-                0: {
-                    "label": "Foo",
-                    "active": [0, 1, 2]
-                }
-            }
+            "index": {0: {"label": "Foo", "active": [0, 1, 2]}},
         }
     }
     controls = layers.LayersUI()
@@ -180,14 +160,17 @@ def test_layersui_render_sets_button_groups():
     assert controls.button_groups[0].labels == ["L", "C", "R"]
 
 
-@pytest.mark.parametrize("from_labels,to_labels,expect", [
-    ([], [], 0),
-    ([], ["label"], 1),
-    ([], ["label", "label"], 2),
-    (["label"], [], 0),
-    (["label", "label"], [], 0),
-    (["label", "label"], ["label"], 1),
-])
+@pytest.mark.parametrize(
+    "from_labels,to_labels,expect",
+    [
+        ([], [], 0),
+        ([], ["label"], 1),
+        ([], ["label", "label"], 2),
+        (["label"], [], 0),
+        (["label", "label"], [], 0),
+        (["label", "label"], ["label"], 1),
+    ],
+)
 def test_controls_render_number_of_rows(from_labels, to_labels, expect):
     states = [
         {
@@ -196,13 +179,14 @@ def test_controls_render_number_of_rows(from_labels, to_labels, expect):
                     i: {"label": label} for i, label in enumerate(from_labels)
                 }
             }
-        }, {
+        },
+        {
             "layers": {
                 "index": {
                     i: {"label": label} for i, label in enumerate(to_labels)
                 }
             }
-        }
+        },
     ]
     controls = layers.LayersUI()
     for state in states:
@@ -219,10 +203,7 @@ def test_on_button_group(listener):
     listener.assert_called_once_with(layers.on_button_group(row_index, new))
 
 
-@pytest.mark.parametrize("method", [
-    "on_edit",
-    "on_close"
-])
+@pytest.mark.parametrize("method", ["on_edit", "on_close"])
 def test_layers_ui_on_click(listener, method):
     row_index = 3
     layers_ui = layers.LayersUI()
@@ -270,9 +251,7 @@ def test_layer_reset():
     map_view = Mock()
     map_view.image_sources = [sentinel.source]
     source_limits = Mock(spec=["add_source", "remove_source"])
-    layer = layers.Layer(map_view,
-                         sentinel.visible,
-                         source_limits)
+    layer = layers.Layer(map_view, sentinel.visible, source_limits)
     layer.reset()
     source_limits.add_source.assert_called_once_with(sentinel.source)
     source_limits.remove_source.assert_called_once_with(sentinel.source)
@@ -282,13 +261,10 @@ def test_layer_prepare():
     map_view = Mock()
     map_view.image_sources = [sentinel.source]
     source_limits = Mock(spec=["add_source", "remove_source"])
-    layer = layers.Layer(map_view,
-                         sentinel.visible,
-                         source_limits)
+    layer = layers.Layer(map_view, sentinel.visible, source_limits)
     layer.prepare()
     # One call during __init__ and one during prepare()
-    calls = [call(sentinel.source),
-             call(sentinel.source)]
+    calls = [call(sentinel.source), call(sentinel.source)]
     source_limits.add_source.assert_has_calls(calls)
 
 
@@ -301,11 +277,7 @@ def test_opacity_slider():
     # Fake image
     figure = bokeh.plotting.figure()
     renderer = figure.image(
-        x=[0],
-        y=[0],
-        dw=[1],
-        dh=[1],
-        image=[np.zeros((3, 3))]
+        x=[0], y=[0], dw=[1], dh=[1], image=[np.zeros((3, 3))]
     )
 
     opacity_slider.add_renderers([renderer])

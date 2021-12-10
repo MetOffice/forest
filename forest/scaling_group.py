@@ -3,6 +3,7 @@
 
 class ScalingGroup:
     """Scale collection of objects up/down to meet criteria"""
+
     def __init__(self, object_pool):
         self.object_pool = object_pool
         self.instances = []

@@ -21,6 +21,7 @@ class Stream(Observable):
 
     Common operations on streams include :func:`~Stream.map` and :func:`~Stream.filter`.
     """
+
     def listen_to(self, observable):
         """Re-transmit events on another observable
 
@@ -35,8 +36,10 @@ class Stream(Observable):
         :returns: new stream that emits f(x)
         """
         stream = Stream()
+
         def callback(x):
             stream.notify(f(x))
+
         self.add_subscriber(callback)
         return stream
 
@@ -51,6 +54,7 @@ class Stream(Observable):
         def closure():
             y = None
             called = False
+
             def callback(x):
                 nonlocal y, called
                 if not called:
@@ -65,6 +69,7 @@ class Stream(Observable):
                 if not_same:
                     y = x  # Important: must be before notify() to prevent recursion
                     stream.notify(x)
+
             return callback
 
         self.add_subscriber(closure())
@@ -76,9 +81,11 @@ class Stream(Observable):
         :param f: predicate function True keeps value False discards value
         """
         stream = Stream()
+
         def callback(x):
             if f(x):
                 stream.notify(x)
+
         self.add_subscriber(callback)
         return stream
 
@@ -92,6 +99,7 @@ class Stream(Observable):
                 nonlocal payload
                 payload[i] = x
                 output.notify(tuple(payload))
+
             return wrapper
 
         for i, stream in enumerate(input_streams):

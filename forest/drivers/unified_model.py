@@ -14,13 +14,15 @@ import forest.util
 import forest.map_view
 import forest._profile
 from forest.bases import Reusable
-from forest import (
-    db,
-    disk,
-    geo)
-from forest.exceptions import SearchFail, PressuresNotFound, InitialTimeNotFound
+from forest import db, disk, geo
+from forest.exceptions import (
+    SearchFail,
+    PressuresNotFound,
+    InitialTimeNotFound,
+)
 from forest.drivers import gridded_forecast
 import bokeh.models
+
 try:
     import iris
 except ImportError:
@@ -34,6 +36,7 @@ class NotFound(Exception):
 
 class Sync:
     """Process to synchronize SQL database"""
+
     def __init__(self, database_path, pattern, directory):
         self.database_path = database_path
         self.pattern = pattern
@@ -49,8 +52,10 @@ class Sync:
         # Find names in database
         connection = sqlite3.connect(self.database_path)
         health_db = forest.db.health.HealthDB(connection)
-        sql_names = [os.path.basename(path)
-                     for path in health_db.checked_files(self.pattern)]
+        sql_names = [
+            os.path.basename(path)
+            for path in health_db.checked_files(self.pattern)
+        ]
         connection.close()
 
         # Find extra files
@@ -83,23 +88,24 @@ class Sync:
 
 
 class Dataset:
-    def __init__(self,
-                 label=None,
-                 pattern=None,
-                 locator="file_system",
-                 directory=None,
-                 database_path=None,
-                 **kwargs):
+    def __init__(
+        self,
+        label=None,
+        pattern=None,
+        locator="file_system",
+        directory=None,
+        database_path=None,
+        **kwargs,
+    ):
         self.label = label
         self.pattern = pattern
         self.use_database = locator == "database"
         if self.use_database:
-            self.sync = Sync(database_path,
-                             pattern,
-                             directory)
+            self.sync = Sync(database_path, pattern, directory)
             self.database = db.get_database(database_path)
-            self.locator = db.Locator(self.database.connection,
-                                      directory=directory)
+            self.locator = db.Locator(
+                self.database.connection, directory=directory
+            )
         else:
             self.locator = Locator.pattern(self.pattern)
 
@@ -125,10 +131,7 @@ class ProfileView(Reusable):
     def __init__(self, figure, loader):
         self.figure = figure
         self.loader = loader
-        self.source = bokeh.models.ColumnDataSource({
-            "x": [],
-            "y": []
-        })
+        self.source = bokeh.models.ColumnDataSource({"x": [], "y": []})
         self.renderers = [
             self.figure.line(x="x", y="y", source=self.source),
             self.figure.circle(x="x", y="y", source=self.source),
@@ -141,15 +144,11 @@ class ProfileView(Reusable):
     def reset(self):
         for renderer in self.renderers:
             renderer.visible = False
-        self.source.data = {
-            "x": [],
-            "y": []
-        }
+        self.source.data = {"x": [], "y": []}
 
     def render_id(self, state, layer_id):
         print(f"{self.__class__.__name__}.render({layer_id})")
-        lons, lats = geo.plate_carree(state.position.x,
-                                      state.position.y)
+        lons, lats = geo.plate_carree(state.position.x, state.position.y)
         lon_0 = lons[0]
         lat_0 = lats[0]
         self.source.data = self.loader.profile(
@@ -159,16 +158,14 @@ class ProfileView(Reusable):
             state.valid_time,
             state.pressure,
             lon_0,
-            lat_0)
+            lat_0,
+        )
 
 
 class SeriesView(Reusable):
     def __init__(self, figure):
         self.figure = figure
-        self.source = bokeh.models.ColumnDataSource({
-            "x": [],
-            "y": []
-        })
+        self.source = bokeh.models.ColumnDataSource({"x": [], "y": []})
         self.renderers = [
             self.figure.line(x="x", y="y", source=self.source),
             self.figure.circle(x="x", y="y", source=self.source),
@@ -181,10 +178,7 @@ class SeriesView(Reusable):
     def reset(self):
         for renderer in self.renderers:
             renderer.visible = False
-        self.source.data = {
-            "x": [],
-            "y": []
-        }
+        self.source.data = {"x": [], "y": []}
 
     def render_id(self, state, layer_id):
         print(f"{self.__class__.__name__}.render({layer_id})")
@@ -209,8 +203,7 @@ class Navigator:
 
     def initial_times(self, pattern, variable):
         locator = self._locators["initial"]
-        return list(sorted(set(locator(path)
-                               for path in glob.glob(pattern))))
+        return list(sorted(set(locator(path) for path in glob.glob(pattern))))
 
     def valid_times(self, pattern, variable, initial_time):
         return self._dimension("valid", pattern, variable, initial_time)
@@ -230,6 +223,7 @@ class Navigator:
 
 class Loader:
     """Unified model formatted loader"""
+
     def __init__(self, name, pattern, locator):
         self.name = name
         self.pattern = pattern
@@ -243,34 +237,35 @@ class Loader:
             state.variable,
             state.initial_time,
             state.valid_time,
-            state.pressure)
-        data.update(gridded_forecast.coordinates(state.valid_time,
-                                                 state.initial_time,
-                                                 state.pressures,
-                                                 state.pressure))
+            state.pressure,
+        )
+        data.update(
+            gridded_forecast.coordinates(
+                state.valid_time,
+                state.initial_time,
+                state.pressures,
+                state.pressure,
+            )
+        )
         return data
 
-    def profile(self,
-                pattern,
-                variable,
-                initial_time,
-                valid_time,
-                pressure,
-                lon_0,
-                lat_0):
+    def profile(
+        self,
+        pattern,
+        variable,
+        initial_time,
+        valid_time,
+        pressure,
+        lon_0,
+        lat_0,
+    ):
         """Load Profile from file"""
         try:
             path, _ = self.locator.locate(
-                pattern,
-                variable,
-                initial_time,
-                valid_time,
-                pressure)
+                pattern, variable, initial_time, valid_time, pressure
+            )
         except SearchFail:
-            return {
-                "x": [],
-                "y": []
-            }
+            return {"x": [], "y": []}
 
         with xarray.open_dataset(path, engine="h5netcdf") as nc:
             data_array = nc[variable]
@@ -294,16 +289,14 @@ class Loader:
         }
 
     @lru_cache(maxsize=100)
-    def _input_output(self, pattern, variable, initial_time, valid_time,
-                      pressure):
+    def _input_output(
+        self, pattern, variable, initial_time, valid_time, pressure
+    ):
         """I/O needed to load an image and its metadata"""
         try:
             path, pts = self.locator.locate(
-                pattern,
-                variable,
-                initial_time,
-                valid_time,
-                pressure)
+                pattern, variable, initial_time, valid_time, pressure
+            )
         except SearchFail:
             return gridded_forecast.empty_image()
 
@@ -345,7 +338,9 @@ class Loader:
             if units == "mm h-1":
                 values = values
             else:
-                values = forest.util.convert_units(values, units, "kg m-2 hour-1")
+                values = forest.util.convert_units(
+                    values, units, "kg m-2 hour-1"
+                )
                 units = "kg m-2 hour-1"
         elif units == "K":
             values = forest.util.convert_units(values, "K", "Celsius")
@@ -356,14 +351,13 @@ class Loader:
         if values.size > threshold:
             fraction = 0.25
         else:
-            fraction = 1.
-        lons, lats, values = forest.util.coarsify(
-            lons, lats, values, fraction)
+            fraction = 1.0
+        lons, lats, values = forest.util.coarsify(lons, lats, values, fraction)
 
         # Roll input data into [-180, 180] range
         if np.any(lons > 180.0):
             shift_by = np.sum(lons > 180.0)
-            lons[lons > 180.0] -= 360.
+            lons[lons > 180.0] -= 360.0
             lons = np.roll(lons, shift_by)
             values = np.roll(values, shift_by, axis=1)
 
@@ -378,7 +372,7 @@ class Loader:
             lons = np.ma.masked_invalid(data_array.longitude)
             lats = np.ma.masked_invalid(data_array.latitude)
             values = np.ma.masked_invalid(data_array)
-            units = getattr(data_array, 'units', '')
+            units = getattr(data_array, "units", "")
         return lons, lats, values, units
 
     @staticmethod
@@ -386,10 +380,10 @@ class Loader:
         # TODO: Is this method still needed?
         cube = iris.load_cube(path, iris.Constraint(variable))
         units = cube.units
-        lons = cube.coord('longitude').points
+        lons = cube.coord("longitude").points
         if lons.ndim == 2:
             lons = lons[0, :]
-        lats = cube.coord('latitude').points
+        lats = cube.coord("latitude").points
         if lons.ndim == 2:
             lats = lats[:, 0]
         values = cube.data[pts]
@@ -417,13 +411,14 @@ class Locator(object):
         return cls(sorted(glob.glob(os.path.expanduser(text))))
 
     def locate(
-            self,
-            pattern,
-            variable,
-            initial_time,
-            valid_time,
-            pressure=None,
-            tolerance=0.001):
+        self,
+        pattern,
+        variable,
+        initial_time,
+        valid_time,
+        pressure=None,
+        tolerance=0.001,
+    ):
         paths = self.find_paths(initial_time) + self.spare
         paths = fnmatch.filter(paths, pattern)
         for path in paths:
@@ -437,8 +432,9 @@ class Locator(object):
 
                 masks = {}
                 for coord, value in [
-                        ("time", valid_time),
-                        ("pressure", pressure)]:
+                    ("time", valid_time),
+                    ("pressure", pressure),
+                ]:
                     if not disk.has_coord(coord, dims, coords):
                         continue
                     if value is None:
@@ -472,8 +468,18 @@ class Locator(object):
             return path, pts
 
         # Search failure message
-        msg = " ".join([str(value) for value in
-            [pattern, variable, initial_time, valid_time, pressure]])
+        msg = " ".join(
+            [
+                str(value)
+                for value in [
+                    pattern,
+                    variable,
+                    initial_time,
+                    valid_time,
+                    pressure,
+                ]
+            ]
+        )
         raise SearchFail(msg)
 
     def find_paths(self, initial_time):
@@ -483,13 +489,12 @@ class Locator(object):
     def key(time):
         if isinstance(time, str):
             from dateutil import parser
+
             time = parser.parse(time)
         return time.strftime("%Y%m%dT%H%M%S")
 
     def initial_time(self, path):
-        for strategy in [
-                self.initial_time_regex,
-                self.initial_time_netcdf4]:
+        for strategy in [self.initial_time_regex, self.initial_time_netcdf4]:
             result = strategy(path)
             if result is None:
                 continue
@@ -526,7 +531,7 @@ class InitialTimeLocator:
     @staticmethod
     def netcdf4_strategy(path):
         with netCDF4.Dataset(path) as dataset:
-            var = dataset.variables["forecast_reference_time" ]
+            var = dataset.variables["forecast_reference_time"]
             values = netCDF4.num2date(var[:], units=var.units)
         return values
 
@@ -535,7 +540,7 @@ class InitialTimeLocator:
         cubes = iris.load(path)
         if len(cubes) > 0:
             cube = cubes[0]
-            return cube.coord('time').cells().next().point
+            return cube.coord("time").cells().next().point
         raise InitialTimeNotFound("No initial time: '{}'".format(path))
 
 
@@ -552,7 +557,7 @@ class ValidTimesLocator(object):
         if t is None:
             t = self.cube_strategy(path, variable)
         elif t.ndim == 0:
-            t = np.array([t], dtype='datetime64[s]')
+            t = np.array([t], dtype="datetime64[s]")
         return t
 
     def netcdf4_strategy(self, path, variable):
@@ -565,26 +570,29 @@ class ValidTimesLocator(object):
         """Search dataset for time axis"""
         var = dataset.variables[variable]
         for d in var.dimensions:
-            if d.startswith('time'):
+            if d.startswith("time"):
                 if d in dataset.variables:
                     tvar = dataset.variables[d]
                     return np.array(
                         netCDF4.num2date(tvar[:], units=tvar.units),
-                        dtype='datetime64[s]')
+                        dtype="datetime64[s]",
+                    )
         coords = var.coordinates.split()
         for c in coords:
-            if c.startswith('time'):
+            if c.startswith("time"):
                 tvar = dataset.variables[c]
                 return np.array(
                     netCDF4.num2date(tvar[:], units=tvar.units),
-                    dtype='datetime64[s]')
+                    dtype="datetime64[s]",
+                )
 
     @staticmethod
     def cube_strategy(path, variable):
         cube = iris.load_cube(path, variable)
-        return np.array([
-            c.point for c in cube.coord('time').cells()],
-                 dtype='datetime64[s]')
+        return np.array(
+            [c.point for c in cube.coord("time").cells()],
+            dtype="datetime64[s]",
+        )
 
 
 class PressuresLocator(object):
@@ -597,7 +605,7 @@ class PressuresLocator(object):
     def cube_strategy(self, path, variable):
         try:
             cube = iris.load_cube(path, variable)
-            points = cube.coord('pressure').points
+            points = cube.coord("pressure").points
             if np.ndim(points) == 0:
                 points = np.array([points])
             return points
@@ -610,12 +618,12 @@ class PressuresLocator(object):
         with netCDF4.Dataset(path) as dataset:
             var = dataset.variables[variable]
             for d in var.dimensions:
-                if d.startswith('pressure'):
+                if d.startswith("pressure"):
                     if d in dataset.variables:
                         return dataset.variables[d][:]
             coords = var.coordinates.split()
             for c in coords:
-                if c.startswith('pressure'):
+                if c.startswith("pressure"):
                     return dataset.variables[c][:]
         # NOTE: refactor needed
         raise KeyError

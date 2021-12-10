@@ -29,6 +29,7 @@ from forest.observe import Observable
 
 SET_POSITION = "SET_POSITION"
 
+
 def reducer(state, action):
     """Screen specific reducer
 
@@ -44,6 +45,7 @@ def reducer(state, action):
     if action["kind"] == SET_POSITION:
         state["position"] = action["payload"]
     return state
+
 
 def set_position(x, y) -> Action:
     """Action that stores a selected position
@@ -65,7 +67,7 @@ def set_position(x, y) -> Action:
 
 
 class TapListener(Observable):
-    """ Listen for bokeh.events.Tap and update the store. Wired up in main.py"""
+    """Listen for bokeh.events.Tap and update the store. Wired up in main.py"""
 
     def __init__(self):
         super().__init__()
@@ -86,11 +88,7 @@ class MarkDraw:
     def __init__(self, figure):
         self.figure = figure
         self.source = bokeh.models.ColumnDataSource({"x": [], "y": []})
-        self.figure.circle(
-          x="x",
-          y="y",
-          color="red",
-          source=self.source)
+        self.figure.circle(x="x", y="y", color="red", source=self.source)
 
     def connect(self, store):
         """
@@ -98,20 +96,15 @@ class MarkDraw:
         position state.
         """
 
-        stream = (rx.Stream()
-            .listen_to(store)
-            .map(self.to_props)
-            .distinct()
-        )
+        stream = rx.Stream().listen_to(store).map(self.to_props).distinct()
         stream.map(lambda props: self.place_marker(*props))
 
     def to_props(self, state):
-        return (state.get('position'),)
+        return (state.get("position"),)
 
     def place_marker(self, pos):
-        """ Update the marker position based on position state. """
+        """Update the marker position based on position state."""
         if pos is None:
             # Position not yet specified
             return
-        self.source.data = {"x": [pos["x"]],
-                            "y": [pos["y"]]}
+        self.source.data = {"x": [pos["x"]], "y": [pos["y"]]}

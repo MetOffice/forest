@@ -47,12 +47,16 @@ def set_date(text):
 
 
 def add_key(key, action):
-    return {"kind": action["kind"],
-            "payload": {"key": key, "value": action["payload"]}}
+    return {
+        "kind": action["kind"],
+        "payload": {"key": key, "value": action["payload"]},
+    }
+
 
 @export
 def set_value(key, value):
     return dict(kind=SET_VALUE, payload={"key": key, "value": value})
+
 
 @export
 def next_valid_time():
@@ -84,22 +88,41 @@ def previous_value(item_key, items_key):
     return dict(kind=PREVIOUS_VALUE, payload=locals())
 
 
-State = namedtuple("State", (
-    "pattern",
-    "patterns",
-    "variable",
-    "variables",
-    "initial_time",
-    "initial_times",
-    "valid_time",
-    "valid_times",
-    "pressure",
-    "pressures",
-    "valid_format"))
+State = namedtuple(
+    "State",
+    (
+        "pattern",
+        "patterns",
+        "variable",
+        "variables",
+        "initial_time",
+        "initial_times",
+        "valid_time",
+        "valid_times",
+        "pressure",
+        "pressures",
+        "valid_format",
+    ),
+)
 State.__new__.__defaults__ = (None,) * len(State._fields)
 
+
 def statehash(self):
-    return hash((self.pattern, str(self.patterns), self.variable, self.initial_time, str(self.initial_times), self.valid_time, str(self.valid_times), self.pressure, str(self.pressures), self.valid_format))
+    return hash(
+        (
+            self.pattern,
+            str(self.patterns),
+            self.variable,
+            self.initial_time,
+            str(self.initial_times),
+            self.valid_time,
+            str(self.valid_times),
+            self.pressure,
+            str(self.pressures),
+            self.valid_format,
+        )
+    )
+
 
 def time_equal(a, b):
     if (a is None) and (b is None):
@@ -109,7 +132,9 @@ def time_equal(a, b):
     else:
         return _to_datetime(a) == _to_datetime(b)
 
+
 _vto_datetime = np.vectorize(_to_datetime)
+
 
 def time_array_equal(x, y):
     if (x is None) and (y is None):
@@ -125,6 +150,7 @@ def time_array_equal(x, y):
         right = _as_datetime_array(y)
         return np.all(left == right)
 
+
 def _as_datetime_array(x):
     """Either vectorized _to_datetime or pd.to_datetime"""
     try:
@@ -132,6 +158,7 @@ def _as_datetime_array(x):
     except TypeError:
         # NOTE: Needed for EarthNetworks DatetimeIndex
         return pd.to_datetime(x)
+
 
 def equal_value(a, b):
     if (a is None) and (b is None):
@@ -141,23 +168,26 @@ def equal_value(a, b):
     else:
         return np.allclose(a, b)
 
+
 def state_ne(self, other):
     return not (self == other)
 
+
 def state_eq(self, other):
     return (
-            (self.pattern == other.pattern) and
-            np.all(self.patterns == other.patterns) and
-            (self.variable == other.variable) and
-            np.all(self.variables == other.variables) and
-            time_equal(self.initial_time, other.initial_time) and
-            time_array_equal(self.initial_times, other.initial_times) and
-            time_equal(self.valid_time, other.valid_time) and
-            time_array_equal(self.valid_times, other.valid_times) and
-            equal_value(self.pressure, other.pressure) and
-            np.shape(self.pressures) == np.shape(other.pressures) and
-            equal_value(self.pressures, other.pressures)
+        (self.pattern == other.pattern)
+        and np.all(self.patterns == other.patterns)
+        and (self.variable == other.variable)
+        and np.all(self.variables == other.variables)
+        and time_equal(self.initial_time, other.initial_time)
+        and time_array_equal(self.initial_times, other.initial_times)
+        and time_equal(self.valid_time, other.valid_time)
+        and time_array_equal(self.valid_times, other.valid_times)
+        and equal_value(self.pressure, other.pressure)
+        and np.shape(self.pressures) == np.shape(other.pressures)
+        and equal_value(self.pressures, other.pressures)
     )
+
 
 State.__hash__ = statehash
 State.__eq__ = state_eq
@@ -186,9 +216,8 @@ def initial_state(navigator, pattern=None):
     if len(valid_times) > 0:
         state["valid_time"] = min(valid_times)
     pressures = navigator.pressures(
-            variable=variable,
-            pattern=pattern,
-            initial_time=initial_time)
+        variable=variable, pattern=pattern, initial_time=initial_time
+    )
     pressures = list(reversed(sorted(pressures)))
     state["pressures"] = pressures
     if len(pressures) > 0:
@@ -210,6 +239,7 @@ def reducer(state, action):
 @export
 class InverseCoordinate(object):
     """Translate actions on inverted coordinates"""
+
     def __init__(self, name):
         self.name = name
 
@@ -281,6 +311,7 @@ def previous_item(items, item):
 class NotFound(Exception):
     pass
 
+
 def _index(items: List[Any], item: Any):
     try:
         return items.index(item)
@@ -300,17 +331,18 @@ def _index(items: List[Any], item: Any):
 @export
 class Navigator(object):
     """Interface for navigation menu system"""
+
     def variables(self, pattern):
-        return ['air_temperature']
+        return ["air_temperature"]
 
     def initial_times(self, pattern):
-        return ['2019-01-01 00:00:00']
+        return ["2019-01-01 00:00:00"]
 
     def valid_times(self, pattern, variable, initial_time):
-        return ['2019-01-01 12:00:00']
+        return ["2019-01-01 12:00:00"]
 
     def pressures(self, pattern, variable, initial_time):
-        return [750.]
+        return [750.0]
 
 
 @export
@@ -359,9 +391,9 @@ class Controls(object):
         variable = store.state.get("variable")
         initial_time = store.state.get("initial_time")
         if all(value is not None for value in [variable, initial_time]):
-            valid_times = self.navigator.valid_times(pattern,
-                                                     variable,
-                                                     initial_time)
+            valid_times = self.navigator.valid_times(
+                pattern, variable, initial_time
+            )
             yield set_value("valid_times", valid_times)
 
     def _variable(self, store, action):
@@ -373,14 +405,12 @@ class Controls(object):
         variable = action["payload"]["value"]
         initial_time = store.state["initial_time"]
         valid_times = self.navigator.valid_times(
-            pattern=pattern,
-            variable=variable,
-            initial_time=initial_time)
+            pattern=pattern, variable=variable, initial_time=initial_time
+        )
         valid_times = sorted(set(valid_times))
         pressures = self.navigator.pressures(
-            pattern=pattern,
-            variable=variable,
-            initial_time=initial_time)
+            pattern=pattern, variable=variable, initial_time=initial_time
+        )
         pressures = list(reversed(pressures))
         yield action
         yield set_value("valid_times", valid_times)
@@ -397,7 +427,8 @@ class Controls(object):
         valid_times = self.navigator.valid_times(
             pattern=store.state["pattern"],
             variable=store.state["variable"],
-            initial_time=initial_time)
+            initial_time=initial_time,
+        )
         valid_times = sorted(set(valid_times))
         yield action
         yield set_value("valid_times", valid_times)
@@ -420,18 +451,19 @@ def calendar_middleware(store, action):
         if time is not None:
             # Compare dates
             if kind == SET_DATE:
-                new = forest.util.replace(time,
-                                          year=value.year,
-                                          month=value.month,
-                                          day=value.day)
+                new = forest.util.replace(
+                    time, year=value.year, month=value.month, day=value.day
+                )
                 yield set_value(key, new)
 
             # Compare hours
             elif kind == SET_HOUR:
-                new = forest.util.replace(time,
-                                          hour=value.hour,
-                                          minute=value.minute,
-                                          second=value.second)
+                new = forest.util.replace(
+                    time,
+                    hour=value.hour,
+                    minute=value.minute,
+                    second=value.second,
+                )
                 yield set_value(key, new)
 
 
@@ -442,6 +474,7 @@ class ControlView:
     A high-level view that delegates to low-level views
     which in turn perform navigation.
     """
+
     def __init__(self):
         if data.FEATURE_FLAGS["calendar"]:
             TimeView = CalendarClockView
@@ -449,10 +482,18 @@ class ControlView:
             TimeView = SelectView
         self.views = {}
         self.views["dataset"] = DatasetView()
-        self.views["variable"] = DimensionView("variable", "variables", next_previous=False)
-        self.views["initial_time"] = DimensionView("initial_time", "initial_times", View=TimeView)
-        self.views["valid_time"] = DimensionView("valid_time", "valid_times", View=TimeView)
-        self.views["pressure"] = DimensionView("pressure", "pressures", formatter=self.hpa)
+        self.views["variable"] = DimensionView(
+            "variable", "variables", next_previous=False
+        )
+        self.views["initial_time"] = DimensionView(
+            "initial_time", "initial_times", View=TimeView
+        )
+        self.views["valid_time"] = DimensionView(
+            "valid_time", "valid_times", View=TimeView
+        )
+        self.views["pressure"] = DimensionView(
+            "pressure", "pressures", formatter=self.hpa
+        )
         self.layout = bokeh.layouts.column(
             self.views["dataset"].layout,
             self.views["variable"].layout,
@@ -491,15 +532,14 @@ class DatasetView(Observable):
     .. note:: Currently 'pattern' is the primary key for
               dataset selection
     """
+
     def __init__(self):
         self._table = {}
         self.item_key = "pattern"
         self.items_key = "patterns"
         self.select = bokeh.models.Select(width=350)
         self.select.on_change("value", self.on_select)
-        self.layout = bokeh.layouts.row(
-            self.select
-        )
+        self.layout = bokeh.layouts.row(self.select)
         super().__init__()
 
     def on_select(self, attr, old, new):
@@ -537,8 +577,10 @@ class DatasetView(Observable):
 @component
 class DimensionView(Observable):
     """Widgets used to navigate a dimension"""
-    def __init__(self, item_key, items_key, next_previous=True, formatter=str,
-                 View=None):
+
+    def __init__(
+        self, item_key, items_key, next_previous=True, formatter=str, View=None
+    ):
         if View is None:
             View = SelectView
         self.views = {}
@@ -550,12 +592,8 @@ class DimensionView(Observable):
             # Include next/previous buttons
             self.views["select"] = View(width=180)
             self.buttons = {
-                "next": bokeh.models.Button(
-                    label="Next",
-                    width=75),
-                "previous": bokeh.models.Button(
-                    label="Previous",
-                    width=75),
+                "next": bokeh.models.Button(label="Next", width=75),
+                "previous": bokeh.models.Button(label="Previous", width=75),
             }
             self.buttons["next"].on_click(self.on_next)
             self.buttons["previous"].on_click(self.on_previous)
@@ -567,9 +605,7 @@ class DimensionView(Observable):
         else:
             # Without next/previous buttons
             self.views["select"] = View(width=350)
-            self.layout = bokeh.layouts.row(
-                self.views["select"].layout
-            )
+            self.layout = bokeh.layouts.row(self.views["select"].layout)
         # Wire up child views
         self.views["select"].add_subscriber(self.on_select)
         super().__init__()
@@ -602,10 +638,7 @@ class DimensionView(Observable):
         values = self.parser.items(state)
         option = self.translator.encode(value)
         options = [self.translator.encode(value) for value in values]
-        self.views["select"].render({
-            "option": option,
-            "options": options
-        })
+        self.views["select"].render({"option": option, "options": options})
         if self.next_previous:
             disabled = len(values) == 0
             self.buttons["next"].disabled = disabled
@@ -615,22 +648,16 @@ class DimensionView(Observable):
 @component
 class CalendarClockView(Observable):
     """Allow user to select available date and time"""
+
     def __init__(self, width=None):
-        self.widths = {
-            "select": 80,
-            "picker": 90,
-            "row": 190
-        }
-        self.picker = bokeh.models.DatePicker(
-            width=self.widths["picker"])
+        self.widths = {"select": 80, "picker": 90, "row": 190}
+        self.picker = bokeh.models.DatePicker(width=self.widths["picker"])
         self.picker.on_change("value", self.on_picker)
-        self.select = bokeh.models.Select(
-            width=self.widths["select"])
+        self.select = bokeh.models.Select(width=self.widths["select"])
         self.select.on_change("value", self.on_select)
         self.layout = bokeh.layouts.row(
-            self.picker,
-            self.select,
-            width=self.widths["row"])
+            self.picker, self.select, width=self.widths["row"]
+        )
         super().__init__()
 
     def on_select(self, attr, old, new):
@@ -650,12 +677,15 @@ class CalendarClockView(Observable):
 
         # Set calendar highlights
         self.picker.value = str(time.date())
-        self.picker.enabled_dates = [(date, date)
-                                     for date in times.date.astype(str)]
+        self.picker.enabled_dates = [
+            (date, date) for date in times.date.astype(str)
+        ]
         fmt = "%H:%M:%S"
-        pts = ((times.year == time.year) &
-               (times.month == time.month) &
-               (times.day == time.day))
+        pts = (
+            (times.year == time.year)
+            & (times.month == time.month)
+            & (times.day == time.day)
+        )
         value = time.strftime(fmt)
         if self.select.value != value:
             self.select.value = value
@@ -667,6 +697,7 @@ class CalendarClockView(Observable):
 @component
 class SelectView(Observable):
     """Select value from menu"""
+
     def __init__(self, width=None):
         self.select = bokeh.models.Select(width=width)
         self.select.on_change("value", self.on_select)
@@ -697,6 +728,7 @@ class SelectView(Observable):
 
 class Translator:
     """Layer to de-couple UI from State"""
+
     def __init__(self, formatter):
         self.formatter = formatter
         self._lookup = {}  # Look-up table to convert from label to value
@@ -714,6 +746,7 @@ class Translator:
 
 class KeyParser:
     """Query state for item/items"""
+
     def __init__(self, item_key, items_key):
         self.item_key = item_key
         self.items_key = items_key
@@ -727,6 +760,7 @@ class KeyParser:
 
 class KeyActions:
     """Actions with item/items key meta-data"""
+
     def __init__(self, item_key, items_key):
         self.item_key = item_key
         self.items_key = items_key

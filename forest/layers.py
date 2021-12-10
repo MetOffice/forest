@@ -42,20 +42,23 @@ def set_figures(n: int) -> Action:
 
 def save_layer(index, settings) -> Action:
     """Action to save layer settings"""
-    return {"kind": SAVE_LAYER, "payload": {"index": index, "settings": settings}}
+    return {
+        "kind": SAVE_LAYER,
+        "payload": {"index": index, "settings": settings},
+    }
 
 
 def on_button_group(row_index: int, active: List[int]) -> Action:
     return {
         "kind": ON_BUTTON_GROUP,
-        "payload": {"row_index": row_index, "active": active}
+        "payload": {"row_index": row_index, "active": active},
     }
 
 
 def set_active(row_index: int, active: List[int]) -> Action:
     return {
         "kind": SET_ACTIVE,
-        "payload": {"row_index": row_index, "active": active}
+        "payload": {"row_index": row_index, "active": active},
     }
 
 
@@ -173,23 +176,25 @@ def reducer(state: State, action: Action) -> State:
 
 
 def _connect(view, store):
-    stream = (rx.Stream()
-                .listen_to(store)
-                .map(view.to_props)
-                .filter(lambda x: x is not None)
-                .distinct())
+    stream = (
+        rx.Stream()
+        .listen_to(store)
+        .map(view.to_props)
+        .filter(lambda x: x is not None)
+        .distinct()
+    )
     stream.map(lambda props: view.render(*props))
 
 
 @forest.mark.component
 class FigureUI(Observable):
     """Controls how many figures are currently displayed"""
+
     def __init__(self, max_figures=3):
         self.max_figures = max_figures
-        self.labels = [
-            "Single figure",
-            "Side by side",
-            "3 way comparison"][:self.max_figures]
+        self.labels = ["Single figure", "Side by side", "3 way comparison"][
+            : self.max_figures
+        ]
         self.select = bokeh.models.Select(
             options=self.labels,
             value=self.labels[0],
@@ -219,20 +224,24 @@ class FigureUI(Observable):
 
 class FigureRow:
     """Component to toggle number of displayed figures"""
+
     def __init__(self, figures):
         self.figures = figures
-        self.layout = bokeh.layouts.row(*figures,
-                sizing_mode="stretch_both",
-                name="figures")
-        self.layout.children = [self.figures[0]]  # Trick to keep correct sizing modes
+        self.layout = bokeh.layouts.row(
+            *figures, sizing_mode="stretch_both", name="figures"
+        )
+        # Trick to keep correct sizing modes
+        self.layout.children = [self.figures[0]]
 
     def connect(self, store):
         """Connect to the Store"""
-        stream = (rx.Stream()
-                    .listen_to(store)
-                    .map(self.to_props)
-                    .filter(lambda x: x is not None)
-                    .distinct())
+        stream = (
+            rx.Stream()
+            .listen_to(store)
+            .map(self.to_props)
+            .filter(lambda x: x is not None)
+            .distinct()
+        )
         stream.map(lambda props: self.render(*props))
 
     def to_props(self, state: State):
@@ -246,17 +255,15 @@ class FigureRow:
     def render(self, n: int):
         """Assign figures to row"""
         if int(n) == 1:
-            self.layout.children = [
-                    self.figures[0]]
+            self.layout.children = [self.figures[0]]
         elif int(n) == 2:
-            self.layout.children = [
-                    self.figures[0],
-                    self.figures[1]]
+            self.layout.children = [self.figures[0], self.figures[1]]
         elif int(n) == 3:
             self.layout.children = [
-                    self.figures[0],
-                    self.figures[1],
-                    self.figures[2]]
+                self.figures[0],
+                self.figures[1],
+                self.figures[2],
+            ]
 
 
 class OpacitySlider:
@@ -268,7 +275,8 @@ class OpacitySlider:
             step=0.1,
             value=1.0,
             title="Image opacity",
-            show_value=False)
+            show_value=False,
+        )
         self.layout = bokeh.layouts.row(self.slider)
 
     def add_renderers(self, renderers):
@@ -282,31 +290,29 @@ class OpacitySlider:
 
         # Pass server-side renderers to client-side callback
         custom_js = bokeh.models.CustomJS(
-                args=dict(renderers=renderers),
-                code="""
+            args=dict(renderers=renderers),
+            code="""
                 renderers.forEach(function (r) {
                     r.glyph.global_alpha = cb_obj.value
                 })
-                """)
+                """,
+        )
         self.slider.js_on_change("value", custom_js)
 
     @staticmethod
     def is_image(renderer):
-        return isinstance(getattr(renderer, 'glyph', None), bokeh.models.Image)
+        return isinstance(getattr(renderer, "glyph", None), bokeh.models.Image)
 
 
 @forest.mark.component
 class LayersUI(Observable):
     """Collection of user interface components to manage layers"""
+
     def __init__(self):
         self.defaults = {
             "label": "Model/observation",
             "flags": [False, False, False],
-            "figure": {
-                1: ["Show"],
-                2: ["L", "R"],
-                3: ["L", "C", "R"]
-            }
+            "figure": {1: ["Show"], 2: ["L", "R"], 3: ["L", "C", "R"]},
         }
         self.button_groups = []
         self.selects = []
@@ -322,11 +328,10 @@ class LayersUI(Observable):
             "rows": bokeh.layouts.column(),
             "buttons": bokeh.layouts.column(
                 bokeh.layouts.row(self.buttons["add"])
-            )
+            ),
         }
         self.layout = bokeh.layouts.column(
-            self.columns["rows"],
-            self.columns["buttons"]
+            self.columns["rows"], self.columns["buttons"]
         )
         self._labels = ["Show"]
         super().__init__()
@@ -356,7 +361,7 @@ class LayersUI(Observable):
         """
         # Match rows to number of labels
         n = len(layers)
-        nrows = len(self.columns["rows"].children) # - 1
+        nrows = len(self.columns["rows"].children)  # - 1
         if n > nrows:
             # for label in labels[nrows:]:
             for _ in range(n - nrows):
@@ -370,8 +375,7 @@ class LayersUI(Observable):
             self.labels = self.defaults["figure"][figure_index]
 
         # Set options in select menus
-        labels = [layer["label"] for layer in layers
-                  if "label" in layer]
+        labels = [layer["label"] for layer in layers if "label" in layer]
         options = list(sorted(labels))
         for select in self.selects:
             select.options = options
@@ -401,12 +405,7 @@ class LayersUI(Observable):
         """Add a bokeh.layouts.row with a dropdown and checkboxbuttongroup"""
         row_index = len(self.columns["rows"].children)
 
-        widths = {
-            "dropdown": 150,
-            "button": 50,
-            "group": 50,
-            "row": 350
-        }
+        widths = {"dropdown": 150, "button": 50, "group": 50, "row": 350}
 
         # Select
         select = bokeh.models.Select(width=widths["dropdown"], disabled=True)
@@ -420,25 +419,30 @@ class LayersUI(Observable):
         self.buttons["edit"].append(edit_button)
 
         # Close button
-        close_button = bokeh.models.Button(label=u"\u274C", width=widths["button"])
+        close_button = bokeh.models.Button(
+            label=u"\u274C", width=widths["button"]
+        )
         close_button.on_click(self.on_close(row_index))
         self.buttons["close"].append(close_button)
 
         # Button group
         button_group = bokeh.models.CheckboxButtonGroup(
-                default_size=widths["group"],
-                max_width=widths["group"],
-                labels=self.labels,
-                width=widths["group"])
+            default_size=widths["group"],
+            max_width=widths["group"],
+            labels=self.labels,
+            width=widths["group"],
+        )
         button_group.on_change("active", self.on_button_group(row_index))
         self.button_groups.append(button_group)
 
         # Row
-        row = bokeh.layouts.row(edit_button,
-                                close_button,
-                                select,
-                                button_group,
-                                width=widths["row"])
+        row = bokeh.layouts.row(
+            edit_button,
+            close_button,
+            select,
+            button_group,
+            width=widths["row"],
+        )
         self.columns["rows"].children.append(row)
 
     def remove_row(self):
@@ -452,20 +456,24 @@ class LayersUI(Observable):
     def on_edit(self, row_index: int):
         def _callback():
             self.notify(on_edit(row_index))
+
         return _callback
 
     def on_close(self, row_index: int):
         def _callback():
             self.notify(on_close(row_index))
+
         return _callback
 
     def on_button_group(self, row_index: int):
         """Translate event into Action"""
+
         def _callback(attr, old, new):
             # Note: bokeh.core.PropertyList can not be deep copied
             #       it RuntimeErrors, cast as list instead
             active = list(new)
             self.notify(on_button_group(row_index, active))
+
         return _callback
 
 
@@ -485,6 +493,7 @@ class LayerSpec:
 
 class Layer(Reusable):
     """Facade to ease API"""
+
     def __init__(self, map_view, visible, source_limits):
         self.map_view = map_view
         self.image_sources = getattr(self.map_view, "image_sources", [])
@@ -510,8 +519,9 @@ class Layer(Reusable):
             layer_state = {}
             layer_state.update(state.to_dict())
             if spec.variable != "":
-                layer_state.update(variable=spec.variable,
-                                   colorbar=spec.colorbar)
+                layer_state.update(
+                    variable=spec.variable, colorbar=spec.colorbar
+                )
             self.map_view.render(layer_state)
 
     def reset(self):
@@ -528,8 +538,10 @@ class Layer(Reusable):
 
 def factory(*args):
     """Curry Factory constructor to accept a single argument"""
+
     def wrapper(dataset):
         return Factory(dataset, *args)
+
     return wrapper
 
 
@@ -539,11 +551,10 @@ class Factory:
     Admittedly, there is a lot of coupling here that could be revised
     in future releases
     """
-    def __init__(self, dataset,
-                 color_mapper,
-                 figures,
-                 source_limits,
-                 opacity_slider):
+
+    def __init__(
+        self, dataset, color_mapper, figures, source_limits, opacity_slider
+    ):
         self._calls = 0
         self.dataset = dataset
         self.color_mapper = color_mapper
@@ -566,6 +577,7 @@ class Factory:
 
 class Visible:
     """Wrapper to make MapView layers visible/invisible"""
+
     def __init__(self, renderers):
         self._active = []
         self.renderers = renderers

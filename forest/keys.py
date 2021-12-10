@@ -36,12 +36,7 @@ def press(code):
     :param code: str representing browser event.code
     :returns: dict representing action
     """
-    return {
-        "kind": KEY_PRESS,
-        "payload": {
-            "code": code
-        }
-    }
+    return {"kind": KEY_PRESS, "payload": {"code": code}}
 
 
 @export
@@ -63,12 +58,13 @@ class KeyPress(Observable):
     .. note:: KeyPress.hidden_button must be added to the
               document to allow JS hack to initialise callbacks
     """
+
     def __init__(self):
-        self.source = bokeh.models.ColumnDataSource({
-            'keys': []
-        })
-        self.source.on_change('data', self._on_change)
-        custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""
+        self.source = bokeh.models.ColumnDataSource({"keys": []})
+        self.source.on_change("data", self._on_change)
+        custom_js = bokeh.models.CustomJS(
+            args=dict(source=self.source),
+            code="""
             if (typeof window.keyPressOn === 'undefined') {
                 let interval = 150  // Key hold is about 30ms, double-click is about 200ms
                 let throttle = function(callback, miliseconds) {
@@ -95,14 +91,16 @@ class KeyPress(Observable):
                 // Global to prevent multiple onkeydown callbacks
                 window.keyPressOn = true
             }
-        """)
+        """,
+        )
         self.hidden_button = bokeh.models.Button(
-                css_classes=['keypress-hidden-btn'])
+            css_classes=["keypress-hidden-btn"]
+        )
         self.hidden_button.js_on_click(custom_js)
         super().__init__()
 
     def _on_change(self, attr, old, new):
-        code = self.source.data['keys'][-1]
+        code = self.source.data["keys"][-1]
         self.notify(press(code))
 
 

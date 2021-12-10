@@ -7,6 +7,7 @@ from functools import partial
 import scipy.ndimage
 import numpy as np
 import pandas as pd
+
 try:
     import cf_units
 except ImportError:
@@ -18,6 +19,7 @@ def timeout_cache(interval):
     def decorator(f):
         cache = {}
         call_time = {}
+
         def wrapped(x):
             nonlocal cache
             nonlocal call_time
@@ -33,7 +35,9 @@ def timeout_cache(interval):
                     return cache[x]
                 else:
                     return cache[x]
+
         return wrapped
+
     return decorator
 
 
@@ -80,9 +84,10 @@ def to_datetime(d):
     elif isinstance(d, str):
         errors = []
         for fmt in (
-                "%Y-%m-%d %H:%M:%S",
-                "%Y-%m-%dT%H:%M:%S",
-                "%Y-%m-%dT%H:%M:%SZ"):
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M:%SZ",
+        ):
             try:
                 return dt.datetime.strptime(d, fmt)
             except ValueError as e:
@@ -96,15 +101,16 @@ def to_datetime(d):
 
 
 def parse_date(regex, fmt, path):
-    '''Parses a date from a pathname
+    """Parses a date from a pathname
 
     :param path: string representation of a path
     :returns: python Datetime object
-    '''
+    """
     groups = re.search(regex, os.path.basename(path))
     if groups is not None:
-        return dt.datetime.strptime(groups[0].replace('Z','UTC'),
-                                    fmt) # always UTC
+        return dt.datetime.strptime(
+            groups[0].replace("Z", "UTC"), fmt
+        )  # always UTC
 
 
 def convert_units(values, old_unit, new_unit):
@@ -117,13 +123,15 @@ def convert_units(values, old_unit, new_unit):
 def replace(time, **kwargs):
     """Swap out year, month, day, hour, minute or second"""
     if isinstance(time, np.datetime64):
-        return (pd.Timestamp(time).replace(**kwargs)
-                                  .to_datetime64()
-                                  .astype(time.dtype))
+        return (
+            pd.Timestamp(time)
+            .replace(**kwargs)
+            .to_datetime64()
+            .astype(time.dtype)
+        )
     elif isinstance(time, str):
         fmt = find_fmt(time)
-        return (pd.Timestamp(time).replace(**kwargs)
-                                  .strftime(fmt))
+        return pd.Timestamp(time).replace(**kwargs).strftime(fmt)
     return time.replace(**kwargs)
 
 

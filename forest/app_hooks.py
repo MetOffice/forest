@@ -7,6 +7,7 @@ import forest.data as data
 
 class DatasetSyncCallback:
     """Process to synchronize datasets"""
+
     def __init__(self, datasets):
         self.datasets = datasets
 
@@ -35,17 +36,20 @@ def parse_forest_args(argv=None):
         argv = sys.argv
     if "bokeh" in os.path.basename(argv[0]):
         i = argv.index("--args")
-        return argv[i + 1:]
+        return argv[i + 1 :]
     else:
         _, argv = forest.cli.main.parse_args(argv)
         return argv[1:]
 
 
 def on_session_destroyed(session_context):
-    '''
-    Function called when a session is closed 
+    """
+    Function called when a session is closed
     (e.g. tab closed or time out)
-    '''
+    """
     if data.AUTO_SHUTDOWN:
-        import sys 
-        sys.exit('\033[1;31mThe session has ended - tab closed or timeout. \n\n --- Terminating the Forest progam and relinquishing control of port. ---\033[1;00m')
+        import sys
+
+        sys.exit(
+            "\033[1;31mThe session has ended - tab closed or timeout. \n\n --- Terminating the Forest progam and relinquishing control of port. ---\033[1;00m"
+        )

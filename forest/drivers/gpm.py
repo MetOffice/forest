@@ -27,17 +27,18 @@ class Dataset:
         return Navigator(self.pattern, self.locator)
 
     def map_view(self, color_mapper):
-        return forest.map_view.ImageView(_Loader(self.pattern,
-                                          self.locator),
-                                  color_mapper,
-                                  use_hover_tool=False)
+        return forest.map_view.ImageView(
+            _Loader(self.pattern, self.locator),
+            color_mapper,
+            use_hover_tool=False,
+        )
 
 
 class Locator:
     """Search files to find paths"""
+
     def __init__(self):
-        self.parse_date = partial(forest.util.parse_date,
-                                  "[0-9]{8}", "%Y%m%d")
+        self.parse_date = partial(forest.util.parse_date, "[0-9]{8}", "%Y%m%d")
 
     def find_paths_and_index(self, paths, date):
         """Flatten paths and index generators"""
@@ -86,9 +87,7 @@ class Navigator:
             self._time_arrays[valid_time] = read_times(path)
 
         # Compute dataset time axis
-        arrays = [
-            np.asarray(list(timestamps.keys()))
-        ]
+        arrays = [np.asarray(list(timestamps.keys()))]
         for array in self._time_arrays.values():
             arrays.append(array)
         if len(arrays) == 0:
@@ -101,6 +100,7 @@ class Navigator:
 
 class _Loader:
     """Compatible with forest.map_view.ImageView"""
+
     def __init__(self, pattern, locator):
         self.pattern = pattern
         self.locator = locator
@@ -128,8 +128,8 @@ class _Loader:
                 lats = dataset.variables["latitude"][:]
                 data = dataset.variables["precipitation_flux"][index]
             npixels = 512
-            data = forest.geo.stretch_image(lons, lats, data,
-                                    plot_height=npixels,
-                                    plot_width=npixels)
+            data = forest.geo.stretch_image(
+                lons, lats, data, plot_height=npixels, plot_width=npixels
+            )
             break
         return data

@@ -7,6 +7,7 @@ from forest.colors import colorbar_figure, parse_color_spec
 
 class ColorbarUI:
     """Helper to make a figure containing only one colorbar"""
+
     def __init__(self):
         n = 1
         self.figures = []
@@ -37,7 +38,7 @@ class ColorbarUI:
             spec.apply(self.color_mappers[i])
 
         # Update layout
-        self.layout.children = self.figures[:len(specs)]
+        self.layout.children = self.figures[: len(specs)]
 
     def parse_specs(self, state):
         """Parse colorbar specifications from application state"""
@@ -55,8 +56,7 @@ class ColorbarUI:
 
     def make_colorbar(self):
         color_mapper = bokeh.models.LinearColorMapper(
-            palette="Greys256",
-            low=0,
-            high=1)
+            palette="Greys256", low=0, high=1
+        )
         figure = colorbar_figure(color_mapper, plot_width=250)
         return figure, color_mapper

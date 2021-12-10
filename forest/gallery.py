@@ -8,6 +8,7 @@ from forest.scaling_group import ScalingGroup
 
 class Gallery:
     """View orchestration layer"""
+
     def __init__(self, scaling_groups):
         self.scaling_groups = scaling_groups
 

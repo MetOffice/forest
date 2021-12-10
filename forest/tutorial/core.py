@@ -8,6 +8,7 @@ import forest.db
 
 class ConfigBuilder:
     """Build a config file"""
+
     def __init__(self, file_name, content):
         self.file_name = file_name
         self.content = content
@@ -21,13 +22,16 @@ class ConfigBuilder:
 
 SOURCE_DIR = os.path.dirname(__file__)
 BUILDERS = {
-    "name": ConfigBuilder("name-config.yaml", """
+    "name": ConfigBuilder(
+        "name-config.yaml",
+        """
 files:
     - label: NAME
       pattern: 'NAME/*.txt'
       file_type: 'name'
 
-""")
+""",
+    )
 }
 MULTI_CFG_FILE = "multi-config.yaml"
 UM_CFG_FILE = "um-config.yaml"
@@ -62,12 +66,13 @@ def build_all(build_dir):
         builder.build(build_dir)
 
     for builder in [
-            build_um_config,
-            build_multi_config,
-            build_rdt,
-            build_eida50,
-            build_um,
-            build_database]:
+        build_um_config,
+        build_multi_config,
+        build_rdt,
+        build_eida50,
+        build_um,
+        build_database,
+    ]:
         builder(build_dir)
 
 
@@ -100,7 +105,9 @@ files:
      pattern: "*{}"
      directory: {}
      locator: database
-""".format(UM_FILE, build_dir)
+""".format(
+        UM_FILE, build_dir
+    )
     print("writing: {}".format(path))
     with open(path, "w") as stream:
         stream.write(content)
@@ -133,10 +140,13 @@ def build_um(build_dir):
     x = np.linspace(0, 45, nx)
     y = np.linspace(0, 45, ny)
     X, Y = np.meshgrid(x, y)
-    Z_0 = np.sqrt(X**2 + Y**2)
-    Z_1 = Z_0 + 5.
+    Z_0 = np.sqrt(X ** 2 + Y ** 2)
+    Z_1 = Z_0 + 5.0
     reference = dt.datetime(2019, 4, 17)
-    times = [dt.datetime(2019, 4, 17, 12, 45), dt.datetime(2019, 4, 17, 13, 45)]
+    times = [
+        dt.datetime(2019, 4, 17, 12, 45),
+        dt.datetime(2019, 4, 17, 13, 45),
+    ]
     path = os.path.join(build_dir, UM_FILE)
     print("writing: {}".format(path))
     with netCDF4.Dataset(path, "w") as dataset:
@@ -148,8 +158,10 @@ def build_um(build_dir):
         var = formatter.times("time", length=len(times), dim_name="dim0")
         var[:] = netCDF4.date2num(times, units=var.units)
         formatter.forecast_reference_time(times[0])
-        var = formatter.pressures("pressure", length=len(times), dim_name="dim0")
-        var[:] = 1000.
+        var = formatter.pressures(
+            "pressure", length=len(times), dim_name="dim0"
+        )
+        var[:] = 1000.0
         dims = ("dim0", "longitude", "latitude")
         coordinates = "forecast_period_1 forecast_reference_time pressure time"
         var = formatter.relative_humidity(dims, coordinates=coordinates)
@@ -170,6 +182,7 @@ def build_database(build_dir):
 
 class UM(object):
     """Unified model diagnostics formatter"""
+
     def __init__(self, dataset):
         self.dataset = dataset
         self.units = "hours since 1970-01-01 00:00:00"
@@ -227,8 +240,12 @@ class UM(object):
         var.long_name = "latitude"
         return var
 
-    def relative_humidity(self, dims, name="relative_humidity",
-            coordinates="forecast_period_1 forecast_reference_time"):
+    def relative_humidity(
+        self,
+        dims,
+        name="relative_humidity",
+        coordinates="forecast_period_1 forecast_reference_time",
+    ):
         dataset = self.dataset
         var = dataset.createVariable(name, "f", dims)
         var.standard_name = "relative_humidity"
