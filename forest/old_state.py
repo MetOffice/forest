@@ -10,8 +10,9 @@ def old_state(f):
             self, state = args
             return f(self, _to_old(state))
         else:
-            state, = args
+            (state,) = args
             return f(_to_old(state))
+
     return wrapper
 
 
@@ -33,7 +34,7 @@ def unique(f):
             self, value = args
             key = (id(self), value)  # Distinguish wrapped methods
         else:
-            value, = args
+            (value,) = args
             key = value
 
         if (not called) or (key != previous):

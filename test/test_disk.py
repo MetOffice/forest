@@ -7,19 +7,19 @@ import fnmatch
 import pytest
 import forest.drivers
 from forest.drivers import unified_model
-from forest import (
-        disk,
-        tutorial)
+from forest import disk, tutorial
 from forest.exceptions import SearchFail
 
 
 class TestLocatorScalability(unittest.TestCase):
     def test_locate_given_one_thousand_files(self):
-        N = 10**4
+        N = 10 ** 4
         k = np.random.randint(N)
         start = dt.datetime(2019, 1, 10)
         times = [start + dt.timedelta(hours=i) for i in range(N)]
-        paths = ["test-locate-{:%Y%m%dT%H%MZ}.nc".format(time) for time in times]
+        paths = [
+            "test-locate-{:%Y%m%dT%H%MZ}.nc".format(time) for time in times
+        ]
         locator = unified_model.Locator(paths)
         result = locator.find_paths(times[k])
         expect = [paths[k]]
@@ -43,11 +43,7 @@ class TestLocator(unittest.TestCase):
         valid_time = dt.datetime(2019, 1, 1)
         locator = unified_model.Locator([self.path])
         with self.assertRaises(SearchFail):
-            locator.locate(
-                    pattern,
-                    variable,
-                    initial_time,
-                    valid_time)
+            locator.locate(pattern, variable, initial_time, valid_time)
 
     def test_locator_given_dim0_format(self):
         pattern = self.path
@@ -60,21 +56,20 @@ class TestLocator(unittest.TestCase):
             var[:] = netCDF4.date2num(times, units=var.units)
             um.forecast_reference_time(times[0])
             var = um.pressures("pressure", length=len(times), dim_name="dim0")
-            var[:] = 1000.
+            var[:] = 1000.0
             dims = ("dim0", "longitude", "latitude")
-            coordinates = "forecast_period_1 forecast_reference_time pressure time"
+            coordinates = (
+                "forecast_period_1 forecast_reference_time pressure time"
+            )
             var = um.relative_humidity(dims, coordinates=coordinates)
-            var[:] = 100.
+            var[:] = 100.0
         variable = "relative_humidity"
         initial_time = dt.datetime(2019, 1, 1)
         valid_time = dt.datetime(2019, 1, 2)
         locator = unified_model.Locator([self.path])
         _, result = locator.locate(
-                    pattern,
-                    variable,
-                    initial_time,
-                    valid_time,
-                    pressure=1000.0001)
+            pattern, variable, initial_time, valid_time, pressure=1000.0001
+        )
         expect = (1,)
         self.assertEqual(expect, result)
 
@@ -95,18 +90,15 @@ class TestLocator(unittest.TestCase):
             dims = ("time", "pressure", "longitude", "latitude")
             coordinates = "forecast_period_1 forecast_reference_time"
             var = um.relative_humidity(dims, coordinates=coordinates)
-            var[:] = 100.
+            var[:] = 100.0
         variable = "relative_humidity"
         initial_time = reference_time
         valid_time = times[1]
         pressure = pressures[2]
         locator = unified_model.Locator([self.path])
         _, result = locator.locate(
-                    pattern,
-                    variable,
-                    initial_time,
-                    valid_time,
-                    pressure)
+            pattern, variable, initial_time, valid_time, pressure
+        )
         expect = (1, 2)
         self.assertEqual(expect, result)
 
@@ -128,7 +120,7 @@ class TestLocator(unittest.TestCase):
             dims = ("time", "pressure", "longitude", "latitude")
             coordinates = "forecast_period_1 forecast_reference_time"
             var = um.relative_humidity(dims, coordinates=coordinates)
-            var[:] = 100.
+            var[:] = 100.0
         variable = "relative_humidity"
         initial_time = reference_time
         valid_time = future
@@ -136,11 +128,8 @@ class TestLocator(unittest.TestCase):
         locator = unified_model.Locator([self.path])
         with self.assertRaises(SearchFail):
             locator.locate(
-                    pattern,
-                    variable,
-                    initial_time,
-                    valid_time,
-                    pressure)
+                pattern, variable, initial_time, valid_time, pressure
+            )
 
     def test_initial_time_given_forecast_reference_time(self):
         time = dt.datetime(2019, 1, 1, 12)
@@ -154,22 +143,23 @@ class TestLocator(unittest.TestCase):
     def test_valid_times(self):
         units = "hours since 1970-01-01 00:00:00"
         times = {
-                "time_0": [dt.datetime(2019, 1, 1)],
-                "time_1": [dt.datetime(2019, 1, 1, 3)]}
+            "time_0": [dt.datetime(2019, 1, 1)],
+            "time_1": [dt.datetime(2019, 1, 1, 3)],
+        }
         with netCDF4.Dataset(self.path, "w") as dataset:
             um = tutorial.UM(dataset)
             for name, values in times.items():
                 var = um.times(name, length=len(values))
                 var[:] = netCDF4.date2num(values, units=var.units)
             var = um.pressures("pressure", length=1)
-            var[:] = 1000.
+            var[:] = 1000.0
             var = um.longitudes(length=1)
-            var[:] = 125.
+            var[:] = 125.0
             var = um.latitudes(length=1)
-            var[:] = 45.
+            var[:] = 45.0
             dims = ("time_1", "pressure", "longitude", "latitude")
             var = um.relative_humidity(dims)
-            var[:] = 100.
+            var[:] = 100.0
         variable = "relative_humidity"
         result = unified_model.read_valid_times(self.path, variable)
         expect = times["time_1"]
@@ -266,9 +256,9 @@ class TestNavigator(unittest.TestCase):
         valid_times = [
             dt.datetime(2019, 1, 1, 0),
             dt.datetime(2019, 1, 1, 1),
-            dt.datetime(2019, 1, 1, 2)
+            dt.datetime(2019, 1, 1, 2),
         ]
-        pressures = [1000., 1000., 1000.]
+        pressures = [1000.0, 1000.0, 1000.0]
         units = "hours since 1970-01-01 00:00:00"
         with netCDF4.Dataset(self.path, "w") as dataset:
             # Dimensions
@@ -292,17 +282,16 @@ class TestNavigator(unittest.TestCase):
 
             # Relative humidity
             var = dataset.createVariable(
-                variable, "f", ("dim0", "longitude", "latitude"))
-            var[:] = 100.
+                variable, "f", ("dim0", "longitude", "latitude")
+            )
+            var[:] = 100.0
             var.standard_name = "relative_humidity"
             var.units = "%"
             var.um_stash_source = "m01s16i256"
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        settings = {
-            "pattern": self.path
-        }
+        settings = {"pattern": self.path}
         dataset = forest.drivers.get_dataset("unified_model", settings)
         navigator = dataset.navigator()
         result = navigator.valid_times(pattern, variable, initial_time)
@@ -316,9 +305,9 @@ class TestNavigator(unittest.TestCase):
         valid_times = [
             dt.datetime(2019, 1, 1, 0),
             dt.datetime(2019, 1, 1, 1),
-            dt.datetime(2019, 1, 1, 2)
+            dt.datetime(2019, 1, 1, 2),
         ]
-        pressures = [1000., 1000., 1000.]
+        pressures = [1000.0, 1000.0, 1000.0]
         units = "hours since 1970-01-01 00:00:00"
         with netCDF4.Dataset(self.path, "w") as dataset:
             # Dimensions
@@ -342,21 +331,20 @@ class TestNavigator(unittest.TestCase):
 
             # Relative humidity
             var = dataset.createVariable(
-                variable, "f", ("pressure", "longitude", "latitude"))
-            var[:] = 100.
+                variable, "f", ("pressure", "longitude", "latitude")
+            )
+            var[:] = 100.0
             var.standard_name = "relative_humidity"
             var.units = "%"
             var.um_stash_source = "m01s16i256"
             var.grid_mapping = "longitude_latitude"
             var.coordinates = "forecast_period forecast_reference_time time"
 
-        settings = {
-            "pattern": self.path
-        }
+        settings = {"pattern": self.path}
         dataset = forest.drivers.get_dataset("unified_model", settings)
         navigator = dataset.navigator()
         result = navigator.pressures(pattern, variable, initial_time)
-        expect = [1000.]
+        expect = [1000.0]
         np.testing.assert_array_equal(expect, result)
 
 
@@ -381,7 +369,8 @@ def test_ndindex_given_dim0_format():
     pressure = pressures[1]
     masks = [
         disk.time_mask(times, time),
-        disk.pressure_mask(pressures, pressure)]
+        disk.pressure_mask(pressures, pressure),
+    ]
     axes = [0, 0]
     result = disk.ndindex(masks, axes)
     expect = (1,)
@@ -398,10 +387,7 @@ class TestFNMatch(unittest.TestCase):
 
 class TestNumpy(unittest.TestCase):
     def test_concatenate(self):
-        arrays = [
-            np.array([1, 2, 3]),
-            np.array([4, 5])
-        ]
+        arrays = [np.array([1, 2, 3]), np.array([4, 5])]
         result = np.concatenate(arrays)
         expect = np.array([1, 2, 3, 4, 5])
         np.testing.assert_array_equal(expect, result)

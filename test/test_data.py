@@ -1,8 +1,6 @@
 import unittest
 import forest.drivers.unified_model
-from forest import (
-        data,
-        db)
+from forest import data, db
 
 
 def test_cut():
@@ -12,7 +10,6 @@ def test_cut():
     assert list(result[0][1]) == [20, 30]
     assert list(result[1][0]) == [6]
     assert list(result[1][1]) == [40]
-
 
 
 class TestUnifiedModelLoader(unittest.TestCase):
@@ -50,7 +47,8 @@ class TestUnifiedModelLoader(unittest.TestCase):
             variable="variable",
             initial_time="2019-01-01 00:00:00",
             valid_time="2019-01-01 00:00:00",
-            pressure=1000.)
+            pressure=1000.0,
+        )
         loader = forest.drivers.unified_model.Loader(name, pattern, locator)
         result = loader.image(state)
         expect = self.empty_image
@@ -61,7 +59,7 @@ class TestUnifiedModelLoader(unittest.TestCase):
         variable = "variable"
         initial_time = "2019-01-01 00:00:00"
         valid_time = "2019-01-01 00:00:00"
-        pressure = 1000.
+        pressure = 1000.0
         database = db.Database.connect(":memory:")
         database.insert_file_name(path, initial_time)
         database.insert_pressure(path, variable, pressure, i=0)
@@ -72,7 +70,8 @@ class TestUnifiedModelLoader(unittest.TestCase):
             initial_time=initial_time,
             valid_time=valid_time,
             pressure=pressure,
-            pressures=[925.])
+            pressures=[925.0],
+        )
         loader = forest.drivers.unified_model.Loader(None, "*.nc", locator)
         result = loader.image(state)
         expect = self.empty_image

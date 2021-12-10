@@ -11,11 +11,11 @@ def parse_args(argv=None, parser=None):
 
 def add_arguments(parser):
     parser.add_argument(
-        "--database", required=True,
-        help="database file to write/extend")
+        "--database", required=True, help="database file to write/extend"
+    )
     parser.add_argument(
-        "paths", nargs="+", metavar="FILE",
-        help="unified model netcdf files")
+        "paths", nargs="+", metavar="FILE", help="unified model netcdf files"
+    )
 
 
 def main(argv=None, args=None):
@@ -26,5 +26,5 @@ def main(argv=None, args=None):
             database.insert_netcdf(path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

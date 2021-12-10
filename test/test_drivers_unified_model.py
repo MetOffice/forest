@@ -22,7 +22,7 @@ def test_sync_skips_oserror(tmpdir):
         "locator": "database",
         "pattern": file_name,
         "directory": str(tmpdir),
-        "database_path": database_path
+        "database_path": database_path,
     }
     dataset = forest.drivers.get_dataset("unified_model", settings)
     dataset.sync()
@@ -45,7 +45,7 @@ def test_navigator_use_database(tmpdir):
     settings = {
         "pattern": "*.nc",
         "locator": "database",
-        "database_path": database_path
+        "database_path": database_path,
     }
     dataset = forest.drivers.get_dataset("unified_model", settings)
     navigator = dataset.navigator()
@@ -77,7 +77,9 @@ def test_view_render_state(tmpdir):
     with netCDF4.Dataset(path, "w") as dataset:
         insert_lonlat(dataset, [0, 1], [0, 1])
         insert_times(dataset, times)
-        var = dataset.createVariable(variable, "f", ("time", "longitude", "latitude"))
+        var = dataset.createVariable(
+            variable, "f", ("time", "longitude", "latitude")
+        )
         var.coords = "time"  # Needed by Locator
     settings = {
         "pattern": path,
@@ -85,13 +87,15 @@ def test_view_render_state(tmpdir):
     color_mapper = bokeh.models.ColorMapper()
     dataset = forest.drivers.get_dataset("unified_model", settings)
     view = dataset.map_view(color_mapper)
-    view.render({
-        "initial_time": dt.datetime(2020, 1, 1),
-        "valid_time": dt.datetime(2020, 1, 1),
-        "variable": variable,
-        "pressure": None,
-        "pressures": []  # Needed by Loader.valid(state)
-    })
+    view.render(
+        {
+            "initial_time": dt.datetime(2020, 1, 1),
+            "valid_time": dt.datetime(2020, 1, 1),
+            "variable": variable,
+            "pressure": None,
+            "pressures": [],  # Needed by Loader.valid(state)
+        }
+    )
     assert len(view.image_sources[0].data["image"]) == 1
 
 
@@ -126,10 +130,7 @@ def insert_times(dataset, times):
 
 
 def insert_lonlat(dataset, lons, lats):
-    dimensions = [
-        ("longitude", len(lons)),
-        ("latitude", len(lats))
-    ]
+    dimensions = [("longitude", len(lons)), ("latitude", len(lats))]
     for name, length in dimensions:
         dataset.createDimension(name, length)
     var = dataset.createVariable("longitude", "f", ("longitude",))

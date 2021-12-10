@@ -35,24 +35,22 @@ def axes_pts(masks):
 
 
 def coord_mask(name, values, value):
-    return {
-        "time": time_mask,
-        "pressure": pressure_mask}[name](values, value)
+    return {"time": time_mask, "pressure": pressure_mask}[name](values, value)
 
 
 def time_mask(times, time):
     """Logical mask that selects particular time"""
     if isinstance(time, (str, dt.datetime)):
-        time = np.datetime64(time, 's')
+        time = np.datetime64(time, "s")
     if isinstance(times, list):
-        times = np.array(times, dtype='datetime64[s]')
+        times = np.array(times, dtype="datetime64[s]")
     return times == time
 
 
 def pressure_mask(pressures, pressure, rtol=0.01):
     """Logical mask that selects particular pressure"""
     if isinstance(pressures, list):
-        pressures = np.array(pressures, dtype='d')
+        pressures = np.array(pressures, dtype="d")
     return (np.abs(pressures - pressure) / np.abs(pressure)) < rtol
 
 
@@ -68,7 +66,9 @@ def _axis(name, path, variable):
     dims, coords = load_dim_coords(path, variable)
     value = axis(name, dims, coords)
     if value is None:
-        msg = "{} axis not found: '{}' '{}'".format(name.capitalize(), path, variable)
+        msg = "{} axis not found: '{}' '{}'".format(
+            name.capitalize(), path, variable
+        )
         raise AxisNotFound(msg)
     else:
         return value

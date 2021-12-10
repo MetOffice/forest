@@ -28,9 +28,8 @@ try:
 except ModuleNotFoundError:
     datashader = None
 
-def stretch_image(lons, lats, values,
-                  plot_height=None,
-                  plot_width=None):
+
+def stretch_image(lons, lats, values, plot_height=None, plot_width=None):
     """
     Do the mapping from image data to the format required by bokeh
     for plotting.
@@ -41,13 +40,9 @@ def stretch_image(lons, lats, values,
                    size of latitude and longitude arrays.
     :return: A dictionary that can be used with the bokeh image glyph.
     """
-    if (lons.ndim == 1):
-        gx, _ = web_mercator(
-            lons,
-            np.zeros(len(lons), dtype="d"))
-        _, gy = web_mercator(
-            np.zeros(len(lats), dtype="d"),
-            lats)
+    if lons.ndim == 1:
+        gx, _ = web_mercator(lons, np.zeros(len(lons), dtype="d"))
+        _, gy = web_mercator(np.zeros(len(lats), dtype="d"), lats)
     elif (lons.ndim == 2) and (lats.ndim == 2):
         gx, gy = web_mercator(lons, lats)
         gx = gx.reshape(lons.shape)
@@ -60,9 +55,15 @@ def stretch_image(lons, lats, values,
     if datashader:
         x_range = (gx.min(), gx.max())
         y_range = (gy.min(), gy.max())
-        image = datashader_stretch(values, gx, gy, x_range, y_range,
-                                   plot_height=plot_height,
-                                   plot_width=plot_width)
+        image = datashader_stretch(
+            values,
+            gx,
+            gy,
+            x_range,
+            y_range,
+            plot_height=plot_height,
+            plot_width=plot_width,
+        )
     else:
         # TODO: Deprecate this method
         image = custom_stretch(values, gx, gy)
@@ -78,18 +79,12 @@ def stretch_image(lons, lats, values,
         # 2D image extent
         dw = gx.max() - gx.min()
         dh = gy.max() - gy.min()
-    return {
-        "x": [x],
-        "y": [y],
-        "dw": [dw],
-        "dh": [dh],
-        "image": [image]
-    }
+    return {"x": [x], "y": [y], "dw": [dw], "dh": [dh], "image": [image]}
 
 
-def datashader_stretch(values, gx, gy, x_range, y_range,
-                       plot_height=None,
-                       plot_width=None):
+def datashader_stretch(
+    values, gx, gy, x_range, y_range, plot_height=None, plot_width=None
+):
     """
     Use datashader to sample the data mesh in on a regular grid for use in
     image display.
@@ -105,27 +100,29 @@ def datashader_stretch(values, gx, gy, x_range, y_range,
         plot_height = values.shape[0]
     if plot_width is None:
         plot_width = values.shape[1]
-    canvas = datashader.Canvas(plot_height=plot_height,
-                               plot_width=plot_width,
-                               x_range=x_range,
-                               y_range=y_range)
+    canvas = datashader.Canvas(
+        plot_height=plot_height,
+        plot_width=plot_width,
+        x_range=x_range,
+        y_range=y_range,
+    )
     if gx.ndim == 1:
         # 1D Quadmesh
-        xarr = xarray.DataArray(values, coords=[('y', gy), ('x', gx)], name='Z')
+        xarr = xarray.DataArray(
+            values, coords=[("y", gy), ("x", gx)], name="Z"
+        )
         image = canvas.quadmesh(xarr)
     else:
         # 2D Quadmesh
-        xarr = xarray.DataArray(values,
-                                dims=['Y', 'X'],
-                                coords={
-                                    'Qx': (['Y', 'X'], gx),
-                                    'Qy': (['Y', 'X'], gy)
-                                },
-                                name='Z')
-        image = canvas.quadmesh(xarr, x='Qx', y='Qy')
-    return np.ma.masked_array(image.values,
-                          mask=np.isnan(
-                              image.values))
+        xarr = xarray.DataArray(
+            values,
+            dims=["Y", "X"],
+            coords={"Qx": (["Y", "X"], gx), "Qy": (["Y", "X"], gy)},
+            name="Z",
+        )
+        image = canvas.quadmesh(xarr, x="Qx", y="Qy")
+    return np.ma.masked_array(image.values, mask=np.isnan(image.values))
+
 
 def custom_stretch(values, gx, gy):
     if np.ma.is_masked(values):
@@ -136,7 +133,8 @@ def custom_stretch(values, gx, gy):
     if mask is not None:
         image_mask = stretch_y(gy)(mask)
         image = np.ma.masked_invalid(
-            np.ma.masked_array(image, mask=image_mask))
+            np.ma.masked_array(image, mask=image_mask)
+        )
     return image
 
 
@@ -152,8 +150,8 @@ def stretch_y(uneven_y):
     if isinstance(uneven_y, list):
         uneven_y = np.asarray(uneven_y, dtype=np.float)
     even_y = np.linspace(
-        uneven_y.min(), uneven_y.max(), len(uneven_y),
-        dtype=np.float)
+        uneven_y.min(), uneven_y.max(), len(uneven_y), dtype=np.float
+    )
     index = np.arange(len(uneven_y), dtype=np.float)
     index_function = scipy.interpolate.interp1d(uneven_y, index)
     index_fractions = index_function(even_y)
@@ -173,32 +171,28 @@ def stretch_y(uneven_y):
         else:
             raise Exception("Can only handle axis 0 or 1")
         return scipy.ndimage.map_coordinates(
-            values,
-            np.meshgrid(i, j, indexing="ij"),
-            order=1)
+            values, np.meshgrid(i, j, indexing="ij"), order=1
+        )
+
     return wrapped
 
 
 def to_180(x):
     y = x.copy()
-    y[y > 180.] -= 360.
+    y[y > 180.0] -= 360.0
     return y
 
 
 def web_mercator(lons, lats):
     return transform(
-            lons,
-            lats,
-            cartopy.crs.PlateCarree(),
-            cartopy.crs.Mercator.GOOGLE)
+        lons, lats, cartopy.crs.PlateCarree(), cartopy.crs.Mercator.GOOGLE
+    )
 
 
 def plate_carree(x, y):
     return transform(
-            x,
-            y,
-            cartopy.crs.Mercator.GOOGLE,
-            cartopy.crs.PlateCarree())
+        x, y, cartopy.crs.Mercator.GOOGLE, cartopy.crs.PlateCarree()
+    )
 
 
 def transform(x, y, src_crs, dst_crs):

@@ -120,7 +120,7 @@ def colorbar_figure(color_mapper, plot_width=500):
         orientation="horizontal",
         major_tick_line_color="black",
         bar_line_color="black",
-        background_fill_alpha=0.,
+        background_fill_alpha=0.0,
     )
     colorbar.title = ""
 
@@ -135,18 +135,20 @@ def colorbar_figure(color_mapper, plot_width=500):
         outline_line_color=None,
     )
     figure.axis.visible = False
-    figure.add_layout(colorbar, 'center')
+    figure.add_layout(colorbar, "center")
     return figure
+
 
 @dataclass
 class ColorSpec:
     """Specifies color mapper settings"""
+
     name: str = "Greys"
     number: int = 256
     reverse: bool = False
-    low: float = 0.
+    low: float = 0.0
     low_visible: bool = True
-    high: float = 1.
+    high: float = 1.0
     high_visible: bool = True
 
     def __post_init__(self):
@@ -259,23 +261,29 @@ def set_palette_numbers(numbers):
 
 def set_source_limits(low, high):
     """Action to set colorbar limits from column data sources"""
-    return {"kind": SET_LIMITS,
-            "payload": {"low": low, "high": high},
-            "meta": {"origin": "column_data_source"}}
+    return {
+        "kind": SET_LIMITS,
+        "payload": {"low": low, "high": high},
+        "meta": {"origin": "column_data_source"},
+    }
 
 
 def set_user_high(high):
     """Action to set user defined colorbar higher limit"""
-    return {"kind": SET_LIMITS,
-            "payload": {"high": high},
-            "meta": {"origin": "user"}}
+    return {
+        "kind": SET_LIMITS,
+        "payload": {"high": high},
+        "meta": {"origin": "user"},
+    }
 
 
 def set_user_low(low):
     """Action to set user defined colorbar lower limit"""
-    return {"kind": SET_LIMITS,
-            "payload": {"low": low},
-            "meta": {"origin": "user"}}
+    return {
+        "kind": SET_LIMITS,
+        "payload": {"low": low},
+        "meta": {"origin": "user"},
+    }
 
 
 def set_limits_origin(text):
@@ -436,6 +444,7 @@ def middleware():
         elif previous != action:
             previous = action
             yield action
+
     return call
 
 
@@ -463,6 +472,7 @@ class SourceLimits(Observable):
     .. note:: Unlike a typical component there is no ``layout`` property
               to attach to a bokeh document
     """
+
     def __init__(self):
         self.sources = []
         super().__init__()
@@ -488,8 +498,9 @@ class SourceLimits(Observable):
 
         # Remove source from limit calculation
         if source in self.sources:
-            self.sources = [_source for _source in self.sources
-                            if _source.id != source.id]
+            self.sources = [
+                _source for _source in self.sources if _source.id != source.id
+            ]
             low, high = self.limits(self.sources)
             self.notify(set_source_limits(low, high))
 
@@ -516,16 +527,21 @@ class SourceLimits(Observable):
 @forest.mark.component
 class UserLimits(Observable):
     """User controlled color mapper limits"""
+
     def __init__(self):
         self.inputs = {
-            "low": bokeh.models.TextInput(title="User min:",
-                                          placeholder="Enter a number"),
-            "high": bokeh.models.TextInput(title="User max:",
-                                           placeholder="Enter a number"),
-            "source_low": bokeh.models.TextInput(title="Data min:",
-                                                 disabled=True),
-            "source_high": bokeh.models.TextInput(title="Data max:",
-                                                  disabled=True)
+            "low": bokeh.models.TextInput(
+                title="User min:", placeholder="Enter a number"
+            ),
+            "high": bokeh.models.TextInput(
+                title="User max:", placeholder="Enter a number"
+            ),
+            "source_low": bokeh.models.TextInput(
+                title="Data min:", disabled=True
+            ),
+            "source_high": bokeh.models.TextInput(
+                title="Data max:", disabled=True
+            ),
         }
         self.inputs["low"].on_change("value", self.on_input_low)
         self.inputs["high"].on_change("value", self.on_input_high)
@@ -534,38 +550,39 @@ class UserLimits(Observable):
         self.radio_group = bokeh.models.RadioGroup(
             labels=["Use data limits", "Use user limits"],
             active=0,
-            inline=True)
+            inline=True,
+        )
         self.radio_group.on_change("active", self.on_origin)
 
         self.checkboxes = {}
 
         # Checkbox transparency lower threshold
         self.checkboxes["invisible_min"] = bokeh.models.CheckboxGroup(
-            labels=["Set data below Min to transparent"],
-            active=[])
-        self.checkboxes["invisible_min"].on_change("active", self.on_invisible_min)
+            labels=["Set data below Min to transparent"], active=[]
+        )
+        self.checkboxes["invisible_min"].on_change(
+            "active", self.on_invisible_min
+        )
 
         # Checkbox transparency upper threshold
         self.checkboxes["invisible_max"] = bokeh.models.CheckboxGroup(
-            labels=["Set data above Max to transparent"],
-            active=[])
-        self.checkboxes["invisible_max"].on_change("active", self.on_invisible_max)
+            labels=["Set data above Max to transparent"], active=[]
+        )
+        self.checkboxes["invisible_max"].on_change(
+            "active", self.on_invisible_max
+        )
 
-        widths = {
-            "row": 310
-        }
+        widths = {"row": 310}
         self.layout = bokeh.layouts.column(
             bokeh.layouts.row(
-                self.inputs["low"],
-                self.inputs["high"],
-                width=widths["row"]),
+                self.inputs["low"], self.inputs["high"], width=widths["row"]
+            ),
             bokeh.layouts.row(
                 self.inputs["source_low"],
                 self.inputs["source_high"],
-                width=widths["row"]),
-            bokeh.layouts.row(
-                self.radio_group,
-                width=widths["row"]),
+                width=widths["row"],
+            ),
+            bokeh.layouts.row(self.radio_group, width=widths["row"]),
             self.checkboxes["invisible_min"],
             self.checkboxes["invisible_max"],
         )
@@ -607,10 +624,9 @@ class UserLimits(Observable):
         """Helper to get current state of widgets"""
         _props = {
             "limits": {
-                "origin": {
-                    0: "column_data_source",
-                    1: "user"
-                }[self.radio_group.active],
+                "origin": {0: "column_data_source", 1: "user"}[
+                    self.radio_group.active
+                ],
                 "user": {},
                 "column_data_source": {},
             }
@@ -624,9 +640,13 @@ class UserLimits(Observable):
 
         # ColumnDataSource inputs
         if self.inputs["source_high"].value is not None:
-            _props["limits"]["column_data_source"]["high"] = self.inputs["source_high"].value
+            _props["limits"]["column_data_source"]["high"] = self.inputs[
+                "source_high"
+            ].value
         if self.inputs["source_low"].value is not None:
-            _props["limits"]["column_data_source"]["low"] = self.inputs["source_low"].value
+            _props["limits"]["column_data_source"]["low"] = self.inputs[
+                "source_low"
+            ].value
 
         # Invisible min/max
         for key in ("invisible_min", "invisible_max"):
@@ -692,11 +712,13 @@ def connect(view, store):
 
 
 def one_way_connect(view, store):
-    stream = (Stream()
-                .listen_to(store)
-                .map(state_to_props)
-                .filter(lambda x: x is not None)
-                .distinct())
+    stream = (
+        Stream()
+        .listen_to(store)
+        .map(state_to_props)
+        .filter(lambda x: x is not None)
+        .distinct()
+    )
     stream.map(lambda props: view.render(props))
 
 
@@ -720,42 +742,39 @@ class ColorMapperView:
 
 class ColorPaletteJS:
     """Client-side ColorPalette selector"""
+
     def __init__(self):
-        self.widths = {
-            "select": 140,
-            "div": 300
-        }
+        self.widths = {"select": 140, "div": 300}
         # Map palettes to ColumnDataSource
         names, numbers = [], []
         for name, palettes in sorted(bokeh.palettes.all_palettes.items()):
             for number in sorted(palettes.keys()):
                 names.append(name)
                 numbers.append(number)
-        self.source = bokeh.models.ColumnDataSource({
-            "names": names,
-            "numbers": numbers
-        })
+        self.source = bokeh.models.ColumnDataSource(
+            {"names": names, "numbers": numbers}
+        )
 
         # Figure to display color bar preview
         self.color_mapper = bokeh.models.LinearColorMapper(
-            palette="Greys256",
-            low=0,
-            high=1)
-        self.figure = colorbar_figure(self.color_mapper,
-                                      plot_width=320)
+            palette="Greys256", low=0, high=1
+        )
+        self.figure = colorbar_figure(self.color_mapper, plot_width=320)
 
         # Wire up select widgets
         self.selects = {
             "name": bokeh.models.Select(width=self.widths["select"]),
             "number": bokeh.models.Select(width=self.widths["select"]),
         }
-        self.selects["name"].options = ["Please specify"] + list(sorted(set(names)))
+        self.selects["name"].options = ["Please specify"] + list(
+            sorted(set(names))
+        )
         self.selects["name"].value = "Please specify"
         self.selects["number"].options = ["Please specify"]
         self.selects["number"].value = "Please specify"
-        custom_js = bokeh.models.CustomJS(args=dict(
-                source=self.source,
-                select=self.selects["number"]), code="""
+        custom_js = bokeh.models.CustomJS(
+            args=dict(source=self.source, select=self.selects["number"]),
+            code="""
             let name = cb_obj.value
             let names = source.data["names"]
             let numbers = source.data["numbers"]
@@ -766,9 +785,9 @@ class ColorPaletteJS:
                 }
             }
             select.options = options
-        """)
+        """,
+        )
         self.selects["name"].js_on_change("value", custom_js)
-
 
         # Preview figure
         self.selects["name"].on_change("value", self.on_preview)
@@ -777,18 +796,16 @@ class ColorPaletteJS:
         # Reverse checkbox
         self.checkboxes = {}
         self.checkboxes["reverse"] = bokeh.models.CheckboxGroup(
-            labels=["Reverse"],
-            active=[])
+            labels=["Reverse"], active=[]
+        )
         self.checkboxes["reverse"].on_change("active", self.on_preview)
 
         self.layout = bokeh.layouts.column(
-            bokeh.models.Div(text="Color palette:",
-                             width=self.widths["div"]),
+            bokeh.models.Div(text="Color palette:", width=self.widths["div"]),
             self.figure,
-            bokeh.layouts.row(
-                self.selects["name"],
-                self.selects["number"]),
-            self.checkboxes["reverse"])
+            bokeh.layouts.row(self.selects["name"], self.selects["number"]),
+            self.checkboxes["reverse"],
+        )
 
     def on_preview(self, attr, old, new):
         spec = ColorSpec(**self.props())
@@ -810,32 +827,33 @@ class ColorPaletteJS:
         for key, select in self.selects.items():
             if key in props:
                 select.value = str(props[key])
-        self.checkboxes["reverse"].active = {
-            True: [0],
-            False: []
-        }[props.get("reverse", False)]
+        self.checkboxes["reverse"].active = {True: [0], False: []}[
+            props.get("reverse", False)
+        ]
 
 
 class ColorPalette(Observable):
     """Color palette user interface"""
+
     def __init__(self):
         self.dropdowns = {
             "names": bokeh.models.Dropdown(label="Palettes"),
-            "numbers": bokeh.models.Dropdown(label="N")
+            "numbers": bokeh.models.Dropdown(label="N"),
         }
         self.dropdowns["names"].on_click(self.on_name)
         self.dropdowns["numbers"].on_click(self.on_number)
 
         self.checkbox = bokeh.models.CheckboxGroup(
-            labels=["Reverse"],
-            active=[])
+            labels=["Reverse"], active=[]
+        )
         self.checkbox.on_change("active", self.on_reverse)
 
         self.layout = bokeh.layouts.column(
-                bokeh.models.Div(text="Color palette:"),
-                self.dropdowns["names"],
-                self.dropdowns["numbers"],
-                self.checkbox)
+            bokeh.models.Div(text="Color palette:"),
+            self.dropdowns["names"],
+            self.dropdowns["numbers"],
+            self.checkbox,
+        )
         super().__init__()
 
     def connect(self, store):
@@ -848,7 +866,7 @@ class ColorPalette(Observable):
         return {
             "name": self.dropdowns["names"].label,
             "number": self.dropdowns["numbers"].label,
-            "reverse": len(self.checkbox.active) == 1
+            "reverse": len(self.checkbox.active) == 1,
         }
 
     def on_name(self, event):

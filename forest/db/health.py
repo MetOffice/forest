@@ -6,10 +6,12 @@ import sqlite3
 
 class HealthDB:
     """Maintain meta-data related to S3 objects"""
+
     def __init__(self, connection):
         self.connection = connection
         self.cursor = self.connection.cursor()
-        self.cursor.execute("""
+        self.cursor.execute(
+            """
             CREATE TABLE
            IF NOT EXISTS health (
                       id INTEGER PRIMARY KEY,
@@ -18,7 +20,8 @@ class HealthDB:
                 strerror TEXT,
                     time TEXT,
                          UNIQUE(name))
-        """)
+        """
+        )
 
     @classmethod
     def connect(cls, path_or_memory):
@@ -30,8 +33,9 @@ class HealthDB:
 
         :returns files: either successfully processed or marked as OSError
         """
-        return sorted(set(self.files(pattern)) |
-                      set(self.error_files(pattern)))
+        return sorted(
+            set(self.files(pattern)) | set(self.error_files(pattern))
+        )
 
     def files(self, pattern):
         query = "SELECT name FROM file WHERE name GLOB :pattern;"
@@ -54,6 +58,6 @@ class HealthDB:
             "path": path,
             "errno": error.errno,
             "strerror": error.strerror,
-            "time": check_time.isoformat()
+            "time": check_time.isoformat(),
         }
         self.cursor.execute(query, params)

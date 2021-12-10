@@ -28,8 +28,9 @@ class TestDatabase(unittest.TestCase):
 
     def test_insert_variable(self):
         for path, variables in [
-                ("file_1.nc", ["relative_humidity"]),
-                ("file_2.nc", ["mslp", "air_temperature"])]:
+            ("file_1.nc", ["relative_humidity"]),
+            ("file_2.nc", ["mslp", "air_temperature"]),
+        ]:
             for variable in variables:
                 self.database.insert_variable(path, variable)
         result = set(self.database.variables())
@@ -38,8 +39,9 @@ class TestDatabase(unittest.TestCase):
 
     def test_variables_given_file_pattern(self):
         for path, variables in [
-                ("file_1.nc", ["relative_humidity"]),
-                ("file_2.nc", ["mslp", "air_temperature"])]:
+            ("file_1.nc", ["relative_humidity"]),
+            ("file_2.nc", ["mslp", "air_temperature"]),
+        ]:
             for variable in variables:
                 self.database.insert_variable(path, variable)
         result = set(self.database.variables(pattern="*2.nc"))
@@ -48,10 +50,11 @@ class TestDatabase(unittest.TestCase):
 
     def test_file_names_given_initial_time(self):
         for path, time in [
-                ("file_1.nc", dt.datetime(2019, 1, 1)),
-                ("file_2.nc", dt.datetime(2019, 1, 2)),
-                ("file_3.nc", dt.datetime(2019, 1, 2)),
-                ("file_4.nc", dt.datetime(2019, 1, 3))]:
+            ("file_1.nc", dt.datetime(2019, 1, 1)),
+            ("file_2.nc", dt.datetime(2019, 1, 2)),
+            ("file_3.nc", dt.datetime(2019, 1, 2)),
+            ("file_4.nc", dt.datetime(2019, 1, 3)),
+        ]:
             self.database.insert_file_name(path, initial_time=time)
         result = self.database.file_names(initial_time=dt.datetime(2019, 1, 2))
         expect = ["file_2.nc", "file_3.nc"]
@@ -72,11 +75,12 @@ class TestDatabase(unittest.TestCase):
         variable = "air_temperature"
         names = []
         for name, axis in [
-                ("time", 0),
-                ("pressure", 0),
-                ("forecast_reference_period", None),
-                ("longitude", 1),
-                ("latitude", 1)]:
+            ("time", 0),
+            ("pressure", 0),
+            ("forecast_reference_period", None),
+            ("longitude", 1),
+            ("latitude", 1),
+        ]:
             self.database.insert_coordinate(path, variable, name, axis=axis)
         result = self.database.axis(path, variable, "pressure")[0]
         expect = 0
@@ -85,13 +89,10 @@ class TestDatabase(unittest.TestCase):
     def test_insert_pressure(self):
         path = "file.nc"
         variable = "air_temperature"
-        values = [1000., 950., 850.]
-        self.database.insert_pressure(
-            path,
-            variable,
-            values)
+        values = [1000.0, 950.0, 850.0]
+        self.database.insert_pressure(path, variable, values)
         result = self.database.pressures(path, variable)
-        expect = [1000., 950., 850.]
+        expect = [1000.0, 950.0, 850.0]
         self.assertEqual(expect, result)
 
 

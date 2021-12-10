@@ -28,7 +28,7 @@ ON_TOGGLE_TOOL = "TOGGLE_TOOL_VISIBILITY"
 
 
 def reducer(state: State, action: Action):
-    """ Reduce a change in state caused by the ToolsPanel"""
+    """Reduce a change in state caused by the ToolsPanel"""
     state = copy.deepcopy(state)
     if action["kind"] == ON_TOGGLE_TOOL:
         if state.get("tools") is None:
@@ -36,16 +36,19 @@ def reducer(state: State, action: Action):
         state["tools"][action["tool_name"]] = action["value"]
     return state
 
+
 def on_toggle_tool(tool_name, value) -> Action:
-    """ Convert some arguments into an Action message to the state"""
+    """Convert some arguments into an Action message to the state"""
     return {"kind": ON_TOGGLE_TOOL, "tool_name": tool_name, "value": value}
 
+
 class ToolsPanel(Observable):
-    """ A panel that contains buttons to turn extra tools on and off"""
+    """A panel that contains buttons to turn extra tools on and off"""
+
     def __init__(self, available_features):
 
         self.buttons = {}
-        for tool_name, display_name in available_features.items(): 
+        for tool_name, display_name in available_features.items():
             self.buttons[tool_name] = bokeh.models.Toggle(label=display_name)
             self.buttons[tool_name].on_click(self.on_click(tool_name))
 
@@ -58,13 +61,16 @@ class ToolsPanel(Observable):
 
     def on_click(self, toggle_name):
         """update the store callback."""
+
         def callback(toggle_state):
             self.notify(on_toggle_tool(toggle_name, toggle_state))
 
         return callback
 
+
 class ToolLayout:
-    """ Manage the row containing the tool plots """
+    """Manage the row containing the tool plots"""
+
     def __init__(self, series_figure=None, profile_figure=None):
         self.layout = bokeh.layouts.column()
         self.series_figure = series_figure

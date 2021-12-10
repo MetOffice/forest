@@ -17,11 +17,13 @@ def component(cls):
 
 def disable_notify(render):
     """Disable self.notify during self.render"""
+
     @wraps(render)
     def wrapper(self, *args, **kwargs):
         with disable(self, "notify"):
             return_value = render(self, *args, **kwargs)
         return return_value
+
     return wrapper
 
 
@@ -43,6 +45,7 @@ def sql_sanitize_time(*labels):
     ...     pass
 
     """
+
     def outer(f):
         parameters = inspect.signature(f).parameters
 
@@ -62,7 +65,9 @@ def sql_sanitize_time(*labels):
                     if i < len(args):
                         args[i] = sanitize_time(args[i])
             return f(*args, **kwargs)
+
         return inner
+
     return outer
 
 

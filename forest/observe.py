@@ -12,8 +12,10 @@ subscriber.
 
 """
 
+
 class Observable(object):
     """Basic observer design pattern"""
+
     def __init__(self):
         self.subscribers = []
 

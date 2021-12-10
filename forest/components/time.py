@@ -13,6 +13,7 @@ class _Axis:
 
     Maps all datetime variants using str(datetime.datetime) as a key
     """
+
     def __init__(self):
         self._mapping = {}
         self._values = []
@@ -47,30 +48,38 @@ class _Axis:
 @forest.mark.component
 class TimeUI(Observable):
     """Allow navigation through time"""
+
     def __init__(self):
         self._axis = _Axis()
-        self.source = bokeh.models.ColumnDataSource(dict(
-            x=[],
-            y=[],
-        ))
+        self.source = bokeh.models.ColumnDataSource(
+            dict(
+                x=[],
+                y=[],
+            )
+        )
         self.figure = bokeh.plotting.figure(
             plot_height=80,
             plot_width=800,
             border_fill_alpha=0,
-            tools='xpan',
-            x_axis_type='datetime')
-        self.figure.toolbar.active_drag = 'auto'
+            tools="xpan",
+            x_axis_type="datetime",
+        )
+        self.figure.toolbar.active_drag = "auto"
 
-        active_scroll = bokeh.models.WheelZoomTool(dimensions='width')
+        active_scroll = bokeh.models.WheelZoomTool(dimensions="width")
         self.figure.add_tools(active_scroll)
         self.figure.toolbar.active_scroll = active_scroll
 
-        renderer = self.figure.square(x="x", y="y", source=self.source,
-                      fill_color='black',
-                      line_color='black')
+        renderer = self.figure.square(
+            x="x",
+            y="y",
+            source=self.source,
+            fill_color="black",
+            line_color="black",
+        )
         renderer.selection_glyph = bokeh.models.Square(
-            fill_color="red",
-            line_color="red")
+            fill_color="red", line_color="red"
+        )
         renderer.nonselection_glyph = bokeh.models.Square(
             fill_color="black",
             line_color="black",
@@ -80,8 +89,8 @@ class TimeUI(Observable):
 
         # X-axis formatter breakpoints
         formatter = self.figure.xaxis[0].formatter
-        formatter.hourmin = ['%H:%M']
-        formatter.hours = ['%H:%M']
+        formatter.hourmin = ["%H:%M"]
+        formatter.hours = ["%H:%M"]
         formatter.days = ["%d %B"]
         formatter.months = ["%b %Y"]
 
@@ -98,23 +107,24 @@ class TimeUI(Observable):
         self.figure.add_tools(hover_tool)
 
         selected_span = bokeh.models.Span(
-            dimension="height",
-            line_color="red",
-            location=0)
+            dimension="height", line_color="red", location=0
+        )
         self.figure.add_layout(selected_span)
-        custom_js = bokeh.models.CustomJS(args=dict(
-            span=selected_span,
-            source=self.source), code="""
+        custom_js = bokeh.models.CustomJS(
+            args=dict(span=selected_span, source=self.source),
+            code="""
             if (cb_obj.indices.length === 0) {
                 return;
             }
             span.location = source.data['x'][cb_obj.indices[0]];
-        """)
-        self.source.selected.js_on_change('indices', custom_js)
+        """,
+        )
+        self.source.selected.js_on_change("indices", custom_js)
 
         # Wire up Tap event
-        tap_js = bokeh.models.CustomJS(args=dict(
-            source=self.source), code="""
+        tap_js = bokeh.models.CustomJS(
+            args=dict(source=self.source),
+            code="""
             let x = source.data['x'];
             let distance = x.map((t) => Math.abs(t - cb_obj.x));
             let minIndex = distance.reduce(function(bestIndex, value, index, values) {
@@ -126,7 +136,8 @@ class TimeUI(Observable):
             }, 0);
             source.selected.indices = [minIndex];
             source.change.emit();
-        """)
+        """,
+        )
         self.figure.js_on_event(bokeh.events.Tap, tap_js)
 
         # Span that follows cursor
@@ -135,50 +146,50 @@ class TimeUI(Observable):
         else:
             location = 0
         span = bokeh.models.Span(
-            dimension="height",
-            line_color="grey",
-            location=location)
-        js = bokeh.models.CustomJS(args=dict(span=span), code="""
+            dimension="height", line_color="grey", location=location
+        )
+        js = bokeh.models.CustomJS(
+            args=dict(span=span),
+            code="""
             span.location = cb_data.geometry.x;
-        """)
+        """,
+        )
         self.figure.add_layout(span)
         hover_tool.callback = js
 
-        self.source.selected.on_change('indices', self.on_selected)
+        self.source.selected.on_change("indices", self.on_selected)
 
         # Band to highlight valid times
-        self.band_source = bokeh.models.ColumnDataSource(dict(
-            base=[-1, 1],
-            upper=[0, 0],
-            lower=[0, 0]
-        ))
+        self.band_source = bokeh.models.ColumnDataSource(
+            dict(base=[-1, 1], upper=[0, 0], lower=[0, 0])
+        )
         band = bokeh.models.Band(
-            dimension='width',
-            base='base',
-            lower='lower',
-            upper='upper',
-            fill_color='grey',
+            dimension="width",
+            base="base",
+            lower="lower",
+            upper="upper",
+            fill_color="grey",
             fill_alpha=0.2,
-            source=self.band_source
+            source=self.band_source,
         )
         self.figure.add_layout(band)
 
         # Controls
         self.buttons = {
-            "play": bokeh.models.Button(label="Play",
-                                        css_classes=['play'],
-                                        width=75),
-            "pause": bokeh.models.Button(label="Pause",
-                                         css_classes=['pause'],
-                                         width=75),
-            "next": bokeh.models.Button(label="Next",
-                                        width=75),
-            "previous": bokeh.models.Button(label="Previous",
-                                            width=75)
+            "play": bokeh.models.Button(
+                label="Play", css_classes=["play"], width=75
+            ),
+            "pause": bokeh.models.Button(
+                label="Pause", css_classes=["pause"], width=75
+            ),
+            "next": bokeh.models.Button(label="Next", width=75),
+            "previous": bokeh.models.Button(label="Previous", width=75),
         }
 
         # Play JS
-        custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""
+        custom_js = bokeh.models.CustomJS(
+            args=dict(source=self.source),
+            code="""
             // Simple JS animation
             console.log('Play');
             window.playing = true;
@@ -195,18 +206,24 @@ class TimeUI(Observable):
                 }
             };
             setTimeout(nextFrame, interval);
-        """)
+        """,
+        )
         self.buttons["play"].js_on_click(custom_js)
 
         # Pause behaviour
-        custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""
+        custom_js = bokeh.models.CustomJS(
+            args=dict(source=self.source),
+            code="""
             console.log('Pause');
             window.playing = false;
-        """)
+        """,
+        )
         self.buttons["pause"].js_on_click(custom_js)
 
         # Previous behaviour
-        custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""
+        custom_js = bokeh.models.CustomJS(
+            args=dict(source=self.source),
+            code="""
             // Simple JS animation
             console.log('Previous');
             if (source.selected.indices.length > 0) {
@@ -214,11 +231,14 @@ class TimeUI(Observable):
                 source.selected.indices = [i - 1];
                 source.change.emit();
             }
-        """)
+        """,
+        )
         self.buttons["previous"].js_on_click(custom_js)
 
         # Next behaviour
-        custom_js = bokeh.models.CustomJS(args=dict(source=self.source), code="""
+        custom_js = bokeh.models.CustomJS(
+            args=dict(source=self.source),
+            code="""
             // Simple JS animation
             console.log('Next');
             if (source.selected.indices.length > 0) {
@@ -227,21 +247,22 @@ class TimeUI(Observable):
                 source.selected.indices = [(i + 1) % n];
                 source.change.emit();
             }
-        """)
+        """,
+        )
         self.buttons["next"].js_on_click(custom_js)
 
         self.layout = bokeh.layouts.column(
-            bokeh.layouts.row(
-                self.figure, sizing_mode="stretch_width"),
+            bokeh.layouts.row(self.figure, sizing_mode="stretch_width"),
             bokeh.layouts.row(
                 self.buttons["previous"],
                 self.buttons["play"],
                 self.buttons["pause"],
                 self.buttons["next"],
-                sizing_mode="stretch_width"
+                sizing_mode="stretch_width",
             ),
             sizing_mode="stretch_width",
-            name="time")
+            name="time",
+        )
 
         super().__init__()
 
@@ -250,7 +271,7 @@ class TimeUI(Observable):
         if len(new) > 0:
             i = new[0]
             value = self._axis.value(i)
-            self.notify(forest.db.control.set_value('valid_time', value))
+            self.notify(forest.db.control.set_value("valid_time", value))
 
     def connect(self, store):
         """Connect component to store
@@ -259,26 +280,28 @@ class TimeUI(Observable):
         for use with render method
         """
         self.add_subscriber(store.dispatch)
-        stream = (rx.Stream()
-                    .listen_to(store)
-                    .map(self.to_props)
-                    .filter(lambda x: x is not None)
-                    .distinct())
+        stream = (
+            rx.Stream()
+            .listen_to(store)
+            .map(self.to_props)
+            .filter(lambda x: x is not None)
+            .distinct()
+        )
         stream.map(lambda props: self.render(*props))
         return self
 
     def to_props(self, state):
         """Convert state to properties needed by component"""
-        if ('valid_time' not in state) or ('valid_times' not in state):
+        if ("valid_time" not in state) or ("valid_times" not in state):
             return
-        return state['valid_time'], sorted(state['valid_times'])
+        return state["valid_time"], sorted(state["valid_times"])
 
     def render(self, time, times):
         """React to state changes"""
         self._axis.times = times
         self.source.data = {
             "x": self._axis.datetimes,
-            "y": np.zeros(len(times))
+            "y": np.zeros(len(times)),
         }
 
         try:
@@ -298,8 +321,4 @@ class TimeUI(Observable):
         else:
             upper = [0, 0]
             lower = [0, 0]
-        self.band_source.data = dict(
-            base=[-1, 1],
-            upper=upper,
-            lower=lower
-        )
+        self.band_source.data = dict(base=[-1, 1], upper=upper, lower=lower)

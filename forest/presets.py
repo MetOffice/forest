@@ -185,6 +185,7 @@ class Storage:
 
     :param file_name: optional file to save settings
     """
+
     def __init__(self, file_name=None):
         self.file_name = file_name
         if self.file_name is not None:
@@ -289,6 +290,7 @@ class IDNotFound(Exception):
 
 class Query:
     """Helper to retrieve values stored in state"""
+
     def __init__(self, state):
         self.state = state
 
@@ -298,7 +300,9 @@ class Query:
 
     @property
     def display_mode(self):
-        return self.state.get("presets", {}).get("meta", {}).get("mode", DEFAULT)
+        return (
+            self.state.get("presets", {}).get("meta", {}).get("mode", DEFAULT)
+        )
 
     @property
     def edit_label(self):
@@ -338,6 +342,7 @@ class PresetUI(Observable):
     >>> preset_ui = PresetUI().connect(store)
 
     """
+
     def __init__(self):
         self.select = bokeh.models.Select()
         self.select.on_change("value", self.on_load)
@@ -354,33 +359,34 @@ class PresetUI(Observable):
         self.buttons["cancel"].on_click(self.on_cancel)
         width = 320
         self.children = {
-            DEFAULT: [
-                self.select, self.buttons["edit"], self.buttons["new"]
-            ],
+            DEFAULT: [self.select, self.buttons["edit"], self.buttons["new"]],
             EDIT: [
-                self.text_input, self.buttons["cancel"], self.buttons["save"]
-            ]
+                self.text_input,
+                self.buttons["cancel"],
+                self.buttons["save"],
+            ],
         }
         self.rows = {
-                "title": bokeh.layouts.row(
-                    bokeh.models.Div(text="Presets:"),
-                    width=width),
-                "content": bokeh.layouts.row(
-                    self.children[DEFAULT],
-                    width=width)}
+            "title": bokeh.layouts.row(
+                bokeh.models.Div(text="Presets:"), width=width
+            ),
+            "content": bokeh.layouts.row(self.children[DEFAULT], width=width),
+        }
         self.layout = bokeh.layouts.column(
-                self.rows["title"],
-                self.rows["content"])
+            self.rows["title"], self.rows["content"]
+        )
         super().__init__()
 
     def connect(self, store):
         """Convenient method to map state to props needed by render"""
         self.add_subscriber(store.dispatch)
-        stream = (rx.Stream()
-                    .listen_to(store)
-                    .map(state_to_props)
-                    .filter(lambda x: x is not None)
-                    .distinct())
+        stream = (
+            rx.Stream()
+            .listen_to(store)
+            .map(state_to_props)
+            .filter(lambda x: x is not None)
+            .distinct()
+        )
         stream.map(lambda props: self.render(*props))
         return self
 

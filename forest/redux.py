@@ -38,7 +38,7 @@ from typing import Callable, Iterable
 Action = dict
 State = dict
 Reducer = Callable[[State, Action], State]
-Middleware = Callable[['Store', Action], Iterable[Action]]
+Middleware = Callable[["Store", Action], Iterable[Action]]
 
 
 __all__ = []
@@ -50,11 +50,13 @@ def combine_reducers(*reducers):
 
     :returns: reducer function
     """
+
     def wrapped(state, action):
         state = copy.deepcopy(state)
         for reducer in reducers:
             state = reducer(state, action)
         return state
+
     return wrapped
 
 
@@ -81,6 +83,7 @@ class Store(Observable):
     :param initial_state: optional initial state, default {}
     :param middlewares: list of middleware functions that intercept actions
     """
+
     def __init__(self, reducer, initial_state=None, middlewares=()):
         self.reducer = reducer
         self.state = initial_state if initial_state is not None else {}

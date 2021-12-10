@@ -5,23 +5,24 @@ import bokeh.colors
 import os
 from forest import _profile as profile
 from forest import (
-        drivers,
-        dimension,
-        screen,
-        tools,
-        series,
-        data,
-        geo,
-        colors,
-        layers,
-        db,
-        keys,
-        plugin,
-        presets,
-        redux,
-        rx,
-        navigate,
-        parse_args)
+    drivers,
+    dimension,
+    screen,
+    tools,
+    series,
+    data,
+    geo,
+    colors,
+    layers,
+    db,
+    keys,
+    plugin,
+    presets,
+    redux,
+    rx,
+    navigate,
+    parse_args,
+)
 import forest.app
 import forest.actions
 import forest.components
@@ -41,7 +42,8 @@ def map_figure(x_range, y_range):
         y_range=y_range,
         x_axis_type="mercator",
         y_axis_type="mercator",
-        active_scroll="wheel_zoom")
+        active_scroll="wheel_zoom",
+    )
     figure.axis.visible = False
     figure.toolbar.logo = None
     figure.toolbar_location = None
@@ -54,14 +56,15 @@ def configure(argv=None):
     data.AUTO_SHUTDOWN = args.auto_shutdown
     if len(args.files) > 0:
         if args.config_file is not None:
-            raise Exception('--config-file and [FILE [FILE ...]] not compatible')
+            raise Exception(
+                "--config-file and [FILE [FILE ...]] not compatible"
+            )
         config = cfg.from_files(args.files, args.file_type)
     else:
         config = cfg.Config.load(
-                args.config_file,
-                variables=cfg.combine_variables(
-                    os.environ,
-                    args.variables))
+            args.config_file,
+            variables=cfg.combine_variables(os.environ, args.variables),
+        )
     return config
 
 
@@ -77,9 +80,7 @@ def main(argv=None):
 
     # Full screen map
     viewport = config.default_viewport
-    x_range, y_range = geo.web_mercator(
-        viewport.lon_range,
-        viewport.lat_range)
+    x_range, y_range = geo.web_mercator(viewport.lon_range, viewport.lat_range)
     figure = map_figure(x_range, y_range)
     figures = [figure]
     for _ in range(2):
@@ -89,9 +90,8 @@ def main(argv=None):
     figure_row = layers.FigureRow(figures)
 
     color_mapper = bokeh.models.LinearColorMapper(
-            low=0,
-            high=1,
-            palette=bokeh.palettes.Plasma[256])
+        low=0, high=1, palette=bokeh.palettes.Plasma[256]
+    )
 
     # Convert config to datasets
     datasets = {}
@@ -125,9 +125,7 @@ def main(argv=None):
         navigator,
         mws.echo,
     ]
-    store = redux.Store(
-        forest.reducer,
-        middlewares=middlewares)
+    store = redux.Store(forest.reducer, middlewares=middlewares)
 
     app = forest.app.Application()
     app.add_component(forest.components.title.Title())
@@ -153,10 +151,9 @@ def main(argv=None):
     # Connect MapView orchestration to store
     opacity_slider = forest.layers.OpacitySlider()
     source_limits = colors.SourceLimits().connect(store)
-    factory_class = forest.layers.factory(color_mapper,
-                                          figures,
-                                          source_limits,
-                                          opacity_slider)
+    factory_class = forest.layers.factory(
+        color_mapper, figures, source_limits, opacity_slider
+    )
     gallery = forest.gallery.Gallery.map_view(datasets, factory_class)
     gallery.connect(store)
 
@@ -167,11 +164,14 @@ def main(argv=None):
     # Connect tools controls
 
     display_names = {
-            "time_series": "Display Time Series",
-            "profile": "Display Profile"
-        }
-    available_features = {k: display_names[k]
-                          for k in display_names.keys() if data.FEATURE_FLAGS[k]}
+        "time_series": "Display Time Series",
+        "profile": "Display Profile",
+    }
+    available_features = {
+        k: display_names[k]
+        for k in display_names.keys()
+        if data.FEATURE_FLAGS[k]
+    }
 
     tools_panel = tools.ToolsPanel(available_features)
     tools_panel.connect(store)
@@ -246,10 +246,12 @@ def main(argv=None):
     for label, dataset in datasets.items():
         pattern = label_to_pattern[label]
         for variable in navigator.variables(pattern):
-            spec = {"label": label,
-                    "dataset": label,
-                    "variable": variable,
-                    "active": [0]}
+            spec = {
+                "label": label,
+                "dataset": label,
+                "variable": variable,
+                "active": [0],
+            }
             store.dispatch(forest.layers.save_layer(0, spec))
             break
         break
@@ -265,13 +267,14 @@ def main(argv=None):
     layouts["controls"] = []
     if config.defaults.figures.ui:
         layouts["controls"] += [
-                bokeh.models.Div(text="Layout:"),
-                figure_ui.layout]
+            bokeh.models.Div(text="Layout:"),
+            figure_ui.layout,
+        ]
     layouts["controls"] += [
         bokeh.models.Div(text="Navigate:"),
         controls.layout,
         bokeh.models.Div(text="Compare:"),
-        layers_ui.layout
+        layers_ui.layout,
     ]
 
     layouts["settings"] = [
@@ -288,29 +291,32 @@ def main(argv=None):
         layouts["settings"].append(bokeh.models.Div(text="Tiles:"))
         layouts["settings"].append(tile_picker.layout)
 
-    tabs = bokeh.models.Tabs(tabs=[
-        bokeh.models.Panel(
-            child=bokeh.layouts.column(*layouts["controls"]),
-            title="Control"
-        ),
-        bokeh.models.Panel(
-            child=bokeh.layouts.column(*layouts["settings"]),
-            title="Settings")
-        ])
+    tabs = bokeh.models.Tabs(
+        tabs=[
+            bokeh.models.Panel(
+                child=bokeh.layouts.column(*layouts["controls"]),
+                title="Control",
+            ),
+            bokeh.models.Panel(
+                child=bokeh.layouts.column(*layouts["settings"]),
+                title="Settings",
+            ),
+        ]
+    )
 
     tool_figures = {}
     if data.FEATURE_FLAGS["time_series"]:
         # Series sub-figure widget
         series_figure = bokeh.plotting.figure(
-                    plot_width=400,
-                    plot_height=200,
-                    x_axis_type="datetime",
-                    toolbar_location=None,
-                    border_fill_alpha=0)
+            plot_width=400,
+            plot_height=200,
+            x_axis_type="datetime",
+            toolbar_location=None,
+            border_fill_alpha=0,
+        )
         series_figure.toolbar.logo = None
 
-        gallery = forest.gallery.Gallery.series_view(datasets,
-                                                     series_figure)
+        gallery = forest.gallery.Gallery.series_view(datasets, series_figure)
         gallery.connect(store)
 
         tool_figures["series_figure"] = series_figure
@@ -318,15 +324,15 @@ def main(argv=None):
     if data.FEATURE_FLAGS["profile"]:
         # Profile sub-figure widget
         profile_figure = bokeh.plotting.figure(
-                    plot_width=300,
-                    plot_height=450,
-                    toolbar_location=None,
-                    border_fill_alpha=0)
+            plot_width=300,
+            plot_height=450,
+            toolbar_location=None,
+            border_fill_alpha=0,
+        )
         profile_figure.toolbar.logo = None
         profile_figure.y_range.flipped = True
 
-        gallery = forest.gallery.Gallery.profile_view(datasets,
-                                                      profile_figure)
+        gallery = forest.gallery.Gallery.profile_view(datasets, profile_figure)
         gallery.connect(store)
 
         tool_figures["profile_figure"] = profile_figure
@@ -338,9 +344,7 @@ def main(argv=None):
         f.on_event(bokeh.events.Tap, tap_listener.update_xy)
         marker = screen.MarkDraw(f).connect(store)
 
-    control_root = bokeh.layouts.column(
-            tabs,
-            name="controls")
+    control_root = bokeh.layouts.column(tabs, name="controls")
 
     # Add key press support
     key_press = keys.KeyPress()
@@ -355,10 +359,9 @@ def main(argv=None):
     document.add_root(control_root)
     document.add_root(
         bokeh.layouts.column(
-            tools_panel.layout,
-            tool_layout.layout,
-            width=400,
-            name="series"))
+            tools_panel.layout, tool_layout.layout, width=400, name="series"
+        )
+    )
     for root in navbar.roots:
         document.add_root(root)
     for root in app.roots:
@@ -370,6 +373,7 @@ def main(argv=None):
 
 class Navbar:
     """Collection of navbar components"""
+
     def __init__(self, show_diagram_button=True):
         self.headline = forest.components.Headline()
         self.headline.layout.name = "headline"
@@ -377,23 +381,24 @@ class Navbar:
         self.buttons = {}
         # Add button to control left drawer
         key = "sidenav_button"
-        self.buttons[key] = bokeh.models.Button(
-            label="Settings",
-            name=key)
-        custom_js = bokeh.models.CustomJS(code="""
+        self.buttons[key] = bokeh.models.Button(label="Settings", name=key)
+        custom_js = bokeh.models.CustomJS(
+            code="""
             openId("sidenav");
-        """)
+        """
+        )
         self.buttons[key].js_on_click(custom_js)
 
         # Add button to control right drawer
         key = "diagrams_button"
         self.buttons[key] = bokeh.models.Button(
-            label="Diagrams",
-            css_classes=["float-right"],
-            name=key)
-        custom_js = bokeh.models.CustomJS(code="""
+            label="Diagrams", css_classes=["float-right"], name=key
+        )
+        custom_js = bokeh.models.CustomJS(
+            code="""
             openId("diagrams");
-        """)
+        """
+        )
         self.buttons[key].js_on_click(custom_js)
 
         roots = [

@@ -15,10 +15,17 @@ def test_parse_args_build_dir():
     assert args.build_dir == "build"
 
 
-@pytest.mark.parametrize("file_names", [
-    pytest.param(forest.tutorial.RDT_FILE, id="Rapid developing thunderstorms"),
-    pytest.param(forest.tutorial.FILE_NAMES["NAME"], id="NAME dispersion data"),
-])
+@pytest.mark.parametrize(
+    "file_names",
+    [
+        pytest.param(
+            forest.tutorial.RDT_FILE, id="Rapid developing thunderstorms"
+        ),
+        pytest.param(
+            forest.tutorial.FILE_NAMES["NAME"], id="NAME dispersion data"
+        ),
+    ],
+)
 def test_main_calls_build_all_with_build_dir(tmpdir, file_names):
     if isinstance(file_names, str):
         file_names = [file_names]
@@ -35,7 +42,9 @@ def test_rdt_file_name():
 def test_build_rdt_copies_rdt_file_to_directory(tmpdir):
     directory = str(tmpdir)
     forest.tutorial.build_rdt(directory)
-    expect = os.path.join(directory, os.path.basename(forest.tutorial.RDT_FILE))
+    expect = os.path.join(
+        directory, os.path.basename(forest.tutorial.RDT_FILE)
+    )
     assert os.path.exists(expect)
 
 
@@ -82,12 +91,14 @@ def test_build_all_builds_um_config_file(tmpdir):
     with open(path) as stream:
         result = yaml.safe_load(stream)
     expect = {
-        "files": [{
-            "label": "Unified Model",
-            "pattern": "*" + forest.tutorial.UM_FILE,
-            "directory": build_dir,
-            "locator": "database"
-        }]
+        "files": [
+            {
+                "label": "Unified Model",
+                "pattern": "*" + forest.tutorial.UM_FILE,
+                "directory": build_dir,
+                "locator": "database",
+            }
+        ]
     }
     assert expect == result
 
@@ -99,22 +110,26 @@ def test_build_all_builds_config_file(tmpdir):
     with open(path) as stream:
         result = yaml.safe_load(stream)
     expect = {
-        "files": [{
-            "label": "UM",
-            "pattern": "unified_model*.nc",
-            "locator": "file_system",
-            "file_type": "unified_model"
-        }, {
-            "label": "EIDA50",
-            "pattern": "eida50*.nc",
-            "locator": "file_system",
-            "file_type": "eida50"
-        }, {
-            "label": "RDT",
-            "pattern": "rdt*.json",
-            "locator": "file_system",
-            "file_type": "rdt"
-        }]
+        "files": [
+            {
+                "label": "UM",
+                "pattern": "unified_model*.nc",
+                "locator": "file_system",
+                "file_type": "unified_model",
+            },
+            {
+                "label": "EIDA50",
+                "pattern": "eida50*.nc",
+                "locator": "file_system",
+                "file_type": "eida50",
+            },
+            {
+                "label": "RDT",
+                "pattern": "rdt*.json",
+                "locator": "file_system",
+                "file_type": "rdt",
+            },
+        ]
     }
     assert expect == result
 
@@ -127,10 +142,8 @@ def test_build_name_config_file(tmpdir):
     with open(path) as stream:
         result = yaml.safe_load(stream)
     expect = {
-        "files": [{
-            "label": "NAME",
-            "pattern": "NAME/*.txt",
-            "file_type": "name"
-        }]
+        "files": [
+            {"label": "NAME", "pattern": "NAME/*.txt", "file_type": "name"}
+        ]
     }
     assert expect == result

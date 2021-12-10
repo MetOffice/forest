@@ -14,13 +14,18 @@ def test_gpm_dataset():
     assert hasattr(map_view, "image_sources")
 
 
-@pytest.mark.parametrize("paths,date,expect", [
-    pytest.param([], dt.datetime.now(), [], id="Empty list"),
-    pytest.param(
-        ["20200101.nc", "20200102.nc"],
-        dt.datetime(2020, 1, 1),
-        ["20200101.nc"], id="Match a file")
-])
+@pytest.mark.parametrize(
+    "paths,date,expect",
+    [
+        pytest.param([], dt.datetime.now(), [], id="Empty list"),
+        pytest.param(
+            ["20200101.nc", "20200102.nc"],
+            dt.datetime(2020, 1, 1),
+            ["20200101.nc"],
+            id="Match a file",
+        ),
+    ],
+)
 def test_locator_find_paths(paths, date, expect):
     window_size = dt.timedelta(days=1)
     locator = forest.drivers.gpm.Locator()
