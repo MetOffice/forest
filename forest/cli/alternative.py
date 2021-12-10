@@ -39,9 +39,12 @@ OPTION_WEBSOCKET = typer.Option(None, help="Bokeh --allow-websocket-origin")
 OPTION_DEV = typer.Option(None, help="Bokeh --dev")
 
 
-@app.command()
+@app.command(hidden=True)
 def edit():
-    """Edit catalogues"""
+    """Edit catalogues
+
+    Work in progress
+    """
     app_path = Path(typer.get_app_dir(APP_NAME))
     if not app_path.is_dir():
         app_path.mkdir()
