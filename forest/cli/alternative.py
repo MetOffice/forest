@@ -17,7 +17,7 @@ app = typer.Typer(help="Command line interface for FOREST web application")
 
 def version_callback(value: bool):
     if value:
-        typer.secho(f"Version {forest.__version__}", fg=typer.colors.CYAN)
+        typer.secho(f"🌲 Version {forest.__version__} ✨", fg=typer.colors.CYAN)
         raise typer.Exit()
 
 
