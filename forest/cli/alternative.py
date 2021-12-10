@@ -30,13 +30,16 @@ def edit():
     typer.launch(str(config_path), locate=True)
 
 
+PORT_OPTION = typer.Option(None, help="bokeh server port")
+
+
 @app.command()
 def view(
     files: List[Path],
     driver: str = "gridded_forecast",
     open_tab: bool = True,
     # Bokeh specific arguments
-    port: int = typer.Option(..., help="bokeh server port"),
+    port: int = PORT_OPTION,
 ):
     """Quickly browse file(s)"""
     typer.secho("Launching Bokeh...", fg=typer.colors.MAGENTA)
@@ -52,10 +55,18 @@ def view(
 
 
 @app.command()
-def ctl():
+def ctl(config_file: Path, open_tab: bool = True, port: int = PORT_OPTION):
     """Control a collection of data sources"""
     typer.secho("Launching Bokeh...", fg=typer.colors.MAGENTA)
-    subprocess.call(["bokeh", "-h"])
+    forest_args = ["--config-file", str(config_file)]
+    bokeh_args = ["bokeh", "serve", str(BOKEH_APP_PATH)]
+    if port:
+        bokeh_args += ["--port", str(port)]
+    if open_tab:
+        bokeh_args.append("--show")
+    command = bokeh_args + ["--args"] + forest_args
+    typer.secho(" ".join(command), fg=typer.colors.CYAN)
+    return subprocess.call(command)
 
 
 app.command(name="tutorial")(forest.tutorial.main.main)
