@@ -60,13 +60,12 @@ def tutorial():
 @app.command()
 def db(database: Path, files: List[Path]):
     """Generate database to accelerate big data navigation"""
-    typer.secho("DATABASE", fg=typer.colors.GREEN)
+    typer.secho("import libraries", fg=typer.colors.MAGENTA)
     import forest.db.database
 
-    typer.secho(str(database), fg=typer.colors.YELLOW)
+    typer.secho(f"open: {database}", fg=typer.colors.CYAN)
     with forest.db.database.Database.connect(str(database)) as handle:
         for path in files:
-            typer.secho(str(path), fg=typer.colors.YELLOW)
+            typer.secho(f"insert records: {path}", fg=typer.colors.YELLOW)
             handle.insert_netcdf(str(path))
-
-    typer.secho("sqlite3 {}".format(str(database)), fg=typer.colors.YELLOW)
+    typer.secho(f"close: {database}", fg=typer.colors.CYAN)
