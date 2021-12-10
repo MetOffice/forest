@@ -4,7 +4,7 @@ FOREST command line application
 from pathlib import Path
 import typer
 import subprocess
-from typing import List
+from typing import List, Optional
 import forest.db.main
 
 APP_NAME = "forest"
@@ -31,13 +31,18 @@ def edit():
 
 @app.command()
 def view(
-    files: List[Path], driver: str = "gridded_forecast", open_tab: bool = True
+    files: List[Path],
+    driver: str = "gridded_forecast",
+    open_tab: bool = True,
+    # Bokeh specific arguments
+    port: int = typer.Option(..., help="bokeh server port"),
 ):
     """Quickly browse file(s)"""
-    typer.echo(files)
     typer.secho("Launching Bokeh...", fg=typer.colors.MAGENTA)
     forest_args = ["--file-type", driver] + [str(f) for f in files]
     bokeh_args = ["bokeh", "serve", str(BOKEH_APP_PATH)]
+    if port:
+        bokeh_args += ["--port", str(port)]
     if open_tab:
         bokeh_args.append("--show")
     command = bokeh_args + ["--args"] + forest_args
