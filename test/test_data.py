@@ -1,6 +1,9 @@
 import unittest
 import forest.drivers.unified_model
-from forest import data, db
+from forest import data
+import forest.db.control
+import forest.db.database
+import forest.db.locate
 
 
 def test_cut():
@@ -32,7 +35,7 @@ class TestUnifiedModelLoader(unittest.TestCase):
         name = None
         pattern = None
         locator = None
-        state = db.State()
+        state = forest.db.control.State()
         loader = forest.drivers.unified_model.Loader(name, pattern, locator)
         result = loader.image(state)
         expect = self.empty_image
@@ -41,9 +44,9 @@ class TestUnifiedModelLoader(unittest.TestCase):
     def test_image_given_non_existent_entry_in_database(self):
         name = None
         pattern = None
-        database = db.Database.connect(":memory:")
-        locator = db.Locator(database.connection)
-        state = db.State(
+        database = forest.db.database.Database.connect(":memory:")
+        locator = forest.db.locate.Locator(database.connection)
+        state = forest.db.control.State(
             variable="variable",
             initial_time="2019-01-01 00:00:00",
             valid_time="2019-01-01 00:00:00",
@@ -60,12 +63,12 @@ class TestUnifiedModelLoader(unittest.TestCase):
         initial_time = "2019-01-01 00:00:00"
         valid_time = "2019-01-01 00:00:00"
         pressure = 1000.0
-        database = db.Database.connect(":memory:")
+        database = forest.db.database.Database.connect(":memory:")
         database.insert_file_name(path, initial_time)
         database.insert_pressure(path, variable, pressure, i=0)
         database.insert_time(path, variable, valid_time, i=0)
-        locator = db.Locator(database.connection)
-        state = db.State(
+        locator = forest.db.locate.Locator(database.connection)
+        state = forest.db.control.State(
             variable=variable,
             initial_time=initial_time,
             valid_time=valid_time,

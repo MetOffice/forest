@@ -1,6 +1,6 @@
 """Decorator to map dict to namedtuple state"""
 from functools import wraps
-from forest import db
+import forest.db.control
 
 
 def old_state(f):
@@ -17,8 +17,8 @@ def old_state(f):
 
 
 def _to_old(state):
-    kwargs = {k: state.get(k, None) for k in db.State._fields}
-    return db.State(**kwargs)
+    kwargs = {k: state.get(k, None) for k in forest.db.control.State._fields}
+    return forest.db.control.State(**kwargs)
 
 
 def unique(f):

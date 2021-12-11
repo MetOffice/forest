@@ -1,12 +1,8 @@
 import pytest
 import unittest
-import os
-import netCDF4
-import numpy as np
-import numpy.testing as npt
-import datetime as dt
 import bokeh.plotting
-from forest import screen, redux, rx, db
+import forest.db.control
+from forest import screen, redux
 
 
 def test_position_reducer():
@@ -26,15 +22,18 @@ def test_position_reducer_immutable_state():
     [
         ([], {}),
         ([screen.set_position(0, 0)], {"position": {"x": 0, "y": 0}}),
-        ([db.set_value("key", "value")], {"key": "value"}),
+        ([forest.db.control.set_value("key", "value")], {"key": "value"}),
         (
-            [screen.set_position(0, 0), db.set_value("key", "value")],
+            [
+                screen.set_position(0, 0),
+                forest.db.control.set_value("key", "value"),
+            ],
             {"key": "value", "position": {"x": 0, "y": 0}},
         ),
     ],
 )
 def test_combine_reducers(actions, expect):
-    reducer = redux.combine_reducers(screen.reducer, db.reducer)
+    reducer = redux.combine_reducers(screen.reducer, forest.db.control.reducer)
     state = {}
     for action in actions:
         state = reducer(state, action)

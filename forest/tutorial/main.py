@@ -1,34 +1,18 @@
-"""Command-line interface to forest-tutorial
-
-This script builds the sample file(s) needed to
-follow along with the tutorial at:
-
-https://forest-informaticslab.readthedocs.io
-
-"""
-import argparse
-import os
-from . import core
+import typer
+from pathlib import Path
 
 
-class HelpFormatter(
-    argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter
+def main(
+    build_dir: Path = typer.Argument(
+        ..., help="directory in which to build sample files, e.g. '.'"
+    )
 ):
-    pass
+    """
+    Builds sample file(s) needed for the tutorial at:
 
+    https://forest-informaticslab.readthedocs.io
 
-def parse_args(argv=None):
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=HelpFormatter
-    )
-    parser.add_argument(
-        "build_dir",
-        metavar="BUILD_DIR",
-        help="directory in which to build sample files, e.g. '.'",
-    )
-    return parser.parse_args(args=argv)
+    """
+    from forest.tutorial import core
 
-
-def main(argv=None):
-    args = parse_args(argv=argv)
-    core.build_all(build_dir=args.build_dir)
+    core.build_all(build_dir=build_dir)

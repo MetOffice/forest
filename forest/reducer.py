@@ -1,10 +1,10 @@
 """Reducer"""
 import copy
 import forest.state
+import forest.db.control
 from forest import (
     actions,
     redux,
-    db,
     layers,
     screen,
     tools,
@@ -51,7 +51,7 @@ def borders_reducer(state, action):
 
 
 reducer = redux.combine_reducers(
-    db.reducer,
+    forest.db.control.reducer,
     layers.reducer,
     screen.reducer,
     tools.reducer,

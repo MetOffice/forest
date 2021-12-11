@@ -6,7 +6,8 @@ import datetime as dt
 import cftime
 import numpy as np
 import pandas as pd
-from forest import db
+import forest.db.locate
+import forest.db.database
 from forest.exceptions import SearchFail
 
 
@@ -23,10 +24,10 @@ from forest.exceptions import SearchFail
 def test_locator_file_names_supports_datetime_types(time):
     path = "file.nc"
     variable = "variable"
-    database = db.Database.connect(":memory:")
+    database = forest.db.database.Database.connect(":memory:")
     database.insert_file_name(path, "2020-01-01 00:00:00")
     database.insert_time(path, variable, "2020-01-01 00:00:00", 0)
-    locator = db.Locator(database.connection)
+    locator = forest.db.locate.Locator(database.connection)
     result = locator.file_names(path, variable, time, time)
     expect = [path]
     assert expect == result
@@ -34,8 +35,8 @@ def test_locator_file_names_supports_datetime_types(time):
 
 class TestLocate(unittest.TestCase):
     def setUp(self):
-        self.database = db.Database.connect(":memory:")
-        self.locator = db.Locator(self.database.connection)
+        self.database = forest.db.database.Database.connect(":memory:")
+        self.locator = forest.db.locate.Locator(self.database.connection)
 
     def test_locate_given_dim0_format_variable(self):
         time_axis = 0
@@ -75,8 +76,8 @@ class TestLocate(unittest.TestCase):
 class TestLocator(unittest.TestCase):
     def setUp(self):
         self.connection = sqlite3.connect(":memory:")
-        self.database = db.Database(self.connection)
-        self.locator = db.Locator(self.connection)
+        self.database = forest.db.database.Database(self.connection)
+        self.locator = forest.db.locate.Locator(self.connection)
 
     def tearDown(self):
         self.connection.close()

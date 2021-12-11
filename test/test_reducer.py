@@ -1,6 +1,7 @@
 import pytest
 import forest
 from forest.state import State
+import forest.layers
 
 
 @pytest.mark.parametrize(
@@ -21,7 +22,7 @@ from forest.state import State
         ),
         pytest.param(
             {},
-            forest.actions.save_layer(0, {"key": "value"}),
+            forest.layers.save_layer(0, {"key": "value"}),
             {"layers": {"index": {0: {"key": "value"}}}},
             id="save_layer",
         ),
@@ -36,5 +37,5 @@ from forest.state import State
     ],
 )
 def test_reducer(state, action, expect):
-    result = forest.reducer(state, action)
+    result = forest.reducer.reducer(state, action)
     assert State.from_dict(result) == State.from_dict(expect)

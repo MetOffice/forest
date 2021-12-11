@@ -17,7 +17,7 @@ class DatasetSyncCallback:
                 dataset.sync()
 
 
-def on_server_loaded(server_context):
+def _on_server_loaded(server_context):
     data.on_server_loaded()
 
     # Add periodic callback to keep database(s) up to date

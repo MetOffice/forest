@@ -3,7 +3,7 @@ import datetime as dt
 import bokeh.models
 import forest.drivers
 from forest.drivers import unified_model
-import forest.db
+import forest.db.database
 import sqlite3
 import netCDF4
 import iris
@@ -49,7 +49,7 @@ def test_navigator_use_database(tmpdir):
     }
     dataset = forest.drivers.get_dataset("unified_model", settings)
     navigator = dataset.navigator()
-    assert isinstance(navigator, forest.db.Database)
+    assert isinstance(navigator, forest.db.database.Database)
 
 
 def test_loader_use_database(tmpdir):
