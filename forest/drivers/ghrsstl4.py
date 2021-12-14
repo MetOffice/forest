@@ -11,6 +11,7 @@ from datetime import datetime
 import collections
 
 import numpy as np
+
 try:
     import iris
 except ModuleNotFoundError:
@@ -35,33 +36,40 @@ def empty_image():
         "valid": [],
         "initial": [],
         "length": [],
-        "level": []
+        "level": [],
     }
 
 
 def coordinates(valid_time, initial_time, pressures, pressure):
     valid = _to_datetime(valid_time)
     initial = _to_datetime(initial_time)
-    hours = (valid - initial).total_seconds() / (60*60)
+    hours = (valid - initial).total_seconds() / (60 * 60)
     length = "T{:+}".format(int(hours))
     level = "Sea Surface"
     return {
-        'valid': [valid],
-        'initial': [initial],
-        'length': [length],
-        'level': [level]
+        "valid": [valid],
+        "initial": [initial],
+        "length": [length],
+        "level": [level],
     }
+
+
 def _is_valid_cube(cube):
     """Return True if, and only if, the cube conforms to a GHRSST data specification"""
     attributes = cube.metadata.attributes
-    is_gds = ("GDS_version_id" in attributes) or ("gds_version_id" in attributes)
+    is_gds = ("GDS_version_id" in attributes) or (
+        "gds_version_id" in attributes
+    )
     dim_names = [c.name() for c in cube.dim_coords]
-    contains_dims = {'time', 'latitude', 'longitude'}.issubset(set(dim_names))
-    dims_are_ordered = dim_names[:3] == ['time', 'latitude', 'longitude']
+    contains_dims = {"time", "latitude", "longitude"}.issubset(set(dim_names))
+    dims_are_ordered = dim_names[:3] == ["time", "latitude", "longitude"]
     has_3_dims = len(dim_names) == 3
     return is_gds and contains_dims and dims_are_ordered and has_3_dims
 
+
 # TODO: This logic should move to a "Group" concept.
+
+
 def _load(pattern):
     """Return all the valid GHRSST L4 cubes that can be loaded
     from the given filename pattern."""
@@ -74,8 +82,9 @@ def _load(pattern):
 
     # Find all the names with duplicates
     name_counts = collections.Counter(cube.name() for cube in cubes)
-    duplicate_names = {name for name, count in name_counts.items()
-                       if count > 1}
+    duplicate_names = {
+        name for name, count in name_counts.items() if count > 1
+    }
 
     # Map names (with numeric suffixes for duplicates) to cubes
     duplicate_counts = collections.defaultdict(int)
@@ -84,12 +93,14 @@ def _load(pattern):
         name = cube.name()
         if name in duplicate_names:
             duplicate_counts[name] += 1
-            name += f' ({duplicate_counts[name]})'
+            name += f" ({duplicate_counts[name]})"
         cube_mapping[name] = cube
     return cube_mapping
 
+
 class Dataset:
     """High-level class to relate navigators, loaders and views"""
+
     def __init__(self, label=None, pattern=None, **kwargs):
         self._label = label
         self.pattern = pattern
@@ -106,6 +117,7 @@ class Dataset:
         """Construct view"""
         return ImageView(ImageLoader(self._label, self._paths), color_mapper)
 
+
 class ImageLoader:
     def __init__(self, label, pattern):
         self._label = label
@@ -119,14 +131,20 @@ class ImageLoader:
         if cube is None:
             data = empty_image()
         else:
-            data = geo.stretch_image(cube.coord('longitude').points,
-                                     cube.coord('latitude').points, cube.data)
-            data.update(coordinates(state.valid_time, state.initial_time,
-                                    state.pressures, state.pressure))
-            data.update({
-                'name': [self._label],
-                'units': [str(cube.units)]
-            })
+            data = geo.stretch_image(
+                cube.coord("longitude").points,
+                cube.coord("latitude").points,
+                cube.data,
+            )
+            data.update(
+                coordinates(
+                    state.valid_time,
+                    state.initial_time,
+                    state.pressures,
+                    state.pressure,
+                )
+            )
+            data.update({"name": [self._label], "units": [str(cube.units)]})
         return data
 
 
@@ -138,11 +156,11 @@ class Navigator:
         return list(self._cubes.keys())
 
     def initial_times(self, pattern, variable=None):
-        return list([datetime(1970,1,1)])
+        return list([datetime(1970, 1, 1)])
 
     def valid_times(self, pattern, variable, initial_time):
         cube = self._cubes[variable]
-        return [cell.point for cell in cube.coord('time').cells()]
+        return [cell.point for cell in cube.coord("time").cells()]
 
     def pressures(self, pattern, variable, initial_time):
         pressures = []

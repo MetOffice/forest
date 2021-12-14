@@ -65,7 +65,9 @@ def test_storage_middleware_given_on_save(store):
 
 
 def test_storage_middleware_given_on_save_copies_colorbar():
-    store = redux.Store(presets.reducer, initial_state={"colorbar": {"K": "V"}})
+    store = redux.Store(
+        presets.reducer, initial_state={"colorbar": {"K": "V"}}
+    )
     storage = presets.Storage()
     action = presets.on_save("label")
     middleware = presets.Middleware(storage)
@@ -97,10 +99,13 @@ def test_storage_middleware_sets_labels(store):
     assert expect == result
 
 
-@pytest.mark.parametrize("in_value,out_value", [
-    ("value", "value"),
-    (np.float32(0.), 0.),
-])
+@pytest.mark.parametrize(
+    "in_value,out_value",
+    [
+        ("value", "value"),
+        (np.float32(0.0), 0.0),
+    ],
+)
 def test_storage_json_save(tmpdir, in_value, out_value):
     path = str(tmpdir / "storage.json")
     storage = presets.Storage(path)

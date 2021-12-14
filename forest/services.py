@@ -25,6 +25,7 @@ state to allow reproduction at a later date.
 
 class NullNavigator:
     """Empty container to allow client-code to work if service not found"""
+
     def variables(self, pattern):
         """
         :returns: empty list
@@ -65,6 +66,7 @@ class NavigatorServiceLocator:
     >>> navigator = forest.services.navigation.get_navigator("name")
 
     """
+
     def __init__(self):
         self.datasets = {}
 
@@ -91,4 +93,5 @@ class NavigatorServiceLocator:
             return NullNavigator()
 
 
-navigation = NavigatorServiceLocator()  # TODO: Find a better place to configure this
+# TODO: Find a better place to configure this
+navigation = NavigatorServiceLocator()

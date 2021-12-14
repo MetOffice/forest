@@ -63,11 +63,13 @@ class Defaults:
 @dataclass
 class PluginSpec:
     """Data representation of plugin"""
+
     entry_point: str
 
 
 class Plugins(Mapping):
     """Specialist mapping between allowed keys and specs"""
+
     def __init__(self, data):
         allowed = ("feature",)
         self.data = {}
@@ -124,15 +126,14 @@ class Config(object):
     :param data: native Python data structure representing application
                  settings
     """
+
     def __init__(self, data):
         self.data = data
         self.plugins = Plugins(self.data.get("plugins", {}))
         self.state = forest.state.State.from_dict(self.data.get("state", {}))
 
     def __repr__(self):
-        return "{}({})".format(
-                self.__class__.__name__,
-                self.data)
+        return "{}({})".format(self.__class__.__name__, self.data)
 
     @property
     def features(self):
@@ -160,10 +161,10 @@ class Config(object):
 
     @property
     def default_viewport(self):
-        defaults = self.data.get('defaults', {})
-        viewport = defaults.get('viewport', {})
-        lon_range = viewport.get('lon_range', (-180, 180))
-        lat_range = viewport.get('lat_range', (-80, 80))
+        defaults = self.data.get("defaults", {})
+        viewport = defaults.get("viewport", {})
+        lon_range = viewport.get("lon_range", (-180, 180))
+        lat_range = viewport.get("lat_range", (-80, 80))
         return Viewport(lon_range, lat_range)
 
     @property
@@ -187,8 +188,7 @@ class Config(object):
     @property
     def patterns(self):
         if "files" in self.data:
-            return [(f["label"], f["pattern"])
-                    for f in self.data["files"]]
+            return [(f["label"], f["pattern"]) for f in self.data["files"]]
         return []
 
     @classmethod
@@ -239,14 +239,18 @@ class Config(object):
         :param file_type: keyword to apply to all files
         :returns: instance of :class:`Config`
         """
-        return cls({
-            "files": [dict(pattern=f, label=f, file_type=file_type)
-                for f in files]})
+        return cls(
+            {
+                "files": [
+                    dict(pattern=f, label=f, file_type=file_type)
+                    for f in files
+                ]
+            }
+        )
 
     @property
     def file_groups(self):
-        return [FileGroup(**data)
-                for data in self.data["files"]]
+        return [FileGroup(**data) for data in self.data["files"]]
 
     @property
     def datasets(self):
@@ -256,7 +260,7 @@ class Config(object):
                 "pattern": group.pattern,
                 "locator": group.locator,
                 "database_path": group.database_path,
-                "directory": group.directory
+                "directory": group.directory,
             }
             yield forest.drivers.get_dataset(group.file_type, settings)
 
@@ -278,13 +282,16 @@ class FileGroup(object):
     :param file_type: keyword describing file contents (default: 'unified_model')
     :param directory: leaf/absolute directory where file(s) are stored (default: None)
     """
-    def __init__(self,
-            label,
-            pattern,
-            locator="file_system",
-            file_type="unified_model",
-            directory=None,
-            database_path=None):
+
+    def __init__(
+        self,
+        label,
+        pattern,
+        locator="file_system",
+        file_type="unified_model",
+        directory=None,
+        database_path=None,
+    ):
         self.label = label
         self.pattern = pattern
         self.locator = locator
@@ -303,26 +310,21 @@ class FileGroup(object):
             raise Exception("Can not compare")
         attrs = ("label", "pattern", "locator", "file_type", "directory")
         return all(
-                getattr(self, attr) == getattr(other, attr)
-                for attr in attrs)
+            getattr(self, attr) == getattr(other, attr) for attr in attrs
+        )
 
     def __repr__(self):
-        arg_attrs = [
-            "label",
-            "pattern"]
-        args = [self._str(getattr(self, attr))
-                for attr in arg_attrs]
-        kwarg_attrs = [
-            "locator",
-            "file_type",
-            "directory",
-            "database_path"]
+        arg_attrs = ["label", "pattern"]
+        args = [self._str(getattr(self, attr)) for attr in arg_attrs]
+        kwarg_attrs = ["locator", "file_type", "directory", "database_path"]
         kwargs = [
             "{}={}".format(attr, self._str(getattr(self, attr)))
-                for attr in kwarg_attrs]
+            for attr in kwarg_attrs
+        ]
         return "{}({})".format(
-                self.__class__.__name__,
-                ", ".join(args + kwargs))
+            self.__class__.__name__, ", ".join(args + kwargs)
+        )
+
     @staticmethod
     def _str(value):
         if isinstance(value, str):

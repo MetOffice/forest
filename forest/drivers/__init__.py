@@ -13,14 +13,16 @@ def _cache(f):
         if uid not in _CACHE:
             _CACHE[uid] = f(driver_name, settings)
         return _CACHE[uid]
+
     return wrapped
 
 
 def _uid(driver_name, settings):
     if settings is None:
         return (driver_name,)
-    return (driver_name,) + tuple(_maybe_hashable(settings[k])
-                                  for k in sorted(settings.keys()))
+    return (driver_name,) + tuple(
+        _maybe_hashable(settings[k]) for k in sorted(settings.keys())
+    )
 
 
 def _maybe_hashable(value):

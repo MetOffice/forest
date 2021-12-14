@@ -11,10 +11,11 @@ from forest.exceptions import FileNotFound, IndexNotFound
 
 
 # Sample data similar to a typical EIDA50 file
-TIMES = [dt.datetime(2019, 4, 17) + i * dt.timedelta(minutes=15)
-        for i in range(94)]
+TIMES = [
+    dt.datetime(2019, 4, 17) + i * dt.timedelta(minutes=15) for i in range(94)
+]
 LONS = np.linspace(-19, 53, 180)  # 10 times fewer for speed
-LATS = np.linspace(-13, 23, 90) # 10 times fewer for speed
+LATS = np.linspace(-13, 23, 90)  # 10 times fewer for speed
 
 
 def _eida50(dataset, times, lons=[0], lats=[0]):
@@ -23,27 +24,25 @@ def _eida50(dataset, times, lons=[0], lats=[0]):
     dataset.createDimension("longitude", len(lons))
     dataset.createDimension("latitude", len(lats))
     units = "hours since 1970-01-01 00:00:00"
-    var = dataset.createVariable(
-            "time", "d", ("time",))
+    var = dataset.createVariable("time", "d", ("time",))
     var.axis = "T"
     var.units = units
     var.standard_name = "time"
     var.calendar = "gregorian"
     var[:] = netCDF4.date2num(times, units=units)
-    var = dataset.createVariable(
-            "longitude", "f", ("longitude",))
+    var = dataset.createVariable("longitude", "f", ("longitude",))
     var.axis = "X"
     var.units = "degrees_east"
     var.standard_name = "longitude"
     var[:] = lons
-    var = dataset.createVariable(
-            "latitude", "f", ("latitude",))
+    var = dataset.createVariable("latitude", "f", ("latitude",))
     var.axis = "Y"
     var.units = "degrees_north"
     var.standard_name = "latitude"
     var[:] = lats
     var = dataset.createVariable(
-            "data", "f", ("time", "latitude", "longitude"))
+        "data", "f", ("time", "latitude", "longitude")
+    )
     var.standard_name = "toa_brightness_temperature"
     var.long_name = "toa_brightness_temperature"
     var.units = "K"
@@ -51,9 +50,7 @@ def _eida50(dataset, times, lons=[0], lats=[0]):
 
 
 def test_dataset_navigator():
-    settings = {
-        "pattern": ""
-    }
+    settings = {"pattern": ""}
     dataset = forest.drivers.get_dataset("eida50", settings)
     navigator = dataset.navigator()
     assert navigator.variables(None) == ["EIDA50"]
@@ -74,17 +71,22 @@ def test_navigator_pressures():
     assert navigator.pressures(None, None, None) == []
 
 
-@pytest.mark.parametrize("path,expect", [
-    pytest.param("/some/file-20190101.nc",
-                 dt.datetime(2019, 1, 1),
-                 id="yyyymmdd format"),
-    pytest.param("/some/file-20190101T1245Z.nc",
-                 dt.datetime(2019, 1, 1, 12, 45),
-                 id="yyyymmdd hm format"),
-    pytest.param("eida50.nc",
-                 None,
-                 id="no timestamp"),
-])
+@pytest.mark.parametrize(
+    "path,expect",
+    [
+        pytest.param(
+            "/some/file-20190101.nc",
+            dt.datetime(2019, 1, 1),
+            id="yyyymmdd format",
+        ),
+        pytest.param(
+            "/some/file-20190101T1245Z.nc",
+            dt.datetime(2019, 1, 1, 12, 45),
+            id="yyyymmdd hm format",
+        ),
+        pytest.param("eida50.nc", None, id="no timestamp"),
+    ],
+)
 def test_locator_parse_date(path, expect):
     result = eida50.Locator.parse_date(path)
     assert expect == result
@@ -117,9 +119,10 @@ def test_locator_find_given_a_single_file(tmpdir):
 def test_find_given_multiple_files(tmpdir):
     pattern = str(tmpdir / "test-eida50*.nc")
     dates = [
-            dt.datetime(2019, 1, 1),
-            dt.datetime(2019, 1, 2),
-            dt.datetime(2019, 1, 3)]
+        dt.datetime(2019, 1, 1),
+        dt.datetime(2019, 1, 2),
+        dt.datetime(2019, 1, 3),
+    ]
     for date in dates:
         path = str(tmpdir / "test-eida50-{:%Y%m%d}.nc".format(date))
         with netCDF4.Dataset(path, "w") as dataset:
@@ -191,6 +194,7 @@ def test_loader_longitudes(tmpdir):
     with netCDF4.Dataset(path) as dataset:
         expect = dataset.variables["longitude"][:]
     np.testing.assert_array_almost_equal(expect, result)
+
 
 def test_loader_latitudes(tmpdir):
     path = str(tmpdir / "eida50_20190417.nc")
@@ -281,11 +285,10 @@ def test_database_open_twice(tmpdir):
         pass
 
 
-@pytest.mark.parametrize("value", [
-    None,
-    "2020-01-01 00:00:00",
-    np.datetime64("2020-01-01 00:00:00", "s")
-])
+@pytest.mark.parametrize(
+    "value",
+    [None, "2020-01-01 00:00:00", np.datetime64("2020-01-01 00:00:00", "s")],
+)
 def test_database_insert_times_invalid_types(value):
     """Anything that doesn't support object.strftime(fmt)"""
     database = forest.drivers.eida50.Database()
@@ -293,10 +296,15 @@ def test_database_insert_times_invalid_types(value):
         database.insert_times([value], "file.nc")
 
 
-@pytest.mark.parametrize("value,expect", [
-    pytest.param(dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 1)),
-    pytest.param(cftime.DatetimeGregorian(2020, 1, 1), dt.datetime(2020, 1, 1))
-])
+@pytest.mark.parametrize(
+    "value,expect",
+    [
+        pytest.param(dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 1)),
+        pytest.param(
+            cftime.DatetimeGregorian(2020, 1, 1), dt.datetime(2020, 1, 1)
+        ),
+    ],
+)
 def test_database_insert_times_supported_types(value, expect):
     database = forest.drivers.eida50.Database()
     database.insert_times([value], "file.nc")

@@ -4,6 +4,7 @@ import bokeh.plotting
 
 class Application:
     """Application structure"""
+
     def __init__(self):
         self.components = []
 

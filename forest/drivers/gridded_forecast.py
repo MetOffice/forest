@@ -2,6 +2,7 @@ from datetime import datetime
 import collections
 
 import numpy as np
+
 try:
     import iris
 except ModuleNotFoundError:
@@ -28,38 +29,45 @@ def empty_image():
         "valid": [],
         "initial": [],
         "length": [],
-        "level": []
+        "level": [],
     }
 
 
 def coordinates(valid_time, initial_time, pressures, pressure):
     valid = _to_datetime(valid_time)
     initial = _to_datetime(initial_time)
-    hours = (valid - initial).total_seconds() / (60*60)
+    hours = (valid - initial).total_seconds() / (60 * 60)
     length = "T{:+}".format(int(hours))
     if (len(pressures) > 0) and (pressure is not None):
         level = "{} hPa".format(int(pressure))
     else:
         level = "Surface"
     return {
-        'valid': [valid],
-        'initial': [initial],
-        'length': [length],
-        'level': [level]
+        "valid": [valid],
+        "initial": [initial],
+        "length": [length],
+        "level": [level],
     }
 
 
 def _is_valid_cube(cube):
     """Return True if, and only if, the cube meets our criteria for a
     'gridded forecast'."""
-    return True
-    # dim_names = [coord.name() for coord in cube.dim_coords]
-    # return (2 <= cube.ndim <= 3
-    #         and len(cube.dim_coords) == cube.ndim
-    #         and (dim_names == ['time', 'latitude', 'longitude'] or
-    #              (dim_names == ['latitude', 'longitude'] and
-    #               len(cube.coords('time')) == 1))
-    #         and len(cube.coords('forecast_reference_time')) == 1)
+
+    dim_names = [coord.name() for coord in cube.dim_coords]
+    return (
+        2 <= cube.ndim <= 3
+        and len(cube.dim_coords) == cube.ndim
+        and (
+            dim_names == ["time", "latitude", "longitude"]
+            or (
+                dim_names == ["latitude", "longitude"]
+                and len(cube.coords("time")) == 1
+            )
+        )
+        and len(cube.coords("forecast_reference_time")) == 1
+    )
+
 
 
 # TODO: This logic should move to a "Group" concept.
@@ -78,8 +86,9 @@ def _load(pattern, is_valid_cube=None):
 
     # Find all the names with duplicates
     name_counts = collections.Counter(cube.name() for cube in cubes)
-    duplicate_names = {name for name, count in name_counts.items()
-                       if count > 1}
+    duplicate_names = {
+        name for name, count in name_counts.items() if count > 1
+    }
 
     # Map names (with numeric suffixes for duplicates) to cubes
     duplicate_counts = collections.defaultdict(int)
@@ -88,13 +97,14 @@ def _load(pattern, is_valid_cube=None):
         name = cube.name()
         if name in duplicate_names:
             duplicate_counts[name] += 1
-            name += f' ({duplicate_counts[name]})'
+            name += f" ({duplicate_counts[name]})"
         cube_mapping[name] = cube
     return cube_mapping
 
 
 class Dataset:
     """High-level class to relate navigators, loaders and views"""
+
     def __init__(self, label=None, pattern=None, **kwargs):
         self._label = label
         self.pattern = pattern
@@ -119,8 +129,7 @@ class Dataset:
 
 
 class ImageLoader:
-    def __init__(self, label, cube_dict,
-                 extract_cube=None):
+    def __init__(self, label, cube_dict, extract_cube=None):
         self._label = label
         self._cubes = cube_dict
         if extract_cube is not None:
@@ -144,6 +153,7 @@ class ImageLoader:
                 'name': [self._label],
                 'units': [str(cube.units)]
             })
+
         return data
 
     @staticmethod
@@ -174,20 +184,22 @@ class Navigator:
         return list(self._cubes.keys())
 
     def initial_times(self, pattern, variable=None):
-        return [datetime.now()]
-        # return list({cube.coord('forecast_reference_time').cell(0).point
-        #              for cube in self._cubes.values()})
+        return list(
+            {
+                cube.coord("forecast_reference_time").cell(0).point
+                for cube in self._cubes.values()
+            }
+        )
 
     def valid_times(self, pattern, variable, initial_time):
-        return [datetime.now()]
-        # cube = self._cubes[variable]
-        # return [cell.point for cell in cube.coord('time').cells()]
+        cube = self._cubes[variable]
+        return [cell.point for cell in cube.coord("time").cells()]
 
     def pressures(self, pattern, variable, initial_time):
         cube = self._cubes[variable]
         pressures = []
         try:
-            pressures = [cell.point for cell in cube.coord('pressure').cells()]
+            pressures = [cell.point for cell in cube.coord("pressure").cells()]
         except iris.exceptions.CoordinateNotFoundError:
             pass
         return pressures

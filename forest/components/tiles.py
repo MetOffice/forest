@@ -20,7 +20,7 @@ URLS = {
     STAMEN_TERRAIN: "http://tile.stamen.com/terrain-background/{Z}/{X}/{Y}.png",
     STAMEN_WATERCOLOR: "http://tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg",
     STAMEN_TONER: "http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png",
-    STAMEN_TONER_LITE: "http://tile.stamen.com/toner-lite/{Z}/{X}/{Y}.png"
+    STAMEN_TONER_LITE: "http://tile.stamen.com/toner-lite/{Z}/{X}/{Y}.png",
 }
 
 
@@ -59,10 +59,7 @@ Wikimedia Maps | © <a href="https://www.openstreetmap.org/copyright">OpenStreet
 
 def attribution(name):
     """Tile server attribution"""
-    if name in [
-            STAMEN_TONER,
-            STAMEN_TERRAIN,
-            STAMEN_TONER_LITE]:
+    if name in [STAMEN_TONER, STAMEN_TERRAIN, STAMEN_TONER_LITE]:
         return STAMEN_TONER_AND_TERRAIN_ATTRIBUTION
     elif name == STAMEN_WATERCOLOR:
         return STAMEN_WATERCOLOR_ATTRIBUTION
@@ -105,25 +102,26 @@ def reducer(state: State, action: Action) -> State:
 @forest.mark.component
 class TilePicker(Observable):
     """Web map tile selector"""
+
     def __init__(self):
         self.tiles = {
             "underlay": bokeh.models.WMTSTileSource(
                 url="https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
-                attribution=""),
+                attribution="",
+            ),
             "labels": bokeh.models.WMTSTileSource(
                 url="http://tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png",
-                attribution="")
+                attribution="",
+            ),
         }
         self._renderers = []
         self.select = bokeh.models.Select(
-            options=sorted(URLS.keys()),
-            width=350)
+            options=sorted(URLS.keys()), width=350
+        )
         self.select.on_change("value", self.on_select)
         self.toggle = bokeh.models.Toggle(label="Show labels")
         self.toggle.on_click(self.on_toggle)
-        self.layout = bokeh.layouts.column(
-            self.select,
-            self.toggle)
+        self.layout = bokeh.layouts.column(self.select, self.toggle)
         super().__init__()
 
     def add_figure(self, figure):

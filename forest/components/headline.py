@@ -3,10 +3,12 @@ import bokeh.models
 
 class Headline:
     """Summarise selected state"""
+
     def __init__(self):
         self._template = "<h3>{}</h3>"
-        self.div = bokeh.models.Div(text=self._template.format(""),
-                                       sizing_mode="stretch_width")
+        self.div = bokeh.models.Div(
+            text=self._template.format(""), sizing_mode="stretch_width"
+        )
         self.layout = self.div
 
     def connect(self, store):

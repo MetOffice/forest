@@ -1,4 +1,2 @@
-__all__ = [
-    "Barb"
-]
+__all__ = ["Barb"]
 from .barb import Barb

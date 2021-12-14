@@ -1,30 +1,18 @@
-#!/usr/bin/env python3
-import argparse
-from . import database as db
+import typer
+from typing import List
+from pathlib import Path
 
 
-def parse_args(argv=None, parser=None):
-    parser = argparse.ArgumentParser()
-    add_arguments(parser)
-    return parser.parse_args(args=argv)
+def main(
+    database: Path = typer.Argument(..., help="database file to write/extend"),
+    files: List[Path] = typer.Argument(..., help="unified model netcdf files"),
+):
+    """Generate database to accelerate big data navigation"""
+    import forest.db.database
 
-
-def add_arguments(parser):
-    parser.add_argument(
-        "--database", required=True,
-        help="database file to write/extend")
-    parser.add_argument(
-        "paths", nargs="+", metavar="FILE",
-        help="unified model netcdf files")
-
-
-def main(argv=None, args=None):
-    if args is None:
-        args = parse_args(argv=argv)
-    with db.Database.connect(args.database) as database:
-        for path in args.paths:
-            database.insert_netcdf(path)
-
-
-if __name__ == '__main__':
-    main()
+    typer.secho(f"open: {database}", fg=typer.colors.CYAN)
+    with forest.db.database.Database.connect(str(database)) as handle:
+        for path in files:
+            typer.secho(f"insert records: {path}", fg=typer.colors.YELLOW)
+            handle.insert_netcdf(str(path))
+    typer.secho(f"close: {database}", fg=typer.colors.CYAN)

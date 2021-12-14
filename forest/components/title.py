@@ -7,6 +7,7 @@ import forest.state
 
 class Title:
     """Simple title"""
+
     def __init__(self):
         self.div = bokeh.models.Div(text="")
         self.layout = bokeh.layouts.row(self.div, name="title")

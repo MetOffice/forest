@@ -7,7 +7,8 @@ def test_gallery():
     state = {}
     factory_class = Mock()
     context = Mock()
-    gallery = forest.gallery.Gallery.series_view({"label": sentinel.dataset},
-                                                 sentinel.figure)
+    gallery = forest.gallery.Gallery.series_view(
+        {"label": sentinel.dataset}, sentinel.figure
+    )
     gallery.connect(store)
     gallery.render(state)

@@ -3,8 +3,12 @@ import datetime as dt
 import os
 import sqlite3
 import netCDF4
-import forest.db.main as main
-import forest
+from forest.cli.alternative import app
+from typer.testing import CliRunner
+from pathlib import Path
+
+
+runner = CliRunner()
 
 
 class TestMain(unittest.TestCase):
@@ -12,10 +16,7 @@ class TestMain(unittest.TestCase):
         self.units = "hours since 1970-01-01 00:00:00"
         self.database_file = "test_main.db"
         self.netcdf_file = "test_file.nc"
-        self._paths = [
-            self.database_file,
-            self.netcdf_file
-        ]
+        self._paths = [self.database_file, self.netcdf_file]
 
     def tearDown(self):
         for path in self._paths:
@@ -23,13 +24,11 @@ class TestMain(unittest.TestCase):
                 os.remove(path)
 
     def test_main_writes_file_names_to_database(self):
-        with netCDF4.Dataset(self.netcdf_file, "w") as dataset:
+        with netCDF4.Dataset(self.netcdf_file, "w"):
             pass
 
-        main.main([
-            "--database", self.database_file,
-            self.netcdf_file
-        ])
+        runner.invoke(app, ["db", self.database_file, self.netcdf_file])
+
         connection = sqlite3.connect(self.database_file)
         cursor = connection.cursor()
         cursor.execute("SELECT name FROM file")
@@ -46,24 +45,22 @@ class TestMain(unittest.TestCase):
             var = dataset.createVariable("relative_humidity", "f", ("x",))
             var.um_stash_source = "m01s16i256"
 
-        main.main([
-            "--database", self.database_file,
-            self.netcdf_file
-        ])
+        runner.invoke(app, ["db", self.database_file, self.netcdf_file])
+
         connection = sqlite3.connect(self.database_file)
         cursor = connection.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
                 SELECT variable.name, variable.file_id FROM variable
                  ORDER BY variable.name
-        """)
+        """
+        )
         result = cursor.fetchall()
         expect = [("air_temperature", 1), ("relative_humidity", 1)]
         self.assertEqual(expect, result)
 
     def test_main_saves_times_in_database(self):
-        times = [
-            dt.datetime(2019, 1, 1, 12),
-            dt.datetime(2019, 1, 1, 13)]
+        times = [dt.datetime(2019, 1, 1, 12), dt.datetime(2019, 1, 1, 13)]
 
         with netCDF4.Dataset(self.netcdf_file, "w") as dataset:
             dataset.createDimension("time", len(times))
@@ -73,10 +70,7 @@ class TestMain(unittest.TestCase):
             obj = dataset.createVariable("air_temperature", "f", ("time",))
             obj.um_stash_source = "m01s16i203"
 
-        main.main([
-            "--database", self.database_file,
-            self.netcdf_file
-        ])
+        runner.invoke(app, ["db", self.database_file, self.netcdf_file])
 
         connection = sqlite3.connect(self.database_file)
         cursor = connection.cursor()
@@ -96,10 +90,7 @@ class TestMain(unittest.TestCase):
             obj.um_stash_source = "m01s16i203"
             obj.coordinates = "pressure"
 
-        main.main([
-            "--database", self.database_file,
-            self.netcdf_file
-        ])
+        runner.invoke(app, ["db", self.database_file, self.netcdf_file])
 
         connection = sqlite3.connect(self.database_file)
         cursor = connection.cursor()
@@ -116,10 +107,7 @@ class TestMain(unittest.TestCase):
             obj[:] = netCDF4.date2num(reference_time, self.units)
             obj.units = self.units
 
-        main.main([
-            "--database", self.database_file,
-            self.netcdf_file
-        ])
+        runner.invoke(app, ["db", self.database_file, self.netcdf_file])
 
         connection = sqlite3.connect(self.database_file)
         cursor = connection.cursor()
@@ -142,14 +130,13 @@ class TestMain(unittest.TestCase):
             obj.um_stash_source = "m01s16i203"
             obj.coordinates = "time pressure"
 
-        main.main([
-            "--database", self.database_file,
-            self.netcdf_file
-        ])
+        runner.invoke(app, ["db", self.database_file, self.netcdf_file])
 
         connection = sqlite3.connect(self.database_file)
         cursor = connection.cursor()
-        cursor.execute("SELECT v.time_axis, v.pressure_axis FROM variable AS v")
+        cursor.execute(
+            "SELECT v.time_axis, v.pressure_axis FROM variable AS v"
+        )
         result = cursor.fetchall()
         expect = [(0, 0)]
         self.assertEqual(expect, result)

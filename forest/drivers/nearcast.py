@@ -17,10 +17,12 @@ try:
 except ModuleNotFoundError:
     pg = None
 
-NEARCAST_TOOLTIPS = [("Name", "@name"),
-                     ("Value", "@image @units"),
-                     ('Valid', '@valid'),
-                     ("Sigma Layer", "@layer")]
+NEARCAST_TOOLTIPS = [
+    ("Name", "@name"),
+    ("Value", "@image @units"),
+    ("Valid", "@valid"),
+    ("Sigma Layer", "@layer"),
+]
 
 
 class Dataset:
@@ -32,13 +34,14 @@ class Dataset:
         return Navigator(self.pattern)
 
     def map_view(self, color_mapper):
-        return forest.map_view.map_view(self.loader,
-                                        color_mapper,
-                                        tooltips=NEARCAST_TOOLTIPS)
+        return forest.map_view.map_view(
+            self.loader, color_mapper, tooltips=NEARCAST_TOOLTIPS
+        )
 
 
 class NearCast(object):
     """View responsible for plotting Nearcast dataset"""
+
     def __init__(self, pattern):
         self.locator = Locator(pattern)
         self.empty_image = {
@@ -59,25 +62,28 @@ class NearCast(object):
             return self.empty_image
 
         try:
-            imageData = self.get_grib2_data(paths[0],
-                                            state.valid_time,
-                                            state.variable,
-                                            state.pressure)
+            imageData = self.get_grib2_data(
+                paths[0], state.valid_time, state.variable, state.pressure
+            )
         except ValueError:
             # TODO: Fix this properly
             return self.empty_image
 
         data = self.load_image(imageData)
-        data.update({"name" : [imageData["name"]],
-                     "units" : [imageData["units"]],
-                     "valid" : [imageData["valid"]],
-                     "layer" : [imageData["layer"]]})
+        data.update(
+            {
+                "name": [imageData["name"]],
+                "units": [imageData["units"]],
+                "valid": [imageData["valid"]],
+                "layer": [imageData["layer"]],
+            }
+        )
         return data
 
     def load_image(self, imageData):
-        return geo.stretch_image(imageData["longitude"],
-                                 imageData["latitude"],
-                                 imageData["data"])
+        return geo.stretch_image(
+            imageData["longitude"], imageData["latitude"], imageData["data"]
+        )
 
     def get_grib2_data(self, path, valid_time, variable, pressure):
         cache = {}
@@ -85,30 +91,44 @@ class NearCast(object):
         validTime = dt.datetime.strptime(str(valid_time), "%Y-%m-%d %H:%M:%S")
         vTime = "{0:d}{1:02d}".format(validTime.hour, validTime.minute)
 
-        messages = pg.index(path, "name", "scaledValueOfFirstFixedSurface", "validityTime")
+        messages = pg.index(
+            path, "name", "scaledValueOfFirstFixedSurface", "validityTime"
+        )
         if len(path) > 0:
-            field = messages.select(name=variable, scaledValueOfFirstFixedSurface=int(pressure), validityTime=vTime)[0]
-            cache["longitude"] = field.latlons()[1][0,:]
-            cache["latitude"] = field.latlons()[0][:,0]
+            field = messages.select(
+                name=variable,
+                scaledValueOfFirstFixedSurface=int(pressure),
+                validityTime=vTime,
+            )[0]
+            cache["longitude"] = field.latlons()[1][0, :]
+            cache["latitude"] = field.latlons()[0][:, 0]
             cache["data"] = field.values
             cache["units"] = field.units
             cache["name"] = field.name
-            cache["valid"] = "{0:02d}:{1:02d} UTC".format(validTime.hour, validTime.minute)
+            cache["valid"] = "{0:02d}:{1:02d} UTC".format(
+                validTime.hour, validTime.minute
+            )
             cache["initial"] = "blah"
             scaledLowerLevel = float(field.scaledValueOfFirstFixedSurface)
             scaleFactorLowerLevel = float(field.scaleFactorOfFirstFixedSurface)
-            lowerSigmaLevel = str(round(scaledLowerLevel * 10**-scaleFactorLowerLevel, 2))
+            lowerSigmaLevel = str(
+                round(scaledLowerLevel * 10 ** -scaleFactorLowerLevel, 2)
+            )
             scaledUpperLevel = float(field.scaledValueOfSecondFixedSurface)
-            scaleFactorUpperLevel = float(field.scaleFactorOfSecondFixedSurface)
-            upperSigmaLevel = str(round(scaledUpperLevel * 10**-scaleFactorUpperLevel, 2))
-            cache['layer'] = lowerSigmaLevel+"-"+upperSigmaLevel
+            scaleFactorUpperLevel = float(
+                field.scaleFactorOfSecondFixedSurface
+            )
+            upperSigmaLevel = str(
+                round(scaledUpperLevel * 10 ** -scaleFactorUpperLevel, 2)
+            )
+            cache["layer"] = lowerSigmaLevel + "-" + upperSigmaLevel
         messages.close()
         return cache
 
 
 class Navigator:
-    """Simplified navigator
-    """
+    """Simplified navigator"""
+
     def __init__(self, pattern):
         self.pattern = pattern
         self.locator = Locator(pattern)
@@ -124,7 +144,7 @@ class Navigator:
     def _variables(path):
         messages = pg.open(path)
         for message in messages.select():
-            yield message['name']
+            yield message["name"]
         messages.close()
 
     def initial_times(self, pattern, variable=None):
@@ -141,8 +161,9 @@ class Navigator:
         messages = pg.index(path, "name")
         try:
             for message in messages.select(name=variable):
-                validTime = "{0:8d}{1:04d}".format(message["validityDate"],
-                                                   message["validityTime"])
+                validTime = "{0:8d}{1:04d}".format(
+                    message["validityDate"], message["validityTime"]
+                )
                 yield dt.datetime.strptime(validTime, "%Y%m%d%H%M")
         except ValueError:
             # messages.select(name=variable) raises ValueError if not found
@@ -175,6 +196,7 @@ class Navigator:
 
 class Locator(object):
     """Locate files on disk"""
+
     def __init__(self, pattern):
         self.pattern = pattern
         self._initial_time_to_path = {}

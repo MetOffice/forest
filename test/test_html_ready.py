@@ -1,4 +1,5 @@
 import forest
+import forest.reducer
 import forest.state
 import forest.actions
 
@@ -6,7 +7,7 @@ import forest.actions
 def test_reducer():
     state = forest.state.State()
     action = forest.actions.html_loaded()
-    state = forest.reducer(state, action.to_dict())
+    state = forest.reducer.reducer(state, action.to_dict())
     state = forest.state.State.from_dict(state)
     assert state.bokeh.html_loaded == True  # noqa: E712
 

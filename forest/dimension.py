@@ -7,8 +7,10 @@ SET_VARIABLES = "DIMENSION_SET_VARIABLES"
 
 def set_variables(label, values):
     """Action to set variables related to dataset"""
-    return {"kind": SET_VARIABLES,
-            "payload": {"label": label, "values": values}}
+    return {
+        "kind": SET_VARIABLES,
+        "payload": {"label": label, "values": values},
+    }
 
 
 def reducer(state, action):
