@@ -145,7 +145,6 @@ class ImageLoader:
             lons = cube.coord('longitude').points
             lats = cube.coord('latitude').points
             values = cube.data
-            # lons, values = self.rollbabyroll(lons, values)
             data = geo.stretch_image(lons, lats, values)
             data.update(coordinates(state.valid_time, state.initial_time,
                                     state.pressures, state.pressure))
@@ -156,14 +155,6 @@ class ImageLoader:
 
         return data
 
-    @staticmethod
-    def rollbabyroll(lons, values):
-        if np.any(lons > 180.0):
-            shift_by = np.sum(lons > 180.0)
-            lons[lons > 180.0] -= 360.
-            lons = np.roll(lons, shift_by)
-            values = np.roll(values, shift_by, axis=1)
-        return lons, values
 
     @staticmethod
     def extract_cube(cube, valid_datetime):
