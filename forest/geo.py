@@ -28,14 +28,6 @@ try:
 except ModuleNotFoundError:
     datashader = None
 
-def mercator_width():
-    x_lims = cartopy.crs.Mercator.GOOGLE.x_limits
-    return x_lims[1] - x_lims[0]
-
-X_MAX = mercator_width()
-
-print("-------- X_MAX ---------")
-print(X_MAX)
 
 def stretch_image(lons, lats, values,
                   plot_height=None,
@@ -62,20 +54,7 @@ def stretch_image(lons, lats, values,
     else:
         raise Exception("Either 1D or 2D lons/lats")
 
-    print("------NOT HOT--------")
-    print(f"lons   = {lons}")
-    print(f"gx.min = {gx.min()}")
-    print(f"gx.max = {gx.max()}")
-
-    # HOTFIX: Dateline unwrapping 🎅
-    if np.any(lons > 180.0):
-        print("HOTFIX! WE GOT A HOTFIX OVER HERE!!")
-        gx[lons > 180.0] += X_MAX
-
-    print("------HOT--------")
-    print(f"lons   = {lons}")
-    print(f"gx.min = {gx.min()}")
-    print(f"gx.max = {gx.max()}")
+    extend_180(gx, lons)
 
     if datashader:
         x_range = (gx.min(), gx.max())
@@ -219,10 +198,23 @@ def to_180(x):
     return y
 
 
+def extend_180(x, lons):
+    y = x.copy()
+    if np.any(lons > 180.0):
+        y[lons > 180.0] += mercator_width()
+    return y
+
+
+def mercator_width():
+    x_lims = cartopy.crs.Mercator.GOOGLE.x_limits
+    return x_lims[1] - x_lims[0]
+
+
 def web_mercator(lons, lats):
-    return transform(
+    gx, gy = transform(
         lons, lats, cartopy.crs.PlateCarree(), cartopy.crs.Mercator.GOOGLE
     )
+    return gx, gy
 
 
 def plate_carree(x, y):
