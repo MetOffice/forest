@@ -29,9 +29,8 @@ except ModuleNotFoundError:
     datashader = None
 
 def mercator_width():
-    x_min, _ = cartopy.crs.Mercator.GOOGLE.transform_point(-180.0, 0, cartopy.crs.PlateCarree())
-    x_max, _ = cartopy.crs.Mercator.GOOGLE.transform_point(180., 0, cartopy.crs.PlateCarree())
-    return x_max - x_min
+    x_lims = cartopy.crs.Mercator.GOOGLE.x_limits
+    return x_lims[1] - x_lims[0]
 
 X_MAX = mercator_width()
 
