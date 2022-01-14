@@ -89,24 +89,42 @@ def main(argv=None):
         low=0, high=1, palette=bokeh.palettes.Plasma[256]
     )
 
-    # Convert config to datasets
-    datasets = {}
-    datasets_by_pattern = {}
-    label_to_pattern = {}
-    for group, dataset in zip(config.file_groups, config.datasets):
-        datasets[group.label] = dataset
-        datasets_by_pattern[group.pattern] = dataset
-        label_to_pattern[group.label] = group.pattern
+    print(list(config.datasets))
+
+    if config.edition == 2022:
+        # Convert config to datasets dict
+        datasets = {}
+        for dataset in config.datasets:
+            datasets[dataset.label] = dataset.driver
+
+        # Add optional sub-navigators
+        sub_navigators = {
+            dataset.label: dataset.driver.navigator()
+            for dataset in config.datasets
+            if hasattr(dataset.driver, "navigator")
+        }
+        navigator = navigate.Navigator(sub_navigators)
+    elif config.edition == 2018:
+        # Convert config to datasets dict
+        datasets = {}
+        datasets_by_pattern = {}
+        label_to_pattern = {}
+        for group, dataset in zip(config.file_groups, config.datasets):
+            datasets[group.label] = dataset
+            datasets_by_pattern[group.pattern] = dataset
+            label_to_pattern[group.label] = group.pattern
+
+        # Add optional sub-navigators
+        sub_navigators = {
+            key: dataset.navigator()
+            for key, dataset in datasets_by_pattern.items()
+            if hasattr(dataset, "navigator")
+        }
+        navigator = navigate.Navigator(sub_navigators)
+    else:
+        raise Exception(f"unknown edition: {config.edition}")
 
     layers_ui = layers.LayersUI()
-
-    # Add optional sub-navigators
-    sub_navigators = {
-        key: dataset.navigator()
-        for key, dataset in datasets_by_pattern.items()
-        if hasattr(dataset, "navigator")
-    }
-    navigator = navigate.Navigator(sub_navigators)
 
     middlewares = [
         keys.navigate,
@@ -241,24 +259,25 @@ def main(argv=None):
     store.dispatch(forest.db.control.set_value("patterns", config.patterns))
 
     # Pre-select first map_view layer
-    for label, dataset in datasets.items():
-        pattern = label_to_pattern[label]
-        for variable in navigator.variables(pattern):
-            spec = {
-                "label": label,
-                "dataset": label,
-                "variable": variable,
-                "active": [0],
-            }
-            store.dispatch(forest.layers.save_layer(0, spec))
+    if config.edition == 2018:
+        for label, dataset in datasets.items():
+            pattern = label_to_pattern[label]
+            for variable in navigator.variables(pattern):
+                spec = {
+                    "label": label,
+                    "dataset": label,
+                    "variable": variable,
+                    "active": [0],
+                }
+                store.dispatch(forest.layers.save_layer(0, spec))
+                break
             break
-        break
 
-    # Set variable dimensions (needed by modal dialogue)
-    for label, dataset in datasets.items():
-        pattern = label_to_pattern[label]
-        values = navigator.variables(pattern)
-        store.dispatch(dimension.set_variables(label, values))
+        # Set variable dimensions (needed by modal dialogue)
+        for label, dataset in datasets.items():
+            pattern = label_to_pattern[label]
+            values = navigator.variables(pattern)
+            store.dispatch(dimension.set_variables(label, values))
 
     # Organise controls/settings
     layouts = {}
