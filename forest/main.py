@@ -259,7 +259,25 @@ def main(argv=None):
     store.dispatch(forest.db.control.set_value("patterns", config.patterns))
 
     # Pre-select first map_view layer
-    if config.edition == 2018:
+    if config.edition == 2022:
+        for label in datasets.keys():
+            for variable in navigator.variables(label):
+                spec = {
+                    "label": label,
+                    "dataset": label,
+                    "variable": variable,
+                    "active": [0],
+                }
+                store.dispatch(forest.layers.save_layer(0, spec))
+                break
+            break
+
+        # Set variable dimensions (needed by modal dialogue)
+        for label in datasets.keys():
+            values = navigator.variables(label)
+            store.dispatch(dimension.set_variables(label, values))
+
+    elif config.edition == 2018:
         for label, dataset in datasets.items():
             pattern = label_to_pattern[label]
             for variable in navigator.variables(pattern):
