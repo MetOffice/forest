@@ -89,8 +89,6 @@ def main(argv=None):
         low=0, high=1, palette=bokeh.palettes.Plasma[256]
     )
 
-    print(list(config.datasets))
-
     if config.edition == 2022:
         # Convert config to datasets dict
         datasets = {}
