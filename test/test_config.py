@@ -242,3 +242,68 @@ def test_config_parser_plugin_given_unsupported_key():
 def test_config_default_state():
     config = forest.config.Config({"state": {}})
     assert config.state == forest.state.State.from_dict({})
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        (
+            """
+files:
+   - A
+    """,
+            2018,
+        ),
+        (
+            """
+edition: 2022
+datasets:
+   - label: A
+     driver:
+       - name: iris
+         settings:
+            pattern: '*.nc'
+    """,
+            2022,
+        ),
+    ],
+)
+def test_config_edition(text, expected):
+    actual = forest.config.Config.loads(text)
+    assert actual.edition == expected
+
+
+def test_config_edition_2022_rdt_dataset():
+    text = """
+    edition: 2022
+    datasets:
+        - label: RDT
+          description: Rapidly developing thunderstorms
+          driver:
+              name: rdt
+              settings:
+                 pattern: 'RDT*.json'
+    """
+    config = forest.config.Config.loads(text)
+    actual = next(config.datasets)
+    assert actual.label == "RDT"
+    assert actual.description == "Rapidly developing thunderstorms"
+    assert actual.driver.pattern == "RDT*.json"
+
+
+def test_config_edition_2022_gridded_forecast_dataset():
+    text = """
+    edition: 2022
+    datasets:
+        - label: NZENS
+          description: NIWA ensemble forecasts
+          driver:
+              name: gridded_forecast
+              settings:
+                 pattern: '*.nc'
+    """
+    config = forest.config.Config.loads(text)
+    actual = next(config.datasets)
+    assert actual.label == "NZENS"
+    assert actual.description == "NIWA ensemble forecasts"
+    assert actual.driver.pattern == "*.nc"

@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 from collections.abc import Mapping
 from forest.export import export
+from typing import Any
 
 
 __all__ = []
@@ -111,6 +112,13 @@ def combine_variables(os_environ, args_variables):
     return variables
 
 
+@dataclass
+class HighLevelDataset:
+    label: str
+    description: str
+    driver: Any
+
+
 class Config(object):
     """Configuration data structure
 
@@ -134,6 +142,11 @@ class Config(object):
 
     def __repr__(self):
         return "{}({})".format(self.__class__.__name__, self.data)
+
+    @property
+    def edition(self):
+        """Text format conventions"""
+        return self.data.get("edition", 2018)
 
     @property
     def features(self):
@@ -220,6 +233,34 @@ class Config(object):
         with open(path) as stream:
             text = stream.read()
 
+        return cls.loads(text, variables=variables)
+
+    @classmethod
+    def loads(cls, text, variables=None):
+        """Parse settings from either YAML or JSON string
+
+        The configuration can be controlled elegantly
+        through a text file. Groups of files can
+        be specified in a list.
+
+        .. note:: Relative or absolute directories are
+                  declared through the use of a leading /
+
+        .. code-block:: yaml
+
+            files:
+                - label: Trial
+                  pattern: "${TRIAL_DIR}/*.nc"
+                - label: Control
+                  pattern: "${CONTROL_DIR}/*.nc"
+                - label: RDT
+                  pattern: "${RDT_DIR}/*.json"
+                  file_type: rdt
+
+        :param text: JSON/YAML string
+        :param variables: dict of key/value pairs used by :py:class:`string.Template`
+        :returns: instance of :class:`Config`
+        """
         if variables is not None:
             template = string.Template(text)
             text = template.substitute(**variables)
@@ -254,15 +295,25 @@ class Config(object):
 
     @property
     def datasets(self):
-        for group in self.file_groups:
-            settings = {
-                "label": group.label,
-                "pattern": group.pattern,
-                "locator": group.locator,
-                "database_path": group.database_path,
-                "directory": group.directory,
-            }
-            yield forest.drivers.get_dataset(group.file_type, settings)
+        if self.edition == 2022:
+            for chunk in self.data["datasets"]:
+                yield HighLevelDataset(
+                    chunk["label"],
+                    chunk.get("description", ""),
+                    forest.drivers.get_dataset(
+                        chunk["driver"]["name"], chunk["driver"]["settings"]
+                    ),
+                )
+        else:
+            for group in self.file_groups:
+                settings = {
+                    "label": group.label,
+                    "pattern": group.pattern,
+                    "locator": group.locator,
+                    "database_path": group.database_path,
+                    "directory": group.directory,
+                }
+                yield forest.drivers.get_dataset(group.file_type, settings)
 
 
 class FileGroup(object):
