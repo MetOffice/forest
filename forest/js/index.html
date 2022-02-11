@@ -12,12 +12,11 @@
 {% endmacro %}
 
 {% block postamble %}
-<link rel="stylesheet" href="forest/static/style.css" type="text/css" media="all">
 
-<link rel="stylesheet" href="forest/static/font-awesome/css/all.css" type="text/css" media="all">
+<link rel="stylesheet" href="./src/style.css" type="text/css" media="all">
 
-<script src="forest/static/script.js" charset="utf-8"></script>
-<script src="forest/static/forest-min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="./src/font-awesome/css/all.css" type="text/css" media="all">
+
 {% endblock %}
 
 {% block contents %}
@@ -89,7 +88,19 @@
         {% endfor %}
     {% endfor %}
 
-    <script charset="utf-8">
+    <script type="module" charset="utf-8">
+        import * as forest from "./src/forest.js"
+    window.forest = forest
+    </script>
+
+    <script type="module" charset="utf-8">
+        import { closeId, openId, openModal, closeModal, openFullscreen, closeFullscreen, getFullscreenElement } from "./src/script.js"
+
+        // Attach to global namespace (needed by Bokeh CustomJSCallbacks)
+        window.closeId = closeId
+        window.openId = openId
+        window.openModal = openModal
+        window.closeModal = closeModal
 
         // Settings icon
         let elSettings = document.getElementById("settings-icon")
