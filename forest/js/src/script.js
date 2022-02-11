@@ -70,3 +70,5 @@ function getFullscreenElement() {
         document.mozFullScreenElement ||/* Firefox syntax */
         document.msFullscreenElement /* IE/Edge syntax */
 }
+
+export { closeId, openId, openModal, closeModal, getFullscreenElement, openFullscreen, closeFullscreen }
