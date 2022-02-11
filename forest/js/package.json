@@ -3,9 +3,6 @@
   "version": "0.0.1",
   "description": "Helper JS for FOREST Python library",
   "main": "index.js",
-  "dependencies": {
-    "redux": "^4.0.5"
-  },
   "devDependencies": {
     "jest": "^26.0.1",
     "vite": "^2.8.0"
