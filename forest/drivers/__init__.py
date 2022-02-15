@@ -37,7 +37,12 @@ def get_dataset(driver_name, settings=None):
     if settings is None:
         settings = {}
     try:
+        # Try builtin driver first
         module = import_module(f"forest.drivers.{driver_name}")
     except ModuleNotFoundError:
-        raise DriverNotFound(driver_name)
+        try:
+            # Try user-defined driver second
+            module = import_module(driver_name)
+        except ModuleNotFoundError:
+            raise DriverNotFound(driver_name)
     return module.Dataset(**settings)
