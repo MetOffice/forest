@@ -29,14 +29,15 @@ def pressures():
 
 
 @app.get("/map_view/image")
-def map_view():
+def map_view(valid_time: dt.datetime):
+    print(f"{valid_time=}")
     return {
         "result": {
             "x": [-2e6],
             "y": [-2e6],
             "dw": [4e6],
             "dh": [4e6],
-            "image": [[[0, 1, 2], [3, 4, 5], [6, 7, 8]]],
+            "image": [[[valid_time.hour, 1, 2], [3, 4, 5], [6, 7, 8]]],
         }
     }
 

@@ -44,11 +44,12 @@ class ImageLoader:
     def __init__(self, url):
         self.url = f"{url}/map_view"
 
-    @no_args_kwargs
-    def image(self):
-        request = requests.get(f"{self.url}/image")
+    def image(self, state):
+        print(f"ImageLoader: {state}")
+        request = requests.get(
+            f"{self.url}/image", params={"valid_time": state.valid_time}
+        )
         data = request.json()
-        print(data)
         return data.get("result", empty_image())
 
 
