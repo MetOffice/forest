@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+import uvicorn
 import glob
 import datetime as dt
 from fastapi import FastAPI
@@ -18,7 +20,7 @@ def initial_times():
 
 @app.get("/navigator/valid_times")
 def valid_times():
-    return {"result": [dt.datetime(2022, 1, 1)]}
+    return {"result": [dt.datetime(2022, 1, 1), dt.datetime(2022, 1, 1, 3)]}
 
 
 @app.get("/navigator/pressures")
@@ -37,3 +39,7 @@ def map_view():
             "image": [[[0, 1, 2], [3, 4, 5], [6, 7, 8]]],
         }
     }
+
+
+if __name__ == "__main__":
+    uvicorn.run("server:app", host="127.0.0.1", port=8000, log_level="info")

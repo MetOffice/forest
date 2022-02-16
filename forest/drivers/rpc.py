@@ -1,5 +1,7 @@
 """
 Remote procedure call driver
+
+.. note: See example in `forest/apps/rpc-server`
 """
 import requests
 import forest.map_view
@@ -68,7 +70,7 @@ class Navigator:
 
     @no_args_kwargs
     def valid_times(self):
-        request = requests.get(f"{self.url}/initial_times")
+        request = requests.get(f"{self.url}/valid_times")
         data = request.json()
         return data.get("result", [])
 
