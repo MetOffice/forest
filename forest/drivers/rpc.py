@@ -7,17 +7,9 @@ import requests
 import forest.map_view
 
 
-def empty_image():
-    return {
-        "x": [],
-        "y": [],
-        "dw": [],
-        "dh": [],
-        "image": [],
-    }
-
-
 def no_args_kwargs(method):
+    """decorator to simplify function calls"""
+
     def inner(self, *args, **kwargs):
         return method(self)
 
@@ -25,6 +17,8 @@ def no_args_kwargs(method):
 
 
 class Dataset:
+    """Remote procedure call dataset"""
+
     def __init__(self, url):
         self.url = url
 
@@ -41,42 +35,53 @@ class Dataset:
 
 
 class ImageLoader:
+    """Fetch data suitable for bokeh.models.Image glyph"""
+
     def __init__(self, url):
-        self.url = f"{url}/map_view"
+        self.root = f"{url}/map_view"
 
     def image(self, state):
-        print(f"ImageLoader: {state}")
         request = requests.get(
-            f"{self.url}/image", params={"valid_time": state.valid_time}
+            f"{self.root}/image", params={"valid_time": state.valid_time}
         )
         data = request.json()
-        return data.get("result", empty_image())
+        return data.get("result", self.empty_image())
+
+    @staticmethod
+    def empty_image():
+        return {
+            "x": [],
+            "y": [],
+            "dw": [],
+            "dh": [],
+            "image": [],
+        }
 
 
 class Navigator:
+    """Adaptor to map framework calls to RPC fetch requests"""
+
     def __init__(self, url):
-        self.url = f"{url}/navigator"
+        self.root = f"{url}/navigator"
 
     @no_args_kwargs
     def variables(self):
-        request = requests.get(f"{self.url}/variables")
-        data = request.json()
-        return data.get("result", [])
+        return self.fetch(f"{self.root}/variables")
 
     @no_args_kwargs
     def initial_times(self):
-        request = requests.get(f"{self.url}/initial_times")
-        data = request.json()
-        return data.get("result", [])
+        return self.fetch(f"{self.root}/initial_times")
 
     @no_args_kwargs
     def valid_times(self):
-        request = requests.get(f"{self.url}/valid_times")
-        data = request.json()
-        return data.get("result", [])
+        return self.fetch(f"{self.root}/valid_times")
 
     @no_args_kwargs
     def pressures(self):
-        request = requests.get(f"{self.url}/pressures")
+        return self.fetch(f"{self.root}/pressures")
+
+    @staticmethod
+    def fetch(endpoint):
+        request = requests.get(endpoint)
         data = request.json()
         return data.get("result", [])
