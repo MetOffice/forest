@@ -10,7 +10,7 @@ app = FastAPI()
 
 @app.get("/navigator/variables")
 def variables():
-    return {"result": ["air_temperature"]}
+    return {"result": ["air_temperature", "relative_humidity"]}
 
 
 @app.get("/navigator/initial_times")
@@ -25,21 +25,40 @@ def valid_times():
 
 @app.get("/navigator/pressures")
 def pressures():
-    return {"result": [1000, 100, 1]}
+    return {"result": []}
 
 
 @app.get("/map_view/image")
-def map_view(valid_time: dt.datetime):
+def map_view(
+    valid_time: dt.datetime,
+    initial_time: dt.datetime,
+    variable: str,
+    pressure: float,
+):
+    print(f"{initial_time=}")
     print(f"{valid_time=}")
-    return {
-        "result": {
-            "x": [-2e6],
-            "y": [-2e6],
-            "dw": [4e6],
-            "dh": [4e6],
-            "image": [[[valid_time.hour, 1, 2], [3, 4, 5], [6, 7, 8]]],
+    print(f"{variable=}")
+    print(f"{pressure=}")
+    if valid_time.hour == 0:
+        return {
+            "result": {
+                "x": [-2e6],
+                "y": [-2e6],
+                "dw": [4e6],
+                "dh": [4e6],
+                "image": [[[2, 1, 0], [3, 4, 8], [6, 7, 5]]],
+            }
         }
-    }
+    else:
+        return {
+            "result": {
+                "x": [-2e6],
+                "y": [-2e6],
+                "dw": [4e6],
+                "dh": [4e6],
+                "image": [[[0, 1, 2], [3, 4, 5], [6, 7, 8]]],
+            }
+        }
 
 
 if __name__ == "__main__":

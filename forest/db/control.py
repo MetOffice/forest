@@ -195,37 +195,6 @@ State.__ne__ = state_ne
 
 
 @export
-def initial_state(navigator, pattern=None):
-    """Find initial state given navigator"""
-    state = {}
-    state["pattern"] = pattern
-    variables = navigator.variables(pattern)
-    state["variables"] = variables
-    if len(variables) == 0:
-        return state
-    variable = variables[0]
-    state["variable"] = variable
-    initial_times = navigator.initial_times(pattern, variable)
-    state["initial_times"] = initial_times
-    if len(initial_times) == 0:
-        return state
-    initial_time = max(initial_times)
-    state["initial_time"] = initial_time
-    valid_times = navigator.valid_times(pattern, variable, initial_time)
-    state["valid_times"] = valid_times
-    if len(valid_times) > 0:
-        state["valid_time"] = min(valid_times)
-    pressures = navigator.pressures(
-        variable=variable, pattern=pattern, initial_time=initial_time
-    )
-    pressures = list(reversed(sorted(pressures)))
-    state["pressures"] = pressures
-    if len(pressures) > 0:
-        state["pressure"] = pressures[0]
-    return state
-
-
-@export
 def reducer(state, action):
     state = copy.deepcopy(state)
     kind = action["kind"]
