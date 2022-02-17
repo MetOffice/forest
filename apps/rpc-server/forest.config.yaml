@@ -1,0 +1,22 @@
+
+# Example configuration file showing multiple RPC datasets
+#
+# A server could serve each dataset behind an endpoint e.g. /dataset/id
+# or multiple domains could be used
+edition: 2022
+datasets:
+  - label: WCSSP SE Asia RA2
+    driver:
+      name: rpc
+      settings:
+        url: http://localhost:8000/ra2
+  - label: WCSSP SE Asia RA3
+    driver:
+      name: rpc
+      settings:
+        url: http://localhost:8000/ra3
+  - label: NIWA
+    driver:
+      name: rpc
+      settings:
+        url: http://localhost:5555
