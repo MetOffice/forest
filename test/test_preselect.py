@@ -1,5 +1,5 @@
 import unittest
-import forest.db.control
+import forest.initial_state
 import forest.db.database
 
 
@@ -56,14 +56,16 @@ class TestInitialState(unittest.TestCase):
         path = "file.nc"
         variable = "relative_humidity"
         self.database.insert_variable(path, variable)
-        state = forest.db.control.initial_state(self.database, pattern="*.nc")
+        state = forest.initial_state.from_pattern(
+            self.database, pattern="*.nc"
+        )
         result = state["variable"]
         expect = variable
         self.assertEqual(expect, result)
 
     def test_initial_state(self):
         self.make_database()
-        state = forest.db.control.initial_state(self.database)
+        state = forest.initial_state.from_pattern(self.database)
         self.assertEqual(
             state["initial_times"],
             [

@@ -5,6 +5,7 @@ import bokeh.colors
 import os
 from forest.reducer import reducer
 from forest import (
+    initial_state,
     dimension,
     screen,
     tools,
@@ -138,6 +139,7 @@ def main(argv=None):
         layers.middleware,
         navigator,
         mws.echo,
+        mws.echo_state,
     ]
     store = redux.Store(reducer, middlewares=middlewares)
 
@@ -241,11 +243,21 @@ def main(argv=None):
     # Set initial state
     store.dispatch(forest.actions.set_state(config.state).to_dict())
 
-    # Pre-select menu choices (if any)
-    for pattern, _ in sub_navigators.items():
-        state = forest.db.control.initial_state(navigator, pattern=pattern)
-        store.dispatch(forest.actions.update_state(state).to_dict())
-        break
+    if config.edition == 2022:
+        # Discover first plottable state
+        labels = list(datasets.keys())
+
+        store.dispatch(
+            forest.actions.update_state(
+                initial_state.from_labels(navigator, labels)
+            ).to_dict()
+        )
+    else:
+        # Pre-select menu choices (if any)
+        for pattern, _ in sub_navigators.items():
+            state = initial_state.from_pattern(navigator, pattern)
+            store.dispatch(forest.actions.update_state(state).to_dict())
+            break
 
     # Set default time series visibility
     store.dispatch(tools.on_toggle_tool("time_series", False))
@@ -253,8 +265,11 @@ def main(argv=None):
     # Set default profile visibility
     store.dispatch(tools.on_toggle_tool("profile", False))
 
-    # Set top-level navigation
-    store.dispatch(forest.db.control.set_value("patterns", config.patterns))
+    if not config.edition == 2022:
+        # Set top-level navigation
+        store.dispatch(
+            forest.db.control.set_value("patterns", config.patterns)
+        )
 
     # Pre-select first map_view layer
     if config.edition == 2022:
