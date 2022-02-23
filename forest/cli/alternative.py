@@ -110,7 +110,10 @@ app.command(name="db")(forest.db.main.main)
 
 
 @app.command()
-def init(config_file: Path="forest.config.yaml", force: bool=False):
+def init(
+    config_file: Path = "forest.config.yaml",
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing file"),
+):
     """Quickly initialise a template"""
     if config_file.exists() and not force:
         name = typer.style(f"{config_file}", fg=typer.colors.CYAN)
@@ -127,6 +130,7 @@ def init(config_file: Path="forest.config.yaml", force: bool=False):
     from forest.config import Edition2022, HighLevelDataset, HighLevelDriver
     from dataclasses import asdict
     import yaml
+
     driver = HighLevelDriver("", {})
     dataset = HighLevelDataset("", "", driver)
     config = Edition2022(datasets=[dataset])
@@ -138,4 +142,3 @@ def init(config_file: Path="forest.config.yaml", force: bool=False):
     with config_file.open() as stream:
         text = stream.read()
         typer.secho(text, fg=typer.colors.CYAN)
-
