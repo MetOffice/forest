@@ -31,7 +31,17 @@ class Dataset:
 
     def map_view(self, color_mapper):
         """Construct view"""
-        return forest.map_view.map_view(self.image_loader(), color_mapper)
+        tooltips = [
+            ("Name", "@name"),
+            ("Variable", "@variable"),
+            ("Value", "@image @units"),
+            ("Level", "@level"),
+            ("Valid at", "@valid{%F %H:%M}"),
+            ("Forecast reference", "@initial{%F %H:%M}"),
+            ("Forecast length", "@length"),
+        ]
+        return forest.map_view.map_view(self.image_loader(), color_mapper,
+                                        tooltips=tooltips)
 
     def image_loader(self):
         """Construct ImageLoader"""
@@ -68,6 +78,7 @@ class ImageLoader:
             bokeh_data.update(
                 self.metadata(
                     self.label,
+                    state.variable,
                     getattr(data_array, "units", ""),
                     forecast_reference_time,
                     forecast_period,
@@ -77,11 +88,12 @@ class ImageLoader:
             return bokeh_data
 
     @staticmethod
-    def metadata(name, units, forecast_reference_time, forecast_period):
+    def metadata(name, variable, units, forecast_reference_time, forecast_period):
         hours = (forecast_period).total_seconds() / (60 * 60)
         length = "T{:+}".format(int(hours))
         return {
             "name": [name],
+            "variable": [variable],
             "units": [units],
             "valid": [forecast_reference_time + forecast_period],
             "initial": [forecast_reference_time],
@@ -113,6 +125,7 @@ class ImageLoader:
             "valid": [],
             "level": [],
             "units": [],
+            "variable": [],
             "name": [],
         }
 
