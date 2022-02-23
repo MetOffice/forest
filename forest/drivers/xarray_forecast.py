@@ -47,11 +47,15 @@ class ImageLoader:
         forecast_reference_time = to_datetime(state.initial_time)
         forecast_period = to_datetime(state.valid_time) - forecast_reference_time
         data_array = self.xarray_dataset[state.variable]
-        data_array = data_array.sel(
-            forecast_reference_time=forecast_reference_time,
-            forecast_period=forecast_period
-        )
-        print(data_array)
+        try:
+            data_array = data_array.sel(
+                forecast_reference_time=forecast_reference_time,
+                forecast_period=forecast_period
+            )
+            print(data_array)
+        except KeyError as error:
+            print(f"Caught KeyError: {error}")
+            return self.empty_image()
         x = np.ma.masked_invalid(data_array.longitude)[:]
         y = np.ma.masked_invalid(data_array.latitude)[:]
         z = np.ma.masked_invalid(data_array)[:]
@@ -87,11 +91,11 @@ class Navigator:
     def initial_times(self):
         return self.xarray_dataset.forecast_reference_time.to_dict()["data"]
 
-    @no_args_kwargs
-    def valid_times(self):
-        reference_time = self.xarray_dataset.forecast_reference_time[0]
-        period = self.xarray_dataset.forecast_period
-        return (reference_time + period).to_dict()["data"]
+    def valid_times(self, pattern, variable, initial_time):
+        """List of validity times from a particular model run"""
+        forecast_reference_time = self.xarray_dataset.forecast_reference_time.sel(forecast_reference_time=initial_time)
+        forecast_period = self.xarray_dataset.forecast_period
+        return (forecast_reference_time + forecast_period).to_dict()["data"]
 
     @no_args_kwargs
     def pressures(self):
