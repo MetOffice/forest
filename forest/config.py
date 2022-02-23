@@ -29,10 +29,29 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 from collections.abc import Mapping
 from forest.export import export
-from typing import Any
+from typing import Any, List
 
 
 __all__ = []
+
+
+@dataclass
+class HighLevelDriver:
+    name: str
+    settings: dict
+
+
+@dataclass
+class HighLevelDataset:
+    label: str
+    description: str
+    driver: HighLevelDriver
+
+
+@dataclass
+class Edition2022:
+    edition: int = 2022
+    datasets: List[HighLevelDataset] = field(default_factory=list)
 
 
 @dataclass
@@ -110,13 +129,6 @@ def combine_variables(os_environ, args_variables):
     if args_variables is not None:
         variables.update(dict(args_variables))
     return variables
-
-
-@dataclass
-class HighLevelDataset:
-    label: str
-    description: str
-    driver: Any
 
 
 class Config(object):

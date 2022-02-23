@@ -107,3 +107,46 @@ app.command(name="tutorial")(forest.tutorial.main.main)
 
 
 app.command(name="db")(forest.db.main.main)
+
+
+@app.command()
+def init(
+    config_file: Path = "forest.config.yaml",
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing file"),
+):
+    """Quickly initialise a template"""
+    if config_file.exists() and not force:
+        name = typer.style(f"{config_file}", fg=typer.colors.CYAN)
+        typer.secho(f"\n{name} already exists")
+        flag = typer.style(f"--force", bold=True)
+        typer.echo(f"use {flag} to overwrite it or")
+        flag = typer.style(f"--config-file", bold=True)
+        typer.echo(f"use {flag} to specify a different file\n")
+        raise typer.Exit()
+
+    # Build a template configuration file
+    typer.secho("\nFile name:", fg=typer.colors.BLUE)
+    typer.secho(f"{config_file}", fg=typer.colors.CYAN)
+    from forest.config import Edition2022, HighLevelDataset, HighLevelDriver
+    from dataclasses import asdict
+    import yaml
+
+    driver = HighLevelDriver("", {})
+    dataset = HighLevelDataset("", "", driver)
+    config = Edition2022(datasets=[dataset])
+    with config_file.open("w") as stream:
+        yaml.dump(asdict(config), stream, sort_keys=False)
+
+    # Summary
+    typer.secho("\nContents:", fg=typer.colors.BLUE)
+    with config_file.open() as stream:
+        text = stream.read()
+        typer.secho(text, fg=typer.colors.CYAN)
+
+    # Instructions
+    typer.secho("\nNext steps:", fg=typer.colors.BLUE)
+    typer.secho("Use your favourite editor to modify", fg=typer.colors.CYAN)
+    typer.secho(f"{config_file}\n", bold=True)
+    typer.secho("Then visualise your data using:", fg=typer.colors.CYAN)
+    typer.secho(f"forest ctl {config_file}\n", bold=True)
+
