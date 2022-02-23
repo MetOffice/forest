@@ -3,8 +3,11 @@ Xarray driver
 
 Make it possible to use formats compatible with Xarray
 """
+import numpy as np
 import xarray
 import forest.map_view
+import forest.geo
+from forest.util import to_datetime
 
 
 def no_args_kwargs(method):
@@ -41,7 +44,23 @@ class ImageLoader:
         self.xarray_dataset = xarray_dataset
 
     def image(self, state):
-        return self.empty_image()
+        forecast_reference_time = to_datetime(state.initial_time)
+        forecast_period = to_datetime(state.valid_time) - forecast_reference_time
+        data_array = self.xarray_dataset[state.variable]
+        data_array = data_array.sel(
+            forecast_reference_time=forecast_reference_time,
+            forecast_period=forecast_period
+        )
+        print(data_array)
+        x = np.ma.masked_invalid(data_array.longitude)[:]
+        y = np.ma.masked_invalid(data_array.latitude)[:]
+        z = np.ma.masked_invalid(data_array)[:]
+        if z.mask.all():
+            return self.empty_image()
+        else:
+            bokeh_data = forest.geo.stretch_image(x, y, z)
+            print(bokeh_data)
+            return bokeh_data
 
     @staticmethod
     def empty_image():

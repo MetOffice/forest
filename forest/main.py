@@ -138,8 +138,8 @@ def main(argv=None):
         presets.middleware,
         layers.middleware,
         navigator,
-        mws.echo,
-        mws.echo_state,
+        # mws.echo,
+        # mws.echo_state,
     ]
     store = redux.Store(reducer, middlewares=middlewares)
 
