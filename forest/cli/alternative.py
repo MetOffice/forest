@@ -142,3 +142,11 @@ def init(
     with config_file.open() as stream:
         text = stream.read()
         typer.secho(text, fg=typer.colors.CYAN)
+
+    # Instructions
+    typer.secho("\nNext steps:", fg=typer.colors.BLUE)
+    typer.secho("Use your favourite editor to modify", fg=typer.colors.CYAN)
+    typer.secho(f"{config_file}\n", bold=True)
+    typer.secho("Then visualise your data using:", fg=typer.colors.CYAN)
+    typer.secho(f"forest ctl {config_file}\n", bold=True)
+
