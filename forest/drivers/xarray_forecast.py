@@ -62,11 +62,11 @@ class Navigator:
 
     @no_args_kwargs
     def variables(self):
-        return self.xarray_dataset.data_vars
+        return list(self.xarray_dataset.data_vars)
 
     @no_args_kwargs
     def initial_times(self):
-        return self.xarray_dataset.forecast_reference_time
+        return []
 
     @no_args_kwargs
     def valid_times(self):
