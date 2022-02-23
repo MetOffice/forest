@@ -66,11 +66,13 @@ class Navigator:
 
     @no_args_kwargs
     def initial_times(self):
-        return []
+        return self.xarray_dataset.forecast_reference_time.to_dict()["data"]
 
     @no_args_kwargs
     def valid_times(self):
-        return []
+        reference_time = self.xarray_dataset.forecast_reference_time[0]
+        period = self.xarray_dataset.forecast_period
+        return (reference_time + period).to_dict()["data"]
 
     @no_args_kwargs
     def pressures(self):
