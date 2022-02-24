@@ -116,7 +116,8 @@ footer {
 .time {
     color: black;
     background-color: white;
-    box-shadow: 0px -2px 4px -2px rgba(0, 0, 0, 0.7);
+    /* box-shadow: 0px -2px 4px -2px rgba(0, 0, 0, 0.7); */
+    border-top: 1px solid #333;
     width: 100%;
 }
 
@@ -135,17 +136,12 @@ footer {
 .diagrams {
     height: 100%;
     width: 0;
-    z-index: 5;
     overflow-x: hidden;
     transition: 0.2s;
-    background-color: white;
-    box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.7);
 }
 
 /* Side navigation */
 .panel {
-    background-color: white;
-    border-radius: 4px;
     margin: 10px;
     padding: 10px;
     overflow-x: hidden;
@@ -154,10 +150,12 @@ footer {
 .panel-open {
     width: 370px;
     padding: 10px;
+    border-width: 1px;
 }
 .panel-close {
     width: 0;
     padding: 0;
+    border-width: 0;
 }
 
 #figures {

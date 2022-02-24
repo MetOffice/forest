@@ -38,23 +38,33 @@
 
     <!-- Layout figure row -->
     <div id="figures" class="flex-figures" style="position:relative;">
-        <i class="fa fa-expand fa-2x settings-icon abs-top-right" id="full-screen-icon"></i>
+
+        <div class="absolute top-0 right-0 z-10 bg-slate-100 text-slate-700 border border-slate-300 shadow-md mt-4 mr-4 rounded-full flex flex-row items-center justify-center">
+        <i class="fa fa-expand hover:contrast-200 p-3 cursor-pointer" id="full-screen-icon"></i>
+        </div>
 
         <!-- Diagram drawer -->
-        <div id="diagrams" class="diagrams abs-top-right">
-                <div class="panel-title-container">
-                    <span class="close-icon"><i class="fas fa-window-close" onclick="closeId('diagrams')"></i></span><span class="margin-left-1em font-family-helvetica">Analysis</span>
+        <div id="diagrams" class="diagrams abs-top-right border-l border-slate-300 bg-slate-100 px-2 text-slate-700 z-20">
+                <div class="flex flex-row justify-between py-4 px-2">
+                    <span class="font-family-helvetica font-semibold">Analysis</span>
+                    <span class="close-icon"><i class="fas fa-window-close" onclick="closeId('diagrams')"></i></span>
                 </div>
                 {{ safe_embed('series') }}
         </div>
 
-        <div class="abs-top-left" style="z-index:4;">
-            <i class="fa fa-cog fa-2x settings-icon" id="settings-icon"></i>
-            <i class="fa fa-chart-line fa-2x settings-icon" id="diagrams-icon"></i>
-            <i class="fa fa-book-open fa-2x settings-icon" id="info-icon"></i>
+        <div class="absolute top-0 left-0 max-height-screen overflow-y-auto" style="z-index:4;">
+            <div>
+                <div class="flex flex-row bg-slate-100 py-3 px-4 rounded mt-4 mx-2 space-x-4 shadow-md border border-slate-300 text-slate-700">
+                    <i class="fa fa-cog cursor-pointer hover:contrast-200" id="settings-icon"></i>
+                    <i class="fa fa-chart-line cursor-pointer hover:contrast-200" id="diagrams-icon"></i>
+                    <i class="fa fa-book-open cursor-pointer hover:contrast-200" id="info-icon"></i>
+                </div>
+            </div>
 
             <!-- Control panel drawer -->
-            <div id="sidenav" class="panel panel-close">
+            <div id="sidenav" class="bg-slate-100 shadow-md border
+                border-slate-300 rounded panel panel-close max-height-1/2
+                overflow-y-auto">
                 <div id="controls-container" class="display-block">{{ safe_embed('controls') }}</div>
                 <div id="modal-container" class="display-none">{{ safe_embed('modal') }}</div>
             </div>
@@ -67,7 +77,8 @@
         </div>
 
         <!-- Title -->
-        <div id="info" class="font-family-helvetica abs-top-middle z-index-5 title">
+        <div id="info" class="absolute top-0 left-1/2 -translate-x-1/2 z-10
+            bg-slate-100 mt-4 p-3 border border-slate-300 rounded shadow-md">
             {{ safe_embed('title') }}
         </div>
 
@@ -91,6 +102,9 @@
     <script type="module" charset="utf-8">
         import * as forest from "./src/forest.js"
     window.forest = forest
+
+        // Tailwind CSS
+        import "./src/index.css"
     </script>
 
     <script type="module" charset="utf-8">

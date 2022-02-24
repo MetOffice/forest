@@ -168,8 +168,8 @@ class TimeUI(Observable):
             base="base",
             lower="lower",
             upper="upper",
-            fill_color="grey",
-            fill_alpha=0.2,
+            fill_color="lightblue",
+            fill_alpha=0.1,
             source=self.band_source,
         )
         self.figure.add_layout(band)
