@@ -52,9 +52,14 @@
 
         <div class="absolute top-0 left-0 max-h-screen overflow-y-hidden py-2 px-2" style="z-index:4;">
         <div class="flex flex-col divide-y overflow-hidden rounded border border-slate-300 shadow-md" style="z-index:4;">
-            <div class="flex flex-row space-x-4 justify-between bg-slate-100 py-3 px-4 text-slate-700">
-                <div class="flex flex-row space-x-4">
-                    <i class="fa fa-cog cursor-pointer hover:text-blue-600" id="settings-icon"></i>
+            <div class="flex flex-row space-x-4 justify-between items-center bg-slate-100 py-3 px-4 text-slate-700">
+                <div class="flex flex-row items-center space-x-4">
+                    <div id="settings-icon" class="cursor-pointer text-green-600 hover:text-green-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </div>
+                    <div class="text-slate-600">Controls</div>
                 </div>
                 <div>
                     <i class="fa fa-expand hover:text-blue-600 cursor-pointer" id="full-screen-icon"></i>
