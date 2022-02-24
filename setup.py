@@ -15,6 +15,7 @@ JS_DIR = os.path.join(os.path.dirname(__file__), NAME, r"js")
 
 
 def find_version():
+    """locate package version from forest/__init__.py"""
     path = os.path.join(os.path.dirname(__file__), NAME, "__init__.py")
     with open(path) as stream:
         contents = stream.read()
