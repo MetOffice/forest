@@ -142,20 +142,8 @@ footer {
 
 /* Side navigation */
 .panel {
-    margin: 10px;
-    padding: 10px;
     overflow-x: hidden;
     transition: 0.2s;
-}
-.panel-open {
-    width: 370px;
-    padding: 10px;
-    border-width: 1px;
-}
-.panel-close {
-    width: 0;
-    padding: 0;
-    border-width: 0;
 }
 
 #figures {

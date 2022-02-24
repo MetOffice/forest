@@ -40,7 +40,6 @@
     <div id="figures" class="flex-figures" style="position:relative;">
 
         <div class="absolute top-0 right-0 z-10 bg-slate-100 text-slate-700 border border-slate-300 shadow-md mt-4 mr-4 rounded-full flex flex-row items-center justify-center">
-        <i class="fa fa-expand hover:contrast-200 p-3 cursor-pointer" id="full-screen-icon"></i>
         </div>
 
         <!-- Diagram drawer -->
@@ -52,23 +51,29 @@
                 {{ safe_embed('series') }}
         </div>
 
-        <div class="absolute top-0 left-0 max-height-screen overflow-y-auto" style="z-index:4;">
-            <div>
-                <div class="flex flex-row bg-slate-100 py-3 px-4 rounded mt-4 mx-2 space-x-4 shadow-md border border-slate-300 text-slate-700">
+        <div class="absolute top-0 left-0 max-h-screen overflow-y-hidden py-4 px-2" style="z-index:4;">
+        <div class="flex flex-col divide-y overflow-hidden rounded border border-slate-300 shadow-md" style="z-index:4;">
+            <div class="flex flex-row space-x-4 justify-between bg-slate-100 py-3 px-4 text-slate-700">
+                <div class="flex flex-row space-x-4">
                     <i class="fa fa-cog cursor-pointer hover:contrast-200" id="settings-icon"></i>
                     <i class="fa fa-chart-line cursor-pointer hover:contrast-200" id="diagrams-icon"></i>
                     <i class="fa fa-book-open cursor-pointer hover:contrast-200" id="info-icon"></i>
                 </div>
+                <div>
+                    <i class="fa fa-expand hover:contrast-200 cursor-pointer" id="full-screen-icon"></i>
+                </div>
             </div>
-
-            <!-- Control panel drawer -->
-            <div id="sidenav" class="bg-slate-100 shadow-md border
-                border-slate-300 rounded panel panel-close max-height-1/2
-                overflow-y-auto">
-                <div id="controls-container" class="display-block">{{ safe_embed('controls') }}</div>
-                <div id="modal-container" class="display-none">{{ safe_embed('modal') }}</div>
+            <div class="">
+                <!-- Control panel drawer -->
+                <div id="sidenav" class="z-10 bg-slate-100 panel panel-close">
+                    <div id="controls-container" class="display-block max-h-1/2 overflow-y-auto">{{ safe_embed('controls') }}</div>
+                    <div id="modal-container" class="display-none">{{ safe_embed('modal') }}</div>
+                </div>
             </div>
         </div>
+        </div>
+
+
         {{ safe_embed('figures') }}
 
         <!-- Colorbars -->
@@ -78,7 +83,8 @@
 
         <!-- Title -->
         <div id="info" class="absolute top-0 left-1/2 -translate-x-1/2 z-10
-            bg-slate-100 mt-4 p-3 border border-slate-300 rounded shadow-md">
+            bg-slate-100 mt-4 p-3 border border-slate-300 rounded shadow-md
+            font-semibold">
             {{ safe_embed('title') }}
         </div>
 

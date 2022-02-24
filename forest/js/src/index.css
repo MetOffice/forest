@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Open/close side panel using transform: translate(...) */
+@layer components {
+    .panel-close {
+        @apply -translate-x-full opacity-0 h-0 p-0
+    }
+    .panel-open {
+        @apply opacity-100 p-2
+    }
+}
