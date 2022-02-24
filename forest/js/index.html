@@ -38,27 +38,44 @@
 
     <!-- Layout figure row -->
     <div id="figures" class="flex-figures" style="position:relative;">
-        <i class="fa fa-expand fa-2x settings-icon abs-top-right" id="full-screen-icon"></i>
+
+        <div class="absolute top-0 right-0 z-10 bg-slate-100 text-slate-700 border border-slate-300 shadow-md mt-4 mr-4 rounded-full flex flex-row items-center justify-center">
+        </div>
 
         <!-- Diagram drawer -->
-        <div id="diagrams" class="diagrams abs-top-right">
-                <div class="panel-title-container">
-                    <span class="close-icon"><i class="fas fa-window-close" onclick="closeId('diagrams')"></i></span><span class="margin-left-1em font-family-helvetica">Analysis</span>
-                </div>
+        <div class="diagrams absolute top-0 right-0 border-l border-slate-300 bg-slate-100 px-2 text-slate-700 z-20">
+            <div id="diagram-drawer"></div>
+            <div id="diagrams">
                 {{ safe_embed('series') }}
-        </div>
-
-        <div class="abs-top-left" style="z-index:4;">
-            <i class="fa fa-cog fa-2x settings-icon" id="settings-icon"></i>
-            <i class="fa fa-chart-line fa-2x settings-icon" id="diagrams-icon"></i>
-            <i class="fa fa-book-open fa-2x settings-icon" id="info-icon"></i>
-
-            <!-- Control panel drawer -->
-            <div id="sidenav" class="panel panel-close">
-                <div id="controls-container" class="display-block">{{ safe_embed('controls') }}</div>
-                <div id="modal-container" class="display-none">{{ safe_embed('modal') }}</div>
             </div>
         </div>
+
+        <div class="absolute top-0 left-0 max-h-screen overflow-y-hidden py-2 px-2" style="z-index:4;">
+        <div class="flex flex-col divide-y overflow-hidden rounded border border-slate-300 shadow-md" style="z-index:4;">
+            <div class="flex flex-row space-x-4 justify-between items-center bg-slate-100 py-3 px-4 text-slate-700">
+                <div class="flex flex-row items-center space-x-4">
+                    <div id="settings-icon" class="cursor-pointer text-green-600 hover:text-green-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </div>
+                    <div class="text-slate-600">Controls</div>
+                </div>
+                <div>
+                    <i class="fa fa-expand hover:text-blue-600 cursor-pointer" id="full-screen-icon"></i>
+                </div>
+            </div>
+            <div class="">
+                <!-- Control panel drawer -->
+                <div id="sidenav" class="z-10 bg-slate-100 panel panel-close">
+                    <div id="controls-container" class="display-block max-h-1/2 overflow-y-auto">{{ safe_embed('controls') }}</div>
+                    <div id="modal-container" class="display-none">{{ safe_embed('modal') }}</div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+
         {{ safe_embed('figures') }}
 
         <!-- Colorbars -->
@@ -67,13 +84,22 @@
         </div>
 
         <!-- Title -->
-        <div id="info" class="font-family-helvetica abs-top-middle z-index-5 title">
-            {{ safe_embed('title') }}
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 z-10
+            bg-slate-100 mt-2 border border-slate-300 rounded shadow-md
+            font-semibold flex flex-row divide-x items-center">
+            <div id="info-icon" class="p-2 text-slate-700 cursor-pointer hover:text-blue-600 flex flex-row items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div id="info" class="transition-all duration-300 flex flex-row items-center bg-white info-open">
+                {{ safe_embed('title') }}
+            </div>
         </div>
 
     </div>
     <footer class="flex-footer">
-        <div id="time" class="time">
+        <div id="time" class="time border-t border-slate-300">
             {{ safe_embed('time') }}
         </div>
     </footer>
@@ -91,6 +117,12 @@
     <script type="module" charset="utf-8">
         import * as forest from "./src/forest.js"
     window.forest = forest
+
+        // Tailwind CSS
+        import "./src/index.css"
+
+        // SolidJS app
+        import "./src/index.jsx"
     </script>
 
     <script type="module" charset="utf-8">
@@ -115,28 +147,16 @@
             }
         })
 
-        // Diagrams icon
-        let elDiagrams = document.getElementById("diagrams-icon")
-        elDiagrams.addEventListener("click", () => {
-            let el = document.getElementById("diagrams")
-            let width = "400px"
-            if (el.style.width !== width) {
-                el.style.width = width
-            } else {
-                el.style.width = "0"
-            }
-        })
-
         // Title icon
         let elTitle = document.getElementById("info-icon")
         elTitle.addEventListener("click", () => {
             let el = document.getElementById("info")
-            if (el.style.display === "") {
-                el.style.display = "none"
-            } else if (el.style.display === "block") {
-                el.style.display = "none"
+            if (el.classList.contains("info-open")) {
+                el.classList.remove("info-open")
+                el.classList.add("info-close")
             } else {
-                el.style.display = "block"
+                el.classList.add("info-open")
+                el.classList.remove("info-close")
             }
         })
 
