@@ -29,7 +29,9 @@ except ModuleNotFoundError:
     datashader = None
 
 
-def stretch_image(lons, lats, values, plot_height=None, plot_width=None):
+def stretch_image(lons, lats, values,
+                  plot_height=None,
+                  plot_width=None):
     """
     Do the mapping from image data to the format required by bokeh
     for plotting.
@@ -51,6 +53,8 @@ def stretch_image(lons, lats, values, plot_height=None, plot_width=None):
         gy = np.ma.masked_invalid(gy)
     else:
         raise Exception("Either 1D or 2D lons/lats")
+
+    extend_180(gx, lons)
 
     if datashader:
         x_range = (gx.min(), gx.max())
@@ -79,12 +83,18 @@ def stretch_image(lons, lats, values, plot_height=None, plot_width=None):
         # 2D image extent
         dw = gx.max() - gx.min()
         dh = gy.max() - gy.min()
-    return {"x": [x], "y": [y], "dw": [dw], "dh": [dh], "image": [image]}
+    return {
+        "x": [x],
+        "y": [y],
+        "dw": [dw],
+        "dh": [dh],
+        "image": [image]
+    }
 
 
-def datashader_stretch(
-    values, gx, gy, x_range, y_range, plot_height=None, plot_width=None
-):
+def datashader_stretch(values, gx, gy, x_range, y_range,
+                       plot_height=None,
+                       plot_width=None):
     """
     Use datashader to sample the data mesh in on a regular grid for use in
     image display.
@@ -183,10 +193,23 @@ def to_180(x):
     return y
 
 
+def extend_180(x, lons):
+    y = x.copy()
+    if np.any(lons > 180.0):
+        y[lons > 180.0] += mercator_width()
+    return y
+
+
+def mercator_width():
+    x_lims = cartopy.crs.Mercator.GOOGLE.x_limits
+    return x_lims[1] - x_lims[0]
+
+
 def web_mercator(lons, lats):
-    return transform(
+    gx, gy = transform(
         lons, lats, cartopy.crs.PlateCarree(), cartopy.crs.Mercator.GOOGLE
     )
+    return gx, gy
 
 
 def plate_carree(x, y):
