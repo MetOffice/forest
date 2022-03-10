@@ -83,11 +83,6 @@ def stretch_image(lons, lats, values,
         # 2D image extent
         dw = gx.max() - gx.min()
         dh = gy.max() - gy.min()
-    print("--------- geo.py ----------")
-    print(f"x  = {x}")
-    print(f"y  = {y}")
-    print(f"dw = {dw}")
-    print(f"dh = {dh}")
     return {
         "x": [x],
         "y": [y],
