@@ -54,7 +54,7 @@ def stretch_image(lons, lats, values,
     else:
         raise Exception("Either 1D or 2D lons/lats")
 
-    extend_180(gx, lons)
+    gx = extend_180(gx, lons)
 
     if datashader:
         x_range = (gx.min(), gx.max())
