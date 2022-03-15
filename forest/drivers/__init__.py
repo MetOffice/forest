@@ -3,6 +3,17 @@ from forest.exceptions import DriverNotFound
 from functools import wraps
 
 
+def iter_drivers():
+    """Generate builtin drivers"""
+    import os
+
+    directory = os.path.dirname(os.path.realpath(__file__))
+    for path in os.listdir(directory):
+        if path.endswith(".py") and not path.startswith("_"):
+            # TODO introspect code to test for Dataset class
+            yield path[:-3]
+
+
 _CACHE = {}
 
 
