@@ -29,6 +29,23 @@ def list():
         typer.echo(name)
 
 
+@driver_app.command()
+def settings(driver: str):
+    """List keywords associated with drivers"""
+    import inspect
+    import forest.drivers
+
+    typer.secho(f"Inspecting driver {driver}...\n", fg=typer.colors.CYAN)
+    driver_class = forest.drivers.get_driver(driver)
+    signature = inspect.signature(driver_class.__init__)
+    typer.secho("Valid keys settings block\n", fg=typer.colors.MAGENTA)
+    for parameter in signature.parameters:
+        if parameter in ["self", "kwargs"]:
+            # Don't advise the user to use self or kwargs in their config
+            continue
+        typer.echo(parameter)
+
+
 def version_callback(value: bool):
     if value:
         typer.secho(f"🌲 Version {forest.__version__} ✨", fg=typer.colors.CYAN)
