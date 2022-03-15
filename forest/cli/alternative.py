@@ -24,7 +24,7 @@ def list():
     """List keywords associated with drivers"""
     import forest.drivers
 
-    typer.secho("Listing available drivers...\n", fg=typer.colors.CYAN)
+    typer.secho("Listing builtin drivers...\n", fg=typer.colors.CYAN)
     for name in sorted(forest.drivers.iter_drivers()):
         typer.echo(name)
 
