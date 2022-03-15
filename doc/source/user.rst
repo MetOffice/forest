@@ -67,6 +67,31 @@ bokeh serve command. For convenience, the bokeh command is printed by FOREST whe
 Then simply use the above ``bokeh serve`` command to further tweak settings. If there is a common
 setting that is repeatedly being overwritten perhaps it would be worth a pull request.
 
+
+Driver discovery
+~~~~~~~~~~~~~~~~
+
+The art of writing configuration files requires a deep understanding of
+the code powering each driver. Fortunately, a pair of helper functions
+exist to introspect existing drivers to reveal valid settings.
+
+.. code-block:: sh
+
+   # Print built-in driver names
+   forest driver list
+
+
+Once a driver name has been identified it is invariably necessary to configure it
+using a ``settings`` block. To find out valid settings run the following command.
+
+.. code-block:: sh
+
+   # Print settings related to gridded_forecast driver
+   forest driver settings gridded_forecast
+
+.. note:: Some drivers don't rely on the local file system and are not suitable
+          for use with ``forest view``
+
 Configuration file
 ~~~~~~~~~~~~~~~~~~
 
