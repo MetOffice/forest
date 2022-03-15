@@ -17,7 +17,10 @@ environment run the following command.
 
 .. code-block:: sh
 
-    conda install -c conda-forge
+    conda install -c conda-forge forest=${VERSION}
+
+.. note:: An explicit version is required to prevent earlier cross-platform versions
+          being prioritised
 
 
 Basic usage
@@ -27,7 +30,7 @@ FOREST can be run as a command to quickly view files on disk.
 
 .. code-block:: sh
 
-   forest --show file.nc
+   forest view --driver ${DRIVER} file.nc
 
 
 Configuration file
@@ -35,6 +38,44 @@ Configuration file
 
 A configuration file is a convenient way to compare multiple
 datasets spread across file systems and web based catalogues.
+
+
+Edition 2022
+============
+
+Recent versions of FOREST have incorporated a more flexible structure
+to configure drivers. To be able to let FOREST know which syntax you
+are using the top-level ``edition`` key should be set to **2022**.
+
+.. code-block:: yaml
+
+   edition: 2022
+   datasets:
+     - label: Example
+       driver:
+          name: gridded_forecast
+          settings:
+            path: example.pp
+
+To generate a template ``forest.config.yaml`` run ``forest init``.
+
+.. code-block:: sh
+
+   forest init
+
+The skeleton configuration file can then be edited to point at your
+data. When you are ready to launch the server process and see
+your data run the ``ctl`` command, short for control.
+
+.. code-block:: sh
+
+   forest ctl forest.config.yaml
+
+
+
+Edition 2018
+============
+
 There is support for variable substitution of either
 environment variables or through the command line ``--var KEY VALUE``
 flag. Multiple ``--var`` flags can be specified to substitute
