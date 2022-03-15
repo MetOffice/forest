@@ -38,7 +38,7 @@ def settings(driver: str):
     typer.secho(f"Inspecting driver {driver}...\n", fg=typer.colors.CYAN)
     driver_class = forest.drivers.get_driver(driver)
     signature = inspect.signature(driver_class.__init__)
-    typer.secho("Valid keys settings block\n", fg=typer.colors.MAGENTA)
+    typer.secho("Valid settings block keys\n", fg=typer.colors.MAGENTA)
     for parameter in signature.parameters:
         if parameter in ["self", "kwargs"]:
             # Don't advise the user to use self or kwargs in their config
