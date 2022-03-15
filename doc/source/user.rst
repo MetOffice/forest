@@ -32,6 +32,17 @@ FOREST can be run as a command to quickly view files on disk.
 
    forest view --driver ${DRIVER} file.nc
 
+For convenience the view command opens a browser tab to display the
+file.
+
+To disable the automatic browser tab, e.g. when running the command
+repeatedly or starting the server in a browserless environment use the
+``--no-open-tab`` flag.
+
+.. code-block:: sh
+
+   forest view --no-open-tab --driver ${DRIVER} file.nc
+
 
 Configuration file
 ~~~~~~~~~~~~~~~~~~
