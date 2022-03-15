@@ -14,6 +14,20 @@ BOKEH_APP_PATH = Path(__file__).resolve().parent.parent
 
 app = typer.Typer(help="Command line interface for FOREST web application")
 
+# Driver sub-command
+driver_app = typer.Typer(help="Describe available drivers")
+app.add_typer(driver_app, name="driver")
+
+
+@driver_app.command()
+def list():
+    """List keywords associated with drivers"""
+    import forest.drivers
+
+    typer.secho("Listing available drivers...\n", fg=typer.colors.CYAN)
+    for name in sorted(forest.drivers.iter_drivers()):
+        typer.echo(name)
+
 
 def version_callback(value: bool):
     if value:
@@ -112,7 +126,9 @@ app.command(name="db")(forest.db.main.main)
 @app.command()
 def init(
     config_file: Path = "forest.config.yaml",
-    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing file"),
+    force: bool = typer.Option(
+        False, "--force", "-f", help="Overwrite existing file"
+    ),
 ):
     """Quickly initialise a template"""
     if config_file.exists() and not force:
@@ -149,4 +165,3 @@ def init(
     typer.secho(f"{config_file}\n", bold=True)
     typer.secho("Then visualise your data using:", fg=typer.colors.CYAN)
     typer.secho(f"forest ctl {config_file}\n", bold=True)
-
