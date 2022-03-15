@@ -43,6 +43,29 @@ repeatedly or starting the server in a browserless environment use the
 
    forest view --no-open-tab --driver ${DRIVER} file.nc
 
+Server settings
+===============
+
+FOREST uses `Bokeh <https://bokeh.org/>`_ which in turn uses a `Tornado <https://www.tornadoweb.org>`_ server. To
+run two or more servers or indeed if the default port `5006` is in use it is possible to specify a unique
+port number.
+
+.. code-block:: sh
+
+   forest view --port 5050 --driver ${DRIVER} file.nc
+
+Other server settings that are exposed by Bokeh but not by FOREST can be accessed by re-running the equivalent
+bokeh serve command. For convenience, the bokeh command is printed by FOREST when launching Bokeh.
+
+.. code-block:: bash
+
+   > # Example bokeh command print
+   > forest view --driver fake settings
+   Launching Bokeh...
+   bokeh serve /path/to/forest --show --args --file-type fake settings
+
+Then simply use the above ``bokeh serve`` command to further tweak settings. If there is a common
+setting that is repeatedly being overwritten perhaps it would be worth a pull request.
 
 Configuration file
 ~~~~~~~~~~~~~~~~~~
