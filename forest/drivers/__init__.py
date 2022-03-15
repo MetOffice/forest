@@ -47,6 +47,14 @@ def get_dataset(driver_name, settings=None):
     """Find Dataset related to file type"""
     if settings is None:
         settings = {}
+    return get_driver(driver_name)(**settings)
+
+
+def get_driver(driver_name):
+    """Get a top-level class related to a driver name
+
+    .. note: TODO clean up ambiguity between driver and dataset in this context
+    """
     try:
         # Try builtin driver first
         module = import_module(f"forest.drivers.{driver_name}")
@@ -56,4 +64,4 @@ def get_dataset(driver_name, settings=None):
             module = import_module(driver_name)
         except ModuleNotFoundError:
             raise DriverNotFound(driver_name)
-    return module.Dataset(**settings)
+    return module.Dataset
