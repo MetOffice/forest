@@ -200,24 +200,28 @@ class Navigator:
             "pressure": PressuresLocator(),
         }
 
-    def variables(self, pattern):
-        cubes = iris.load(pattern)
+    def variables(self, _pattern):
+        cubes = iris.load(self.pattern)
         return [cube.name() for cube in cubes]
 
-    def initial_times(self, pattern, variable):
+    def initial_times(self, _pattern, variable):
         locator = self._locators["initial"]
-        return list(sorted(set(locator(path) for path in glob.glob(pattern))))
+        return list(
+            sorted(set(locator(path) for path in glob.glob(self.pattern)))
+        )
 
-    def valid_times(self, pattern, variable, initial_time):
-        return self._dimension("valid", pattern, variable, initial_time)
+    def valid_times(self, _pattern, variable, initial_time):
+        return self._dimension("valid", self.pattern, variable, initial_time)
 
-    def pressures(self, pattern, variable, initial_time):
-        return self._dimension("pressure", pattern, variable, initial_time)
+    def pressures(self, _pattern, variable, initial_time):
+        return self._dimension(
+            "pressure", self.pattern, variable, initial_time
+        )
 
     def _dimension(self, keyword, pattern, variable, initial_time):
         arrays = []
         locator = self._locators[keyword]
-        for path in glob.glob(self.pattern):
+        for path in glob.glob(pattern):
             arrays.append(locator(path, variable))
         if len(arrays) == 0:
             return []
