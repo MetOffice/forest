@@ -25,12 +25,12 @@ def _natargmax(arr):
 
 
 class Dataset:
-    def __init__(self, pattern=None, database_path=None, **kwargs):
+    def __init__(self, pattern=None, database_path=None, minutes=15, **kwargs):
         self.pattern = pattern
         if database_path is None:
             database_path = ":memory:"
         self.database = Database(database_path)
-        self.locator = Locator(self.pattern, self.database)
+        self.locator = Locator(self.pattern, self.database, minutes=minutes)
 
     def navigator(self):
         return Navigator(self.locator, self.database)
@@ -133,9 +133,12 @@ class Database:
 class Locator:
     """Locate EIDA50 satellite images"""
 
-    def __init__(self, pattern, database):
+    def __init__(self, pattern, database, minutes=15):
+        self.minutes = minutes
         self.pattern = pattern
-        self._glob = forest.util.cached_glob(dt.timedelta(minutes=15))
+        self._glob = forest.util.cached_glob(
+            dt.timedelta(minutes=self.minutes)
+        )
         self.database = database
 
     def all_times(self, paths):
@@ -183,7 +186,9 @@ class Locator:
         else:
             times = self.load_time_axis(path)  # datetime64[s]
 
-        index = self.find_index(times, date, dt.timedelta(minutes=15))
+        index = self.find_index(
+            times, date, dt.timedelta(minutes=self.minutes)
+        )
         return path, index
 
     def glob(self):
@@ -219,6 +224,7 @@ class Locator:
     @staticmethod
     def find_index(times, time, length):
         """Search for index inside array of datetime64[s] values"""
+        print(f"FIND_INDEX: {times} {time} {length}")
         dtype = "datetime64[s]"
         if isinstance(times, list):
             times = np.asarray(times, dtype=dtype)
@@ -271,7 +277,8 @@ class Loader:
         else:
             try:
                 data = self._image(forest.util.to_datetime(state.valid_time))
-            except (FileNotFound, IndexNotFound):
+            except (FileNotFound, IndexNotFound) as e:
+                print(f"EIDA50: {e}")
                 data = self.empty_image
         return data
 
