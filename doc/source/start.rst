@@ -42,16 +42,24 @@ to hands on experience.
 
    ~: forest tutorial --help
 
-The only argument `forest-tutorial` needs is a directory to place
-files. Go ahead and run the tutorial command to
+The only argument `forest tutorial files` needs is a directory to place
+files into. Go ahead and run the tutorial command to
 get your hands on some files that `forest` can analyse.
 
 .. code-block:: bash
 
-   ~: forest tutorial .
+   ~: forest tutorial files .
 
 The above snippet can be used to populate the current working directory with
-all of the inputs needed to run the `forest` command line interface
+all of the inputs needed to run the `forest` command line interface.
+
+If you get stuck and want a quick way to open the tutorial page.
+
+.. code-block:: bash
+
+   ~: forest tutorial launch
+
+The launch command opens a browser tab at the official tutorial guide.
 
 Example - Unified model output
 ------------------------------

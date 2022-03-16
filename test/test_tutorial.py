@@ -34,7 +34,7 @@ def test_main_calls_build_all_with_build_dir(build_dir, file_names):
     if isinstance(file_names, str):
         file_names = [file_names]
 
-    runner.invoke(app, ["tutorial", build_dir])
+    runner.invoke(app, ["tutorial", "files", build_dir])
 
     for file_name in file_names:
         assert os.path.exists(os.path.join(build_dir, file_name)), file_name
