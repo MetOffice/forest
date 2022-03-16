@@ -40,7 +40,7 @@ to hands on experience.
 
 .. code-block:: bash
 
-   ~: forest-tutorial -h
+   ~: forest tutorial --help
 
 The only argument `forest-tutorial` needs is a directory to place
 files. Go ahead and run the tutorial command to
@@ -48,7 +48,7 @@ get your hands on some files that `forest` can analyse.
 
 .. code-block:: bash
 
-  ~: forest-tutorial .
+   ~: forest tutorial .
 
 The above snippet can be used to populate the current working directory with
 all of the inputs needed to run the `forest` command line interface
@@ -61,7 +61,7 @@ run the following command inside a shell prompt
 
 .. code-block:: bash
 
-  ~: forest --show unified_model.nc
+  ~: forest view --driver unified_model unified_model.nc
 
 
 Example - Atmospheric dispersion modelling
@@ -75,17 +75,20 @@ builtin to FOREST.
 .. code-block:: yaml
 
    # contents of name-config.yaml
-   files:
+   edition: 2022
+   datasets:
        - label: NAME
-         pattern: 'NAME/*.txt'
-         file_type: 'name'
+         driver:
+           name: 'name'
+           settings:
+             pattern: 'NAME/*.txt'
 
-To launch FOREST with NAME settings run the following command. A browser
-tab will be launched by the ``--show`` flag.
+To launch FOREST with NAME settings run the ``ctl`` command. A browser
+tab will be launched, it is possible to disable it with ``--no-open-tab``.
 
 .. code-block:: bash
 
-   forest --show --config-file name-config.yaml
+   forest ctl name-config.yaml
 
 Once FOREST launches it is then possible to customize the color palette(s)
 and limits, map backgrounds etc. to settings suitable to illustrate plumes
@@ -93,8 +96,8 @@ of contaminants.
 
 .. image:: name-animation.gif
 
-.. note:: The NAME driver can be invoked with the ``--file-type=name`` command
-          line option when running without a config file
+.. note:: The NAME driver can be invoked with ``forest view --driver=name`` command
+          when running without a config file
 
 
 Example - Rapidly developing thunderstorms
@@ -108,7 +111,7 @@ try the following command:
 
 .. code-block:: bash
 
-  ~: forest --show --file-type rdt rdt_*.json
+  ~: forest view --driver rdt rdt_*.json
 
 This should bring up a novel polygon geojson visualisation of satellite
 RDT (rapidly developing thunderstorms). But wait, without the underlying
@@ -117,7 +120,7 @@ of little value
 
 .. code-block:: bash
 
-  ~: forest --show --file-type eida50 eida50*.nc
+  ~: forest view --driver eida50 eida50*.nc
 
 It seems we are beginning to outgrow the command line, wouldn't it be
 nice if we could store our settings and use them in a reproducible way!
@@ -130,19 +133,26 @@ to suit your particular use case.
 
 .. code-block:: yaml
 
-  files:
+  edition: 2022
+  datasets:
      - label: UM
+       driver:
+         name: unified_model
+         settings:
        pattern: "unified_model*.nc"
        locator: file_system
-       file_type: unified_model
      - label: EIDA50
-       pattern: "eida50*.nc"
-       locator: file_system
-       file_type: eida50
+       driver:
+         name: eida50
+         settings:
+           pattern: "eida50*.nc"
+           locator: file_system
      - label: RDT
-       pattern: "rdt*.json"
-       locator: file_system
-       file_type: rdt
+       driver:
+         name: rdt
+         settings:
+           pattern: "rdt*.json"
+           locator: file_system
 
 Running the following command should load FOREST with a model diagnostic,
 satellite image and derived polygon product at the same time that can be
@@ -150,7 +160,7 @@ simultaneously compared.
 
 .. code-block:: bash
 
-   :> forest --show --config-file multi-config.yaml
+   :> forest ctl multi-config.yaml
 
 Example - Going faster with SQL
 -------------------------------
@@ -163,29 +173,36 @@ this issue by providing a facility to harvest the meta-data once, store
 it in a database, and then use the database to quickly locate relevant
 files.
 
-To generate a database from scratch use the `forestdb` command.
+To generate a database from scratch use the `forest database` command.
 
 .. code-block:: sh
 
-  :> forestdb --database my-database.db my-file-*.nc
+  :> forest database my-database.db my-file-*.nc
 
 To make use of a database for a particular database, set the `locator`
 to "database" and set `database_path` to the location of the database file.
 
 .. code-block:: yaml
 
-  files:
+  edition: 2022
+  datasets:
      - label: UM
-       pattern: "*unified_model.nc"
-       locator: database
-       database_path: database.db
+       driver:
+         name: unified_model
+         settings:
+           pattern: "*unified_model.nc"
+           locator: database
+           database_path: database.db
      - label: RDT
-       pattern: rdt*.json
-       locator: file_system
+       driver:
+         name: rdt
+         settings:
+           pattern: rdt*.json
      - label: EIDA50
-       pattern: eida50*.nc
-       locator: file_system
+       driver:
+         name: eida50
+         settings:
+           pattern: eida50*.nc
 
-.. note:: Database support is only available for unified_model file types
 
 .. note:: Prefix pattern with wildcard `*` to enable SQL queries to find files

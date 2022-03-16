@@ -25,11 +25,13 @@ BUILDERS = {
     "name": ConfigBuilder(
         "name-config.yaml",
         """
-files:
+edition: 2022
+datasets:
     - label: NAME
-      pattern: 'NAME/*.txt'
-      file_type: 'name'
-
+      driver:
+          name: 'name'
+          settings:
+              pattern: 'NAME/*.txt'
 """,
     )
 }
@@ -100,11 +102,16 @@ def build_file(directory, file_name):
 def build_um_config(build_dir):
     path = os.path.join(build_dir, UM_CFG_FILE)
     content = """
-files:
+edition: 2022
+datasets:
    - label: Unified Model
-     pattern: "*{}"
-     directory: {}
-     locator: database
+     driver:
+       name: unified_model
+       settings:
+         pattern: "*{}"
+         directory: {}
+         locator: database
+         database_path: database.db
 """.format(
         UM_FILE, build_dir
     )
@@ -116,19 +123,24 @@ files:
 def build_multi_config(build_dir):
     path = os.path.join(build_dir, MULTI_CFG_FILE)
     content = """
-files:
+edition: 2022
+datasets:
    - label: UM
-     pattern: "unified_model*.nc"
-     locator: file_system
-     file_type: unified_model
+     driver:
+       name: unified_model
+       settings:
+         locator: file_system
+         pattern: "unified_model*.nc"
    - label: EIDA50
-     pattern: "eida50*.nc"
-     locator: file_system
-     file_type: eida50
+     driver:
+       name: eida50
+       settings:
+         pattern: "eida50*.nc"
    - label: RDT
-     pattern: "rdt*.json"
-     locator: file_system
-     file_type: rdt
+     driver:
+       name: rdt
+       settings:
+         pattern: "rdt*.json"
 """
     print("writing: {}".format(path))
     with open(path, "w") as stream:
@@ -140,7 +152,7 @@ def build_um(build_dir):
     x = np.linspace(0, 45, nx)
     y = np.linspace(0, 45, ny)
     X, Y = np.meshgrid(x, y)
-    Z_0 = np.sqrt(X ** 2 + Y ** 2)
+    Z_0 = np.sqrt(X**2 + Y**2)
     Z_1 = Z_0 + 5.0
     reference = dt.datetime(2019, 4, 17)
     times = [
