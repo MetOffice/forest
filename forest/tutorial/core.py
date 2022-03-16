@@ -25,11 +25,13 @@ BUILDERS = {
     "name": ConfigBuilder(
         "name-config.yaml",
         """
-files:
+edition: 2022
+datasets:
     - label: NAME
-      pattern: 'NAME/*.txt'
-      file_type: 'name'
-
+      driver:
+          name: 'name'
+          settings:
+              pattern: 'NAME/*.txt'
 """,
     )
 }
@@ -105,6 +107,7 @@ files:
      pattern: "*{}"
      directory: {}
      locator: database
+     database_path: database.db
 """.format(
         UM_FILE, build_dir
     )
@@ -140,7 +143,7 @@ def build_um(build_dir):
     x = np.linspace(0, 45, nx)
     y = np.linspace(0, 45, ny)
     X, Y = np.meshgrid(x, y)
-    Z_0 = np.sqrt(X ** 2 + Y ** 2)
+    Z_0 = np.sqrt(X**2 + Y**2)
     Z_1 = Z_0 + 5.0
     reference = dt.datetime(2019, 4, 17)
     times = [
