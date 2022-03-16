@@ -102,12 +102,16 @@ def build_file(directory, file_name):
 def build_um_config(build_dir):
     path = os.path.join(build_dir, UM_CFG_FILE)
     content = """
-files:
+edition: 2022
+datasets:
    - label: Unified Model
-     pattern: "*{}"
-     directory: {}
-     locator: database
-     database_path: database.db
+     driver:
+       name: unified_model
+       settings:
+         pattern: "*{}"
+         directory: {}
+         locator: database
+         database_path: database.db
 """.format(
         UM_FILE, build_dir
     )
@@ -119,19 +123,24 @@ files:
 def build_multi_config(build_dir):
     path = os.path.join(build_dir, MULTI_CFG_FILE)
     content = """
-files:
+edition: 2022
+datasets:
    - label: UM
-     pattern: "unified_model*.nc"
-     locator: file_system
-     file_type: unified_model
+     driver:
+       name: unified_model
+       settings:
+         locator: file_system
+         pattern: "unified_model*.nc"
    - label: EIDA50
-     pattern: "eida50*.nc"
-     locator: file_system
-     file_type: eida50
+     driver:
+       name: eida50
+       settings:
+         pattern: "eida50*.nc"
    - label: RDT
-     pattern: "rdt*.json"
-     locator: file_system
-     file_type: rdt
+     driver:
+       name: rdt
+       settings:
+         pattern: "rdt*.json"
 """
     print("writing: {}".format(path))
     with open(path, "w") as stream:

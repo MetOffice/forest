@@ -91,15 +91,21 @@ def test_build_all_builds_um_config_file(build_dir):
         result = yaml.safe_load(stream)
 
     expect = {
-        "files": [
+        "edition": 2022,
+        "datasets": [
             {
                 "label": "Unified Model",
-                "pattern": "*" + forest.tutorial.core.UM_FILE,
-                "directory": build_dir,
-                "locator": "database",
-                "database_path": "database.db",
+                "driver": {
+                    "name": "unified_model",
+                    "settings": {
+                        "pattern": "*" + forest.tutorial.core.UM_FILE,
+                        "directory": build_dir,
+                        "locator": "database",
+                        "database_path": "database.db",
+                    },
+                },
             }
-        ]
+        ],
     }
     assert expect == result
 
@@ -110,26 +116,37 @@ def test_build_all_builds_config_file(build_dir):
     with open(path) as stream:
         result = yaml.safe_load(stream)
     expect = {
-        "files": [
+        "edition": 2022,
+        "datasets": [
             {
                 "label": "UM",
-                "pattern": "unified_model*.nc",
-                "locator": "file_system",
-                "file_type": "unified_model",
+                "driver": {
+                    "name": "unified_model",
+                    "settings": {
+                        "pattern": "unified_model*.nc",
+                        "locator": "file_system",
+                    },
+                },
             },
             {
                 "label": "EIDA50",
-                "pattern": "eida50*.nc",
-                "locator": "file_system",
-                "file_type": "eida50",
+                "driver": {
+                    "name": "eida50",
+                    "settings": {
+                        "pattern": "eida50*.nc",
+                    },
+                },
             },
             {
                 "label": "RDT",
-                "pattern": "rdt*.json",
-                "locator": "file_system",
-                "file_type": "rdt",
+                "driver": {
+                    "name": "rdt",
+                    "settings": {
+                        "pattern": "rdt*.json",
+                    },
+                },
             },
-        ]
+        ],
     }
     assert expect == result
 
