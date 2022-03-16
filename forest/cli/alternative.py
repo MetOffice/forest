@@ -14,6 +14,21 @@ BOKEH_APP_PATH = Path(__file__).resolve().parent.parent
 
 app = typer.Typer(help="Command line interface for FOREST web application")
 
+# Tutorial sub-command
+tutorial_app = typer.Typer(help="Guide to getting started")
+app.add_typer(tutorial_app, name="tutorial")
+tutorial_app.command(name="files")(forest.tutorial.main.main)
+
+
+@tutorial_app.command()
+def launch():
+    """Open documentation pages"""
+    typer.secho("Opening tutorial page...\n", fg=typer.colors.CYAN)
+    typer.launch(
+        "https://forest-informaticslab.readthedocs.io/en/latest/start.html#tutorial"
+    )
+
+
 # Driver sub-command
 driver_app = typer.Typer(help="Describe available drivers")
 app.add_typer(driver_app, name="driver")
@@ -132,9 +147,6 @@ def ctl(
     command = bokeh_args + ["--args"] + forest_args
     typer.secho(" ".join(command), fg=typer.colors.CYAN)
     return subprocess.call(command)
-
-
-app.command(name="tutorial")(forest.tutorial.main.main)
 
 
 app.command(name="db")(forest.db.main.main)
