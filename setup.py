@@ -1,6 +1,7 @@
 """
    FOREST - Forecast and Observation Research and Evaluation Survey Tool
 """
+import platform
 import os
 import re
 import subprocess
@@ -72,8 +73,14 @@ class BuildJSCommand(setuptools.command.build_py.build_py):
         cwd = os.getcwd()
         os.chdir(JS_DIR)
         if not os.path.exists("node_modules"):
-            subprocess.check_call(["npm", "install"])
-        subprocess.check_call(["npm", "run", "build"])
+            if platform.system() == "Windows":
+                subprocess.check_call("npm install", shell=True)
+            else:
+                subprocess.check_call(["npm", "install"])
+        if platform.system() == "Windows":
+            subprocess.check_call("npm run build", shell=True)
+        else:
+            subprocess.check_call(["npm", "run", "build"])
         os.chdir(cwd)
         super().run()
 
