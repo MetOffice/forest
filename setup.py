@@ -15,6 +15,17 @@ NAME = "forest"
 JS_DIR = os.path.join(os.path.dirname(__file__), NAME, r"js")
 
 
+def cross_platform(cmd):
+    """Support Windows
+
+    :param cmd: list of str
+    """
+    if platform.system().lower() == "windows":
+        return subprocess.check_call(" ".join(cmd), shell=True)
+    else:
+        return subprocess.check_call(cmd)
+
+
 def find_version():
     """locate package version from forest/__init__.py"""
     path = os.path.join(os.path.dirname(__file__), NAME, "__init__.py")
@@ -73,14 +84,8 @@ class BuildJSCommand(setuptools.command.build_py.build_py):
         cwd = os.getcwd()
         os.chdir(JS_DIR)
         if not os.path.exists("node_modules"):
-            if platform.system() == "Windows":
-                subprocess.check_call("npm install", shell=True)
-            else:
-                subprocess.check_call(["npm", "install"])
-        if platform.system() == "Windows":
-            subprocess.check_call("npm run build", shell=True)
-        else:
-            subprocess.check_call(["npm", "run", "build"])
+            cross_platform(["npm", "install"])
+        cross_platform(["npm", "run", "build"])
         os.chdir(cwd)
         super().run()
 
