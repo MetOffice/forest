@@ -35,18 +35,31 @@ to install forest alongside existing packages in that environment.
 
 .. code-block:: sh
 
-  # Install in activated environment
+  # Install in activated environment [if not following above steps]
   conda install -c conda-forge forest
 
 Full documentation for conda can be found here: https://docs.conda.io/en/latest/
 
 .. note:: Windows users may need to update their conda using ``conda update -n base -c defaults conda``
 
+Test installation
+^^^^^^^^^^^^^^^^^
+
 If the installation was successful it should be possible to print the current installed version.
 
 .. code-block:: sh
 
   forest --version
+  
+Update forest
+^^^^^^^^^^^^^
+
+To make sure you have the latest build of forest use the following command to stay up-to-date.
+
+.. code-block:: sh
+
+  # From inside an environment with forest installed
+  conda update -c conda-forge forest
 
 Who is FOREST for?
 ------------------
