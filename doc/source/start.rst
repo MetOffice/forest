@@ -27,8 +27,8 @@ should enable the ``forest`` command.
 
 .. code-block:: sh
 
+  # Enable environment
   conda activate custom-name
-  forest --help
 
 Alternatively, if you already have a conda environment and would like
 to install forest alongside existing packages in that environment.
