@@ -10,16 +10,34 @@ observations.
 Installation
 ------------
 
-FOREST is distributed via conda through the `conda-forge` channel
+FOREST is distributed via conda through the `conda-forge` channel. There are
+multiple ways to install forest with conda.
 
 .. code-block:: sh
 
-  :> conda install -c conda-forge forest -y
+  # Create a new environment with forest installed
+  conda create -n custom-name -c conda-forge forest
+  
+Then to activate the ``custom-name`` environment.
+
+.. code-block:: sh
+
+  conda activate custom-name
+
+Alternatively, if you already have a conda environment and would like
+to install forest alongside existing packages in that environment.
+
+.. code-block:: sh
+
+  # Install in activated environment
+  conda install -c conda-forge forest
 
 Full documentation for conda can be found here: https://docs.conda.io/en/latest/
 
+.. note:: Windows users may need to update their conda using ``conda update -n base -c defaults conda``
+
 Who is FOREST for?
-~~~~~~~~~~~~~~~~~~
+------------------
 
 FOREST is intended to provide a step change in exploration and
 monitoring of forecasting systems. Technical and non-technical
