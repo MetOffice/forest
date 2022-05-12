@@ -18,11 +18,17 @@ multiple ways to install forest with conda.
   # Create a new environment with forest installed
   conda create -n custom-name -c conda-forge forest
   
-Then to activate the ``custom-name`` environment.
+Conda should search the channels and find the libraries that forest depends
+on and queue them up for installation. Select ``y`` when prompted to
+begin installation.
+
+Once installation has completed successfully, activate the ``custom-name`` environment. This
+should enable the ``forest`` command.
 
 .. code-block:: sh
 
   conda activate custom-name
+  forest --help
 
 Alternatively, if you already have a conda environment and would like
 to install forest alongside existing packages in that environment.
@@ -35,6 +41,12 @@ to install forest alongside existing packages in that environment.
 Full documentation for conda can be found here: https://docs.conda.io/en/latest/
 
 .. note:: Windows users may need to update their conda using ``conda update -n base -c defaults conda``
+
+If the installation was successful it should be possible to print the current installed version.
+
+.. code-block:: sh
+
+  forest --version
 
 Who is FOREST for?
 ------------------
