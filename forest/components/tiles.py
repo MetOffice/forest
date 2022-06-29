@@ -16,7 +16,7 @@ WIKIMEDIA = "Wikimedia"
 
 URLS = {
     WIKIMEDIA: "https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}.png",
-    OPEN_STREET_MAP: "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png",
+    OPEN_STREET_MAP: "https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png",
     STAMEN_TERRAIN: "http://tile.stamen.com/terrain-background/{Z}/{X}/{Y}.png",
     STAMEN_WATERCOLOR: "http://tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg",
     STAMEN_TONER: "http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png",
