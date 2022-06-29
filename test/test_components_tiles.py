@@ -7,7 +7,7 @@ from forest.components import tiles
     [
         (
             tiles.OPEN_STREET_MAP,
-            "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png",
+            "https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png",
         ),
         (
             tiles.STAMEN_TERRAIN,
