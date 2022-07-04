@@ -90,6 +90,27 @@ class Sync:
             return os.path.join(self.directory, name)
 
 
+class Facade:
+    """Translation layer between dataset labels and file system patterns
+    """
+
+    def __init__(self, pattern, database):
+        self.pattern = pattern
+        self.database = database
+
+    def variables(self, _label):
+        return self.database.variables(self.pattern)
+
+    def initial_times(self, _label, variable):
+        return self.database.initial_times(self.pattern, variable)
+
+    def valid_times(self, _label, variable, initial_time):
+        return self.database.valid_times(self.pattern, variable, initial_time)
+
+    def pressures(self, _label, variable, initial_time):
+        return self.database.pressures(self.pattern, variable, initial_time)
+
+
 class Dataset:
     def __init__(
         self,
@@ -114,7 +135,7 @@ class Dataset:
 
     def navigator(self):
         if self.use_database:
-            return self.database
+            return Facade(self.pattern, self.database)
         else:
             return Navigator(self.pattern)
 
