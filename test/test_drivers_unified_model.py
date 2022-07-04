@@ -49,7 +49,10 @@ def test_navigator_use_database(tmpdir):
     }
     dataset = forest.drivers.get_dataset("unified_model", settings)
     navigator = dataset.navigator()
-    assert isinstance(navigator, forest.db.database.Database)
+    assert hasattr(navigator, "variables")
+    assert hasattr(navigator, "initial_times")
+    assert hasattr(navigator, "valid_times")
+    assert hasattr(navigator, "pressures")
 
 
 def test_loader_use_database(tmpdir):
