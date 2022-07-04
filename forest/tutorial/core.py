@@ -111,9 +111,9 @@ datasets:
          pattern: "*{}"
          directory: {}
          locator: database
-         database_path: database.db
+         database_path: {}
 """.format(
-        UM_FILE, build_dir
+        UM_FILE, build_dir, db_path(build_dir)
     )
     print("writing: {}".format(path))
     with open(path, "w") as stream:
@@ -181,13 +181,15 @@ def build_um(build_dir):
         var[1] = Z_1.T
 
 
+def db_path(build_dir):
+    return os.path.join(build_dir, DB_FILE)
+
 def build_database(build_dir):
-    db_path = os.path.join(build_dir, DB_FILE)
     um_path = os.path.join(build_dir, UM_FILE)
     if not os.path.exists(um_path):
         build_um(build_dir)
-    print("building: {}".format(db_path))
-    database = forest.db.database.Database.connect(db_path)
+    print("building: {}".format(db_path(build_dir)))
+    database = forest.db.database.Database.connect(db_path(build_dir))
     database.insert_netcdf(um_path)
     database.close()
 

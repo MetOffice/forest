@@ -101,7 +101,7 @@ def test_build_all_builds_um_config_file(build_dir):
                         "pattern": "*" + forest.tutorial.core.UM_FILE,
                         "directory": build_dir,
                         "locator": "database",
-                        "database_path": "database.db",
+                        "database_path": f"{build_dir}/database.db",
                     },
                 },
             }
