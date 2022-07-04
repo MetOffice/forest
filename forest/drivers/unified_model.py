@@ -90,6 +90,34 @@ class Sync:
             return os.path.join(self.directory, name)
 
 
+class Facade:
+    """Translation layer between dataset labels and file system patterns
+
+    .. note:: Uses a class level lookup dictionary to account for driver
+              caching/re-use patterns
+    """
+    _patterns = {}
+
+    def __init__(self, label, pattern, database):
+        assert isinstance(label, str), f"{label} must be str"
+        self._patterns[label] = pattern
+        self.database = database
+
+    def variables(self, label):
+        return self.database.variables(self._patterns[label])
+
+    def initial_times(self, label, variable):
+        return self.database.initial_times(self._patterns[label], variable)
+
+    def valid_times(self, label, variable, initial_time):
+        return self.database.valid_times(self._patterns[label], variable,
+                                         initial_time)
+
+    def pressures(self, label, variable, initial_time):
+        return self.database.pressures(self._patterns[label], variable,
+                                         initial_time)
+
+
 class Dataset:
     def __init__(
         self,
@@ -114,7 +142,7 @@ class Dataset:
 
     def navigator(self):
         if self.use_database:
-            return self.database
+            return Facade(self.label, self.pattern, self.database)
         else:
             return Navigator(self.pattern)
 
