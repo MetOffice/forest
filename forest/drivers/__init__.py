@@ -21,6 +21,9 @@ def _cache(f):
     # Ensure per-server dataset instances
     def wrapped(driver_name, settings=None):
         uid = _uid(driver_name, settings)
+        import json
+
+        uid = json.dumps(uid)
         if uid not in _CACHE:
             _CACHE[uid] = f(driver_name, settings)
         return _CACHE[uid]
