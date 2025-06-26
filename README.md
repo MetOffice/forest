@@ -1,3 +1,6 @@
+> [!IMPORTANT]  
+> FOREST is no longer maintained, and issues and pull requests are no longer accepted. For an alternative model evaluation tool please see [CSET](https://github.com/MetOffice/CSET).
+
 <h1 align="center">
   <a href="https://forest-informaticslab.readthedocs.io/en/latest/" style="display: block; margin: 0 auto;">
    <img src="https://raw.githubusercontent.com/MetOffice/forest/master/forest-logo-small.png"
